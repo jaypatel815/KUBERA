@@ -13,7 +13,6 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 - [x] T008 — pre-commit installed — done 2026-08-11 (owner). Sandbox-side caveat: I003.
 
 ## Backlog — Phase 2: Analysis & insight engine (agents)
-- [ ] T020 — Time-series metrics in `/backend/analysis`: daily returns, CAGR, volatility, Sharpe, max drawdown — known-answer tests (hand-computed fixtures). Spec §7.2.
 - [ ] T021 — Benchmark comparison: portfolio equity history (account_snapshots) vs SPY or any symbol (market_data bars), aligned by date; `GET /api/benchmark?symbol=SPY&days=90`.
 - [ ] T022 — Win/loss breakdown across positions (green vs red, counts + magnitudes) feeding the future dashboard chart; extend `/portfolio`.
 - [ ] T023 — Fundamentals + news ingestion: evaluate the owner's existing FMP/FRED keys (D009) vs Alpaca news; verify key validity + tier limits first, then pick and integrate one source.
@@ -25,6 +24,7 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 (none)
 
 ## Done
+- [x] T020 — `analysis/metrics.py`: daily_returns, cumulative_return, CAGR, volatility, Sharpe, max_drawdown_frac — documented conventions (252 ppy, positive-magnitude drawdown, ValueError on bad input), 16 known-answer tests hand-computed — 2026-08-11
 - [x] T015 — `GET /portfolio`: live account + positions at request time, totals/weights/returns via `analysis/portfolio.summarize()` (deterministic, tested); 7 new tests. **Phase 1 code-complete** — owner sign-off via T007 — 2026-08-11
 - [x] T014 — Snapshot sync job: `data/sync.py` (idempotent account upsert + account/position snapshot writes), `scripts/sync.py` CLI (one-shot / `--loop N`), account model gains `external_id`; idempotency tests — 2026-08-11
 - [x] T013 — DB schema v1: SQLAlchemy 2 models (broker_accounts, account_snapshots, position_snapshots, transactions), UTCDateTime type rejecting naive datetimes, engine/session factory, first alembic migration `bee2b4896cdf` + migration-parity test; `alembic -c backend/alembic.ini upgrade head` — 2026-08-11

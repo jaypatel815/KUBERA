@@ -3,6 +3,17 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T020 done (metrics library, Phase 2 started)
+Built: `analysis/metrics.py` — daily_returns, cumulative_return, cagr, volatility, sharpe,
+max_drawdown_frac. Conventions locked in the module docstring: values oldest-first and >0,
+252 trading days/year, sqrt-annualization, rf/ppy per-period risk-free, drawdown as
+positive magnitude, ValueError on any bad input (no silent garbage in a money pipeline).
+Verified: verify.py PASS — 56 passed, 3 skipped. All 16 metric tests are hand-computed
+known answers, independent of the implementation.
+Next: T021 (benchmark comparison vs SPY — uses these metrics + account_snapshots +
+market_data bars) or T022 (win/loss breakdown). T021 recommended first.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T015 done — PHASE 1 CODE-COMPLETE
 Built: `analysis/portfolio.py` summarize() — totals, per-position returns, weights, sorted
 by market value; duck-typed inputs keep analysis decoupled from broker clients. `GET
