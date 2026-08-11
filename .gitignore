@@ -1,0 +1,20 @@
+# Secrets — never commit
+.env
+*.pem
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Data & builds
+*.sqlite3
+dist/
+node_modules/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

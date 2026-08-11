@@ -1,0 +1,7 @@
+# Activate once per machine:  pip install pre-commit && pre-commit install
+# Blocks commits containing secrets/API keys before they ever reach git history.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
