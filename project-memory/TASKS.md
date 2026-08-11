@@ -13,7 +13,6 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 - [x] T008 — pre-commit installed — done 2026-08-11 (owner). Sandbox-side caveat: I003.
 
 ## Backlog — Phase 1: Data & portfolio backbone (agents)
-- [ ] T013 — DB schema v1 (SQLAlchemy 2 + SQLite + alembic): accounts, positions, transactions, snapshots; first migration; tests. (D007)
 - [ ] T014 — Scheduled refresh job writing position/quote snapshots; tests.
 - [ ] T015 — `GET /portfolio`: live holdings, values, asof — wired through T011–T014; integration test. **Phase 1 exit criterion (spec §7.1).**
 
@@ -24,6 +23,7 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 (none)
 
 ## Done
+- [x] T013 — DB schema v1: SQLAlchemy 2 models (broker_accounts, account_snapshots, position_snapshots, transactions), UTCDateTime type rejecting naive datetimes, engine/session factory, first alembic migration `bee2b4896cdf` + migration-parity test; `alembic -c backend/alembic.ini upgrade head` — 2026-08-11
 - [x] T012 — Market data client (`backend/data/market_data.py`): latest trade/quote + daily OHLCV (IEX free feed, split-adjusted), dual timestamps (exchange_ts + asof) on every payload, RFC3339 parser handling Alpaca's variable-precision fractions on py3.10+; `GET /api/market/{symbol}/latest` + `/bars`; 9 new tests — 2026-08-11
 - [x] T011 — Alpaca paper client (`backend/data/alpaca.py`): account + positions, timestamped/sourced payloads, actionable 401s, **live-endpoint refusal rail** (§7.4 not implemented = no code path to real money); `GET /api/account`; 8 new tests + skip-guarded live integration test — 2026-08-11
 - [x] T010 — Typed settings loader (`backend/settings.py`, pydantic-settings): fail-fast `require_alpaca()`, SecretStr, `/health` reports config state; 5 tests — 2026-08-11

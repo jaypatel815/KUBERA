@@ -6,3 +6,7 @@ select = ["E", "F", "I", "W"]
 
 [lint.isort]
 known-first-party = ["analysis", "api", "backtest", "data", "research_agent", "risk", "settings"]
+
+[lint.per-file-ignores]
+# Alembic autogenerates these; keep F-rules (real bugs) but skip style nits.
+"backend/alembic/versions/*" = ["E501", "W291", "I001"]

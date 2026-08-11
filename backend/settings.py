@@ -42,6 +42,12 @@ class KuberaSettings(BaseSettings):
     )
     alpaca_paper: bool = True
 
+    # D007: SQLite now, Postgres+pgvector at Phase 3 — switching is a URL change.
+    database_url: str = Field(
+        default=f"sqlite:///{(REPO_ROOT / 'kubera.sqlite3').as_posix()}",
+        validation_alias=AliasChoices("DATABASE_URL", "KUBERA_DATABASE_URL"),
+    )
+
     def require_alpaca(self) -> "KuberaSettings":
         """Return self if Alpaca credentials are present; raise ConfigError otherwise."""
         missing = []

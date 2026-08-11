@@ -3,6 +3,21 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T013 done (database schema v1)
+Built: SQLAlchemy 2 models — broker_accounts, account_snapshots, position_snapshots,
+transactions (deduped per account by broker fill id); UTCDateTime TypeDecorator that
+rejects naive datetimes on write and restores UTC on read (SQLite drops tzinfo);
+`data/db.py` engine/session factory; settings gain `database_url` (DATABASE_URL env,
+default repo-root SQLite per D007). First alembic migration `bee2b4896cdf` with a
+migration-parity test (upgrade head must produce exactly the models' tables).
+Gotchas fixed: alembic autogenerate emitted `data.models.UTCDateTime` without importing
+it (normalized to `sa.DateTime` — identical DDL); ruff per-file-ignores for generated
+migrations (style rules off, F-rules kept — they catch real bugs like that import).
+Verified: verify.py PASS — 33 passed, 2 skipped.
+Next: T014 (scheduled refresh job writing snapshots) then T015 closes Phase 1.
+Owner: T007 quickstart + T005 push still open.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T012 done (market data)
 Built: `backend/data/market_data.py` — latest trade, level-1 quote, daily OHLCV bars
 (split-adjusted, free IEX feed per D006), every payload carries BOTH `exchange_ts` and
