@@ -3,6 +3,17 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T035 done (breaker survives restarts)
+Built: `risk_state` table (single row, migration 35b6c01bf49b), `risk/persistence.py`
+(restore/persist), `RiskEngine.restore()` (persistence-only, documented), paper loop now
+restores state before acting and persists after every equity mark. `scripts/risk_reset.py`:
+shows state; reset requires --note AND typing RESET. README updated (loop mode now safe;
+reset instructions added). Fills-sync + market-hours guard split to T036.
+Verified: verify.py PASS — 140 passed, 3 skipped. Killer test: trip → simulated restart
+(fresh engine, same DB) → still blocked, zero orders reach the broker.
+Next: T034 (results ledger — last Phase 3 ticket) or T036 polish; then Phase 4.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T032 done (paper-trading loop) — KUBERA can trade (paper)
 Built: `backtest/paper_loop.py` run_paper_cycle — bars → strategy weight → target value
 (weight × allocation × equity) → delta order → RiskEngine pre_trade_check → Alpaca PAPER

@@ -26,6 +26,7 @@ from data.alpaca import AlpacaClient
 from data.market_data import MarketDataClient
 from data.models import SignalLog
 from risk.engine import OrderRequest, RiskEngine
+from risk.persistence import persist_risk_state, restore_risk_state
 
 log = logging.getLogger("kubera.paper_loop")
 
@@ -73,11 +74,14 @@ def run_paper_cycle(
     current_value = held.market_value if held else 0.0
     target_value = weight * allocation_frac * acct.equity
 
-    # 3. risk engine day management + breaker feed
+    # 3. risk engine: restore persisted state (a restart must never forget a trip),
+    #    then day management + breaker feed, then persist the updated state.
+    restore_risk_state(db, risk)
     today = datetime.now(timezone.utc).date().isoformat()
-    if risk._day != today:  # noqa: SLF001 - deliberate: loop owns day lifecycle
+    if risk.day != today:
         risk.start_day(acct.equity, today)
     risk.record_equity(acct.equity, acct.asof)
+    persist_risk_state(db, risk)
 
     strategy_name = getattr(strategy, "__name__", "strategy")
 

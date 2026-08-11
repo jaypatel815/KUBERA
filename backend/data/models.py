@@ -8,7 +8,7 @@ guarantees tz-aware UTC on read, on SQLite today and Postgres later (D007).
 
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Float, ForeignKey, Index, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import TypeDecorator
 
@@ -84,6 +84,20 @@ class PositionSnapshot(Base):
     unrealized_pl: Mapped[float] = mapped_column(Float)
     asof: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
     source: Mapped[str] = mapped_column(String(32))
+
+
+class RiskState(Base):
+    """Single-row persistence of the RiskEngine (id is always 1). Exists so a tripped
+    circuit breaker SURVIVES process restarts — a restart must never bypass it (spec §8)."""
+
+    __tablename__ = "risk_state"
+
+    id: Mapped[int] = mapped_column(primary_key=True)  # always RISK_STATE_ID = 1
+    day: Mapped[str | None] = mapped_column(String(10), default=None)
+    day_start_equity: Mapped[float | None] = mapped_column(Float, default=None)
+    tripped: Mapped[bool] = mapped_column(Boolean, default=False)
+    trip_reason: Mapped[str | None] = mapped_column(String(512), default=None)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
 class SignalLog(Base):

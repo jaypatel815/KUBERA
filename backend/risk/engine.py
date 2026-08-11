@@ -77,6 +77,30 @@ class RiskEngine:
     def trip_reason(self) -> str | None:
         return self._trip_reason
 
+    @property
+    def day(self) -> str | None:
+        return self._day
+
+    @property
+    def day_start_equity(self) -> float | None:
+        return self._day_start_equity
+
+    def restore(
+        self,
+        day: str | None,
+        day_start_equity: float | None,
+        tripped: bool,
+        trip_reason: str | None,
+    ) -> None:
+        """Persistence-layer use ONLY (risk/persistence.py): rehydrate saved state so a
+        process restart cannot forget a tripped breaker. Not for business logic."""
+        self._day = day
+        self._day_start_equity = day_start_equity
+        self._tripped = tripped
+        self._trip_reason = trip_reason
+        if tripped:
+            log.warning("risk state restored TRIPPED: %s", trip_reason)
+
     def start_day(self, equity: float, day: str) -> None:
         """Set the day's baseline. Does NOT clear a tripped breaker (principle 2)."""
         if equity <= 0:

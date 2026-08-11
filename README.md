@@ -72,6 +72,14 @@ decision — ordered, rejected, or no-action — is written to the `signal_log` 
 data snapshot it was based on. Strategies: momentum, sma_cross, mean_reversion, buy_and_hold.
 Paper only: there is deliberately no code path to real money.
 
+The circuit breaker persists to the database — restarting the loop cannot bypass a trip.
+If it trips, inspect and (deliberately, with a note) reset it:
+
+```
+python scripts\risk_reset.py                                  # show current risk state
+python scripts\risk_reset.py --note "reviewed the drawdown"   # reset (asks you to type RESET)
+```
+
 Run the full test suite any time: `python scripts\verify.py` (128+ tests; a few live ones
 run only when keys + internet are available). If local Python ever breaks:
 `powershell -ExecutionPolicy Bypass -File scripts\repair_python.ps1`.
