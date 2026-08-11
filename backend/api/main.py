@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 
 from fastapi import Depends, FastAPI, HTTPException
 
+from analysis.portfolio import summarize
 from data.alpaca import AlpacaClient, AlpacaError
 from data.market_data import MarketDataClient, MarketDataError
 from settings import ConfigError, KuberaSettings, get_settings
@@ -51,6 +52,33 @@ def account(client: AlpacaClient = Depends(get_alpaca_client)) -> dict:
         return asdict(client.get_account())
     except AlpacaError as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.get("/portfolio")
+def portfolio(client: AlpacaClient = Depends(get_alpaca_client)) -> dict:
+    """Phase 1 exit criterion: what do I hold and what's it worth — live, computed, dated.
+
+    Positions and account state are fetched from the broker at request time (never a stale
+    cache presented as current); totals come from the tested analysis layer.
+    """
+    try:
+        acct = client.get_account()
+        positions = client.get_positions()
+    except AlpacaError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    summary = summarize(positions)
+    return {
+        "account": asdict(acct),
+        "summary": {
+            "total_market_value": summary.total_market_value,
+            "total_cost_basis": summary.total_cost_basis,
+            "total_unrealized_pl": summary.total_unrealized_pl,
+            "total_return_frac": summary.total_return_frac,
+        },
+        "positions": [asdict(v) for v in summary.positions],
+        "asof": acct.asof.isoformat(),
+        "source": acct.source,
+    }
 
 
 def get_market_client(s: KuberaSettings = Depends(get_settings)):

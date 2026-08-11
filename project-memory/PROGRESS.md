@@ -3,6 +3,18 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T015 done — PHASE 1 CODE-COMPLETE
+Built: `analysis/portfolio.py` summarize() — totals, per-position returns, weights, sorted
+by market value; duck-typed inputs keep analysis decoupled from broker clients. `GET
+/portfolio` fetches account + positions live at request time (no cache presented as
+current) and returns computed summary + per-position views + asof + source.
+Verified: verify.py PASS — 40 passed, 3 skipped (live tests run on owner's machine).
+Phase 1 exit criterion met in code; owner sign-off = T007 (quickstart + sync + /portfolio).
+Promoted Phase 2 backlog: T020 metrics, T021 benchmark vs SPY, T022 win/loss, T023
+fundamentals/news (evaluate owner's FMP/FRED keys), T024 tool registry, T017 chore.
+Next: T020 (time-series metrics) — natural start for any agent.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T014 done (snapshot sync job)
 Built: `data/sync.py` — sync_once() fetches live account + positions and writes timestamped
 snapshot rows; ensure_account() is idempotent per (broker, external_id) — proven by test
