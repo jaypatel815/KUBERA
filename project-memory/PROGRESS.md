@@ -3,6 +3,20 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T046 done (chat on the owner's Claude Max)
+Built: `api/llm_claude_sdk.py` — LLM_PROVIDER=claude-sdk runs /api/chat on the owner's
+Max subscription (personal-use-only per verified Anthropic policy — D012 has citations).
+The SDK runs its own agent loop, so: registry bridged as SDK tools (@tool wrappers calling
+registry.execute with the request-bound ToolContext — confirmation gate intact), permission
+surface locked to mcp__kubera__* (Bash/file tools disallowed, dontAsk, bounded max_turns),
+history flattened to a transcript prompt, and every internal tool run captured as a
+side-channel event the chat loop persists as tool rows (audit trail complete) + feeds the
+recency footer. Lazy optional dependency; ConfigErrors are actionable. Fully mocked tests
+(fake claude_agent_sdk module) — 186 passed, 3 skipped.
+Owner activation = T047 (install SDK, claude setup-token, flip LLM_PROVIDER).
+Next: T045 (KUBERA MCP server) is the last Phase 4 side quest; then Phase 5 (PWA).
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T044 done (context budgeting)
 Built: `api/context.py` assemble_context — groups history into indivisible blocks (an
 assistant tool_call + its results can never split: provider APIs error on orphans, and

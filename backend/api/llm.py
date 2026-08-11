@@ -215,6 +215,17 @@ def build_provider(settings: KuberaSettings | None = None,
             )
         return OpenAIProvider(key or "not-needed", s.openai_model, transport,
                               base_url=s.openai_base_url)
+    if provider in ("claude-sdk", "claude_sdk", "max"):
+        if not s.claude_code_oauth_token:
+            raise ConfigError(
+                "LLM provider 'claude-sdk' selected but CLAUDE_CODE_OAUTH_TOKEN is "
+                "missing in .env. Run `claude setup-token` once (uses your Claude "
+                "Pro/Max login), paste the token into .env, and restart. Personal "
+                "use only per Anthropic policy (see DECISIONS.md D012)."
+            )
+        from api.llm_claude_sdk import ClaudeSDKProvider  # lazy: optional dependency
+        return ClaudeSDKProvider(s)
     raise ConfigError(
-        f"unknown LLM_PROVIDER '{s.llm_provider}' — valid values: anthropic, openai"
+        f"unknown LLM_PROVIDER '{s.llm_provider}' — valid values: anthropic, openai, "
+        "claude-sdk"
     )

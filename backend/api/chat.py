@@ -111,10 +111,28 @@ def run_chat_turn(
     total_in = total_out = 0
     reply = None
 
+    # SDK-style providers execute tools inside complete(); hand them the request-bound
+    # context (confirmation gate included) and collect their audit events afterward.
+    if hasattr(provider, "tool_context"):
+        provider.tool_context = ctx
+
     budget = get_settings().context_budget_chars
     for _round in range(max_tool_rounds):
         history = assemble_context(_history(db, conversation_id), budget)
         reply = provider.complete(system, history, schemas)
+
+        for ev in (getattr(provider, "last_tool_events", None) or []):
+            trail.append({"name": ev["name"], "arguments": ev["arguments"]})
+            if ev.get("asof"):
+                tool_asofs[ev["name"]] = ev["asof"]
+            db.add(ChatMessage(
+                conversation_id=conversation_id, role="tool",
+                tool_call_id=ev["id"], tool_name=ev["name"],
+                content=_cap(ev["content"]),
+            ))
+        if getattr(provider, "last_tool_events", None):
+            provider.last_tool_events = []
+            db.commit()
         total_in += reply.input_tokens
         total_out += reply.output_tokens
 

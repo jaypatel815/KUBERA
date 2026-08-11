@@ -2,6 +2,19 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D012 — Claude Agent SDK provider is PERSONAL-USE-ONLY (2026-08-11)
+LLM_PROVIDER=claude-sdk runs chat on the owner's Claude Max subscription via the Agent
+SDK's Claude-account auth (`claude setup-token` → CLAUDE_CODE_OAUTH_TOKEN). Verified
+against current Anthropic docs/policy: permitted for personal single-user use; explicitly
+NOT permitted to offer claude.ai login/limits to other users ("wrapper" products need
+API keys or Anthropic approval). If KUBERA is EVER multi-tenanted or productized, this
+provider must be removed or switched to API-key auth first. SDK usage draws from the
+owner's Max limits (shared with Claude Code/Cowork). The SDK's own agent loop executes
+KUBERA's bridged registry tools; permission surface locked to mcp__kubera__* only
+(Bash/file tools disallowed, permission_mode=dontAsk, bounded max_turns). Audit trail
+preserved via provider side-channel events persisted by the chat loop.
+Sources: code.claude.com/docs/en/authentication, support.claude.com article 15036540.
+
 ## D011 — Alpaca's official MCP server: data window yes, trading path never (2026-08-11)
 Owner asked whether to adopt github.com/alpacahq/alpaca-mcp-server. Decision: (a) NEVER in
 the trading path — its `trading` toolset lets an LLM place/cancel orders and liquidate

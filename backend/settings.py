@@ -53,6 +53,15 @@ class KuberaSettings(BaseSettings):
     openai_api_key: SecretStr | None = Field(
         default=None, validation_alias=AliasChoices("OPENAI_API_KEY",)
     )
+    # T046: Claude Agent SDK provider — runs chat on the owner's Claude subscription.
+    # Personal use only (D012). Token from `claude setup-token`.
+    claude_code_oauth_token: SecretStr | None = Field(
+        default=None, validation_alias=AliasChoices("CLAUDE_CODE_OAUTH_TOKEN",)
+    )
+    claude_sdk_max_turns: int = Field(
+        default=8, ge=1, le=24, validation_alias=AliasChoices("CLAUDE_SDK_MAX_TURNS",)
+    )
+
     # Verify current model names when configuring; override via env any time.
     anthropic_model: str = Field(
         default="claude-sonnet-5", validation_alias=AliasChoices("ANTHROPIC_MODEL",)

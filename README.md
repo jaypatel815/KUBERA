@@ -56,11 +56,19 @@ POST /api/chat            {"message": "how is my portfolio doing?"}   — TALK T
 GET  /api/chat/{id}                                         full audit trail of a conversation
 ```
 
-**Talking to KUBERA** needs an LLM key in `.env` (`ANTHROPIC_API_KEY` or `OPENAI_API_KEY`;
-pick with `LLM_PROVIDER=anthropic|openai`). Easiest way: open `/docs`, expand
-`POST /api/chat`, click "Try it out", and ask *"Should I buy more AAPL?"* — KUBERA will
-call its tools (briefing, portfolio, backtests) and answer with sourced, dated numbers.
-Include the returned `conversation_id` in your next message to continue the thread.
+**Talking to KUBERA** — pick ONE brain via `LLM_PROVIDER` in `.env`:
+
+- `claude-sdk` — **your Claude Max subscription, no API credits** (personal use only,
+  see DECISIONS D012). One-time setup: `pip install claude-agent-sdk`, run
+  `claude setup-token` (logs into your Claude account), put the token in `.env` as
+  `CLAUDE_CODE_OAUTH_TOKEN`. Shares your Max weekly limits with Claude Code/Cowork.
+- `openai` + `OPENAI_BASE_URL=http://localhost:11434/v1` — free local via Ollama
+  (validated with `nemotron-3.5-lightning`); or real OpenAI with `OPENAI_API_KEY`.
+- `anthropic` — Anthropic API with `ANTHROPIC_API_KEY` (needs API credits).
+
+Then open `/docs`, expand `POST /api/chat`, "Try it out", and ask *"Should I buy more
+AAPL?"* — KUBERA calls its tools and answers with sourced, dated numbers. Reuse the
+returned `conversation_id` to continue the thread.
 
 Backtest the strategy templates on real history (no server needed):
 
