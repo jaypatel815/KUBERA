@@ -3,6 +3,19 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T031 done (strategy library with regime proofs)
+Built: make_momentum(lookback, threshold) and make_mean_reversion(window, band_frac) on the
+T030 contract, plus regime test fixtures (BULL +1%/bar, BEAR -1%/bar, CHOP 100/82 range).
+Key behavioral proofs: momentum stays 100% flat through the entire synthetic bear (capital
+preserved, beats buy-and-hold by construction) and rides the bull after warmup; mean
+reversion profits in chop and correctly sits out smooth trends. Hand-tracked equity curves
+for both. MR is stateless (no hysteresis) — documented simplification.
+Verified: verify.py PASS — 128 passed, 3 skipped.
+Next: T032 (paper-trading loop: strategy → risk gate → Alpaca paper orders — the big one)
+or T034 (results ledger). T032 recommended; its live pieces will skip in sandbox per I002
+and prove out on the owner's machine.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T033 done (risk engine — the hard rails)
 Built: `risk/engine.py` — RiskLimits (validated), OrderRequest, RiskDecision (timestamped,
 all violated rules with numbers), RiskEngine. Fail-closed: uninitialized engine rejects all
