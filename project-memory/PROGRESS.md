@@ -3,6 +3,19 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — chat provider options (owner hit API-credits wall)
+Context: owner's Anthropic API account has no credits (Max subscription ≠ API billing).
+Built: OPENAI_BASE_URL override — the OpenAI adapter now targets any OpenAI-compatible
+endpoint (Ollama local = free, Groq, Gemini compat); keyless custom endpoints allowed,
+real OpenAI still requires a key. Owner unblock: LLM_PROVIDER=openai +
+OPENAI_BASE_URL=http://localhost:11434/v1 + OPENAI_MODEL=<ollama model>.
+Filed: T046 — Claude Agent SDK provider to run chat on the owner's Max subscription
+(Claude-account auth, registry as SDK tools; verify current subscription terms at build).
+Also fixed earlier: conversation_id=0 now means new conversation (Swagger example trap).
+Verified: verify.py PASS — 163 passed, 3 skipped.
+Next: T046 (high value for owner) or T043/T044/T045 as before.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T042 done — KUBERA CAN TALK
 Built: `api/chat.py` run_chat_turn — persona + replayed history → provider.complete →
 execute requested registry tools (errors surfaced verbatim, results capped at 6k chars) →

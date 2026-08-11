@@ -128,11 +128,16 @@ class AnthropicProvider:
 
 
 class OpenAIProvider:
+    """Speaks the OpenAI chat-completions wire format — which many providers serve
+    (Ollama locally, Groq, Gemini's compatibility endpoint). `base_url` picks the host."""
+
     def __init__(self, api_key: str, model: str,
-                 transport: httpx.BaseTransport | None = None):
+                 transport: httpx.BaseTransport | None = None,
+                 base_url: str = "https://api.openai.com/v1"):
         self._key = api_key
         self.model = model
         self._transport = transport
+        self._url = base_url.rstrip("/") + "/chat/completions"
 
     @staticmethod
     def _to_messages(system: str, neutral: list[dict]) -> list[dict]:
@@ -167,7 +172,7 @@ class OpenAIProvider:
                               "parameters": t["parameters"]}}
                 for t in tools
             ]
-        d = _post(OPENAI_URL, {"Authorization": f"Bearer {self._key}"},
+        d = _post(self._url, {"Authorization": f"Bearer {self._key}"},
                   payload, "openai", self._transport)
         msg = d["choices"][0]["message"]
         calls = [
@@ -199,13 +204,17 @@ def build_provider(settings: KuberaSettings | None = None,
         return AnthropicProvider(s.anthropic_api_key.get_secret_value(),
                                  s.anthropic_model, transport)
     if provider == "openai":
-        if not s.openai_api_key or not s.openai_api_key.get_secret_value():
+        # Local/compat endpoints (e.g. Ollama) don't need a real key — allow a dummy.
+        is_custom_endpoint = "api.openai.com" not in s.openai_base_url
+        key = s.openai_api_key.get_secret_value() if s.openai_api_key else ""
+        if not key and not is_custom_endpoint:
             raise ConfigError(
                 "LLM provider 'openai' selected but OPENAI_API_KEY is missing in .env. "
-                "Add it, or set LLM_PROVIDER=anthropic."
+                "Add it, set OPENAI_BASE_URL to a local endpoint (e.g. Ollama), or set "
+                "LLM_PROVIDER=anthropic."
             )
-        return OpenAIProvider(s.openai_api_key.get_secret_value(),
-                              s.openai_model, transport)
+        return OpenAIProvider(key or "not-needed", s.openai_model, transport,
+                              base_url=s.openai_base_url)
     raise ConfigError(
         f"unknown LLM_PROVIDER '{s.llm_provider}' — valid values: anthropic, openai"
     )

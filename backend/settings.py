@@ -60,6 +60,12 @@ class KuberaSettings(BaseSettings):
     openai_model: str = Field(
         default="gpt-5", validation_alias=AliasChoices("OPENAI_MODEL",)
     )
+    # Any OpenAI-compatible endpoint: Ollama (http://localhost:11434/v1), Groq,
+    # Gemini's compat endpoint, etc. Default = the real OpenAI.
+    openai_base_url: str = Field(
+        default="https://api.openai.com/v1",
+        validation_alias=AliasChoices("OPENAI_BASE_URL",),
+    )
 
     # D007: SQLite now, Postgres+pgvector at Phase 3 — switching is a URL change.
     database_url: str = Field(

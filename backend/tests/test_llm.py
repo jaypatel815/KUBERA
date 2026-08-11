@@ -121,6 +121,27 @@ def base_settings(**kw) -> KuberaSettings:
     return KuberaSettings(_env_file=None, **kw)
 
 
+def test_openai_base_url_override_for_compat_endpoints():
+    response = {"choices": [{"message": {"content": "local hello"},
+                             "finish_reason": "stop"}], "usage": {}}
+    transport, cap = capture_transport(response)
+    p = OpenAIProvider("not-needed", "llama3.3", transport,
+                       base_url="http://localhost:11434/v1")
+    reply = p.complete("S", [{"role": "user", "content": "hi"}], [])
+    assert cap["url"] == "http://localhost:11434/v1/chat/completions"
+    assert reply.text == "local hello"
+
+
+def test_build_provider_allows_keyless_custom_endpoint():
+    s = base_settings(llm_provider="openai",
+                      openai_base_url="http://localhost:11434/v1")
+    p = build_provider(s)
+    assert isinstance(p, OpenAIProvider)
+    # but the real OpenAI endpoint still requires a key
+    with pytest.raises(ConfigError):
+        build_provider(base_settings(llm_provider="openai"))
+
+
 def test_build_provider_selection_and_failfast():
     s = base_settings(llm_provider="anthropic", anthropic_api_key="k1")
     assert isinstance(build_provider(s), AnthropicProvider)

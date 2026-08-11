@@ -22,6 +22,7 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 ## Backlog — Phase 4: Conversation layer (agents; unblocked — §3 registry is done)
 - [ ] T043 — Conversation safety rails as code: order-related intents require explicit confirmation tokens; responses must carry data-recency line — enforced by post-checks, tested.
 - [ ] T044 — Context assembly: portfolio state + recent messages + relevant research memory into the prompt within a token budget; deterministic selection logic, tested.
+- [ ] T046 — Claude Agent SDK provider: run /api/chat on the owner's Claude MAX subscription (no API credits) via the Agent SDK's Claude-account auth, with the T024 registry exposed as SDK tools. Prereqs: verify current Anthropic subscription-usage terms at build time; note it shares Max weekly limits with Claude Code/Cowork. Owner pays $200/mo for Max — this makes KUBERA chat effectively free for him.
 - [ ] T045 — KUBERA MCP server (D011): thin FastMCP/official-SDK stdio server exposing the T024 registry tools (get_portfolio, get_latest, get_daily_bars, compare_benchmark, get_symbol_briefing) so Claude Desktop/Antigravity/mobile become KUBERA frontends pre-PWA. Read-only; no order tools until §7.4 exists. Later: streamable-http + auth for remote/mobile.
 
 ## Blocked
