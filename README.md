@@ -33,6 +33,36 @@ alembic -c backend\alembic.ini upgrade head
 python scripts\sync.py            # add --loop 300 to snapshot every 5 minutes
 ```
 
+## Try what's built so far
+
+With the server running (`uvicorn --app-dir backend api.main:app --reload`), open these in a browser:
+
+```
+http://127.0.0.1:8000/docs                                  interactive API explorer (try everything from here)
+http://127.0.0.1:8000/health                                liveness + whether your keys are detected
+http://127.0.0.1:8000/portfolio                             live paper account: positions, totals, win/loss
+http://127.0.0.1:8000/api/account                           equity, cash, buying power (timestamped)
+http://127.0.0.1:8000/api/market/AAPL/latest                latest trade + bid/ask for any symbol
+http://127.0.0.1:8000/api/market/AAPL/bars?days=30          daily price history (split-adjusted)
+http://127.0.0.1:8000/api/briefing/AAPL                     "should I buy X" evidence pack: momentum,
+                                                            volatility, drawdown, 52-week position, trend,
+                                                            your current exposure — facts only, dated
+http://127.0.0.1:8000/api/benchmark?symbol=SPY&days=90      your equity curve vs the market (needs snapshot
+                                                            history — run sync daily so this gets richer)
+http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
+```
+
+Backtest the strategy templates on real history (no server needed):
+
+```
+python scripts\backtest_demo.py                 # SPY, ~2 years: buy-and-hold vs momentum vs
+python scripts\backtest_demo.py AAPL --days 365 # SMA-cross vs mean-reversion, with costs
+```
+
+Run the full test suite any time: `python scripts\verify.py` (128+ tests; a few live ones
+run only when keys + internet are available). If local Python ever breaks:
+`powershell -ExecutionPolicy Bypass -File scripts\repair_python.ps1`.
+
 ## Repo map
 
 - `/AGENTS.md` — the contract every AI agent follows. Read first, always.

@@ -32,7 +32,7 @@ Keep this current — this section should never go stale. Rationale in `/project
 
 ## Session protocol
 **Start of every session:** read this file, then `PROGRESS.md`, then your assigned item in `TASKS.md`. Only read the `DECISIONS.md` entries and `PROJECT_SPEC.md` sections relevant to the module you're touching — you don't need the whole spec every time.
-**End of every session, before you stop:** update your task in `TASKS.md` (done / blocked / new tasks discovered), append one dated entry to `PROGRESS.md`, log any unresolved error to `ISSUES.md` with repro steps, and commit with a message referencing the task ID. Never leave the tree with failing tests or uncommitted secrets.
+**End of every session, before you stop:** update your task in `TASKS.md` (done / blocked / new tasks discovered), append one dated entry to `PROGRESS.md`, log any unresolved error to `ISSUES.md` with repro steps, and commit with a message referencing the task ID. If the session changed the user-facing surface (endpoints, scripts, commands), update README.md's "Try what's built so far" section in the same session — the owner tests from it. Never leave the tree with failing tests or uncommitted secrets.
 
 ## Do not
 - Commit secrets, API keys, or `.env` contents.

@@ -3,6 +3,16 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — README testing guide + backtest demo (owner request)
+Built: README "Try what's built so far" — every endpoint incl. /docs Swagger explorer,
+sync, verify, repair. New `scripts/backtest_demo.py`: compares buy-and-hold / momentum /
+SMA-cross / mean-reversion on real history with costs, graceful config/network errors.
+NEW STANDING RULE in AGENTS.md session protocol: any session that changes the user-facing
+surface updates README's try-it section — the owner tests from it. All agents comply.
+Verified: verify.py PASS; demo script degrades cleanly without network (I002).
+Next: T032 (paper-trading loop) unchanged.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T031 done (strategy library with regime proofs)
 Built: make_momentum(lookback, threshold) and make_mean_reversion(window, band_frac) on the
 T030 contract, plus regime test fixtures (BULL +1%/bar, BEAR -1%/bar, CHOP 100/82 range).
