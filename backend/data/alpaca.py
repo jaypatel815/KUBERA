@@ -25,6 +25,7 @@ class AlpacaError(RuntimeError):
 
 @dataclass(frozen=True)
 class AccountSnapshot:
+    external_id: str  # broker's account number — identifies the account across syncs
     status: str
     currency: str
     cash: float
@@ -101,6 +102,7 @@ class AlpacaClient:
     def get_account(self) -> AccountSnapshot:
         d = self._get("/v2/account").json()
         return AccountSnapshot(
+            external_id=str(d.get("account_number") or d["id"]),
             status=d["status"],
             currency=d["currency"],
             cash=float(d["cash"]),

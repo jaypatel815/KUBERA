@@ -26,6 +26,13 @@ uvicorn --app-dir backend api.main:app --reload
 
 Then open http://127.0.0.1:8000/health — a JSON `"status": "ok"` means the backbone is alive.
 
+With Alpaca paper keys in `.env`, create the database and take a snapshot:
+
+```
+alembic -c backend\alembic.ini upgrade head
+python scripts\sync.py            # add --loop 300 to snapshot every 5 minutes
+```
+
 ## Repo map
 
 - `/AGENTS.md` — the contract every AI agent follows. Read first, always.

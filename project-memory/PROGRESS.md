@@ -3,6 +3,17 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T014 done (snapshot sync job)
+Built: `data/sync.py` — sync_once() fetches live account + positions and writes timestamped
+snapshot rows; ensure_account() is idempotent per (broker, external_id) — proven by test
+(two syncs → one account row, two snapshots). `scripts/sync.py` CLI: one-shot default,
+`--loop N` continuous; Windows Task Scheduler can call one-shot mode. AlpacaClient
+AccountSnapshot now carries the broker account_number as external_id. README quickstart
+gains migrate + sync commands.
+Verified: verify.py PASS — 35 passed, 2 skipped.
+Next: T015 — `GET /portfolio` (Phase 1 exit criterion). Owner: T007 quickstart + T005 push.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T013 done (database schema v1)
 Built: SQLAlchemy 2 models — broker_accounts, account_snapshots, position_snapshots,
 transactions (deduped per account by broker fill id); UTCDateTime TypeDecorator that

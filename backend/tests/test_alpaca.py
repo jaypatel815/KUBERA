@@ -7,6 +7,7 @@ from data.alpaca import PAPER_BASE_URL, AlpacaClient, AlpacaError
 from settings import ConfigError, KuberaSettings
 
 ACCOUNT_JSON = {
+    "account_number": "PA1TEST23",
     "status": "ACTIVE",
     "currency": "USD",
     "cash": "25000.50",
@@ -53,6 +54,7 @@ def test_get_account_parses_and_timestamps():
     assert acct.equity == pytest.approx(100000.75)
     assert acct.cash == pytest.approx(25000.50)
     assert acct.status == "ACTIVE"
+    assert acct.external_id == "PA1TEST23"
     assert acct.source == "alpaca-paper"
     assert acct.asof.tzinfo is not None
 
