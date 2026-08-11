@@ -2,6 +2,14 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D010 — Backtesting: minimal internal engine first, framework when complexity demands (2026-08-11)
+Deviates from spec §4's "start with vectorbt or backtrader", deliberately: the backtester IS
+money math, and AGENTS.md's determinism rule wants it hand-verifiable. A ~120-line internal
+daily-bar engine (no-lookahead execution, explicit cost model, metrics from analysis/metrics)
+can be proven correct with hand-computed tests; a framework's fill model cannot. Zero new
+heavy deps (no numba/pandas), CI stays fast. Revisit triggers → adopt vectorbt or LEAN:
+multi-asset portfolios, intraday data, param sweeps at scale, or live/backtest parity needs.
+
 ## D009 — Broker roadmap: Alpaca paper now, Schwab (thinkorswim) integration later (2026-08-11)
 Owner wants to use thinkorswim going forward. thinkorswim is Schwab's trading platform and has
 no separate public API — programmatic access to that account goes through the **Schwab Trader

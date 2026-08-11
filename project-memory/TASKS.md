@@ -16,10 +16,24 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 - [ ] T023 — Fundamentals + news ingestion: evaluate the owner's existing FMP/FRED keys (D009) vs Alpaca news; verify key validity + tier limits first, then pick and integrate one source.
 - [ ] T016 — Schwab Trader API read-only sync (owner's real thinkorswim account): positions + balances alongside Alpaca paper, same timestamped model shapes. Prereqs: owner confirms Schwab developer app/keys are active; agent verifies current API capabilities (paper endpoint? scopes?) before building. Live orders out of scope pending §7.4. (D009)
 
+## Backlog — Phase 3: Backtesting & strategy sandbox (agents)
+- [ ] T031 — Strategy template library: momentum + mean-reversion signal functions on the T030 contract; each backtested across ≥2 market regimes per spec §9 (synthetic regime fixtures fine for tests, real SPY history for the ledger).
+- [ ] T033 — Risk module v1 (`/backend/risk`, spec §8): max position size %, daily-loss circuit breaker with manual reset, pre-trade check API; exhaustive unit tests. Prereq for T032.
+- [ ] T032 — Paper-trading loop: chosen strategy → signals on live data → orders to Alpaca paper THROUGH the T033 risk gate; every signal/order logged with data snapshot; needs T031+T033.
+- [ ] T034 — Backtest results ledger: persist runs (strategy, params, date range, metrics) to DB; comparison endpoint; feeds the §7.4 promotion checklist.
+
+## Backlog — Phase 4: Conversation layer (agents; unblocked — §3 registry is done)
+- [ ] T040 — KUBERA persona + system prompt (docs + code constant): sharp analyst voice per spec §1; always states data recency + confidence; never invents numbers (tools only); refuses certainty framing; confirm-before-capital rule.
+- [ ] T041 — LLM provider abstraction: Anthropic/OpenAI/Gemini behind one interface, keys from .env (owner already has several), provider pick via settings; no SDK lock-in; mock-based tests.
+- [ ] T042 — POST /api/chat: conversation loop executing registry tools (T024), conversation + message persistence in DB, timestamped tool-call audit trail per spec §2.7.
+- [ ] T043 — Conversation safety rails as code: order-related intents require explicit confirmation tokens; responses must carry data-recency line — enforced by post-checks, tested.
+- [ ] T044 — Context assembly: portfolio state + recent messages + relevant research memory into the prompt within a token budget; deterministic selection logic, tested.
+
 ## Blocked
 (none)
 
 ## Done
+- [x] T030 — Backtest engine v1 (`backtest/engine.py` + `strategies.py`, per D010): no-lookahead by construction (prefix-enforced, tested), cost model in bps, weight validation, metrics from analysis layer; buy-and-hold + SMA-cross templates; 8 hand-computed tests — 2026-08-11
 - [x] T017 — Chore: shared httpx plumbing extracted to `data/_http.py` (build_client + checked_get); both clients refactored, error text byte-identical, same 85 tests green — 2026-08-11
 - [x] T025 — Symbol briefing composer (`analysis/briefing.py` + `sma()` in metrics): trailing 20/60/252d returns, 60d ann vol, 252d max DD, 52-week high/low distance, SMA50/200 trend context, owner's exposure; graceful degradation on thin history; `get_symbol_briefing` tool + `GET /api/briefing/{symbol}`; 12 new tests — 2026-08-11
 - [x] T024 — Tool-calling registry (`api/tools.py`, spec §3): typed pydantic-validated tools with JSON-schema export (`GET /api/tools`), context injection, clear error taxonomy; 4 tools registered (get_portfolio, get_latest, get_daily_bars, compare_benchmark); 8 tests — 2026-08-11

@@ -3,6 +3,20 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T030 done; Phase 3+4 backlogs seeded; D010 logged
+Built: `backtest/engine.py` — minimal deterministic daily-bar engine (D010: hand-verifiable
+over frameworks; revisit triggers logged). No-lookahead enforced by passing the strategy a
+prefix slice (tested with a spy). Cost model (bps of shifted equity), weight validation,
+flat-strategy Sharpe honestly None. `backtest/strategies.py`: buy_and_hold + make_sma_cross.
+Every expected number in the 8 new tests is hand-computed, including a fully hand-tracked
+SMA-cross equity curve.
+Seeded: Phase 3 tickets T031-T034 (strategy library, risk module, paper loop, results
+ledger) and Phase 4 tickets T040-T044 (persona, LLM abstraction, /api/chat, safety rails,
+context assembly — unblocked, registry done).
+Verified: verify.py PASS — 96 passed, 3 skipped.
+Next: T033 (risk module — prereq for the paper loop) or T040/T041 (conversation layer).
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T017 done (httpx plumbing unified)
 Built: `data/_http.py` — build_client (auth headers, timeout) + checked_get (network-error
 wrapping, actionable 401 hints, HTTP>=400 discipline). Both Alpaca clients refactored onto
