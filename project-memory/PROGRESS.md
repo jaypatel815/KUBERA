@@ -3,6 +3,20 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T024 done (tool-calling registry)
+Built: `api/tools.py` — the spec §3 contract in code. ToolRegistry with @registry.tool
+decorator (duplicate names rejected), pydantic argument validation, ToolContext injection
+(alpaca/market/db; clear error when missing), error taxonomy (UnknownTool/ToolArgument/
+ToolError), and schemas() JSON-schema export consumed directly by LLM function-calling
+APIs. Four real tools registered: get_portfolio, get_latest, get_daily_bars,
+compare_benchmark. `GET /api/tools` lists them. Adding a Phase-3+ capability is now a
+one-decorator registration next to the function it wraps.
+Verified: verify.py PASS — 75 passed, 3 skipped.
+Next: T023 (fundamentals/news — needs live key checks, best from owner's machine via
+Antigravity) or T017 chore; after that Phase 2 needs a "should I buy X" briefing composer
+(new ticket to write) to hit the spec §7.2 exit criterion.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T022 done (win/loss breakdown); committed Gemini's fix
 Built: `analysis/portfolio.win_loss()` — winners/losers/flat counts, total_gain (>=0) and
 total_loss (<=0) with natural signs, net, best/worst position. `/portfolio` now returns a

@@ -11,6 +11,7 @@ from sqlalchemy.exc import OperationalError
 
 from analysis.benchmark import compare
 from analysis.portfolio import summarize, win_loss
+from api.tools import registry
 from data.alpaca import AlpacaClient, AlpacaError
 from data.db import make_engine, make_session_factory
 from data.history import equity_history
@@ -58,6 +59,12 @@ def health() -> dict:
         "alpaca_configured": s.alpaca_configured,
         "paper_mode": s.alpaca_paper,
     }
+
+
+@app.get("/api/tools")
+def list_tools() -> dict:
+    """The spec §3 tool registry — what the Phase 4 conversation layer will call."""
+    return {"tools": registry.schemas(), "count": len(registry.names())}
 
 
 @app.get("/api/account")
