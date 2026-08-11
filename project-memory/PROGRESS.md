@@ -3,6 +3,19 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T021 done (benchmark comparison)
+Built: `analysis/benchmark.py` — strict inner-join date alignment (ValueError <2 overlaps,
+message tells the user history accumulates via sync), normalized curves for charting,
+per-series metrics (cum return, ann vol, ann Sharpe, max DD; vol/Sharpe None when <3
+points), excess return. `data/history.py` — daily equity: last snapshot per day per
+account, summed across accounts. `GET /api/benchmark?symbol=SPY&days=90`; DB DI via lazy
+engine; 503 with migrate instructions when DB uninitialized; 409 when insufficient overlap.
+Verified: verify.py PASS — 65 passed, 3 skipped.
+Note: comparison quality grows with snapshot history — owner should run scripts/sync.py
+daily (or --loop / Task Scheduler) once T007 is done.
+Next: T022 (win/loss breakdown) — small; or T024 (tool registry) — bigger leverage.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T020 done (metrics library, Phase 2 started)
 Built: `analysis/metrics.py` — daily_returns, cumulative_return, cagr, volatility, sharpe,
 max_drawdown_frac. Conventions locked in the module docstring: values oldest-first and >0,

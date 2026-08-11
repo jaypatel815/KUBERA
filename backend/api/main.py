@@ -7,15 +7,30 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 
 from fastapi import Depends, FastAPI, HTTPException
+from sqlalchemy.exc import OperationalError
 
+from analysis.benchmark import compare
 from analysis.portfolio import summarize
 from data.alpaca import AlpacaClient, AlpacaError
+from data.db import make_engine, make_session_factory
+from data.history import equity_history
 from data.market_data import MarketDataClient, MarketDataError
 from settings import ConfigError, KuberaSettings, get_settings
 
 VERSION = "0.1.0"
 
 app = FastAPI(title="KUBERA API", version=VERSION)
+
+_engine = None
+
+
+def get_db_session():
+    """Yield a DB session against the configured database (lazy singleton engine)."""
+    global _engine
+    if _engine is None:
+        _engine = make_engine()
+    with make_session_factory(_engine)() as session:
+        yield session
 
 
 def get_alpaca_client(s: KuberaSettings = Depends(get_settings)):
@@ -118,3 +133,48 @@ def market_bars(
         raise HTTPException(status_code=422, detail=str(e))
     except MarketDataError as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.get("/api/benchmark")
+def benchmark(
+    symbol: str = "SPY",
+    days: int = 90,
+    session=Depends(get_db_session),
+    market: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """Portfolio equity history vs a benchmark symbol, date-aligned, metrics compared."""
+    try:
+        portfolio_points = equity_history(session, days=days)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except OperationalError:
+        raise HTTPException(
+            status_code=503,
+            detail="database not initialized — run: alembic -c backend/alembic.ini "
+            "upgrade head, then scripts/sync.py to start building history",
+        )
+    try:
+        bars = market.get_daily_bars(symbol, days=days)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    bench_points = [(b.date, b.close) for b in bars.bars]
+    try:
+        c = compare(portfolio_points, bench_points)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    return {
+        "symbol": bars.symbol,
+        "days": days,
+        "dates": c.dates,
+        "portfolio_norm": c.portfolio_norm,
+        "benchmark_norm": c.benchmark_norm,
+        "metrics": {
+            "portfolio": asdict(c.portfolio),
+            "benchmark": asdict(c.benchmark),
+            "excess_return": c.excess_return,
+        },
+        "asof": bars.asof.isoformat(),
+        "source": f"snapshots + {bars.source}",
+    }

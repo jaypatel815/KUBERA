@@ -13,7 +13,6 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 - [x] T008 — pre-commit installed — done 2026-08-11 (owner). Sandbox-side caveat: I003.
 
 ## Backlog — Phase 2: Analysis & insight engine (agents)
-- [ ] T021 — Benchmark comparison: portfolio equity history (account_snapshots) vs SPY or any symbol (market_data bars), aligned by date; `GET /api/benchmark?symbol=SPY&days=90`.
 - [ ] T022 — Win/loss breakdown across positions (green vs red, counts + magnitudes) feeding the future dashboard chart; extend `/portfolio`.
 - [ ] T023 — Fundamentals + news ingestion: evaluate the owner's existing FMP/FRED keys (D009) vs Alpaca news; verify key validity + tier limits first, then pick and integrate one source.
 - [ ] T024 — Tool-calling registry (spec §3): typed registration mapping conversation-layer tools to analysis/data functions; foundation for Phase 4.
@@ -24,6 +23,7 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 (none)
 
 ## Done
+- [x] T021 — Benchmark comparison: `analysis/benchmark.py` (inner-join date alignment, normalized curves, per-series metrics, excess return), `data/history.py` equity_history (last snapshot/day/account, summed), `GET /api/benchmark?symbol=SPY&days=90` with actionable 409/503; 9 new tests — 2026-08-11
 - [x] T020 — `analysis/metrics.py`: daily_returns, cumulative_return, CAGR, volatility, Sharpe, max_drawdown_frac — documented conventions (252 ppy, positive-magnitude drawdown, ValueError on bad input), 16 known-answer tests hand-computed — 2026-08-11
 - [x] T015 — `GET /portfolio`: live account + positions at request time, totals/weights/returns via `analysis/portfolio.summarize()` (deterministic, tested); 7 new tests. **Phase 1 code-complete** — owner sign-off via T007 — 2026-08-11
 - [x] T014 — Snapshot sync job: `data/sync.py` (idempotent account upsert + account/position snapshot writes), `scripts/sync.py` CLI (one-shot / `--loop N`), account model gains `external_id`; idempotency tests — 2026-08-11
