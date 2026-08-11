@@ -11,7 +11,8 @@ from sqlalchemy.exc import OperationalError
 
 from analysis.benchmark import compare
 from analysis.portfolio import summarize, win_loss
-from api.tools import ToolContext, ToolError, registry
+from api.tools import ToolArgumentError, ToolContext, ToolError, registry
+from backtest.ledger import list_runs
 from data.alpaca import AlpacaClient, AlpacaError
 from data.db import make_engine, make_session_factory
 from data.history import equity_history
@@ -160,6 +161,69 @@ def symbol_briefing(
     except ToolError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except (AlpacaError, MarketDataError) as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.get("/api/backtests")
+def backtests(
+    strategy: str | None = None,
+    symbol: str | None = None,
+    limit: int = 50,
+    session=Depends(get_db_session),
+) -> dict:
+    """The results ledger — every recorded backtest, newest first."""
+    try:
+        rows = list_runs(session, strategy=strategy, symbol=symbol, limit=limit)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except OperationalError:
+        raise HTTPException(
+            status_code=503,
+            detail="database not initialized — run: alembic -c backend/alembic.ini upgrade head",
+        )
+    return {
+        "count": len(rows),
+        "runs": [
+            {
+                "id": r.id, "ts": r.ts.isoformat(), "strategy": r.strategy,
+                "params": r.params_json, "symbol": r.symbol,
+                "period": f"{r.start_date} → {r.end_date}", "bars": r.bars_count,
+                "cost_bps": r.cost_bps, "cumulative_return": r.cumulative_return,
+                "volatility_ann": r.volatility_ann, "sharpe_ann": r.sharpe_ann,
+                "max_drawdown_frac": r.max_drawdown_frac,
+                "n_rebalances": r.n_rebalances, "source": r.source,
+            }
+            for r in rows
+        ],
+    }
+
+
+@app.post("/api/backtests/run")
+def backtests_run(
+    strategy: str,
+    symbol: str = "SPY",
+    days: int = 730,
+    cost_bps: float = 5.0,
+    session=Depends(get_db_session),
+    market: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """Run a template backtest on real history and record it — via the registry tool."""
+    try:
+        return registry.execute(
+            "run_backtest",
+            {"strategy": strategy, "symbol": symbol, "days": days, "cost_bps": cost_bps},
+            ToolContext(db=session, market=market),
+        )
+    except ToolArgumentError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except OperationalError:
+        raise HTTPException(
+            status_code=503,
+            detail="database not initialized — run: alembic -c backend/alembic.ini upgrade head",
+        )
+    except MarketDataError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
 

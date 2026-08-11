@@ -18,6 +18,8 @@ from sqlalchemy.orm import Session
 from analysis.benchmark import compare
 from analysis.briefing import PositionContext, build_briefing
 from analysis.portfolio import summarize, win_loss
+from backtest.ledger import run_and_record
+from backtest.strategies import TEMPLATES, build_strategy
 from data.alpaca import AlpacaClient
 from data.history import equity_history
 from data.market_data import MarketDataClient
@@ -120,6 +122,13 @@ class BenchmarkArgs(BaseModel):
     days: int = Field(default=90, ge=2, le=3650)
 
 
+class BacktestArgs(BaseModel):
+    strategy: str = Field(description=f"One of: {', '.join(sorted(TEMPLATES))}")
+    symbol: str = Field(default="SPY", min_length=1, max_length=10)
+    days: int = Field(default=730, ge=30, le=3650)
+    cost_bps: float = Field(default=5.0, ge=0, lt=10_000)
+
+
 class BriefingArgs(SymbolArgs):
     days: int = Field(
         default=400, ge=30, le=3650,
@@ -218,6 +227,41 @@ def _get_symbol_briefing(ctx: ToolContext, p: BriefingArgs) -> dict:
         "briefing": asdict(briefing),
         "asof": bars.asof.isoformat(),
         "source": bars.source,
+    }
+
+
+@registry.tool(
+    "run_backtest",
+    "Backtest a named strategy template on real price history and record the run in the "
+    "results ledger. Returns computed metrics (cumulative return, volatility, Sharpe, max "
+    "drawdown, rebalances). Backtests describe the PAST — never present them as promises.",
+    BacktestArgs,
+)
+def _run_backtest(ctx: ToolContext, p: BacktestArgs) -> dict:
+    db = ctx.require("db")
+    market: MarketDataClient = ctx.require("market")
+    try:
+        strategy = build_strategy(p.strategy)
+    except ValueError as e:
+        raise ToolArgumentError(str(e)) from e
+    result, row = run_and_record(
+        db, market, strategy, {"template": p.strategy}, p.symbol,
+        days=p.days, cost_bps=p.cost_bps,
+    )
+    return {
+        "run_id": row.id,
+        "strategy": result.strategy_name,
+        "symbol": row.symbol,
+        "period": f"{row.start_date} → {row.end_date}",
+        "bars": row.bars_count,
+        "cost_bps": p.cost_bps,
+        "cumulative_return": result.cumulative_return,
+        "volatility_ann": result.volatility_ann,
+        "sharpe_ann": result.sharpe_ann,
+        "max_drawdown_frac": result.max_drawdown_frac,
+        "n_rebalances": result.n_rebalances,
+        "recorded_at": row.ts.isoformat(),
+        "source": row.source,
     }
 
 

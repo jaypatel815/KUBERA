@@ -3,6 +3,21 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T034 done — PHASE 3 CORE COMPLETE
+Built: `backtest_runs` table (migration 33592ebf6de6) + `backtest/ledger.py` — every run
+recorded with strategy/params/period/metrics; `list_runs` with filters. Shared strategy
+TEMPLATES + build_strategy (CLI + API + tools all use one registry). `GET /api/backtests`,
+`POST /api/backtests/run`, and `run_backtest` as the 6th registry tool — the future chat
+layer can test strategies conversationally, and §7.4 promotion evidence accumulates in the
+ledger. Gotcha fixed: in-memory SQLite is per-connection; TestClient threads need
+StaticPool (see test_ledger.py comment).
+Verified: verify.py PASS — 145 passed, 3 skipped.
+Phase 3 status: engine, strategies, risk rails + persistence, paper loop, ledger — DONE.
+T036 (fills sync, market-hours guard) remains as optional polish.
+Next: Phase 4 (T040 persona → T041 LLM abstraction → T042 /api/chat) or T045 (KUBERA MCP
+server — small, high leverage). Owner tasks still open: T005 push, T007 finale.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T035 done (breaker survives restarts)
 Built: `risk_state` table (single row, migration 35b6c01bf49b), `risk/persistence.py`
 (restore/persist), `RiskEngine.restore()` (persistence-only, documented), paper loop now

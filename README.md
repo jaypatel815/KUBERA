@@ -50,6 +50,8 @@ http://127.0.0.1:8000/api/briefing/AAPL                     "should I buy X" evi
 http://127.0.0.1:8000/api/benchmark?symbol=SPY&days=90      your equity curve vs the market (needs snapshot
                                                             history — run sync daily so this gets richer)
 http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
+http://127.0.0.1:8000/api/backtests                         the results ledger: every recorded backtest
+POST /api/backtests/run?strategy=momentum&symbol=SPY        run + record a backtest (use /docs to click it)
 ```
 
 Backtest the strategy templates on real history (no server needed):

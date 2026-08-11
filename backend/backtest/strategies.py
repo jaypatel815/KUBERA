@@ -1,6 +1,6 @@
 """Strategy templates on the T030 contract: closes-so-far -> target weight [0..1]."""
 
-from typing import Sequence
+from typing import Callable, Sequence
 
 from analysis.metrics import sma
 
@@ -39,6 +39,22 @@ def make_momentum(lookback: int = 60, threshold: float = 0.0):
 
     momentum.__name__ = f"momentum_{lookback}"
     return momentum
+
+
+# Shared template registry: one place both the CLI and the API/tools build from.
+TEMPLATES: dict[str, Callable[[], Callable[[Sequence[float]], float]]] = {
+    "buy_and_hold": lambda: buy_and_hold,
+    "momentum": lambda: make_momentum(lookback=60),
+    "sma_cross": lambda: make_sma_cross(fast=50, slow=200),
+    "mean_reversion": lambda: make_mean_reversion(window=20, band_frac=0.05),
+}
+
+
+def build_strategy(name: str):
+    """Instantiate a template by name; ValueError lists valid names."""
+    if name not in TEMPLATES:
+        raise ValueError(f"unknown strategy '{name}' — valid: {', '.join(sorted(TEMPLATES))}")
+    return TEMPLATES[name]()
 
 
 def make_mean_reversion(window: int = 20, band_frac: float = 0.05):

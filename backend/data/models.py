@@ -86,6 +86,30 @@ class PositionSnapshot(Base):
     source: Mapped[str] = mapped_column(String(32))
 
 
+class BacktestRun(Base):
+    """Every backtest, recorded forever — the §7.4 promotion checklist's evidence base."""
+
+    __tablename__ = "backtest_runs"
+    __table_args__ = (Index("ix_backtest_strategy_ts", "strategy", "ts"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ts: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    strategy: Mapped[str] = mapped_column(String(48))
+    params_json: Mapped[str] = mapped_column(String(512), default="{}")
+    symbol: Mapped[str] = mapped_column(String(16), index=True)
+    start_date: Mapped[str] = mapped_column(String(10))
+    end_date: Mapped[str] = mapped_column(String(10))
+    bars_count: Mapped[int] = mapped_column()
+    cost_bps: Mapped[float] = mapped_column(Float)
+    cumulative_return: Mapped[float] = mapped_column(Float)
+    volatility_ann: Mapped[float | None] = mapped_column(Float, default=None)
+    sharpe_ann: Mapped[float | None] = mapped_column(Float, default=None)
+    max_drawdown_frac: Mapped[float] = mapped_column(Float)
+    n_rebalances: Mapped[int] = mapped_column()
+    total_cost_frac: Mapped[float] = mapped_column(Float)
+    source: Mapped[str] = mapped_column(String(32))
+
+
 class RiskState(Base):
     """Single-row persistence of the RiskEngine (id is always 1). Exists so a tripped
     circuit breaker SURVIVES process restarts — a restart must never bypass it (spec §8)."""

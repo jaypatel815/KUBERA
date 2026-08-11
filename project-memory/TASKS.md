@@ -18,7 +18,6 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 
 ## Backlog — Phase 3: Backtesting & strategy sandbox (agents)
 - [ ] T036 — Paper-loop polish (remainder of old T035 scope): sync fills from Alpaca activities into `transactions` (deduped); market-hours guard so cycles outside RTH log no_action instead of placing queued orders.
-- [ ] T034 — Backtest results ledger: persist runs (strategy, params, date range, metrics) to DB; comparison endpoint; feeds the §7.4 promotion checklist.
 
 ## Backlog — Phase 4: Conversation layer (agents; unblocked — §3 registry is done)
 - [ ] T040 — KUBERA persona + system prompt (docs + code constant): sharp analyst voice per spec §1; always states data recency + confidence; never invents numbers (tools only); refuses certainty framing; confirm-before-capital rule.
@@ -32,6 +31,7 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 (none)
 
 ## Done
+- [x] T034 — Backtest results ledger: `backtest_runs` table + migration `33592ebf6de6`, `backtest/ledger.py` (record/list/run_and_record), shared TEMPLATES + build_strategy, `GET /api/backtests` + `POST /api/backtests/run`, `run_backtest` registry tool (6 tools now); tests incl. StaticPool fix for cross-thread in-memory SQLite — 2026-08-11. **Phase 3 core complete** (T036 polish optional).
 - [x] T035 — Risk-state persistence: `risk_state` table + migration `35b6c01bf49b`, `engine.restore()` (persistence-only), `risk/persistence.py`, paper-loop restore/persist hooks, `scripts/risk_reset.py` (note-required, type-RESET confirm); killer test: restarted loop loads tripped breaker from DB and stays blocked — 2026-08-11
 - [x] T032 — Paper-trading loop: `backtest/paper_loop.py` (strategy → risk gate → paper order → SignalLog audit row for every decision incl. rejections/no-action), `place_order` on AlpacaClient (paper-only by construction), `signal_log` table + migration `c09d9671853d`, `scripts/paper_trade.py` CLI; 10 new hand-computed tests incl. breaker-blocks-second-cycle — 2026-08-11
 - [x] T031 — Strategy library: make_momentum (trailing-return trend filter) + make_mean_reversion (band-below-SMA dip buyer, stateless), validated params; hand-tracked equity tests + regime proofs (momentum flat through the whole synthetic bear; MR profits in chop, sits out smooth bulls) — 2026-08-11
