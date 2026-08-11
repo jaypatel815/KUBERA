@@ -15,9 +15,11 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from api.context import assemble_context
 from api.persona import build_system_prompt
 from api.tools import ConfirmationRequiredError, ToolContext, ToolError, registry
 from data.models import ChatMessage, Conversation
+from settings import get_settings
 
 log = logging.getLogger("kubera.chat")
 
@@ -109,8 +111,9 @@ def run_chat_turn(
     total_in = total_out = 0
     reply = None
 
+    budget = get_settings().context_budget_chars
     for _round in range(max_tool_rounds):
-        history = _history(db, conversation_id)
+        history = assemble_context(_history(db, conversation_id), budget)
         reply = provider.complete(system, history, schemas)
         total_in += reply.input_tokens
         total_out += reply.output_tokens

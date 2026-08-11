@@ -67,6 +67,13 @@ class KuberaSettings(BaseSettings):
         validation_alias=AliasChoices("OPENAI_BASE_URL",),
     )
 
+    # T044: how much conversation history (in characters, ~4 chars/token) the chat
+    # loop replays to the LLM each round.
+    context_budget_chars: int = Field(
+        default=24_000, ge=1_000,
+        validation_alias=AliasChoices("KUBERA_CONTEXT_BUDGET_CHARS",),
+    )
+
     # D007: SQLite now, Postgres+pgvector at Phase 3 — switching is a URL change.
     database_url: str = Field(
         default=f"sqlite:///{(REPO_ROOT / 'kubera.sqlite3').as_posix()}",

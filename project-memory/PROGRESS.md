@@ -3,6 +3,19 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T044 done (context budgeting)
+Built: `api/context.py` assemble_context — groups history into indivisible blocks (an
+assistant tool_call + its results can never split: provider APIs error on orphans, and
+the pairing test proves integrity across budgets), drops oldest blocks whole within
+KUBERA_CONTEXT_BUDGET_CHARS (default 24k chars), always keeps the newest block, and
+elides tool payloads older than the freshest 4 blocks while assistant conclusions
+survive. Wired into the chat loop. Long conversations now cost O(budget), not O(history).
+Note: "relevant research memory" retrieval deferred to Phase 7 (needs pgvector, D007).
+Verified: verify.py PASS — 179 passed, 3 skipped.
+Next: T045 (KUBERA MCP server) or T046 (Max/Agent SDK provider). Phase 4 core otherwise
+complete — spec §7.4-phase "Done when" needs only real-world conversation mileage.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T043 done (conversation rails as code)
 Built: (1) confirmation gate — ToolSpec.requires_confirmation + ConfirmationRequiredError;
 ctx.confirmed flows ONLY from ChatRequest.confirm (user's HTTP body — the LLM cannot set
