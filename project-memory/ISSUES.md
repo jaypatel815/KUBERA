@@ -4,7 +4,21 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
-(none)
+- I005 — Owner's machine: Python 3.11 was uninstalled/moved but the `py` launcher registry
+  and user PATH still point at `C:\Users\jaybe\AppData\Local\Programs\Python\Python311\`
+  ("Unable to create process… system cannot find the file"). The repo `.venv` is built on
+  that base and is therefore broken; this also caused the IDE interpreter-binding failures
+  (I004's config is correct but needs a healthy venv underneath).
+  Fix (owner or an Antigravity agent with terminal access):
+  1. `py -0p` — list actually-registered Pythons.
+  2. If a working 3.11+ exists: `py -3.X -m venv .venv --clear`. If not: install 3.11/3.12
+     from python.org ("Add python.exe to PATH" + py launcher checked) — overwrites the
+     orphaned registry entry.
+  3. `.venv\Scripts\activate` → `pip install -r backend\requirements.txt` →
+     `python scripts\verify.py` must PASS.
+  4. Remove dead `…\Python311\` entries from the user PATH; reload Antigravity and select
+     `.venv\Scripts\python.exe`.
+  Status: open — close when verify.py passes on a rebuilt venv. Logged 2026-08-11.
 
 ## Resolved
 - I004 — IDE type checkers (Pyrefly/Pyright in Antigravity) reported missing imports
