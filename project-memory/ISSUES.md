@@ -28,6 +28,12 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   **all-users** install (→ C:\Program Files) as their general Python — needs their UAC
   click; after installing, rebuild the venv on it. This whole item is executable by an
   Antigravity agent with terminal access except the UAC approval.
+  ONE-COMMAND FIX (2026-08-11): `scripts/repair_python.ps1` automates all of the above at
+  user level (no admin): picks newest healthy C:\Program Files\Python3xx, rebuilds .venv,
+  reinstalls deps, runs verify (must PASS), removes dead user-PATH entries, deletes the
+  orphaned HKCU 3.11 launcher key only after confirming its target is gone. Run:
+  `powershell -ExecutionPolicy Bypass -File scripts\repair_python.ps1` — safe to re-run
+  (auto-adopts newer Pythons installed later). Close this issue when it reports DONE.
 
 ## Resolved
 - I004 — IDE type checkers (Pyrefly/Pyright in Antigravity) reported missing imports
