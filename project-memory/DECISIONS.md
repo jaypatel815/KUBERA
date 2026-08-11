@@ -2,6 +2,18 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D011 — Alpaca's official MCP server: data window yes, trading path never (2026-08-11)
+Owner asked whether to adopt github.com/alpacahq/alpaca-mcp-server. Decision: (a) NEVER in
+the trading path — its `trading` toolset lets an LLM place/cancel orders and liquidate
+positions outside our risk gate and signal_log audit, violating "rails are code, not
+prompts" (spec §2.5/§8) and polluting the paper-account lab that feeds §7.4 evidence;
+(b) approved as a restricted convenience/dev tool with `ALPACA_TOOLSETS` EXCLUDING
+`trading` (account, stock-data, news, assets, index-data, corporate-actions), paper keys
+only, in Claude Desktop / Antigravity; (c) KUBERA gets its OWN MCP server over the T024
+registry (T045) — exposes briefings/benchmark/win-loss/backtests, the layer Alpaca can't,
+with any future order-adjacent tool routed through the risk gate. MCP-client config files
+hold keys in plaintext — same hygiene as .env.
+
 ## D010 — Backtesting: minimal internal engine first, framework when complexity demands (2026-08-11)
 Deviates from spec §4's "start with vectorbt or backtrader", deliberately: the backtester IS
 money math, and AGENTS.md's determinism rule wants it hand-verifiable. A ~120-line internal
