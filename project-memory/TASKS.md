@@ -10,7 +10,7 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 - [ ] T005 — Create a **private** GitHub repo, push `main`, confirm the Actions CI run is green.
 - [x] T006 — Alpaca paper keys in `.env` — done 2026-08-11 (owner). Note: owner's `.env` uses `ALPACA_API_KEY` naming + extra vars from another template; settings loader accepts both spellings, extras ignored.
 - [ ] T007 — Install Python 3.11+ on Windows, run the README quickstart, confirm `verify.py` passes locally.
-- [ ] T008 — `pip install pre-commit && pre-commit install` (activates the commit-time secret scanner).
+- [x] T008 — pre-commit installed — done 2026-08-11 (owner). Sandbox-side caveat: I003.
 
 ## Backlog — Phase 1: Data & portfolio backbone (agents)
 - [ ] T012 — Market data via Alpaca Data API: latest quote + daily history; every payload carries `source` and `asof`; tests.
