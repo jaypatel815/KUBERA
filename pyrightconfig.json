@@ -1,0 +1,18 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": ["backend"],
+  "executionEnvironments": [
+    { "root": ".", "extraPaths": ["backend"] }
+  ],
+  "exclude": [
+    "**/__pycache__",
+    ".venv",
+    ".git",
+    ".ruff_cache",
+    ".pytest_cache",
+    "backend/alembic/versions"
+  ],
+  "reportMissingImports": "error",
+  "pythonVersion": "3.11"
+}

@@ -7,6 +7,16 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
 (none)
 
 ## Resolved
+- I004 — IDE type checkers (Pyrefly/Pyright in Antigravity) reported missing imports
+  (e.g. `fastapi.testclient`) despite a working `.venv`: no `pyrightconfig.json` or
+  `.vscode/settings.json` existed, so the checker used a bare default environment and
+  didn't know `backend/` is the import root. Fixed 2026-08-11: committed
+  `pyrightconfig.json` (venvPath/venv/extraPaths) + `.vscode/settings.json`
+  (defaultInterpreterPath → `.venv\Scripts\python.exe`). If the interpreter picker still
+  errors: Ctrl+Shift+P → "Python: Select Interpreter" → "Enter interpreter path…" →
+  paste the full path; then "Developer: Reload Window". Last resort: recreate the venv
+  (`py -3.11 -m venv .venv --clear` + reinstall requirements) — a venv whose base Python
+  was moved/upgraded breaks interpreter binding.
 - I003 — Owner's Windows-installed pre-commit hook (T008) cannot execute inside the Cowork
   Linux sandbox ("cannot run .git/hooks/pre-commit"). Sandbox commits therefore use
   `git commit --no-verify` **only after** an explicit check that `.env` is not staged

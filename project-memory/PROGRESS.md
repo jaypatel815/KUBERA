@@ -3,6 +3,16 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — IDE config fix (I004)
+Fixed: owner's Antigravity showed missing-import errors (Pyrefly) and couldn't bind the
+interpreter — no pyrightconfig.json/.vscode existed. Committed pyrightconfig.json (venv
+binding, backend extraPaths, alembic versions excluded) and .vscode/settings.json
+(defaultInterpreterPath, pytest config). Manual fallback steps in ISSUES I004.
+Noted: kubera.sqlite3 exists at repo root — owner has run the migration (T007 nearly done).
+Verified: verify.py PASS (unchanged code, config only).
+Next: unchanged — T023 via Antigravity, or new "should I buy X" briefing ticket.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T024 done (tool-calling registry)
 Built: `api/tools.py` — the spec §3 contract in code. ToolRegistry with @registry.tool
 decorator (duplicate names rejected), pydantic argument validation, ToolContext injection
