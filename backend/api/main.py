@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from fastapi import Depends, FastAPI, HTTPException
 
 from data.alpaca import AlpacaClient, AlpacaError
+from data.market_data import MarketDataClient, MarketDataError
 from settings import ConfigError, KuberaSettings, get_settings
 
 VERSION = "0.1.0"
@@ -49,4 +50,43 @@ def account(client: AlpacaClient = Depends(get_alpaca_client)) -> dict:
     try:
         return asdict(client.get_account())
     except AlpacaError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+def get_market_client(s: KuberaSettings = Depends(get_settings)):
+    """Yield a market-data client, or 503 with an actionable message if unconfigured."""
+    try:
+        client = MarketDataClient(settings=s)
+    except ConfigError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    try:
+        yield client
+    finally:
+        client.close()
+
+
+@app.get("/api/market/{symbol}/latest")
+def market_latest(symbol: str, client: MarketDataClient = Depends(get_market_client)) -> dict:
+    """Latest trade + level-1 quote, each with exchange and fetch timestamps."""
+    try:
+        return {
+            "trade": asdict(client.get_latest_trade(symbol)),
+            "quote": asdict(client.get_latest_quote(symbol)),
+        }
+    except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.get("/api/market/{symbol}/bars")
+def market_bars(
+    symbol: str,
+    days: int = 30,
+    client: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """Daily OHLCV history (split-adjusted, free IEX feed)."""
+    try:
+        return asdict(client.get_daily_bars(symbol, days=days))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except MarketDataError as e:
         raise HTTPException(status_code=502, detail=str(e))

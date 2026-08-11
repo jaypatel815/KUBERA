@@ -3,6 +3,19 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T012 done (market data)
+Built: `backend/data/market_data.py` — latest trade, level-1 quote, daily OHLCV bars
+(split-adjusted, free IEX feed per D006), every payload carries BOTH `exchange_ts` and
+`asof` fetch time. `GET /api/market/{symbol}/latest` and `/bars?days=N` with DI.
+Fixed in review: py3.10 `fromisoformat` can't parse Alpaca's variable-precision second
+fractions — `parse_rfc3339()` normalizes any width to microseconds, with tests.
+Verified: verify.py PASS — 29 passed, 2 skipped (live tests skip in sandbox per I002).
+Noticed: owner added the GitHub remote (T005 partial — push + Actions check remain; sandbox
+has no GitHub auth so pushes must come from the owner's machine).
+Next: T013 (DB schema v1: SQLAlchemy 2 + SQLite + alembic) — last big block before T014/T015
+close Phase 1. Owner: T007 quickstart run + T005 push when convenient.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T011 done; owner completed T006
 Built: `backend/data/alpaca.py` — thin httpx client (no SDK), `get_account()` +
 `get_positions()`, every payload timestamped + sourced, actionable 401 messages, and a hard
