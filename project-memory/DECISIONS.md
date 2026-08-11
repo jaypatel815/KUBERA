@@ -2,6 +2,17 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D009 — Broker roadmap: Alpaca paper now, Schwab (thinkorswim) integration later (2026-08-11)
+Owner wants to use thinkorswim going forward. thinkorswim is Schwab's trading platform and has
+no separate public API — programmatic access to that account goes through the **Schwab Trader
+API**, already named as our alternate broker in spec §4. Plan: (a) Alpaca stays the paper/
+simulation environment (Schwab's API has historically had no paper endpoint — verify current
+capabilities when starting T016); (b) add read-only Schwab sync so KUBERA sees the owner's
+real positions for analysis; (c) any live trading through Schwab stays behind the §7.4 gate.
+Owner's `.env` (from a prior, abandoned attempt with another AI — no active fork) already has
+Schwab, Polygon, FMP, and FRED keys: candidates for fundamentals/macro data in Phases 2–3;
+verify validity and tiers on first use.
+
 ## D008 — Hosting deferred to Phase 4/5 (2026-08-11)
 Local-first on the owner's Windows machine until phone access is needed. Pick Fly.io/Railway/VM
 when the conversation layer ships. CI is GitHub Actions, activated when repo is pushed (T005).

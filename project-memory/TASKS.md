@@ -18,6 +18,9 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 - [ ] T014 — Scheduled refresh job writing position/quote snapshots; tests.
 - [ ] T015 — `GET /portfolio`: live holdings, values, asof — wired through T011–T014; integration test. **Phase 1 exit criterion (spec §7.1).**
 
+## Backlog — Phase 2 seeds
+- [ ] T016 — Schwab Trader API read-only sync (owner's real thinkorswim account): positions + balances alongside Alpaca paper, same timestamped model shapes. Prereqs: owner confirms Schwab developer app/keys are active; agent verifies current API capabilities (paper endpoint? scopes?) before building. Live orders out of scope pending §7.4. (D009)
+
 ## Blocked
 (none)
 
