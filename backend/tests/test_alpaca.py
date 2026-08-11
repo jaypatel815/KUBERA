@@ -93,3 +93,31 @@ def test_live_endpoint_is_refused_by_code():
 def test_missing_keys_fail_fast():
     with pytest.raises(ConfigError):
         AlpacaClient(settings=KuberaSettings(_env_file=None))
+
+
+def test_place_order_posts_and_parses():
+    posts = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v2/orders" and request.method == "POST":
+            import json
+            posts.append(json.loads(request.content))
+            return httpx.Response(200, json={"id": "abc-1", "symbol": "SPY", "qty": "5",
+                                             "side": "buy", "status": "accepted"})
+        return httpx.Response(404, json={})
+
+    with make_client(handler) as c:
+        result = c.place_order("spy", "buy", 5)
+    assert posts[0] == {"symbol": "SPY", "qty": "5", "side": "buy",
+                        "type": "market", "time_in_force": "day"}
+    assert result.external_id == "abc-1"
+    assert result.status == "accepted"
+    assert result.asof.tzinfo is not None
+
+
+def test_place_order_validates_inputs():
+    with make_client(lambda r: httpx.Response(200, json={})) as c:
+        with pytest.raises(ValueError):
+            c.place_order("SPY", "hold", 5)
+        with pytest.raises(ValueError):
+            c.place_order("SPY", "buy", 0)

@@ -17,7 +17,7 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 - [ ] T016 — Schwab Trader API read-only sync (owner's real thinkorswim account): positions + balances alongside Alpaca paper, same timestamped model shapes. Prereqs: owner confirms Schwab developer app/keys are active; agent verifies current API capabilities (paper endpoint? scopes?) before building. Live orders out of scope pending §7.4. (D009)
 
 ## Backlog — Phase 3: Backtesting & strategy sandbox (agents)
-- [ ] T032 — Paper-trading loop: chosen strategy → signals on live data → orders to Alpaca paper THROUGH the T033 risk gate; every signal/order logged with data snapshot; needs T031+T033.
+- [ ] T035 — Paper-loop hardening (follow-up to T032): persist risk-engine trip state + day baseline to DB so restarts can't bypass the breaker; sync fills from Alpaca activities into `transactions`; consider market-hours guard. Small but safety-relevant.
 - [ ] T034 — Backtest results ledger: persist runs (strategy, params, date range, metrics) to DB; comparison endpoint; feeds the §7.4 promotion checklist.
 
 ## Backlog — Phase 4: Conversation layer (agents; unblocked — §3 registry is done)
@@ -31,6 +31,7 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 (none)
 
 ## Done
+- [x] T032 — Paper-trading loop: `backtest/paper_loop.py` (strategy → risk gate → paper order → SignalLog audit row for every decision incl. rejections/no-action), `place_order` on AlpacaClient (paper-only by construction), `signal_log` table + migration `c09d9671853d`, `scripts/paper_trade.py` CLI; 10 new hand-computed tests incl. breaker-blocks-second-cycle — 2026-08-11
 - [x] T031 — Strategy library: make_momentum (trailing-return trend filter) + make_mean_reversion (band-below-SMA dip buyer, stateless), validated params; hand-tracked equity tests + regime proofs (momentum flat through the whole synthetic bear; MR profits in chop, sits out smooth bulls) — 2026-08-11
 - [x] T033 — Risk engine v1 (`risk/engine.py`, spec §8): fail-closed pre-trade gate, per-symbol position cap (inclusive), daily-loss circuit breaker (trips at limit, blocks buys AND sells, survives recovery and new days, manual reset only), timestamped decisions with all violated rules + numbers; 22 hand-computed tests — 2026-08-11
 - [x] T030 — Backtest engine v1 (`backtest/engine.py` + `strategies.py`, per D010): no-lookahead by construction (prefix-enforced, tested), cost model in bps, weight validation, metrics from analysis layer; buy-and-hold + SMA-cross templates; 8 hand-computed tests — 2026-08-11

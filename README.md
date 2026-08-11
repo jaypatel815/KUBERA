@@ -59,6 +59,19 @@ python scripts\backtest_demo.py                 # SPY, ~2 years: buy-and-hold vs
 python scripts\backtest_demo.py AAPL --days 365 # SMA-cross vs mean-reversion, with costs
 ```
 
+Let a strategy trade your **paper** account (migrate the DB first — see above):
+
+```
+python scripts\paper_trade.py SPY --strategy momentum              # one cycle
+python scripts\paper_trade.py SPY --strategy momentum --loop 3600  # hourly, Ctrl+C to stop
+```
+
+Each cycle: strategy reads real bars → target position → **fail-closed risk gate** (20%
+per-symbol cap, 3% daily-loss circuit breaker) → market order on the paper account. Every
+decision — ordered, rejected, or no-action — is written to the `signal_log` table with the
+data snapshot it was based on. Strategies: momentum, sma_cross, mean_reversion, buy_and_hold.
+Paper only: there is deliberately no code path to real money.
+
 Run the full test suite any time: `python scripts\verify.py` (128+ tests; a few live ones
 run only when keys + internet are available). If local Python ever breaks:
 `powershell -ExecutionPolicy Bypass -File scripts\repair_python.ps1`.

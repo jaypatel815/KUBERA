@@ -37,6 +37,17 @@ class AccountSnapshot:
 
 
 @dataclass(frozen=True)
+class OrderResult:
+    external_id: str
+    symbol: str
+    side: str
+    qty: float
+    status: str  # e.g. "accepted", "new", "filled"
+    asof: datetime
+    source: str = SOURCE
+
+
+@dataclass(frozen=True)
 class Position:
     symbol: str
     qty: float
@@ -98,6 +109,43 @@ class AlpacaClient:
             cash=float(d["cash"]),
             equity=float(d["equity"]),
             buying_power=float(d["buying_power"]),
+            asof=datetime.now(timezone.utc),
+        )
+
+    def place_order(self, symbol: str, side: str, qty: float) -> OrderResult:
+        """Market day order on the PAPER account (the only account this client can reach).
+
+        This method must only ever be called with a RiskDecision.approved order —
+        the paper loop enforces that; nothing else in the codebase places orders.
+        """
+        if side not in ("buy", "sell"):
+            raise ValueError(f"side must be 'buy' or 'sell', got {side!r}")
+        if qty <= 0:
+            raise ValueError(f"qty must be > 0, got {qty}")
+        try:
+            resp = self._http.post(
+                "/v2/orders",
+                json={
+                    "symbol": symbol.upper(),
+                    "qty": str(qty),
+                    "side": side,
+                    "type": "market",
+                    "time_in_force": "day",
+                },
+            )
+        except httpx.HTTPError as e:
+            raise AlpacaError(f"Network error placing order for {symbol}: {e!r}") from e
+        if resp.status_code >= 400:
+            raise AlpacaError(
+                f"Alpaca order for {symbol} failed: HTTP {resp.status_code} — {resp.text[:200]}"
+            )
+        d = resp.json()
+        return OrderResult(
+            external_id=str(d["id"]),
+            symbol=d["symbol"],
+            side=d["side"],
+            qty=float(d["qty"]),
+            status=d["status"],
             asof=datetime.now(timezone.utc),
         )
 

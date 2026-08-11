@@ -86,6 +86,28 @@ class PositionSnapshot(Base):
     source: Mapped[str] = mapped_column(String(32))
 
 
+class SignalLog(Base):
+    """Full audit trail of the paper loop (spec §2.7): every signal, every decision —
+    ordered, rejected, or no_action — with the data snapshot it was based on."""
+
+    __tablename__ = "signal_log"
+    __table_args__ = (Index("ix_signal_symbol_ts", "symbol", "ts"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ts: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    strategy: Mapped[str] = mapped_column(String(48))
+    symbol: Mapped[str] = mapped_column(String(16))
+    signal_weight: Mapped[float] = mapped_column(Float)
+    equity: Mapped[float] = mapped_column(Float)
+    current_value: Mapped[float] = mapped_column(Float)
+    target_value: Mapped[float] = mapped_column(Float)
+    action: Mapped[str] = mapped_column(String(16))  # "ordered" | "rejected" | "no_action"
+    reasons: Mapped[str | None] = mapped_column(String(1024), default=None)
+    order_external_id: Mapped[str | None] = mapped_column(String(64), default=None)
+    bars_asof: Mapped[datetime] = mapped_column(UTCDateTime)
+    source: Mapped[str] = mapped_column(String(32))
+
+
 class Transaction(Base):
     """Executed fills, deduped per account by the broker's own id."""
 

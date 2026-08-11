@@ -3,6 +3,20 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T032 done (paper-trading loop) — KUBERA can trade (paper)
+Built: `backtest/paper_loop.py` run_paper_cycle — bars → strategy weight → target value
+(weight × allocation × equity) → delta order → RiskEngine pre_trade_check → Alpaca PAPER
+order. Every cycle writes a SignalLog row (ordered/rejected/no_action) with the data
+snapshot. AlpacaClient.place_order (validates inputs; paper-only by construction).
+New table signal_log + migration c09d9671853d. CLI scripts/paper_trade.py (--strategy,
+--allocation, --loop). Tests hand-compute the buy qty (15000/179), prove rejected orders
+never reach the broker, sells cap at held qty, and the tripped breaker blocks cycle 2.
+Verified: verify.py PASS — 136 passed, 3 skipped. README try-it updated per standing rule.
+Known gap → T035 filed: risk trip state is per-process; persist to DB so restarts can't
+bypass the breaker. Owner should run cycles manually (not --loop) until T035 lands.
+Next: T035 (small, safety) then T034 (results ledger) closes Phase 3.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — README testing guide + backtest demo (owner request)
 Built: README "Try what's built so far" — every endpoint incl. /docs Swagger explorer,
 sync, verify, repair. New `scripts/backtest_demo.py`: compares buy-and-hold / momentum /
