@@ -37,6 +37,46 @@ class PortfolioSummary:
     positions: list[PositionView]
 
 
+@dataclass(frozen=True)
+class WinLossBreakdown:
+    """Green vs red across open positions, by unrealized P&L. Natural signs throughout:
+    total_gain >= 0 is the sum over winners, total_loss <= 0 the sum over losers."""
+
+    winners: int
+    losers: int
+    flat: int
+    total_gain: float
+    total_loss: float
+    net: float
+    best_symbol: str | None
+    best_pl: float | None
+    worst_symbol: str | None
+    worst_pl: float | None
+
+
+def win_loss(positions: Iterable[PositionLike]) -> WinLossBreakdown:
+    """Count and size winners vs losers among open positions."""
+    items = list(positions)
+    winners = [p for p in items if p.unrealized_pl > 0]
+    losers = [p for p in items if p.unrealized_pl < 0]
+    total_gain = sum(p.unrealized_pl for p in winners)
+    total_loss = sum(p.unrealized_pl for p in losers)
+    best = max(items, key=lambda p: p.unrealized_pl) if items else None
+    worst = min(items, key=lambda p: p.unrealized_pl) if items else None
+    return WinLossBreakdown(
+        winners=len(winners),
+        losers=len(losers),
+        flat=len(items) - len(winners) - len(losers),
+        total_gain=total_gain,
+        total_loss=total_loss,
+        net=total_gain + total_loss,
+        best_symbol=best.symbol if best else None,
+        best_pl=best.unrealized_pl if best else None,
+        worst_symbol=worst.symbol if worst else None,
+        worst_pl=worst.unrealized_pl if worst else None,
+    )
+
+
 def summarize(positions: Iterable[PositionLike]) -> PortfolioSummary:
     """Aggregate holdings into totals, per-position returns, and portfolio weights."""
     items = list(positions)

@@ -39,6 +39,8 @@ def test_portfolio_live_computed_dated():
         assert body["summary"]["total_return_frac"] == pytest.approx(148.50 / 1502.50)
         assert body["positions"][0]["symbol"] == "AAPL"
         assert body["positions"][0]["weight_frac"] == pytest.approx(1.0)
+        assert body["win_loss"]["winners"] == 1
+        assert body["win_loss"]["best_symbol"] == "AAPL"
         assert body["asof"] and body["source"] == "alpaca-paper"
     finally:
         app.dependency_overrides.clear()

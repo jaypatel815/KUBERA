@@ -3,6 +3,17 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T022 done (win/loss breakdown); committed Gemini's fix
+Built: `analysis/portfolio.win_loss()` — winners/losers/flat counts, total_gain (>=0) and
+total_loss (<=0) with natural signs, net, best/worst position. `/portfolio` now returns a
+`win_loss` block ready for the dashboard's green/red chart.
+Also: committed Gemini's Windows env fix (ccc5ec4) with attribution — it was left
+uncommitted; reminder to all agents: commit before ending a session (AGENTS.md).
+Verified: verify.py PASS — 67 passed, 3 skipped (68/68 on Windows per Gemini).
+Next: T024 (tool-calling registry — biggest leverage, unblocks Phase 4) or T023
+(fundamentals/news). T007 remaining: migrate + sync + open /portfolio once.
+Blockers: none.
+
 ## 2026-08-11 — Gemini (Antigravity) — Windows subprocess env fix in test_db.py
 Fixed: `backend/tests/test_db.py` `test_alembic_migration_matches_models` hardcoded `PATH: /usr/bin:/bin`
 when spawning Alembic via `subprocess.run`, overriding `os.environ` completely and breaking Winsock / system DLL loading on Windows (`OSError: [WinError 10106]`). Updated to `{**os.environ, "DATABASE_URL": ...}` so system environment variables (PATH, SystemRoot) are preserved.

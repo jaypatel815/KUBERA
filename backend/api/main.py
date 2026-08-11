@@ -10,7 +10,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.exc import OperationalError
 
 from analysis.benchmark import compare
-from analysis.portfolio import summarize
+from analysis.portfolio import summarize, win_loss
 from data.alpaca import AlpacaClient, AlpacaError
 from data.db import make_engine, make_session_factory
 from data.history import equity_history
@@ -90,6 +90,7 @@ def portfolio(client: AlpacaClient = Depends(get_alpaca_client)) -> dict:
             "total_unrealized_pl": summary.total_unrealized_pl,
             "total_return_frac": summary.total_return_frac,
         },
+        "win_loss": asdict(win_loss(positions)),
         "positions": [asdict(v) for v in summary.positions],
         "asof": acct.asof.isoformat(),
         "source": acct.source,
