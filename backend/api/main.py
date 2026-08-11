@@ -178,8 +178,17 @@ def get_llm_provider(s: KuberaSettings = Depends(get_settings)):
 
 
 class ChatRequest(BaseModel):
+    """`conversation_id`: omit (or send 0) to start a new conversation; reuse the id
+    from a previous response to continue that thread."""
+
     message: str = Field(min_length=1, max_length=6000)
     conversation_id: int | None = None
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [{"message": "Should I buy more AAPL?"}]
+        }
+    }
 
 
 @app.post("/api/chat")
@@ -192,8 +201,10 @@ def chat(
 ) -> dict:
     """Talk to KUBERA. Every message and tool call is persisted (spec §2.7)."""
     ctx = ToolContext(alpaca=alpaca, market=market, db=session)
+    # Swagger's default example for optional ints is 0 — treat it as "new conversation".
+    conversation_id = body.conversation_id or None
     try:
-        r = run_chat_turn(session, provider, ctx, body.message, body.conversation_id)
+        r = run_chat_turn(session, provider, ctx, body.message, conversation_id)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except LLMError as e:

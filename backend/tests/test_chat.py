@@ -169,7 +169,10 @@ def test_chat_endpoint_end_to_end():
     app.dependency_overrides[get_market_client] = market_override
     app.dependency_overrides[get_llm_provider] = provider_override
     try:
-        r = client.post("/api/chat", json={"message": "how is my portfolio?"})
+        r = client.post(
+            "/api/chat",
+            json={"message": "how is my portfolio?", "conversation_id": 0},  # 0 == new
+        )
         assert r.status_code == 200
         body = r.json()
         assert "AAPL" in body["reply"]
