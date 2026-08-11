@@ -1,6 +1,7 @@
 """Schema v1 tests: CRUD roundtrip, constraints, UTC enforcement, and — most importantly —
 migration parity: `alembic upgrade head` must produce the same tables the models define."""
 
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -87,7 +88,7 @@ def test_duplicate_transaction_rejected(session):
 def test_alembic_migration_matches_models(tmp_path):
     """upgrade head on a fresh DB must create every table the models define."""
     db_path = tmp_path / "migrate_test.sqlite3"
-    env = {"DATABASE_URL": f"sqlite:///{db_path.as_posix()}", "PATH": "/usr/bin:/bin"}
+    env = {**os.environ, "DATABASE_URL": f"sqlite:///{db_path.as_posix()}"}
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "-c", "backend/alembic.ini", "upgrade", "head"],
         cwd=REPO_ROOT, env=env, capture_output=True, text=True,

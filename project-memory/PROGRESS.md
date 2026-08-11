@@ -3,6 +3,13 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Gemini (Antigravity) — Windows subprocess env fix in test_db.py
+Fixed: `backend/tests/test_db.py` `test_alembic_migration_matches_models` hardcoded `PATH: /usr/bin:/bin`
+when spawning Alembic via `subprocess.run`, overriding `os.environ` completely and breaking Winsock / system DLL loading on Windows (`OSError: [WinError 10106]`). Updated to `{**os.environ, "DATABASE_URL": ...}` so system environment variables (PATH, SystemRoot) are preserved.
+Verified: `python scripts/verify.py` passes all tests on Windows (68/68 passed).
+Next: T022 (win/loss breakdown) or T024 (tool registry).
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T021 done (benchmark comparison)
 Built: `analysis/benchmark.py` — strict inner-join date alignment (ValueError <2 overlaps,
 message tells the user history accumulates via sync), normalized curves for charting,
