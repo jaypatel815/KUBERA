@@ -3,6 +3,18 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T033 done (risk engine — the hard rails)
+Built: `risk/engine.py` — RiskLimits (validated), OrderRequest, RiskDecision (timestamped,
+all violated rules with numbers), RiskEngine. Fail-closed: uninitialized engine rejects all
+orders. Position cap inclusive at the boundary; sells exempt from cap (they reduce risk).
+Circuit breaker: trips at the daily-loss limit exactly, then blocks buys AND sells; neither
+recovery nor a new day untrips it — only manual reset(note). Pure logic, no I/O; T032 owns
+persistence of trip state and wiring to live equity marks.
+Verified: verify.py PASS — 118 passed (22 new risk tests), 3 skipped.
+Next: T032 (paper-trading loop through this gate) needs T031 (strategy library) — either
+order works; T031 is the smaller bite. T040-T044 (conversation) remain open for any agent.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T030 done; Phase 3+4 backlogs seeded; D010 logged
 Built: `backtest/engine.py` — minimal deterministic daily-bar engine (D010: hand-verifiable
 over frameworks; revisit triggers logged). No-lookahead enforced by passing the strategy a

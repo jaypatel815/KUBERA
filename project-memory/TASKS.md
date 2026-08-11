@@ -18,7 +18,6 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 
 ## Backlog — Phase 3: Backtesting & strategy sandbox (agents)
 - [ ] T031 — Strategy template library: momentum + mean-reversion signal functions on the T030 contract; each backtested across ≥2 market regimes per spec §9 (synthetic regime fixtures fine for tests, real SPY history for the ledger).
-- [ ] T033 — Risk module v1 (`/backend/risk`, spec §8): max position size %, daily-loss circuit breaker with manual reset, pre-trade check API; exhaustive unit tests. Prereq for T032.
 - [ ] T032 — Paper-trading loop: chosen strategy → signals on live data → orders to Alpaca paper THROUGH the T033 risk gate; every signal/order logged with data snapshot; needs T031+T033.
 - [ ] T034 — Backtest results ledger: persist runs (strategy, params, date range, metrics) to DB; comparison endpoint; feeds the §7.4 promotion checklist.
 
@@ -33,6 +32,7 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 (none)
 
 ## Done
+- [x] T033 — Risk engine v1 (`risk/engine.py`, spec §8): fail-closed pre-trade gate, per-symbol position cap (inclusive), daily-loss circuit breaker (trips at limit, blocks buys AND sells, survives recovery and new days, manual reset only), timestamped decisions with all violated rules + numbers; 22 hand-computed tests — 2026-08-11
 - [x] T030 — Backtest engine v1 (`backtest/engine.py` + `strategies.py`, per D010): no-lookahead by construction (prefix-enforced, tested), cost model in bps, weight validation, metrics from analysis layer; buy-and-hold + SMA-cross templates; 8 hand-computed tests — 2026-08-11
 - [x] T017 — Chore: shared httpx plumbing extracted to `data/_http.py` (build_client + checked_get); both clients refactored, error text byte-identical, same 85 tests green — 2026-08-11
 - [x] T025 — Symbol briefing composer (`analysis/briefing.py` + `sma()` in metrics): trailing 20/60/252d returns, 60d ann vol, 252d max DD, 52-week high/low distance, SMA50/200 trend context, owner's exposure; graceful degradation on thin history; `get_symbol_briefing` tool + `GET /api/briefing/{symbol}`; 12 new tests — 2026-08-11
