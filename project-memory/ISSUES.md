@@ -19,6 +19,15 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   4. Remove dead `…\Python311\` entries from the user PATH; reload Antigravity and select
      `.venv\Scripts\python.exe`.
   Status: open — close when verify.py passes on a rebuilt venv. Logged 2026-08-11.
+  UPDATE (owner's `py -0p`, 2026-08-11): healthy installs exist — **3.10 at
+  `C:\Program Files\Python310\`** (use this: `py -3.10 -m venv .venv --clear`, activate,
+  reinstall requirements, verify), plus uv-managed 3.14.7 (legit, from prior project) and
+  Anaconda 3.9 (below our 3.10 floor — do not use). Only `3.11 *` is orphaned.
+  Cleanup for the orphan: delete stale `…\Python311\` user-PATH entries and the registry
+  key `HKCU\Software\Python\PythonCore\3.11`. Owner separately wants a fresh 3.12/3.13
+  **all-users** install (→ C:\Program Files) as their general Python — needs their UAC
+  click; after installing, rebuild the venv on it. This whole item is executable by an
+  Antigravity agent with terminal access except the UAC approval.
 
 ## Resolved
 - I004 — IDE type checkers (Pyrefly/Pyright in Antigravity) reported missing imports
