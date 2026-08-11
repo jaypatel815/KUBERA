@@ -4,7 +4,11 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
-- I005 — Owner's machine: Python 3.11 was uninstalled/moved but the `py` launcher registry
+- I005 [NEARLY CLOSED] — venv observed rebuilt on CPython 3.14.7 (python.org install
+  manager, `AppData\Local\Python\pythoncore-3.14-64`) on 2026-08-11. 3.14 is supported
+  (project floor is 3.10). Close this issue on the next local `python scripts\verify.py`
+  PASS. Original details below.
+- (was) I005 — Owner's machine: Python 3.11 was uninstalled/moved but the `py` launcher registry
   and user PATH still point at `C:\Users\jaybe\AppData\Local\Programs\Python\Python311\`
   ("Unable to create process… system cannot find the file"). The repo `.venv` is built on
   that base and is therefore broken; this also caused the IDE interpreter-binding failures

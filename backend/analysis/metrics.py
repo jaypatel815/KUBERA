@@ -69,6 +69,18 @@ def sharpe(
     return (mean(returns) - rf_per_period) / sd * sqrt(periods_per_year)
 
 
+def sma(values: Sequence[float], window: int) -> float:
+    """Simple moving average of the LAST `window` values."""
+    if window < 1:
+        raise ValueError(f"window must be >= 1, got {window}")
+    if len(values) < window:
+        raise ValueError(f"need at least {window} values, got {len(values)}")
+    tail = values[-window:]
+    if any(v <= 0 for v in tail):
+        raise ValueError("all values must be > 0 (prices/equity levels)")
+    return sum(tail) / window
+
+
 def max_drawdown_frac(values: Sequence[float]) -> float:
     """Largest peak-to-trough decline as a positive fraction (0.25 == fell 25%)."""
     _check_values(values)

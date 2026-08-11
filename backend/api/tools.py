@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.orm import Session
 
 from analysis.benchmark import compare
+from analysis.briefing import PositionContext, build_briefing
 from analysis.portfolio import summarize, win_loss
 from data.alpaca import AlpacaClient
 from data.history import equity_history
@@ -119,6 +120,13 @@ class BenchmarkArgs(BaseModel):
     days: int = Field(default=90, ge=2, le=3650)
 
 
+class BriefingArgs(SymbolArgs):
+    days: int = Field(
+        default=400, ge=30, le=3650,
+        description="Calendar days of history to base the briefing on (400 covers 52 weeks)",
+    )
+
+
 @registry.tool(
     "get_portfolio",
     "Live portfolio: account state, positions, totals, win/loss breakdown. All values "
@@ -167,6 +175,50 @@ def _get_latest(ctx: ToolContext, p: SymbolArgs) -> dict:
 def _get_daily_bars(ctx: ToolContext, p: BarsArgs) -> dict:
     market: MarketDataClient = ctx.require("market")
     return asdict(market.get_daily_bars(p.symbol, days=p.days))
+
+
+def position_context_for(client: AlpacaClient, symbol: str) -> PositionContext | None:
+    """Owner's current exposure to `symbol`, or None if not held."""
+    positions = client.get_positions()
+    match = next((p for p in positions if p.symbol == symbol), None)
+    if match is None:
+        return None
+    total_mv = sum(p.market_value for p in positions)
+    return PositionContext(
+        qty=match.qty,
+        market_value=match.market_value,
+        unrealized_pl=match.unrealized_pl,
+        portfolio_weight_frac=(match.market_value / total_mv) if total_mv > 0 else None,
+    )
+
+
+@registry.tool(
+    "get_symbol_briefing",
+    "Evidence pack for 'should I buy X': trailing returns (20/60/252 trading days), "
+    "annualized volatility, max drawdown, distance from 52-week high/low, SMA50/200 trend "
+    "context, and the user's current exposure. Facts only, dated; fields degrade to null "
+    "when history is thin. Narration must state data recency and never present certainty.",
+    BriefingArgs,
+)
+def _get_symbol_briefing(ctx: ToolContext, p: BriefingArgs) -> dict:
+    market: MarketDataClient = ctx.require("market")
+    bars = market.get_daily_bars(p.symbol, days=p.days)
+    if not bars.bars:
+        raise ToolError(f"no price history returned for '{p.symbol}' — check the symbol")
+    position = None
+    if ctx.alpaca is not None:  # exposure context is optional, not required
+        position = position_context_for(ctx.alpaca, p.symbol.upper())
+    briefing = build_briefing(
+        p.symbol,
+        [b.close for b in bars.bars],
+        [b.date for b in bars.bars],
+        position=position,
+    )
+    return {
+        "briefing": asdict(briefing),
+        "asof": bars.asof.isoformat(),
+        "source": bars.source,
+    }
 
 
 @registry.tool(

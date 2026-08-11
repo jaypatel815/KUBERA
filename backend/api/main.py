@@ -11,7 +11,7 @@ from sqlalchemy.exc import OperationalError
 
 from analysis.benchmark import compare
 from analysis.portfolio import summarize, win_loss
-from api.tools import registry
+from api.tools import ToolContext, ToolError, registry
 from data.alpaca import AlpacaClient, AlpacaError
 from data.db import make_engine, make_session_factory
 from data.history import equity_history
@@ -140,6 +140,26 @@ def market_bars(
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.get("/api/briefing/{symbol}")
+def symbol_briefing(
+    symbol: str,
+    days: int = 400,
+    alpaca: AlpacaClient = Depends(get_alpaca_client),
+    market: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """Evidence pack for 'should I buy X' — via the same tool the conversation layer uses."""
+    try:
+        return registry.execute(
+            "get_symbol_briefing",
+            {"symbol": symbol, "days": days},
+            ToolContext(alpaca=alpaca, market=market),
+        )
+    except ToolError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except (AlpacaError, MarketDataError) as e:
         raise HTTPException(status_code=502, detail=str(e))
 
 

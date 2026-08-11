@@ -9,6 +9,7 @@ from analysis.metrics import (
     daily_returns,
     max_drawdown_frac,
     sharpe,
+    sma,
     volatility,
 )
 
@@ -81,3 +82,17 @@ def test_sharpe_zero_volatility_rejected():
 def test_short_returns_rejected():
     with pytest.raises(ValueError):
         volatility([0.01])
+
+
+def test_sma_hand_computed():
+    assert sma([10.0, 20.0, 30.0], 2) == pytest.approx(25.0)
+    assert sma([10.0, 20.0, 30.0], 3) == pytest.approx(20.0)
+
+
+def test_sma_validation():
+    with pytest.raises(ValueError):
+        sma([10.0, 20.0], 3)  # window bigger than series
+    with pytest.raises(ValueError):
+        sma([10.0, 20.0], 0)
+    with pytest.raises(ValueError):
+        sma([10.0, -1.0], 2)

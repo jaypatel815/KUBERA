@@ -3,6 +3,20 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T025 done (symbol briefing composer)
+Built: `analysis/briefing.py` — the deterministic evidence pack behind "should I buy X":
+trailing returns (20/60/252 trading days), 60d annualized vol, 252d max drawdown,
+distance from 52-week high/low, SMA50/200 trend context (`sma()` added to metrics with
+tests), and the owner's current exposure (PositionContext). Degrades gracefully on thin
+history (None fields + bars_count, never fake numbers). Registered as tool
+`get_symbol_briefing` (registry now 5 tools) + `GET /api/briefing/{symbol}`.
+Verified: verify.py PASS — 85 passed, 3 skipped.
+Also: owner's venv observed rebuilt on CPython 3.14.7 (I005 nearly closed — needs one
+local verify PASS to confirm).
+Next: T023 (fundamentals/news — owner's-machine task) or T017 chore. Phase 2 exit then
+needs only the Phase 4 narration on top of this briefing.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — IDE config fix (I004)
 Fixed: owner's Antigravity showed missing-import errors (Pyrefly) and couldn't bind the
 interpreter — no pyrightconfig.json/.vscode existed. Committed pyrightconfig.json (venv
