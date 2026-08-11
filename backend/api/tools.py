@@ -37,13 +37,24 @@ class ToolArgumentError(ToolError):
     pass
 
 
+class ConfirmationRequiredError(ToolError):
+    """Raised when a tool needs the user's explicit out-of-band confirmation (T043).
+
+    ctx.confirmed comes from the HTTP request body — user-controlled, outside the LLM's
+    reach. The model can ask the user to confirm; it can never confirm for them."""
+
+
 @dataclass
 class ToolContext:
-    """What handlers may need. The API layer builds this per request; tests inject fakes."""
+    """What handlers may need. The API layer builds this per request; tests inject fakes.
+
+    `confirmed` is set ONLY from the user's HTTP request (ChatRequest.confirm) — it gates
+    tools registered with requires_confirmation=True. Never set it from model output."""
 
     alpaca: AlpacaClient | None = None
     market: MarketDataClient | None = None
     db: Session | None = None
+    confirmed: bool = False
 
     def require(self, attr: str) -> Any:
         value = getattr(self, attr)
@@ -58,22 +69,31 @@ class ToolSpec:
     description: str
     params_model: type[BaseModel]
     handler: Callable[..., dict]
+    requires_confirmation: bool = False  # True = user must confirm out-of-band (T043)
 
 
 @dataclass
 class ToolRegistry:
     _tools: dict[str, ToolSpec] = field(default_factory=dict)
 
-    def tool(self, name: str, description: str, params_model: type[BaseModel]):
-        """Decorator: register `handler(ctx, params) -> dict` under a unique name."""
+    def tool(self, name: str, description: str, params_model: type[BaseModel],
+             requires_confirmation: bool = False):
+        """Decorator: register `handler(ctx, params) -> dict` under a unique name.
+        Set requires_confirmation=True for anything that changes state with money."""
 
         def decorator(handler: Callable[..., dict]):
             if name in self._tools:
                 raise ValueError(f"duplicate tool name: {name}")
-            self._tools[name] = ToolSpec(name, description, params_model, handler)
+            self._tools[name] = ToolSpec(
+                name, description, params_model, handler, requires_confirmation
+            )
             return handler
 
         return decorator
+
+    def requires_confirmation(self, name: str) -> bool:
+        spec = self._tools.get(name)
+        return bool(spec and spec.requires_confirmation)
 
     def names(self) -> list[str]:
         return sorted(self._tools)
@@ -96,6 +116,12 @@ class ToolRegistry:
             params = spec.params_model(**args)
         except ValidationError as e:
             raise ToolArgumentError(f"invalid arguments for '{name}': {e}") from e
+        if spec.requires_confirmation and not ctx.confirmed:
+            raise ConfirmationRequiredError(
+                f"tool '{name}' requires the user's explicit confirmation. Ask the user "
+                "to confirm; they must resend their request with confirm=true. You "
+                "cannot confirm on their behalf."
+            )
         return spec.handler(ctx, params)
 
 

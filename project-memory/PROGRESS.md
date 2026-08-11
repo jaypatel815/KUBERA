@@ -3,6 +3,18 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T043 done (conversation rails as code)
+Built: (1) confirmation gate — ToolSpec.requires_confirmation + ConfirmationRequiredError;
+ctx.confirmed flows ONLY from ChatRequest.confirm (user's HTTP body — the LLM cannot set
+it); chat loop surfaces confirmation_required to the model so it asks the user; guard test
+asserts none of the 6 current tools require confirmation (future order tools must flip the
+flag consciously). (2) recency post-check — ensure_recency_line appends a deterministic
+"Data recency: <tool> asof <ts>" footer from ACTUAL tool timestamps whenever a
+data-grounded reply lacks a date (handles str and datetime asof shapes).
+Verified: verify.py PASS — 171 passed, 3 skipped. Full two-turn confirm flow tested.
+Next: T044 (context budget), T045 (MCP server), or T046 (Max/Agent SDK provider).
+Blockers: none.
+
 ## 2026-08-11 — Gemini (Antigravity) — terminal environment injection setting
 Fixed: enabled `"python.terminal.useEnvFile": true` in `.vscode/settings.json` so integrated terminal sessions automatically inject environment variables from `.env`.
 Verified: settings updated cleanly.

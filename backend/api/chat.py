@@ -8,6 +8,7 @@ never swallowed. The loop is bounded: max_tool_rounds prevents runaway tool chai
 
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
@@ -15,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.persona import build_system_prompt
-from api.tools import ToolContext, ToolError, registry
+from api.tools import ConfirmationRequiredError, ToolContext, ToolError, registry
 from data.models import ChatMessage, Conversation
 
 log = logging.getLogger("kubera.chat")
@@ -38,6 +39,19 @@ def _cap(text: str, limit: int = MAX_STORED_CHARS) -> str:
     if len(text) <= limit:
         return text
     return text[:limit] + f"... [truncated at {limit} chars]"
+
+
+_RECENCY_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}|as of", re.IGNORECASE)
+
+
+def ensure_recency_line(reply: str, tool_asofs: dict[str, str]) -> str:
+    """Post-check (T043): a data-grounded reply must carry a date. If the model used
+    tools but stated no recency, append a deterministic footer from the ACTUAL tool
+    timestamps — enforced by code, not trusted to the prompt."""
+    if not tool_asofs or _RECENCY_PATTERN.search(reply):
+        return reply
+    parts = "; ".join(f"{name} asof {asof}" for name, asof in sorted(tool_asofs.items()))
+    return f"{reply}\n\n_Data recency: {parts}_"
 
 
 def _history(db: Session, conversation_id: int) -> list[dict]:
@@ -91,6 +105,7 @@ def run_chat_turn(
     )
     schemas = registry.schemas()
     trail: list[dict] = []
+    tool_asofs: dict[str, str] = {}  # tool name -> asof from its actual result
     total_in = total_out = 0
     reply = None
 
@@ -113,7 +128,8 @@ def run_chat_turn(
 
         if not reply.wants_tools:
             return ChatTurnResult(
-                conversation_id=conversation_id, reply=reply.text or "",
+                conversation_id=conversation_id,
+                reply=ensure_recency_line(reply.text or "", tool_asofs),
                 tool_trail=trail, input_tokens=total_in, output_tokens=total_out,
                 stop_reason=reply.stop_reason,
             )
@@ -122,7 +138,18 @@ def run_chat_turn(
             trail.append({"name": tc.name, "arguments": tc.arguments})
             try:
                 result = registry.execute(tc.name, tc.arguments, ctx)
+                asof_val = result.get("asof")
+                if asof_val is not None:  # str for most tools, datetime for dataclass dumps
+                    tool_asofs[tc.name] = (
+                        asof_val.isoformat() if hasattr(asof_val, "isoformat")
+                        else str(asof_val)
+                    )
                 content = _cap(json.dumps(result, default=str))
+            except ConfirmationRequiredError as e:
+                # Not an error: the user must confirm out-of-band. Tell the model so it
+                # can ask; it cannot confirm on the user's behalf (ctx is request-bound).
+                content = json.dumps({"confirmation_required": True, "message": str(e)})
+                log.info("tool %s awaiting user confirmation", tc.name)
             except ToolError as e:
                 content = json.dumps({"error": str(e)})
                 log.warning("tool %s failed in chat: %s", tc.name, e)
@@ -135,8 +162,11 @@ def run_chat_turn(
     # Bounded loop exhausted: return honestly rather than spinning.
     return ChatTurnResult(
         conversation_id=conversation_id,
-        reply=(reply.text if reply and reply.text else
-               f"(stopped after {max_tool_rounds} tool rounds without a final answer)"),
+        reply=ensure_recency_line(
+            (reply.text if reply and reply.text else
+             f"(stopped after {max_tool_rounds} tool rounds without a final answer)"),
+            tool_asofs,
+        ),
         tool_trail=trail, input_tokens=total_in, output_tokens=total_out,
         stop_reason="max_tool_rounds",
     )

@@ -183,6 +183,9 @@ class ChatRequest(BaseModel):
 
     message: str = Field(min_length=1, max_length=6000)
     conversation_id: int | None = None
+    # T043: explicit user confirmation for confirmation-gated tools (future order tools).
+    # Comes from YOUR request — the model cannot set this.
+    confirm: bool = False
 
     model_config = {
         "json_schema_extra": {
@@ -200,7 +203,7 @@ def chat(
     provider=Depends(get_llm_provider),
 ) -> dict:
     """Talk to KUBERA. Every message and tool call is persisted (spec §2.7)."""
-    ctx = ToolContext(alpaca=alpaca, market=market, db=session)
+    ctx = ToolContext(alpaca=alpaca, market=market, db=session, confirmed=body.confirm)
     # Swagger's default example for optional ints is 0 — treat it as "new conversation".
     conversation_id = body.conversation_id or None
     try:
