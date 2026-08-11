@@ -14,6 +14,7 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 
+from data._http import build_client, checked_get
 from settings import KuberaSettings, get_settings
 
 DATA_BASE_URL = "https://data.alpaca.markets"
@@ -86,16 +87,7 @@ class MarketDataClient:
         transport: httpx.BaseTransport | None = None,
     ):
         s = (settings or get_settings()).require_alpaca()
-        assert s.alpaca_api_secret_key is not None  # guaranteed by require_alpaca()
-        self._http = httpx.Client(
-            base_url=DATA_BASE_URL,
-            headers={
-                "APCA-API-KEY-ID": s.alpaca_api_key_id or "",
-                "APCA-API-SECRET-KEY": s.alpaca_api_secret_key.get_secret_value(),
-            },
-            timeout=15.0,
-            transport=transport,
-        )
+        self._http = build_client(DATA_BASE_URL, s, transport)
 
     def close(self) -> None:
         self._http.close()
@@ -107,20 +99,17 @@ class MarketDataClient:
         self.close()
 
     def _get(self, path: str, params: dict | None = None) -> dict:
-        try:
-            resp = self._http.get(path, params=params)
-        except httpx.HTTPError as e:
-            raise MarketDataError(f"Network error calling Alpaca data {path}: {e!r}") from e
-        if resp.status_code == 401:
-            raise MarketDataError(
+        return checked_get(
+            self._http,
+            path,
+            params=params,
+            error_cls=MarketDataError,
+            label="Alpaca data",
+            unauthorized_hint=(
                 "Alpaca data API rejected the keys (401). Check ALPACA_API_KEY_ID / "
                 "ALPACA_API_SECRET_KEY in .env (same keys as the paper account)."
-            )
-        if resp.status_code >= 400:
-            raise MarketDataError(
-                f"Alpaca data {path} failed: HTTP {resp.status_code} — {resp.text[:200]}"
-            )
-        return resp.json()
+            ),
+        ).json()
 
     def get_latest_trade(self, symbol: str) -> LatestTrade:
         symbol = symbol.upper()

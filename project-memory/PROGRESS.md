@@ -3,6 +3,16 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T017 done (httpx plumbing unified)
+Built: `data/_http.py` — build_client (auth headers, timeout) + checked_get (network-error
+wrapping, actionable 401 hints, HTTP>=400 discipline). Both Alpaca clients refactored onto
+it; error text preserved byte-for-byte. Pure refactor: same 85 tests pass unchanged.
+Remaining Phase 2: T023 (fundamentals/news — owner's machine) and T016 (Schwab read-only —
+needs owner's dev-app confirmation). Everything else in Phase 2 is done.
+Next: T023 via Antigravity, or begin Phase 4 conversation-layer ticket writing (it can
+proceed in parallel — the §3 tool registry it needs is complete).
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T025 done (symbol briefing composer)
 Built: `analysis/briefing.py` — the deterministic evidence pack behind "should I buy X":
 trailing returns (20/60/252 trading days), 60d annualized vol, 252d max drawdown,

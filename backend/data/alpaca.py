@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 
 import httpx
 
+from data._http import build_client, checked_get
 from settings import ConfigError, KuberaSettings, get_settings
 
 PAPER_BASE_URL = "https://paper-api.alpaca.markets"
@@ -64,16 +65,7 @@ class AlpacaClient:
                 "ALPACA_PAPER=false is not supported: live trading is gated by "
                 "PROJECT_SPEC.md §7.4, which is not implemented. Set ALPACA_PAPER=true."
             )
-        assert s.alpaca_api_secret_key is not None  # guaranteed by require_alpaca()
-        self._http = httpx.Client(
-            base_url=PAPER_BASE_URL,
-            headers={
-                "APCA-API-KEY-ID": s.alpaca_api_key_id or "",
-                "APCA-API-SECRET-KEY": s.alpaca_api_secret_key.get_secret_value(),
-            },
-            timeout=15.0,
-            transport=transport,
-        )
+        self._http = build_client(PAPER_BASE_URL, s, transport)
 
     def close(self) -> None:
         self._http.close()
@@ -85,19 +77,17 @@ class AlpacaClient:
         self.close()
 
     def _get(self, path: str) -> httpx.Response:
-        try:
-            resp = self._http.get(path)
-        except httpx.HTTPError as e:
-            raise AlpacaError(f"Network error calling Alpaca {path}: {e!r}") from e
-        if resp.status_code == 401:
-            raise AlpacaError(
+        return checked_get(
+            self._http,
+            path,
+            error_cls=AlpacaError,
+            label="Alpaca",
+            unauthorized_hint=(
                 "Alpaca rejected the API keys (401). Check ALPACA_API_KEY_ID / "
                 "ALPACA_API_SECRET_KEY in .env — paper keys are generated on the "
                 "paper dashboard, and regenerate if in doubt."
-            )
-        if resp.status_code >= 400:
-            raise AlpacaError(f"Alpaca {path} failed: HTTP {resp.status_code} — {resp.text[:200]}")
-        return resp
+            ),
+        )
 
     def get_account(self) -> AccountSnapshot:
         d = self._get("/v2/account").json()
