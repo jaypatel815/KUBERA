@@ -42,6 +42,25 @@ class KuberaSettings(BaseSettings):
     )
     alpaca_paper: bool = True
 
+    # Conversation layer (Phase 4). Provider picked here; keys never leave SecretStr.
+    llm_provider: str = Field(
+        default="anthropic",
+        validation_alias=AliasChoices("KUBERA_LLM_PROVIDER", "LLM_PROVIDER"),
+    )
+    anthropic_api_key: SecretStr | None = Field(
+        default=None, validation_alias=AliasChoices("ANTHROPIC_API_KEY",)
+    )
+    openai_api_key: SecretStr | None = Field(
+        default=None, validation_alias=AliasChoices("OPENAI_API_KEY",)
+    )
+    # Verify current model names when configuring; override via env any time.
+    anthropic_model: str = Field(
+        default="claude-sonnet-5", validation_alias=AliasChoices("ANTHROPIC_MODEL",)
+    )
+    openai_model: str = Field(
+        default="gpt-5", validation_alias=AliasChoices("OPENAI_MODEL",)
+    )
+
     # D007: SQLite now, Postgres+pgvector at Phase 3 — switching is a URL change.
     database_url: str = Field(
         default=f"sqlite:///{(REPO_ROOT / 'kubera.sqlite3').as_posix()}",

@@ -17,7 +17,7 @@ In Claude Cowork: select this folder and type `/kubera`.
 ## Quickstart (Windows)
 
 ```
-py -3.11 -m venv .venv
+py -3.14.7 -m venv .venv
 .venv\Scripts\activate
 pip install -r backend\requirements.txt
 python scripts\verify.py          # lint + tests — must PASS

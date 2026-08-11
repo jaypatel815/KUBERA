@@ -20,8 +20,6 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 - [ ] T036 — Paper-loop polish (remainder of old T035 scope): sync fills from Alpaca activities into `transactions` (deduped); market-hours guard so cycles outside RTH log no_action instead of placing queued orders.
 
 ## Backlog — Phase 4: Conversation layer (agents; unblocked — §3 registry is done)
-- [ ] T040 — KUBERA persona + system prompt (docs + code constant): sharp analyst voice per spec §1; always states data recency + confidence; never invents numbers (tools only); refuses certainty framing; confirm-before-capital rule.
-- [ ] T041 — LLM provider abstraction: Anthropic/OpenAI/Gemini behind one interface, keys from .env (owner already has several), provider pick via settings; no SDK lock-in; mock-based tests.
 - [ ] T042 — POST /api/chat: conversation loop executing registry tools (T024), conversation + message persistence in DB, timestamped tool-call audit trail per spec §2.7.
 - [ ] T043 — Conversation safety rails as code: order-related intents require explicit confirmation tokens; responses must carry data-recency line — enforced by post-checks, tested.
 - [ ] T044 — Context assembly: portfolio state + recent messages + relevant research memory into the prompt within a token budget; deterministic selection logic, tested.
@@ -31,6 +29,8 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 (none)
 
 ## Done
+- [x] T041 — LLM abstraction (`api/llm.py`): neutral message/tool format, Anthropic + OpenAI adapters (thin httpx, no SDKs), both-direction translation tested via captured wire payloads, build_provider fail-fast selection (LLM_PROVIDER env; Gemini = future add); settings: ANTHROPIC/OPENAI keys + model overrides — 2026-08-11
+- [x] T040 — Persona (`api/persona.py`): build_system_prompt with 8 non-negotiable CORE_RULES (tools-only numbers, recency, no certainty, paper clarity, confirm-before-capital, can't override risk engine, no gap-filling, not-an-advisor) + analyst voice; guard tests prevent silent rule deletion — 2026-08-11
 - [x] T034 — Backtest results ledger: `backtest_runs` table + migration `33592ebf6de6`, `backtest/ledger.py` (record/list/run_and_record), shared TEMPLATES + build_strategy, `GET /api/backtests` + `POST /api/backtests/run`, `run_backtest` registry tool (6 tools now); tests incl. StaticPool fix for cross-thread in-memory SQLite — 2026-08-11. **Phase 3 core complete** (T036 polish optional).
 - [x] T035 — Risk-state persistence: `risk_state` table + migration `35b6c01bf49b`, `engine.restore()` (persistence-only), `risk/persistence.py`, paper-loop restore/persist hooks, `scripts/risk_reset.py` (note-required, type-RESET confirm); killer test: restarted loop loads tripped breaker from DB and stays blocked — 2026-08-11
 - [x] T032 — Paper-trading loop: `backtest/paper_loop.py` (strategy → risk gate → paper order → SignalLog audit row for every decision incl. rejections/no-action), `place_order` on AlpacaClient (paper-only by construction), `signal_log` table + migration `c09d9671853d`, `scripts/paper_trade.py` CLI; 10 new hand-computed tests incl. breaker-blocks-second-cycle — 2026-08-11

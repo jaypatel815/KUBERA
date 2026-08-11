@@ -3,6 +3,21 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T040+T041 done (Phase 4 opened: persona + LLM layer)
+Built: `api/persona.py` — build_system_prompt(asof, tools) with 8 CORE_RULES encoding spec
+§2 (every number from tools, recency stated, no certainty framing, backtests-are-the-past,
+paper clarity, explicit confirmation + risk-engine supremacy for anything order-shaped, no
+gap-filling, not-an-advisor) + the analyst voice; guard tests fail if any rule is deleted.
+`api/llm.py` — neutral message/tool-call format; AnthropicProvider + OpenAIProvider (thin
+httpx, no SDKs) with full both-direction translation (tool_use/tool_result blocks vs
+tool_calls/tool role) proven by captured-payload tests; build_provider selects via
+LLM_PROVIDER with fail-fast actionable ConfigErrors. Model names are settings with
+defaults (claude-sonnet-5 / gpt-5) — verify current names at T042 wiring time.
+Verified: verify.py PASS — 154 passed, 3 skipped.
+Next: T042 — POST /api/chat: the loop (persona + context → LLM → tool execution via
+registry → final answer), conversation persistence, audit trail. Then T043 rails.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T034 done — PHASE 3 CORE COMPLETE
 Built: `backtest_runs` table (migration 33592ebf6de6) + `backtest/ledger.py` — every run
 recorded with strategy/params/period/metrics; `list_runs` with filters. Shared strategy
