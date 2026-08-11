@@ -20,7 +20,6 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 - [ ] T036 — Paper-loop polish (remainder of old T035 scope): sync fills from Alpaca activities into `transactions` (deduped); market-hours guard so cycles outside RTH log no_action instead of placing queued orders.
 
 ## Backlog — Phase 4: Conversation layer (agents; unblocked — §3 registry is done)
-- [ ] T042 — POST /api/chat: conversation loop executing registry tools (T024), conversation + message persistence in DB, timestamped tool-call audit trail per spec §2.7.
 - [ ] T043 — Conversation safety rails as code: order-related intents require explicit confirmation tokens; responses must carry data-recency line — enforced by post-checks, tested.
 - [ ] T044 — Context assembly: portfolio state + recent messages + relevant research memory into the prompt within a token budget; deterministic selection logic, tested.
 - [ ] T045 — KUBERA MCP server (D011): thin FastMCP/official-SDK stdio server exposing the T024 registry tools (get_portfolio, get_latest, get_daily_bars, compare_benchmark, get_symbol_briefing) so Claude Desktop/Antigravity/mobile become KUBERA frontends pre-PWA. Read-only; no order tools until §7.4 exists. Later: streamable-http + auth for remote/mobile.
@@ -29,6 +28,7 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 (none)
 
 ## Done
+- [x] T042 — POST /api/chat: bounded conversation loop (persona + history → LLM → registry tools → grounded answer), conversations/chat_messages tables + migration `7bb8528ec2d3`, every message/tool-call/result persisted with timestamps, tool errors surfaced verbatim, GET /api/chat/{id} audit view; 7 scripted-provider tests + endpoint E2E — 2026-08-11
 - [x] T041 — LLM abstraction (`api/llm.py`): neutral message/tool format, Anthropic + OpenAI adapters (thin httpx, no SDKs), both-direction translation tested via captured wire payloads, build_provider fail-fast selection (LLM_PROVIDER env; Gemini = future add); settings: ANTHROPIC/OPENAI keys + model overrides — 2026-08-11
 - [x] T040 — Persona (`api/persona.py`): build_system_prompt with 8 non-negotiable CORE_RULES (tools-only numbers, recency, no certainty, paper clarity, confirm-before-capital, can't override risk engine, no gap-filling, not-an-advisor) + analyst voice; guard tests prevent silent rule deletion — 2026-08-11
 - [x] T034 — Backtest results ledger: `backtest_runs` table + migration `33592ebf6de6`, `backtest/ledger.py` (record/list/run_and_record), shared TEMPLATES + build_strategy, `GET /api/backtests` + `POST /api/backtests/run`, `run_backtest` registry tool (6 tools now); tests incl. StaticPool fix for cross-thread in-memory SQLite — 2026-08-11. **Phase 3 core complete** (T036 polish optional).

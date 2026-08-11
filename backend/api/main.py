@@ -7,16 +7,21 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 
 from fastapi import Depends, FastAPI, HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
 
 from analysis.benchmark import compare
 from analysis.portfolio import summarize, win_loss
+from api.chat import run_chat_turn
+from api.llm import LLMError, build_provider
 from api.tools import ToolArgumentError, ToolContext, ToolError, registry
 from backtest.ledger import list_runs
 from data.alpaca import AlpacaClient, AlpacaError
 from data.db import make_engine, make_session_factory
 from data.history import equity_history
 from data.market_data import MarketDataClient, MarketDataError
+from data.models import ChatMessage
 from settings import ConfigError, KuberaSettings, get_settings
 
 VERSION = "0.1.0"
@@ -162,6 +167,75 @@ def symbol_briefing(
         raise HTTPException(status_code=422, detail=str(e))
     except (AlpacaError, MarketDataError) as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+def get_llm_provider(s: KuberaSettings = Depends(get_settings)):
+    """Yield the configured LLM provider, or 503 with an actionable message."""
+    try:
+        yield build_provider(s)
+    except ConfigError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=6000)
+    conversation_id: int | None = None
+
+
+@app.post("/api/chat")
+def chat(
+    body: ChatRequest,
+    session=Depends(get_db_session),
+    alpaca: AlpacaClient = Depends(get_alpaca_client),
+    market: MarketDataClient = Depends(get_market_client),
+    provider=Depends(get_llm_provider),
+) -> dict:
+    """Talk to KUBERA. Every message and tool call is persisted (spec §2.7)."""
+    ctx = ToolContext(alpaca=alpaca, market=market, db=session)
+    try:
+        r = run_chat_turn(session, provider, ctx, body.message, body.conversation_id)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except LLMError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except OperationalError:
+        raise HTTPException(
+            status_code=503,
+            detail="database not initialized — run: alembic -c backend/alembic.ini upgrade head",
+        )
+    return {
+        "conversation_id": r.conversation_id,
+        "reply": r.reply,
+        "tool_calls": r.tool_trail,
+        "usage": {"input_tokens": r.input_tokens, "output_tokens": r.output_tokens},
+        "stop_reason": r.stop_reason,
+        "asof": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@app.get("/api/chat/{conversation_id}")
+def chat_history(conversation_id: int, session=Depends(get_db_session)) -> dict:
+    """Full audit trail of a conversation — who said what, from which data."""
+    try:
+        rows = session.execute(
+            select(ChatMessage)
+            .where(ChatMessage.conversation_id == conversation_id)
+            .order_by(ChatMessage.id)
+        ).scalars().all()
+    except OperationalError:
+        raise HTTPException(status_code=503, detail="database not initialized")
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"no conversation {conversation_id}")
+    return {
+        "conversation_id": conversation_id,
+        "messages": [
+            {
+                "role": r.role, "content": r.content, "tool_name": r.tool_name,
+                "tool_calls": r.tool_calls_json, "created_at": r.created_at.isoformat(),
+            }
+            for r in rows
+        ],
+    }
 
 
 @app.get("/api/backtests")

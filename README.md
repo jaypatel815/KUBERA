@@ -52,7 +52,15 @@ http://127.0.0.1:8000/api/benchmark?symbol=SPY&days=90      your equity curve vs
 http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
 http://127.0.0.1:8000/api/backtests                         the results ledger: every recorded backtest
 POST /api/backtests/run?strategy=momentum&symbol=SPY        run + record a backtest (use /docs to click it)
+POST /api/chat            {"message": "how is my portfolio doing?"}   — TALK TO KUBERA
+GET  /api/chat/{id}                                         full audit trail of a conversation
 ```
+
+**Talking to KUBERA** needs an LLM key in `.env` (`ANTHROPIC_API_KEY` or `OPENAI_API_KEY`;
+pick with `LLM_PROVIDER=anthropic|openai`). Easiest way: open `/docs`, expand
+`POST /api/chat`, click "Try it out", and ask *"Should I buy more AAPL?"* — KUBERA will
+call its tools (briefing, portfolio, backtests) and answer with sourced, dated numbers.
+Include the returned `conversation_id` in your next message to continue the thread.
 
 Backtest the strategy templates on real history (no server needed):
 

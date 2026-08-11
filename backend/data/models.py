@@ -86,6 +86,35 @@ class PositionSnapshot(Base):
     source: Mapped[str] = mapped_column(String(32))
 
 
+class Conversation(Base):
+    """One chat thread with KUBERA."""
+
+    __tablename__ = "conversations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    title: Mapped[str | None] = mapped_column(String(120), default=None)
+
+
+class ChatMessage(Base):
+    """Every message — user, assistant, and tool results — timestamped (spec §2.7):
+    the full audit trail of what KUBERA said and exactly which data it said it from."""
+
+    __tablename__ = "chat_messages"
+    __table_args__ = (Index("ix_chat_conversation_created", "conversation_id", "created_at"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id"))
+    role: Mapped[str] = mapped_column(String(16))  # "user" | "assistant" | "tool"
+    content: Mapped[str | None] = mapped_column(String(8000), default=None)
+    tool_calls_json: Mapped[str | None] = mapped_column(String(4000), default=None)
+    tool_call_id: Mapped[str | None] = mapped_column(String(64), default=None)
+    tool_name: Mapped[str | None] = mapped_column(String(64), default=None)
+    input_tokens: Mapped[int] = mapped_column(default=0)
+    output_tokens: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
 class BacktestRun(Base):
     """Every backtest, recorded forever — the §7.4 promotion checklist's evidence base."""
 

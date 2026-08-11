@@ -3,6 +3,21 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T042 done — KUBERA CAN TALK
+Built: `api/chat.py` run_chat_turn — persona + replayed history → provider.complete →
+execute requested registry tools (errors surfaced verbatim, results capped at 6k chars) →
+loop until text (bounded by max_tool_rounds=6, honest message on exhaustion). New tables
+conversations + chat_messages (migration 7bb8528ec2d3) persist EVERY message, tool call,
+tool result, and token count — spec §2.7's "why did KUBERA say that" is a SELECT away.
+Endpoints: POST /api/chat (DI: db, alpaca, market, llm provider — each 503s actionably
+when unconfigured), GET /api/chat/{id} audit view. README: how to talk to KUBERA via
+/docs (needs ANTHROPIC_API_KEY or OPENAI_API_KEY + LLM_PROVIDER).
+Verified: verify.py PASS — 161 passed, 3 skipped. First LIVE conversation happens on the
+owner's machine (LLM APIs not reachable from sandbox).
+Next: T043 (conversation safety post-checks) and T044 (context assembly) polish the loop;
+T045 (MCP server) remains the high-leverage side door. Owner: try talking to it!
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T040+T041 done (Phase 4 opened: persona + LLM layer)
 Built: `api/persona.py` — build_system_prompt(asof, tools) with 8 CORE_RULES encoding spec
 §2 (every number from tools, recency stated, no certainty framing, backtests-are-the-past,
