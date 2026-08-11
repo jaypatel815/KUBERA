@@ -5,7 +5,13 @@ from settings import ConfigError, KuberaSettings
 
 def clean_settings(monkeypatch, **env) -> KuberaSettings:
     """Settings from a controlled environment: no ambient vars, no .env file."""
-    for var in ("ALPACA_API_KEY_ID", "ALPACA_API_SECRET_KEY", "ALPACA_PAPER"):
+    for var in (
+        "ALPACA_API_KEY_ID",
+        "ALPACA_API_KEY",
+        "ALPACA_API_SECRET_KEY",
+        "ALPACA_SECRET_KEY",
+        "ALPACA_PAPER",
+    ):
         monkeypatch.delenv(var, raising=False)
     for var, value in env.items():
         monkeypatch.setenv(var, value)
@@ -44,6 +50,14 @@ def test_secret_never_leaks_in_repr(monkeypatch):
     assert "supersecret" not in str(s)
     assert s.alpaca_api_secret_key is not None
     assert s.alpaca_api_secret_key.get_secret_value() == "supersecret"
+
+
+def test_alias_names_accepted(monkeypatch):
+    """The owner's .env uses ALPACA_API_KEY — both spellings must work."""
+    s = clean_settings(
+        monkeypatch, ALPACA_API_KEY="PKTEST123", ALPACA_API_SECRET_KEY="supersecret"
+    )
+    assert s.alpaca_configured is True
 
 
 def test_paper_flag_parses_from_env(monkeypatch):

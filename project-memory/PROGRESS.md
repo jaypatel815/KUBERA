@@ -3,6 +3,19 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T011 done; owner completed T006
+Built: `backend/data/alpaca.py` — thin httpx client (no SDK), `get_account()` +
+`get_positions()`, every payload timestamped + sourced, actionable 401 messages, and a hard
+code rail: constructing against the live endpoint raises ConfigError until §7.4 exists.
+`GET /api/account` with DI (503 + fix instructions when unconfigured). Settings now accept
+the owner's `.env` naming (`ALPACA_API_KEY` alias); extra template vars ignored harmlessly.
+Verified: verify.py PASS — 20 passed, 1 skipped (live integration test skips in Cowork
+sandbox: alpaca.markets not allowlisted, see I002; it will run on the owner's machine).
+Owner did T006 (paper keys). Committed on `main`.
+Next: T007 is now the highest-value step — running the quickstart on Windows also executes
+the live paper-account test for real. Then T012 (market data) or T013 (DB schema).
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T010 done (Phase 1 started)
 Built: `backend/settings.py` — typed config via pydantic-settings, loads env then repo-root
 `.env`, `require_alpaca()` raises ConfigError naming the exact missing vars and pointing at

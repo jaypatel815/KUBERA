@@ -8,12 +8,11 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [ ] T005 — Create a **private** GitHub repo, push `main`, confirm the Actions CI run is green.
-- [ ] T006 — Open an Alpaca account, generate **paper** API keys, copy `.env.example` → `.env`, fill it in. Never commit `.env`.
+- [x] T006 — Alpaca paper keys in `.env` — done 2026-08-11 (owner). Note: owner's `.env` uses `ALPACA_API_KEY` naming + extra vars from another template; settings loader accepts both spellings, extras ignored.
 - [ ] T007 — Install Python 3.11+ on Windows, run the README quickstart, confirm `verify.py` passes locally.
 - [ ] T008 — `pip install pre-commit && pre-commit install` (activates the commit-time secret scanner).
 
 ## Backlog — Phase 1: Data & portfolio backbone (agents)
-- [ ] T011 — Alpaca paper client in `/backend/data`: account + positions fetch, every payload timestamped; integration test against the paper API that skips cleanly when keys are absent (needs T006). Use `settings.require_alpaca()` from T010.
 - [ ] T012 — Market data via Alpaca Data API: latest quote + daily history; every payload carries `source` and `asof`; tests.
 - [ ] T013 — DB schema v1 (SQLAlchemy 2 + SQLite + alembic): accounts, positions, transactions, snapshots; first migration; tests. (D007)
 - [ ] T014 — Scheduled refresh job writing position/quote snapshots; tests.
@@ -23,6 +22,7 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 (none)
 
 ## Done
+- [x] T011 — Alpaca paper client (`backend/data/alpaca.py`): account + positions, timestamped/sourced payloads, actionable 401s, **live-endpoint refusal rail** (§7.4 not implemented = no code path to real money); `GET /api/account`; 8 new tests + skip-guarded live integration test — 2026-08-11
 - [x] T010 — Typed settings loader (`backend/settings.py`, pydantic-settings): fail-fast `require_alpaca()`, SecretStr, `/health` reports config state; 5 tests — 2026-08-11
 - [x] T004 — git init, CI workflow, gitleaks pre-commit config, .env.example, .gitignore — 2026-08-11
 - [x] T003 — Backend skeleton: FastAPI /health, analysis.returns + 7 tests, ruff, verify.py — 2026-08-11

@@ -11,7 +11,7 @@ with a precise, actionable message instead of a mysterious HTTP 401 later.
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import SecretStr
+from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -28,10 +28,18 @@ class KuberaSettings(BaseSettings):
         env_file=str(REPO_ROOT / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
+        populate_by_name=True,
     )
 
-    alpaca_api_key_id: str | None = None
-    alpaca_api_secret_key: SecretStr | None = None
+    # Accepts both our canonical name and the common short form (owner's .env uses the latter).
+    alpaca_api_key_id: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("ALPACA_API_KEY_ID", "ALPACA_API_KEY"),
+    )
+    alpaca_api_secret_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("ALPACA_API_SECRET_KEY", "ALPACA_SECRET_KEY"),
+    )
     alpaca_paper: bool = True
 
     def require_alpaca(self) -> "KuberaSettings":
