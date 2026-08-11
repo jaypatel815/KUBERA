@@ -3,6 +3,22 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Gemini (Antigravity) — terminal environment injection setting
+Fixed: enabled `"python.terminal.useEnvFile": true` in `.vscode/settings.json` so integrated terminal sessions automatically inject environment variables from `.env`.
+Verified: settings updated cleanly.
+Next: T046 (Claude Agent SDK provider) or T043/T044/T045 as planned.
+Blockers: none.
+
+## 2026-08-11 — MILESTONE: first live KUBERA conversation (owner-verified)
+Owner ran POST /api/chat on his machine with Ollama + nemotron-3.5-lightning (30B MoE,
+tools-capable, free/local) via the OPENAI_BASE_URL path. KUBERA called get_latest +
+get_symbol_briefing on AAPL and produced a properly hedged, dated, evidence-grounded
+answer (verdict, asof-stamped metrics table, assumptions, falsifying risk, no certainty),
+correctly noting the owner holds no AAPL. ~5.4k in / 1.3k out tokens per turn.
+Environment fact for all agents: local tool-calling models work; nemotron-3.5-lightning
+is the validated default for keyless local chat.
+Next: unchanged (T043/T044/T045/T046).
+
 ## 2026-08-11 — Claude (Cowork) — chat provider options (owner hit API-credits wall)
 Context: owner's Anthropic API account has no credits (Max subscription ≠ API billing).
 Built: OPENAI_BASE_URL override — the OpenAI adapter now targets any OpenAI-compatible
