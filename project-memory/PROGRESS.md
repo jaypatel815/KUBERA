@@ -3,6 +3,16 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Claude (Cowork) — T010 done (Phase 1 started)
+Built: `backend/settings.py` — typed config via pydantic-settings, loads env then repo-root
+`.env`, `require_alpaca()` raises ConfigError naming the exact missing vars and pointing at
+T006, secrets are SecretStr (leak-proof repr), `alpaca_paper` defaults true per D003.
+`/health` now reports `alpaca_configured` and `paper_mode` (state only, never values).
+Verified: verify.py PASS — ruff clean, 12/12 tests. Committed on `main`.
+Next: T011 (Alpaca paper client) — buildable now; its integration test skips until T006 gives
+us real paper keys. Owner tasks T005–T008 still open.
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — Phase 0 complete
 Built: project-memory working files (TASKS, DECISIONS D001–D008, ISSUES, PROGRESS); backend
 skeleton — FastAPI `/health`, first deterministic module `analysis/returns.py`, 7 tests;

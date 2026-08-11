@@ -16,3 +16,6 @@ def test_health_ok():
     assert body["version"] == VERSION
     # Every payload is timestamped and parseable — no undated data, ever.
     assert datetime.fromisoformat(body["time"]).tzinfo is not None
+    # Reports config *state*, never values or secrets.
+    assert isinstance(body["alpaca_configured"], bool)
+    assert isinstance(body["paper_mode"], bool)
