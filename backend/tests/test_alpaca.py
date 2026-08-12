@@ -91,8 +91,9 @@ def test_live_endpoint_is_refused_by_code():
 
 
 def test_missing_keys_fail_fast():
+    unconfig = KuberaSettings(_env_file=None, alpaca_api_key_id=None, alpaca_api_secret_key=None)
     with pytest.raises(ConfigError):
-        AlpacaClient(settings=KuberaSettings(_env_file=None))
+        AlpacaClient(settings=unconfig)
 
 
 def test_place_order_posts_and_parses():

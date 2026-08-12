@@ -144,9 +144,13 @@ class ClaudeSDKProvider:
                     if isinstance(text, str):
                         text_parts.append(text)
                 usage = getattr(message, "usage", None)
-                if usage is not None:
-                    usage_in = getattr(usage, "input_tokens", 0) or 0
-                    usage_out = getattr(usage, "output_tokens", 0) or 0
+                if usage is not None:  # dict in current SDK versions, object in others
+                    if isinstance(usage, dict):
+                        usage_in = usage.get("input_tokens", 0) or 0
+                        usage_out = usage.get("output_tokens", 0) or 0
+                    else:
+                        usage_in = getattr(usage, "input_tokens", 0) or 0
+                        usage_out = getattr(usage, "output_tokens", 0) or 0
             return "\n".join(t for t in text_parts if t), usage_in, usage_out
 
         text, usage_in, usage_out = asyncio.run(run())

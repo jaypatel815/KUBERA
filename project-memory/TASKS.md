@@ -20,7 +20,7 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 - [ ] T036 — Paper-loop polish (remainder of old T035 scope): sync fills from Alpaca activities into `transactions` (deduped); market-hours guard so cycles outside RTH log no_action instead of placing queued orders.
 
 ## Backlog — Phase 4: Conversation layer (agents; unblocked — §3 registry is done)
-- [ ] T047 — Owner: activate claude-sdk provider — `pip install claude-agent-sdk` in the venv, `claude setup-token`, CLAUDE_CODE_OAUTH_TOKEN into .env, LLM_PROVIDER=claude-sdk, restart, one live /api/chat turn. Any SDK-version quirks (e.g. mcp_servers dict-vs-list) → ISSUES.md.
+- [x] T047 — Owner activated claude-sdk: live /api/chat turn on the Max subscription verified 2026-08-12 02:22 UTC — KUBERA corrected the question's premise (holds SPY, not AAPL), full case-for/against, falsifiable risk level, persona disclaimers intact. Side-channel audit captured both tool calls. Quirk found+fixed: SDK usage is a dict (was parsed as object → 0/0).
 - [ ] T045 — KUBERA MCP server (D011): thin FastMCP/official-SDK stdio server exposing the T024 registry tools (get_portfolio, get_latest, get_daily_bars, compare_benchmark, get_symbol_briefing) so Claude Desktop/Antigravity/mobile become KUBERA frontends pre-PWA. Read-only; no order tools until §7.4 exists. Later: streamable-http + auth for remote/mobile.
 
 ## Blocked

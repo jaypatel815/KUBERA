@@ -3,6 +3,24 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-11 — Gemini (Antigravity) — fix unconfigured settings tests against ambient env vars
+Fixed: `test_account_api.py`, `test_portfolio_api.py`, `test_alpaca.py`, and `test_llm.py` failed when terminal environment injection loaded `.env` into `os.environ` because `pydantic-settings` read keys/urls from `os.environ` even with `_env_file=None`. Updated tests to use `monkeypatch.delenv` for `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `ANTHROPIC_API_KEY`, and explicitly pass `openai_base_url="https://api.openai.com/v1"` when testing standard endpoint failfast paths.
+Verified: all 189 tests pass.
+Next: T045 (KUBERA MCP server) or T047 (Claude Agent SDK provider setup).
+Blockers: none.
+
+## 2026-08-12 — MILESTONE: claude-sdk live on owner's Max (T047 ✔) + usage-parse fix
+Owner activated LLM_PROVIDER=claude-sdk and ran a live turn: KUBERA (Claude brain)
+corrected the question's premise via get_portfolio (owner holds 19.46 SPY ≈ $15k — the
+paper loop's own first trade!), delivered case-for/against with a falsifiable 200-day
+risk level, flagged AAPL/SPY mega-cap overlap, persona disclaimers intact. Side-channel
+audit recorded both tool calls correctly.
+Fixed: SDK ResultMessage.usage is a DICT in current versions — extraction handled objects
+only, reporting 0/0. Now handles both shapes, with a regression test.
+Verified: verify.py PASS — 187 passed, 3 skipped.
+Next: T045 (KUBERA MCP server) closes Phase 4; then Phase 5 (PWA).
+Blockers: none.
+
 ## 2026-08-11 — Claude (Cowork) — T046 done (chat on the owner's Claude Max)
 Built: `api/llm_claude_sdk.py` — LLM_PROVIDER=claude-sdk runs /api/chat on the owner's
 Max subscription (personal-use-only per verified Anthropic policy — D012 has citations).

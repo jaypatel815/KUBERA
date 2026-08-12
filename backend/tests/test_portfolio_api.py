@@ -47,7 +47,8 @@ def test_portfolio_live_computed_dated():
 
 
 def test_portfolio_503_when_unconfigured():
-    app.dependency_overrides[get_settings] = lambda: KuberaSettings(_env_file=None)
+    unconfig = KuberaSettings(_env_file=None, alpaca_api_key_id=None, alpaca_api_secret_key=None)
+    app.dependency_overrides[get_settings] = lambda: unconfig
     try:
         r = client.get("/portfolio")
         assert r.status_code == 503

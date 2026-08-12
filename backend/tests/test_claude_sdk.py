@@ -132,6 +132,27 @@ def test_complete_locks_down_and_parses(monkeypatch):
     assert reply.input_tokens == 100 and reply.output_tokens == 40
 
 
+def test_usage_parsed_from_dict_shape(monkeypatch):
+    """Owner's live run showed 0/0 usage: the real SDK returns usage as a dict."""
+    captured: dict = {}
+    install_fake_sdk(monkeypatch, captured)
+    # swap the FakeResult's usage for a dict, as the real SDK emits
+    original_query = sys.modules["claude_agent_sdk"].query
+
+    async def query_dict_usage(prompt, options):
+        async for m in original_query(prompt, options):
+            if hasattr(m, "usage"):
+                m = FakeResult()
+                m.usage = {"input_tokens": 5415, "output_tokens": 1347}
+            yield m
+
+    sys.modules["claude_agent_sdk"].query = query_dict_usage
+    p = ClaudeSDKProvider(sdk_settings())
+    reply = p.complete("S", [{"role": "user", "content": "hi"}], [])
+    assert reply.input_tokens == 5415
+    assert reply.output_tokens == 1347
+
+
 def test_bridged_tool_execution_records_audit_event(monkeypatch):
     captured: dict = {}
     install_fake_sdk(monkeypatch, captured, call_tool="get_daily_bars")

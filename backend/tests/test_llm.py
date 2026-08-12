@@ -132,23 +132,28 @@ def test_openai_base_url_override_for_compat_endpoints():
     assert reply.text == "local hello"
 
 
-def test_build_provider_allows_keyless_custom_endpoint():
+def test_build_provider_allows_keyless_custom_endpoint(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
     s = base_settings(llm_provider="openai",
                       openai_base_url="http://localhost:11434/v1")
     p = build_provider(s)
     assert isinstance(p, OpenAIProvider)
     # but the real OpenAI endpoint still requires a key
     with pytest.raises(ConfigError):
-        build_provider(base_settings(llm_provider="openai"))
+        build_provider(base_settings(llm_provider="openai", openai_api_key=None,
+                                    openai_base_url="https://api.openai.com/v1"))
 
 
-def test_build_provider_selection_and_failfast():
+def test_build_provider_selection_and_failfast(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     s = base_settings(llm_provider="anthropic", anthropic_api_key="k1")
     assert isinstance(build_provider(s), AnthropicProvider)
     s = base_settings(llm_provider="openai", openai_api_key="k2")
     assert isinstance(build_provider(s), OpenAIProvider)
     with pytest.raises(ConfigError) as exc:
-        build_provider(base_settings(llm_provider="anthropic"))
+        build_provider(base_settings(llm_provider="anthropic", anthropic_api_key=None))
     assert "ANTHROPIC_API_KEY" in str(exc.value)
     with pytest.raises(ConfigError) as exc2:
         build_provider(base_settings(llm_provider="carrier-pigeon"))
