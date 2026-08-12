@@ -139,6 +139,25 @@ class BacktestRun(Base):
     source: Mapped[str] = mapped_column(String(32))
 
 
+class InvestmentPolicy(Base):
+    """The owner's living Investment Policy Statement (T061, D014) — single row (id=1).
+    Injected into every chat; recommendations are checked against it. Updates go through
+    the confirmation-gated `update_ips` tool, so changing your own rules is deliberate."""
+
+    __tablename__ = "investment_policy"
+
+    id: Mapped[int] = mapped_column(primary_key=True)  # always 1
+    objectives: Mapped[str | None] = mapped_column(String(500), default=None)
+    target_annual_return_frac: Mapped[float | None] = mapped_column(Float, default=None)
+    max_drawdown_frac: Mapped[float | None] = mapped_column(Float, default=None)
+    horizon_years: Mapped[float | None] = mapped_column(Float, default=None)
+    risk_tolerance: Mapped[str | None] = mapped_column(String(32), default=None)
+    restrictions_json: Mapped[str] = mapped_column(String(2000), default="[]")
+    prohibited_strategies_json: Mapped[str] = mapped_column(String(2000), default="[]")
+    notes: Mapped[str | None] = mapped_column(String(1000), default=None)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
 class RiskState(Base):
     """Single-row persistence of the RiskEngine (id is always 1). Exists so a tripped
     circuit breaker SURVIVES process restarts — a restart must never bypass it (spec §8)."""

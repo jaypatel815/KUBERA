@@ -22,6 +22,7 @@ from backtest.ledger import run_and_record
 from backtest.strategies import TEMPLATES, build_strategy
 from data.alpaca import AlpacaClient
 from data.history import equity_history
+from data.ips import get_ips, ips_as_dict, upsert_ips
 from data.market_data import MarketDataClient
 
 
@@ -254,6 +255,49 @@ def _get_symbol_briefing(ctx: ToolContext, p: BriefingArgs) -> dict:
         "asof": bars.asof.isoformat(),
         "source": bars.source,
     }
+
+
+class UpdateIpsArgs(BaseModel):
+    """Only provided fields change; restriction lists REPLACE wholesale."""
+
+    objectives: str | None = Field(default=None, max_length=500)
+    target_annual_return_frac: float | None = Field(default=None, gt=-1, le=2)
+    max_drawdown_frac: float | None = Field(default=None, gt=0, le=1)
+    horizon_years: float | None = Field(default=None, gt=0, le=80)
+    risk_tolerance: str | None = Field(default=None, max_length=32)
+    restrictions: list[str] | None = None
+    prohibited_strategies: list[str] | None = None
+    notes: str | None = Field(default=None, max_length=1000)
+
+
+@registry.tool(
+    "get_ips",
+    "The owner's Investment Policy Statement: objectives, target return, max drawdown, "
+    "horizon, risk tolerance, restrictions, prohibited strategies. Check every "
+    "recommendation against it.",
+    NoArgs,
+)
+def _get_ips(ctx: ToolContext, _: NoArgs) -> dict:
+    db = ctx.require("db")
+    row = get_ips(db)
+    if row is None:
+        return {"ips": None,
+                "note": "No IPS set yet — offer to record one via update_ips."}
+    return {"ips": ips_as_dict(row)}
+
+
+@registry.tool(
+    "update_ips",
+    "Update the owner's Investment Policy Statement (partial: only provided fields "
+    "change; restriction lists replace wholesale). Changing your own investment rules "
+    "is a deliberate act — this tool requires the owner's explicit confirmation.",
+    UpdateIpsArgs,
+    requires_confirmation=True,
+)
+def _update_ips(ctx: ToolContext, p: UpdateIpsArgs) -> dict:
+    db = ctx.require("db")
+    row = upsert_ips(db, **p.model_dump())
+    return {"updated": True, "ips": ips_as_dict(row)}
 
 
 @registry.tool(

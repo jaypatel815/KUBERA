@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from api.context import assemble_context
 from api.persona import build_system_prompt
 from api.tools import ConfirmationRequiredError, ToolContext, ToolError, registry
+from data.ips import format_ips_for_prompt, get_ips
 from data.models import ChatMessage, Conversation
 from settings import get_settings
 
@@ -103,8 +104,10 @@ def run_chat_turn(
     db.add(ChatMessage(conversation_id=conversation_id, role="user", content=_cap(user_text)))
     db.commit()
 
+    ips_row = get_ips(db)
     system = build_system_prompt(
-        datetime.now(timezone.utc).isoformat(), registry.names(), voice=voice
+        datetime.now(timezone.utc).isoformat(), registry.names(), voice=voice,
+        ips_context=format_ips_for_prompt(ips_row) if ips_row else None,
     )
     schemas = registry.schemas()
     trail: list[dict] = []

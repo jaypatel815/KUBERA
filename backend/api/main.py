@@ -257,6 +257,22 @@ def chat_history(conversation_id: int, session=Depends(get_db_session)) -> dict:
     }
 
 
+@app.get("/api/ips")
+def investment_policy(session=Depends(get_db_session)) -> dict:
+    """The owner's Investment Policy Statement. Updates happen conversationally via the
+    confirmation-gated update_ips tool — changing your rules should be deliberate."""
+    from data.ips import get_ips as _get
+    from data.ips import ips_as_dict as _asdict
+    try:
+        row = _get(session)
+    except OperationalError:
+        raise HTTPException(status_code=503, detail="database not initialized")
+    if row is None:
+        raise HTTPException(status_code=404,
+                            detail="No IPS set yet — ask KUBERA to record one in chat.")
+    return _asdict(row)
+
+
 @app.get("/api/backtests")
 def backtests(
     strategy: str | None = None,

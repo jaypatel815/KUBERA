@@ -23,6 +23,20 @@ threaded through: IEX feed = relative volume only until SIP upgrade (D006).
 Next: T050 is the natural opener; T045 (MCP server) still pending in Phase 4.
 Blockers: none.
 
+## 2026-08-12 — T061 done (Investment Policy Statement) — KUBERA knows its owner
+Built: investment_policy table (migration 08dfc64f8e4b), data/ips.py (partial upserts;
+restriction lists replace wholesale; format_ips_for_prompt compact block), IPS injected
+into EVERY chat system prompt as hard context ("check every recommendation against it,
+state conflicts plainly"). Tools: get_ips (free) + update_ips — the FIRST live
+confirmation-gated tool: the owner can set his IPS by talking, KUBERA asks for
+confirmation, and only the typed/deliberate confirm flag completes it (T043 gate proven
+in production use, not just tests). GET /api/ips for viewing. Registry now 8 tools;
+count guards updated; safety guard now asserts gated == {update_ips}.
+Verified: verify.py PASS — 209 passed, 3 skipped.
+Next: owner should SET his IPS (by voice, fittingly) — then T069 tolerance estimation,
+T062 briefs, and the coach all have their foundation. T050 regime pack still open.
+Blockers: none.
+
 ## 2026-08-12 — T070 done (push-to-talk loop) — KUBERA can be TALKED to
 Built: `api/voice_loop.py` — tested orchestration (audio → STT → /api/chat(voice=true) →
 TTS): conversation threads across turns, silence never reaches KUBERA, and confirm passes

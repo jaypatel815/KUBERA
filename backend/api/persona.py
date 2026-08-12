@@ -71,7 +71,8 @@ VOICE_STYLE = (
 )
 
 
-def build_system_prompt(asof_utc: str, tool_names: list[str], voice: bool = False) -> str:
+def build_system_prompt(asof_utc: str, tool_names: list[str], voice: bool = False,
+                        ips_context: str | None = None) -> str:
     """Deterministic system prompt. `asof_utc` is the session start time (ISO)."""
     rules = "\n".join(f"{i + 1}. {rule}" for i, rule in enumerate(CORE_RULES))
     tools = ", ".join(sorted(tool_names)) if tool_names else "none registered"
@@ -85,6 +86,8 @@ def build_system_prompt(asof_utc: str, tool_names: list[str], voice: bool = Fals
         f"{ANALYSIS_STRUCTURE}\n\n"
         f"{STYLE}"
     )
+    if ips_context:
+        prompt += f"\n\n{ips_context}"
     if voice:
         prompt += f"\n\n{VOICE_STYLE}"
     return prompt

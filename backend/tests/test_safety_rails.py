@@ -47,11 +47,12 @@ def test_confirmed_context_passes():
     assert r.execute("place_test_order", {}, ToolContext(confirmed=True)) == {"placed": True}
 
 
-def test_no_current_tool_requires_confirmation():
-    """Guard: all 6 registered tools are read/research — none may silently require
-    confirmation, and any future order tool must consciously flip this flag."""
-    for name in global_registry.names():
-        assert global_registry.requires_confirmation(name) is False, name
+def test_confirmation_flags_are_exactly_as_intended():
+    """Guard: state-changing tools require confirmation, read/research tools never do.
+    Any new tool must land in the right set consciously."""
+    gated = {name for name in global_registry.names()
+             if global_registry.requires_confirmation(name)}
+    assert gated == {"update_ips"}, gated
 
 
 # --- recency post-check ------------------------------------------------------
