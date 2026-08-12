@@ -87,6 +87,7 @@ def run_chat_turn(
     user_text: str,
     conversation_id: int | None = None,
     max_tool_rounds: int = MAX_TOOL_ROUNDS,
+    voice: bool = False,
 ) -> ChatTurnResult:
     if not user_text.strip():
         raise ValueError("empty message")
@@ -103,7 +104,7 @@ def run_chat_turn(
     db.commit()
 
     system = build_system_prompt(
-        datetime.now(timezone.utc).isoformat(), registry.names()
+        datetime.now(timezone.utc).isoformat(), registry.names(), voice=voice
     )
     schemas = registry.schemas()
     trail: list[dict] = []

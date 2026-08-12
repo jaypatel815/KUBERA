@@ -186,6 +186,10 @@ class ChatRequest(BaseModel):
     # T043: explicit user confirmation for confirmation-gated tools (future order tools).
     # Comes from YOUR request — the model cannot set this.
     confirm: bool = False
+    # Voice-first owner (D015): true = reply will be spoken aloud (no tables/markdown,
+    # ear-rounded numbers, concise). A spoken "yes" never sets `confirm` — clients must
+    # translate an explicit confirmation gesture into the flag deliberately.
+    voice: bool = False
 
     model_config = {
         "json_schema_extra": {
@@ -207,7 +211,8 @@ def chat(
     # Swagger's default example for optional ints is 0 — treat it as "new conversation".
     conversation_id = body.conversation_id or None
     try:
-        r = run_chat_turn(session, provider, ctx, body.message, conversation_id)
+        r = run_chat_turn(session, provider, ctx, body.message, conversation_id,
+                          voice=body.voice)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except LLMError as e:

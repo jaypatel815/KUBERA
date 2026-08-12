@@ -2,6 +2,16 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D015 — Voice-first owner: voice is a primary interface, not a Phase-5 afterthought (2026-08-12)
+Owner will primarily TALK to KUBERA. Consequences: (a) chat layer now has voice mode —
+ChatRequest.voice → persona VOICE_STYLE (no markdown/tables, ear-rounded numbers, ~120
+words, natural recency) — shipped and tested; (b) T070 pulls a push-to-talk desktop loop
+ahead of Phase 5 (STT → /api/chat → TTS is buildable today); (c) safety invariant: a
+spoken "yes" NEVER sets the confirm flag — clients translate a deliberate, distinct
+gesture into confirm=true (persona instructs the model to explain this). Phase 5 PWA
+voice + Phase 6 hands-free (Siri App Intents, Windows tray) sequencing unchanged, but
+response-shaping and the v0 loop land first.
+
 ## D014 — Gemini master-spec reconciliation: the coaching layer (2026-08-12)
 Companion to D013 (shared rejections apply verbatim — not re-argued). NEW adoptions:
 the Quantitative Trading Coach — KUBERA judges the OWNER'S trades by process quality,

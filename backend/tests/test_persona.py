@@ -15,6 +15,18 @@ def test_prompt_carries_session_time_and_tools():
     assert "a_tool, b_tool" in prompt  # sorted
 
 
+def test_voice_mode_appends_spoken_style_and_default_does_not():
+    text_prompt = build_system_prompt("t", [])
+    voice_prompt = build_system_prompt("t", [], voice=True)
+    assert "VOICE MODE" not in text_prompt
+    assert "VOICE MODE" in voice_prompt
+    for keyword in ("spoken aloud", "No markdown", "Round numbers for the ear",
+                    "spoken 'yes'"):
+        assert keyword in voice_prompt, f"missing voice keyword: {keyword}"
+    # everything else is preserved in voice mode
+    assert text_prompt in voice_prompt
+
+
 def test_nonnegotiable_keywords_present():
     """The rules that make KUBERA trustworthy, by keyword — belt and suspenders."""
     prompt = build_system_prompt("t", []).lower()

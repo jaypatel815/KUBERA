@@ -23,6 +23,17 @@ threaded through: IEX feed = relative volume only until SIP upgrade (D006).
 Next: T050 is the natural opener; T045 (MCP server) still pending in Phase 4.
 Blockers: none.
 
+## 2026-08-12 — Voice mode shipped (D015): owner is voice-first
+Owner will primarily talk to KUBERA. Shipped now: ChatRequest.voice → run_chat_turn →
+build_system_prompt(voice=True) appends VOICE_STYLE — spoken-aloud replies (no markdown/
+tables/bullets, ear-rounded numbers, ~120-word default, natural recency phrasing), with
+the safety invariant IN the prompt: a spoken "yes" is not the confirm flag. Tests: voice
+prompt content, default-off, flag plumbing through the loop. T070 filed: push-to-talk
+desktop loop (STT → /api/chat → TTS) — voice lands before Phase 5, not inside it.
+Verified: verify.py PASS — 196 passed, 3 skipped.
+Next: T070 (hear KUBERA speak) or T061 (IPS). Both high-value; owner's pick.
+Blockers: none.
+
 ## 2026-08-12 — Time-locked breaker reset (commitment device) + T069
 Owner disclosed the pattern: he sets risk limits, passes them, keeps trading. Built the
 enforceable half NOW: RiskLimits.cooldown_hours (default 20h) — a trip sets

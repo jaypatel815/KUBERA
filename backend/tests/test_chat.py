@@ -65,7 +65,14 @@ def test_text_only_turn_persists_and_returns(db):
     roles = [m.role for m in db.execute(select(ChatMessage)).scalars()]
     assert roles == ["user", "assistant"]
     assert "KUBERA" in p.calls[0]["system"]  # persona in place
+    assert "VOICE MODE" not in p.calls[0]["system"]  # text mode by default
     assert len(p.calls[0]["tools"]) == 6  # registry schemas offered
+
+
+def test_voice_flag_reaches_system_prompt(db):
+    p = ScriptedProvider([LLMReply(text="About ten percent below its high.")])
+    run_chat_turn(db, p, ToolContext(), "how's AAPL?", voice=True)
+    assert "VOICE MODE" in p.calls[0]["system"]
 
 
 def test_tool_round_executes_and_grounds_the_answer(db):

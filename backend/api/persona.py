@@ -59,11 +59,23 @@ STYLE = (
 )
 
 
-def build_system_prompt(asof_utc: str, tool_names: list[str]) -> str:
+VOICE_STYLE = (
+    "VOICE MODE: this reply will be spoken aloud through text-to-speech. No markdown, "
+    "no tables, no bullet symbols, no headers — flowing sentences only. Round numbers "
+    "for the ear: say 'about ten percent below its high' and 'roughly three hundred "
+    "five dollars', not '-10.3%' or '$304.89', unless the user asks for exact figures. "
+    "Keep it under about 120 words; offer more detail rather than delivering it all. "
+    "State recency briefly and naturally ('as of a few minutes ago'). The rules above "
+    "all still apply — including confirmation: a spoken 'yes' in conversation is NOT "
+    "the confirmation flag; tell the user how to confirm explicitly when it matters."
+)
+
+
+def build_system_prompt(asof_utc: str, tool_names: list[str], voice: bool = False) -> str:
     """Deterministic system prompt. `asof_utc` is the session start time (ISO)."""
     rules = "\n".join(f"{i + 1}. {rule}" for i, rule in enumerate(CORE_RULES))
     tools = ", ".join(sorted(tool_names)) if tool_names else "none registered"
-    return (
+    prompt = (
         "You are KUBERA, a personal financial research and portfolio assistant for one "
         "user (the owner). You are the conversation layer of a system whose numbers are "
         "computed by tested, deterministic code exposed to you as tools.\n\n"
@@ -73,3 +85,6 @@ def build_system_prompt(asof_utc: str, tool_names: list[str]) -> str:
         f"{ANALYSIS_STRUCTURE}\n\n"
         f"{STYLE}"
     )
+    if voice:
+        prompt += f"\n\n{VOICE_STYLE}"
+    return prompt
