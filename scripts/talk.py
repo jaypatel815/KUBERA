@@ -90,7 +90,7 @@ def make_transcriber():
             "aren't available for your Python, set KUBERA_STT=openai instead."
         )
     print("loading local Whisper model (first run downloads it)...")
-    model = WhisperModel("small", compute_type="int8")
+    model = WhisperModel("small", device="cpu", compute_type="int8")
 
     def whisper_stt(audio: bytes) -> str:
         segments, _info = model.transcribe(io.BytesIO(audio), language="en")
@@ -163,13 +163,19 @@ def main() -> int:
         r.raise_for_status()
         return r.json()
 
-    print("\nKUBERA voice loop — Enter to talk, 'confirm' for a confirmed turn, 'q' to quit.")
+    print("\nKUBERA voice loop — Enter or 'v' to talk, 'confirm' for a confirmed turn, 'q' to quit.")
     while True:
-        cmd = input("\n[Enter]=talk  confirm  q > ").strip().lower()
+        cmd = input("\n[Enter/v]=talk  confirm  q > ").strip().lower()
         if cmd == "q":
             print("bye")
             return 0
-        confirm = cmd == "confirm"
+        if cmd in ("", "v"):
+            confirm = False
+        elif cmd == "confirm":
+            confirm = True
+        else:
+            print(f"Unknown input '{cmd}'. Press Enter or 'v' to talk, 'confirm' for a confirmed turn, 'q' to quit.")
+            continue
         audio = record_push_to_talk()
         report = run_voice_turn(audio, transcriber, chat_fn, speaker, state,
                                 confirm=confirm)
