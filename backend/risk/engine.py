@@ -15,9 +15,16 @@ across process restarts is T032's responsibility (DB), noted here so nobody assu
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 log = logging.getLogger("kubera.risk")
+
+
+class LockoutActiveError(RuntimeError):
+    """Raised when a breaker reset is attempted during the cooling-off period.
+
+    This is the commitment device (owner-requested, 2026-08-12): the person who set the
+    limit must not be able to remove it in the same emotional moment it tripped."""
 
 
 def _utcnow() -> datetime:
@@ -30,6 +37,9 @@ class RiskLimits:
 
     max_position_frac: float = 0.20  # per-symbol cap as fraction of portfolio equity
     daily_loss_limit_frac: float = 0.03  # halt at -3% from the day's starting equity
+    # Cooling-off period: after a trip, reset() is refused for this many hours.
+    # Default ~20h pushes the reset past "one more trade" into the next session.
+    cooldown_hours: float = 20.0
 
     def __post_init__(self):
         if not 0 < self.max_position_frac <= 1:
@@ -38,6 +48,8 @@ class RiskLimits:
             raise ValueError(
                 f"daily_loss_limit_frac must be in (0, 1), got {self.daily_loss_limit_frac}"
             )
+        if not 0 <= self.cooldown_hours <= 24 * 7:
+            raise ValueError(f"cooldown_hours must be in [0, 168], got {self.cooldown_hours}")
 
 
 @dataclass(frozen=True)
@@ -66,6 +78,7 @@ class RiskEngine:
     _day: str | None = None
     _tripped: bool = False
     _trip_reason: str | None = None
+    _lockout_until: datetime | None = None
 
     # -- state ---------------------------------------------------------------
 
@@ -76,6 +89,10 @@ class RiskEngine:
     @property
     def trip_reason(self) -> str | None:
         return self._trip_reason
+
+    @property
+    def lockout_until(self) -> datetime | None:
+        return self._lockout_until
 
     @property
     def day(self) -> str | None:
@@ -91,13 +108,15 @@ class RiskEngine:
         day_start_equity: float | None,
         tripped: bool,
         trip_reason: str | None,
+        lockout_until: datetime | None = None,
     ) -> None:
         """Persistence-layer use ONLY (risk/persistence.py): rehydrate saved state so a
-        process restart cannot forget a tripped breaker. Not for business logic."""
+        process restart cannot forget a tripped breaker OR its lockout."""
         self._day = day
         self._day_start_equity = day_start_equity
         self._tripped = tripped
         self._trip_reason = trip_reason
+        self._lockout_until = lockout_until
         if tripped:
             log.warning("risk state restored TRIPPED: %s", trip_reason)
 
@@ -118,18 +137,35 @@ class RiskEngine:
         loss_frac = (self._day_start_equity - equity) / self._day_start_equity
         if loss_frac >= self.limits.daily_loss_limit_frac:
             self._tripped = True
+            self._lockout_until = asof + timedelta(hours=self.limits.cooldown_hours)
             self._trip_reason = (
                 f"daily loss circuit breaker: equity {equity:.2f} is "
                 f"{loss_frac:.2%} below day-start {self._day_start_equity:.2f} "
                 f"(limit {self.limits.daily_loss_limit_frac:.2%}) at {asof.isoformat()}"
             )
-            log.warning("CIRCUIT BREAKER TRIPPED: %s", self._trip_reason)
+            log.warning(
+                "CIRCUIT BREAKER TRIPPED: %s (reset locked until %s)",
+                self._trip_reason, self._lockout_until.isoformat(),
+            )
 
-    def reset(self, note: str) -> None:
-        """Manual, human-initiated reset — the ONLY way a trip clears."""
+    def reset(self, note: str, now: datetime | None = None) -> None:
+        """Manual, human-initiated reset — the ONLY way a trip clears, and NOT during
+        the cooling-off period. The commitment device has no override parameter,
+        deliberately: the person who set the limit must not be able to remove it in
+        the moment it starts hurting (owner request, 2026-08-12)."""
+        now = now or _utcnow()
+        if self._tripped and self._lockout_until and now < self._lockout_until:
+            remaining = self._lockout_until - now
+            hours = remaining.total_seconds() / 3600
+            raise LockoutActiveError(
+                f"cooling-off period active: reset available at "
+                f"{self._lockout_until.isoformat()} ({hours:.1f}h from now). "
+                "This lockout is the point — step away from the screen."
+            )
         log.warning("circuit breaker reset: %s (was: %s)", note, self._trip_reason)
         self._tripped = False
         self._trip_reason = None
+        self._lockout_until = None
 
     # -- the gate ------------------------------------------------------------
 

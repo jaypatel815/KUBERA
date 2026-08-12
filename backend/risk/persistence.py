@@ -22,6 +22,7 @@ def restore_risk_state(session: Session, engine: RiskEngine) -> bool:
         day_start_equity=row.day_start_equity,
         tripped=row.tripped,
         trip_reason=row.trip_reason,
+        lockout_until=row.lockout_until,
     )
     return True
 
@@ -35,5 +36,6 @@ def persist_risk_state(session: Session, engine: RiskEngine) -> None:
     row.day_start_equity = engine.day_start_equity
     row.tripped = engine.tripped
     row.trip_reason = engine.trip_reason
+    row.lockout_until = engine.lockout_until
     row.updated_at = utcnow()
     session.commit()

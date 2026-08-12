@@ -34,6 +34,7 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 - [ ] T066 — Trade coaching: pre-trade review (thesis, sizing, concentration, correlation, regime fit, IPS compliance) + post-trade review (expected vs actual, entry/exit quality, rule adherence, lesson) persisted per trade; PROCESS-not-outcome scoring. Depends on T016 for real fills; chat-level v0 works today via conversation.
 - [ ] T067 — Decision Quality Score + graduated advisories: rolling DQS from behavioral signals (revenge trading, FOMO, post-loss impulsivity, sizing inconsistency) + risk-budget-consumed (derived from IPS); proactive advisory levels 1–3 ("80% of today's risk budget consumed"); Level 4 hard stop remains the existing breaker, unchanged.
 - [ ] T068 — Watchlist + opportunity ranking: watchlist table + ranked view scoring briefings (edge, risk, portfolio fit, confidence) — a ranked research pipeline instead of isolated ideas.
+- [ ] T069 — Adaptive risk-tolerance estimation (owner request 2026-08-12): derive a recommended risk budget from account composition (invested vs cash), drawdown history, and demonstrated behavior (sizing drift, post-loss trade frequency); KUBERA proposes, owner ratifies into the IPS (T061); feeds the DQS budget (T067). The owner explicitly wants KUBERA's estimate to override his in-the-moment self-assessment.
 
 ## Backlog — Phase 2: Analysis & insight engine (agents)
 - [ ] T023 — Fundamentals + news ingestion: evaluate the owner's existing FMP/FRED keys (D009) vs Alpaca news; verify key validity + tier limits first, then pick and integrate one source.

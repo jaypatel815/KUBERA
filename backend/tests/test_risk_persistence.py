@@ -53,7 +53,9 @@ def test_restore_returns_false_when_no_state(db):
 
 
 def test_reset_persists(db):
-    e1 = RiskEngine()
+    from risk.engine import RiskLimits
+
+    e1 = RiskEngine(limits=RiskLimits(cooldown_hours=0))  # lockout tested separately
     e1.start_day(100_000.0, "2026-08-11")
     e1.record_equity(96_000.0, NOW)
     persist_risk_state(db, e1)

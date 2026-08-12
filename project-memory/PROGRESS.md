@@ -23,6 +23,21 @@ threaded through: IEX feed = relative volume only until SIP upgrade (D006).
 Next: T050 is the natural opener; T045 (MCP server) still pending in Phase 4.
 Blockers: none.
 
+## 2026-08-12 — Time-locked breaker reset (commitment device) + T069
+Owner disclosed the pattern: he sets risk limits, passes them, keeps trading. Built the
+enforceable half NOW: RiskLimits.cooldown_hours (default 20h) — a trip sets
+lockout_until; reset() raises LockoutActiveError until it passes; NO override parameter
+exists by design; lockout persists to DB (migration 5b54677a6d1d) so restarts can't
+shorten it; risk_reset.py explains the refusal. Tests: refusal with remaining time,
+refusal 1 minute before expiry, allowed after, zero-cooldown legacy mode, restart
+survival. Honest limits documented in the self-exclusion doctrine (gemini review doc):
+KUBERA cannot freeze thinkorswim; friction ≠ cryptography; the structural answer is
+KUBERA-managed allocation. T069 filed: adaptive risk-tolerance estimation from account
+composition + behavior (owner wants KUBERA's estimate over his in-the-moment one).
+Verified: verify.py PASS — 194 passed, 3 skipped. README updated.
+Next: T061 IPS (unlocks coach/briefs/T069) or T050 regime pack.
+Blockers: none.
+
 ## 2026-08-12 — Gemini master-spec reconciled (D014): the coaching layer
 Owner supplied Gemini's pre-project master prompt. Review at docs/research/
 gemini-master-spec-review.md (companion to D013 — shared rejections not re-argued).

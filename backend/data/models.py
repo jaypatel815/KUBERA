@@ -150,6 +150,7 @@ class RiskState(Base):
     day_start_equity: Mapped[float | None] = mapped_column(Float, default=None)
     tripped: Mapped[bool] = mapped_column(Boolean, default=False)
     trip_reason: Mapped[str | None] = mapped_column(String(512), default=None)
+    lockout_until: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 

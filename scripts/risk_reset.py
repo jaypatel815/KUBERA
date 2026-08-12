@@ -15,7 +15,7 @@ BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend"
 sys.path.insert(0, str(BACKEND_DIR))
 
 from data.db import make_engine, make_session_factory  # noqa: E402
-from risk.engine import RiskEngine  # noqa: E402
+from risk.engine import LockoutActiveError, RiskEngine  # noqa: E402
 from risk.persistence import persist_risk_state, restore_risk_state  # noqa: E402
 
 
@@ -49,7 +49,12 @@ def main() -> int:
         if confirm != "RESET":
             print("Not confirmed — breaker stays tripped.")
             return 1
-        risk.reset(args.note)
+        try:
+            risk.reset(args.note)
+        except LockoutActiveError as e:
+            print(f"\nRESET REFUSED: {e}")
+            print("There is no override flag. That is the feature.")
+            return 1
         persist_risk_state(db, risk)
         print("Breaker reset and persisted. Trading may resume next cycle.")
     return 0

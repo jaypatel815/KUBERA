@@ -11,6 +11,9 @@ NOW = datetime(2026, 8, 11, 15, 0, 0, tzinfo=timezone.utc)
 
 
 def engine(**limit_overrides) -> RiskEngine:
+    # cooldown_hours=0 in mechanics tests that reset immediately; the lockout itself
+    # has dedicated tests in test_risk_lockout.py.
+    limit_overrides.setdefault("cooldown_hours", 0)
     e = RiskEngine(limits=RiskLimits(**limit_overrides))
     e.start_day(equity=100_000.0, day="2026-08-11")
     return e

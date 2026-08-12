@@ -98,6 +98,10 @@ python scripts\risk_reset.py                                  # show current ris
 python scripts\risk_reset.py --note "reviewed the drawdown"   # reset (asks you to type RESET)
 ```
 
+**Cooling-off lockout:** after a trip, the reset is refused for ~20 hours (configurable
+via `RiskLimits.cooldown_hours`). There is no override flag — that's the feature: the
+person who set the limit shouldn't be able to remove it in the moment it starts hurting.
+
 Run the full test suite any time: `python scripts\verify.py` (128+ tests; a few live ones
 run only when keys + internet are available). If local Python ever breaks:
 `powershell -ExecutionPolicy Bypass -File scripts\repair_python.ps1`.

@@ -69,6 +69,23 @@ model governance registry (when ML models exist), Kelly/HRP/Black-Litterman port
 optimizers (research queue via §7.7), tail-hedging instruments (options domain is
 warn-only per doctrine).
 
+## Self-exclusion doctrine (owner request, 2026-08-12 — built + honest limits)
+
+The owner described blowing through his own risk limits and continuing to trade. Adopted:
+
+1. **Time-locked breaker reset (BUILT)**: when the breaker trips, `risk_reset.py` refuses
+   for `cooldown_hours` (default 20h). No override flag exists — deliberately. Tests
+   prove the lockout survives restarts and refuses one minute before expiry.
+2. **Honest limits, on the record**: KUBERA cannot freeze the owner's thinkorswim
+   account — no third-party software is in that path; and any lockout on a machine the
+   owner administrates is strong friction, not cryptography. Do not promise otherwise.
+3. **Structural answer**: the durable fix is allocation — KUBERA-managed capital (rails
+   are code, §7.4-gated) large, self-directed account deliberately small. Broker-side
+   friction the owner can add himself: remove the phone app, no saved logins, cash
+   account (settlement throttles), keep long-term holdings in a separate account.
+4. **T069**: KUBERA estimates the risk budget from account composition + behavior,
+   because in-the-moment self-assessment is the thing that fails.
+
 ## Rejected (D013 reasoning applies)
 
 ML/DL/RL model zoo now (every model enters through the §7.7 research pipeline with
