@@ -26,5 +26,7 @@ def test_nonnegotiable_keywords_present():
         "overall mixed",  # conflicting-signals honesty
         "not a calibrated probability",  # confidence framing
         "what would change this view",  # falsifiable-thesis structure
+        "process quality, not outcome",  # coaching doctrine (Gemini spec, D014)
+        "learning quantitative investing",  # educational mode
     ):
         assert keyword in prompt, f"missing persona keyword: {keyword}"

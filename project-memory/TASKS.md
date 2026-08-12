@@ -24,11 +24,16 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 
 ## Backlog — Adopted from ChatGPT master-spec review (docs/research/chatgpt-master-spec-review.md)
 - [ ] T060 — Time-weighted returns: benchmark comparison currently distorts under deposits/withdrawals; compute TWR from account_snapshots + transactions (needs T036 fills), use it in /api/benchmark; hand-computed tests with a mid-period deposit.
-- [ ] T061 — User profile memory: objectives, risk tolerance, horizon, restrictions in DB (+ settings CLI or endpoint), injected into chat context by T044's assembler; persona respects restrictions ("never sell X") as hard context.
-- [ ] T062 — Morning brief / end-of-day report: deterministic composition (portfolio, benchmark, win/loss, regime once T050 lands, upcoming events once T023 lands) + LLM narration; `GET /api/brief?type=morning|eod`.
+- [ ] T061 — User profile + Investment Policy Statement (IPS): objectives, target return, max acceptable drawdown, horizon, restrictions, prohibited strategies in DB; injected into chat context; every recommendation checked against it, conflicts stated plainly. (Gemini spec upgrade, D014.)
+- [ ] T062 — Briefs & reviews: morning brief + end-of-day report + WEEKLY investment-committee review (performance, discipline, behavioral trends, lessons, next priorities); deterministic composition + LLM narration; `GET /api/brief?type=morning|eod|weekly`.
 - [ ] T063 — Decision journal: persist every chat recommendation (symbol, verdict, confidence, thesis, horizon, key-risk level) to a table; later scoring pass compares outcomes → measurable calibration (spec §28 self-evaluation).
-- [ ] T064 — Backtest rigor pack: walk-forward splits, per-trade stats (win rate, profit factor, avg/best/worst trade), Calmar; extend backtest_runs + ledger.
+- [ ] T064 — Backtest rigor pack: walk-forward splits, per-trade stats (win rate, profit factor, avg/best/worst trade), Calmar, and named historical-crisis stress windows (2008/2020/2022 where data allows); extend backtest_runs + ledger.
 - [ ] T065 — Risk engine v2: sector-exposure caps (needs sector data from T023), cancel-all + disable-symbol controls, order-frequency limit (merge with T055 overtrading guard).
+
+## Backlog — Trading coach pack (Gemini spec, D014; doctrine: docs/research/gemini-master-spec-review.md)
+- [ ] T066 — Trade coaching: pre-trade review (thesis, sizing, concentration, correlation, regime fit, IPS compliance) + post-trade review (expected vs actual, entry/exit quality, rule adherence, lesson) persisted per trade; PROCESS-not-outcome scoring. Depends on T016 for real fills; chat-level v0 works today via conversation.
+- [ ] T067 — Decision Quality Score + graduated advisories: rolling DQS from behavioral signals (revenge trading, FOMO, post-loss impulsivity, sizing inconsistency) + risk-budget-consumed (derived from IPS); proactive advisory levels 1–3 ("80% of today's risk budget consumed"); Level 4 hard stop remains the existing breaker, unchanged.
+- [ ] T068 — Watchlist + opportunity ranking: watchlist table + ranked view scoring briefings (edge, risk, portfolio fit, confidence) — a ranked research pipeline instead of isolated ideas.
 
 ## Backlog — Phase 2: Analysis & insight engine (agents)
 - [ ] T023 — Fundamentals + news ingestion: evaluate the owner's existing FMP/FRED keys (D009) vs Alpaca news; verify key validity + tier limits first, then pick and integrate one source.

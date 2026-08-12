@@ -23,6 +23,19 @@ threaded through: IEX feed = relative volume only until SIP upgrade (D006).
 Next: T050 is the natural opener; T045 (MCP server) still pending in Phase 4.
 Blockers: none.
 
+## 2026-08-12 — Gemini master-spec reconciled (D014): the coaching layer
+Owner supplied Gemini's pre-project master prompt. Review at docs/research/
+gemini-master-spec-review.md (companion to D013 — shared rejections not re-argued).
+Standout adoption: the Quantitative Trading Coach — process-not-outcome judgment of the
+OWNER'S trades, behavioral-pattern detection, and the owner's Decision Quality Score
+(risk budget × behavior → graduated advisories; hard stop stays the breaker). Tickets:
+T066 coaching pack (needs T016 fills; chat v0 today), T067 DQS + advisories, T068
+watchlist/ranking. Upgraded: T061 → full IPS, T062 → +weekly committee review, T064 →
++crisis-window stress tests. Persona: coaching rule + educational mode (guard-tested).
+Verified: verify.py PASS — 187 passed, 3 skipped.
+Next: T050 regime pack or T061 IPS (unlocks coaching + briefs); T045 MCP still open.
+Blockers: none.
+
 ## 2026-08-12 — ChatGPT master-spec reconciled (D013); persona upgraded; T060–T065
 The owner supplied his original ChatGPT master prompt + Software Factory spec (this was
 the abandoned first attempt — its stack matches the .env extras). Full section-by-section

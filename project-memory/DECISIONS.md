@@ -2,6 +2,19 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D014 — Gemini master-spec reconciliation: the coaching layer (2026-08-12)
+Companion to D013 (shared rejections apply verbatim — not re-argued). NEW adoptions:
+the Quantitative Trading Coach — KUBERA judges the OWNER'S trades by process quality,
+not outcome, detects behavioral patterns (revenge trading, FOMO, sizing drift), and the
+owner's own Decision Quality Score idea (risk-budget-used × behavioral quality →
+graduated advisories L1–L3; L4 hard stop = existing breaker). Tickets T066–T068
+(coaching, DQS + advisories, watchlist/ranking); T061 upgraded to full IPS; T062 gains
+weekly committee review; T064 gains named crisis-window stress tests. Persona now
+carries the coaching rule + educational mode (guard-tested). Rejected per D013
+reasoning: ML/RL model zoo outside the §7.7 pipeline, 22 sub-agents, tick/L2/alt-data
+at this scale, 25-document governance suite. Binding record:
+docs/research/gemini-master-spec-review.md.
+
 ## D013 — ChatGPT master-spec reconciliation: adopt features, keep our architecture (2026-08-12)
 The owner's pre-project ChatGPT spec was reviewed in full (docs/research/
 chatgpt-master-spec-review.md — the binding record). ADOPTED: persona upgrades (domain
