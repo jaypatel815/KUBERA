@@ -40,6 +40,13 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   (auto-adopts newer Pythons installed later). Close this issue when it reports DONE.
 
 ## Resolved
+- I006 — Voice loop spoke only the FIRST reply, then printed silently (owner report,
+  2026-08-12). Root cause: pyttsx3's well-known Windows bug — `runAndWait()` works once
+  per engine instance; subsequent calls are silently ignored. Fix: fresh engine per
+  utterance in talk.py's sapi backend (+ both speakers now catch playback errors and
+  print a warning instead of killing the loop). Cannot be regression-tested (audio
+  hardware); verified by owner in the field. Note: KUBERA_TTS=edge is unaffected by
+  this bug and sounds far better anyway.
 - I004 — IDE type checkers (Pyrefly/Pyright in Antigravity) reported missing imports
   (e.g. `fastapi.testclient`) despite a working `.venv`: no `pyrightconfig.json` or
   `.vscode/settings.json` existed, so the checker used a bare default environment and

@@ -125,9 +125,12 @@ def make_speaker():
                         out.write(chunk["data"])
                 return out.getvalue()
 
-            data, rate = sf.read(io.BytesIO(asyncio.run(synth())))
-            sd.play(data, rate)
-            sd.wait()
+            try:
+                data, rate = sf.read(io.BytesIO(asyncio.run(synth())))
+                sd.play(data, rate)
+                sd.wait()
+            except Exception as e:  # voice must never kill the loop; text still prints
+                print(f"  [voice playback failed: {e}]")
 
         return edge_speak
 
@@ -135,12 +138,19 @@ def make_speaker():
         import pyttsx3  # noqa: PLC0415
     except ImportError:
         raise SystemExit("TTS needs pyttsx3 — run: pip install -r requirements-voice.txt")
-    engine = pyttsx3.init()
-    engine.setProperty("rate", 185)
 
     def sapi_speak(text: str) -> None:
-        engine.say(text)
-        engine.runAndWait()
+        # pyttsx3's runAndWait() speaks exactly once per engine on Windows (known bug:
+        # later calls are silently ignored). A fresh engine per utterance fixes it.
+        # See ISSUES.md I006.
+        try:
+            engine = pyttsx3.init()
+            engine.setProperty("rate", 185)
+            engine.say(text)
+            engine.runAndWait()
+            engine.stop()
+        except Exception as e:  # voice must never kill the loop; text still prints
+            print(f"  [voice playback failed: {e}]")
 
     return sapi_speak
 
