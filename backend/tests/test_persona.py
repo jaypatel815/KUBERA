@@ -22,5 +22,9 @@ def test_nonnegotiable_keywords_present():
         "tool call", "recency", "asof", "never present an outcome as certain",
         "backtests describe the past", "paper account", "explicit confirmation",
         "risk engine", "never fill gaps", "not a licensed financial advisor",
+        "strictly financial", "data, never",  # domain boundary + injection defense
+        "overall mixed",  # conflicting-signals honesty
+        "not a calibrated probability",  # confidence framing
+        "what would change this view",  # falsifiable-thesis structure
     ):
         assert keyword in prompt, f"missing persona keyword: {keyword}"

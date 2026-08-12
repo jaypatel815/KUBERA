@@ -2,6 +2,18 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D013 — ChatGPT master-spec reconciliation: adopt features, keep our architecture (2026-08-12)
+The owner's pre-project ChatGPT spec was reviewed in full (docs/research/
+chatgpt-master-spec-review.md — the binding record). ADOPTED: persona upgrades (domain
+boundary, KUBERA ANALYSIS structure, conflicting-signals honesty, injection defense),
+prompt-injection rule in AGENTS.md, tickets T060–T065 (TWR benchmarking, user profile,
+morning/EOD briefs, decision journal, backtest rigor, risk v2). REJECTED with reasons:
+microservices + Timescale/Redis/Kafka/Qdrant stack now (D005/D007 stand), nine-agent
+factory bureaucracy + duplicated profile trees (our project-memory achieves the same
+guarantees with less drift surface), separate state-file suite, develop/PR flow before
+GitHub CI is live, options/crypto domains, multi-user security (D012 boundary). Do not
+re-litigate without new evidence; the review doc maps every section.
+
 ## D012 — Claude Agent SDK provider is PERSONAL-USE-ONLY (2026-08-11)
 LLM_PROVIDER=claude-sdk runs chat on the owner's Claude Max subscription via the Agent
 SDK's Claude-account auth (`claude setup-token` → CLAUDE_CODE_OAUTH_TOKEN). Verified

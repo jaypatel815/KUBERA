@@ -22,6 +22,14 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 - [ ] T056 — exit_plan in briefings/chat: structured hold-horizon guidance per thesis (range: levels; momentum: trend-break level; time-based fallback) — the "how long do I hold" answer as data, not prose.
 - [ ] (future, logged) Options awareness: theta/IV warnings in low-vol regimes live in the doctrine; full options analytics is a separate future phase — do not build ad hoc.
 
+## Backlog — Adopted from ChatGPT master-spec review (docs/research/chatgpt-master-spec-review.md)
+- [ ] T060 — Time-weighted returns: benchmark comparison currently distorts under deposits/withdrawals; compute TWR from account_snapshots + transactions (needs T036 fills), use it in /api/benchmark; hand-computed tests with a mid-period deposit.
+- [ ] T061 — User profile memory: objectives, risk tolerance, horizon, restrictions in DB (+ settings CLI or endpoint), injected into chat context by T044's assembler; persona respects restrictions ("never sell X") as hard context.
+- [ ] T062 — Morning brief / end-of-day report: deterministic composition (portfolio, benchmark, win/loss, regime once T050 lands, upcoming events once T023 lands) + LLM narration; `GET /api/brief?type=morning|eod`.
+- [ ] T063 — Decision journal: persist every chat recommendation (symbol, verdict, confidence, thesis, horizon, key-risk level) to a table; later scoring pass compares outcomes → measurable calibration (spec §28 self-evaluation).
+- [ ] T064 — Backtest rigor pack: walk-forward splits, per-trade stats (win rate, profit factor, avg/best/worst trade), Calmar; extend backtest_runs + ledger.
+- [ ] T065 — Risk engine v2: sector-exposure caps (needs sector data from T023), cancel-all + disable-symbol controls, order-frequency limit (merge with T055 overtrading guard).
+
 ## Backlog — Phase 2: Analysis & insight engine (agents)
 - [ ] T023 — Fundamentals + news ingestion: evaluate the owner's existing FMP/FRED keys (D009) vs Alpaca news; verify key validity + tier limits first, then pick and integrate one source.
 - [ ] T016 — Schwab Trader API read-only sync (owner's real thinkorswim account): positions + balances alongside Alpaca paper, same timestamped model shapes. Prereqs: owner confirms Schwab developer app/keys are active; agent verifies current API capabilities (paper endpoint? scopes?) before building. Live orders out of scope pending §7.4. (D009)

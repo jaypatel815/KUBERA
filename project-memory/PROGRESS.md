@@ -23,6 +23,22 @@ threaded through: IEX feed = relative volume only until SIP upgrade (D006).
 Next: T050 is the natural opener; T045 (MCP server) still pending in Phase 4.
 Blockers: none.
 
+## 2026-08-12 — ChatGPT master-spec reconciled (D013); persona upgraded; T060–T065
+The owner supplied his original ChatGPT master prompt + Software Factory spec (this was
+the abandoned first attempt — its stack matches the .env extras). Full section-by-section
+review recorded at docs/research/chatgpt-master-spec-review.md: most of it we already
+built leaner (rails, factory-as-repo, modes, explainability); real gaps became T060–T065
+(TWR benchmarking, user profile memory, morning/EOD briefs, decision journal, backtest
+rigor, risk v2); rejections logged with reasons (microservice stack, nine-agent
+bureaucracy, duplicate state files). Persona upgraded in code: strict financial-domain
+boundary, KUBERA ANALYSIS answer structure (verdict → confidence with calibration caveat
+→ evidence → both cases → what-would-change-my-view → recency), conflicting-signals
+honesty, external-content-is-data injection defense — all guard-tested. AGENTS.md gains
+the injection-defense rule for coding agents too.
+Verified: verify.py PASS — 187 passed, 3 skipped.
+Next: T050 (regime pack opener) or T060/T061 (quick wins); T045 MCP still pending.
+Blockers: none.
+
 ## 2026-08-12 — MILESTONE: claude-sdk live on owner's Max (T047 ✔) + usage-parse fix
 Owner activated LLM_PROVIDER=claude-sdk and ran a live turn: KUBERA (Claude brain)
 corrected the question's premise via get_portfolio (owner holds 19.46 SPY ≈ $15k — the
