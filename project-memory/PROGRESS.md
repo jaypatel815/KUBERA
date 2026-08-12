@@ -23,6 +23,19 @@ threaded through: IEX feed = relative volume only until SIP upgrade (D006).
 Next: T050 is the natural opener; T045 (MCP server) still pending in Phase 4.
 Blockers: none.
 
+## 2026-08-12 — T070 done (push-to-talk loop) — KUBERA can be TALKED to
+Built: `api/voice_loop.py` — tested orchestration (audio → STT → /api/chat(voice=true) →
+TTS): conversation threads across turns, silence never reaches KUBERA, and confirm passes
+through ONLY from the typed gesture (all fake-tested). `scripts/talk.py` — Enter-to-talk
+capture (sounddevice), STT backends (faster-whisper local default; KUBERA_STT=openai
+fallback for py3.14 wheel gaps), TTS backends (pyttsx3/SAPI default; KUBERA_TTS=edge for
+neural voices), typing `confirm` is the only confirmed-turn path. requirements-voice.txt
+keeps audio deps out of backend CI. README try-it added.
+Verified: verify.py PASS — 200 passed, 3 skipped. Spoken round-trip = owner run (T071);
+sandbox has no audio hardware.
+Next: T071 (owner: talk to it!), then T061 IPS or T050 regime pack.
+Blockers: none.
+
 ## 2026-08-12 — Voice mode shipped (D015): owner is voice-first
 Owner will primarily talk to KUBERA. Shipped now: ChatRequest.voice → run_chat_turn →
 build_system_prompt(voice=True) appends VOICE_STYLE — spoken-aloud replies (no markdown/

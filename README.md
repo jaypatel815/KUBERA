@@ -102,7 +102,19 @@ python scripts\risk_reset.py --note "reviewed the drawdown"   # reset (asks you 
 via `RiskLimits.cooldown_hours`). There is no override flag — that's the feature: the
 person who set the limit shouldn't be able to remove it in the moment it starts hurting.
 
-Run the full test suite any time: `python scripts\verify.py` (128+ tests; a few live ones
+**Talk to KUBERA out loud** (server running, then in a second terminal):
+
+```
+pip install -r requirements-voice.txt      # once; audio deps stay out of the backend
+python scripts\talk.py                     # Enter = talk, Enter again = stop, q = quit
+```
+
+Local Whisper transcribes you; Windows' voice speaks the reply (set `KUBERA_TTS=edge`
+for neural voices, `KUBERA_STT=openai` if local Whisper won't install on your Python).
+Replies come back voice-shaped: no tables, numbers rounded for the ear. Typing `confirm`
+before a turn is the ONLY way to send a confirmed request — saying "yes" never is.
+
+Run the full test suite any time: `python scripts\verify.py` (190+ tests; a few live ones
 run only when keys + internet are available). If local Python ever breaks:
 `powershell -ExecutionPolicy Bypass -File scripts\repair_python.ps1`.
 

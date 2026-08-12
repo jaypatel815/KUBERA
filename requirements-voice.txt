@@ -1,0 +1,10 @@
+# Voice loop dependencies (scripts/talk.py) — separate from backend/requirements.txt
+# so CI and the API server stay lean. Install on the owner's machine only:
+#   pip install -r requirements-voice.txt
+sounddevice>=0.4
+numpy>=1.26
+pyttsx3>=2.90
+# Local speech-to-text (default). If wheels are unavailable for your Python version,
+# skip it and set KUBERA_STT=openai (uses OPENAI_API_KEY) instead:
+faster-whisper>=1.0
+# Optional nicer voices: pip install edge-tts soundfile  (then KUBERA_TTS=edge)
