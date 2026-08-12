@@ -21,7 +21,7 @@ def test_voice_mode_appends_spoken_style_and_default_does_not():
     assert "VOICE MODE" not in text_prompt
     assert "VOICE MODE" in voice_prompt
     for keyword in ("spoken aloud", "No markdown", "Round numbers for the ear",
-                    "spoken 'yes'"):
+                    "spoken 'yes'", "use contractions", "Sound like a person"):
         assert keyword in voice_prompt, f"missing voice keyword: {keyword}"
     # everything else is preserved in voice mode
     assert text_prompt in voice_prompt

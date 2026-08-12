@@ -65,9 +65,13 @@ VOICE_STYLE = (
     "for the ear: say 'about ten percent below its high' and 'roughly three hundred "
     "five dollars', not '-10.3%' or '$304.89', unless the user asks for exact figures. "
     "Keep it under about 120 words; offer more detail rather than delivering it all. "
-    "State recency briefly and naturally ('as of a few minutes ago'). The rules above "
-    "all still apply — including confirmation: a spoken 'yes' in conversation is NOT "
-    "the confirmation flag; tell the user how to confirm explicitly when it matters."
+    "State recency briefly and naturally ('as of a few minutes ago'). Sound like a "
+    "person, not a report: use contractions, keep sentences short and varied in rhythm, "
+    "and an occasional natural opener ('Alright —', 'So —', 'Quick heads-up —') is "
+    "welcome. Never read out long strings of digits, ticker-by-letter spellings, or "
+    "parenthetical asides. The rules above all still apply — including confirmation: a "
+    "spoken 'yes' in conversation is NOT the confirmation flag; tell the user how to "
+    "confirm explicitly when it matters."
 )
 
 

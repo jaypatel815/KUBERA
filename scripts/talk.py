@@ -113,10 +113,13 @@ def make_speaker():
         except ImportError:
             raise SystemExit("KUBERA_TTS=edge needs: pip install edge-tts soundfile")
 
+        # Pick a voice with KUBERA_VOICE (try en-US-AndrewNeural — very natural).
+        voice = os.environ.get("KUBERA_VOICE", "en-US-GuyNeural")
+
         def edge_speak(text: str) -> None:
             async def synth() -> bytes:
                 out = io.BytesIO()
-                communicate = edge_tts.Communicate(text, "en-US-GuyNeural")
+                communicate = edge_tts.Communicate(text, voice)
                 async for chunk in communicate.stream():
                     if chunk["type"] == "audio":
                         out.write(chunk["data"])
@@ -154,16 +157,24 @@ def main() -> int:
     state = VoiceState()
 
     def chat_fn(text: str, conversation_id: int | None, confirm: bool) -> dict:
-        r = httpx.post(
-            f"{args.url}/api/chat",
-            json={"message": text, "conversation_id": conversation_id,
-                  "voice": True, "confirm": confirm},
-            timeout=180,
-        )
-        r.raise_for_status()
-        return r.json()
+        try:
+            r = httpx.post(
+                f"{args.url}/api/chat",
+                json={"message": text, "conversation_id": conversation_id,
+                      "voice": True, "confirm": confirm},
+                timeout=180,
+            )
+            r.raise_for_status()
+            return r.json()
+        except httpx.HTTPStatusError as e:
+            try:
+                detail = e.response.json().get("detail", e.response.text)
+            except Exception:
+                detail = e.response.text
+            raise SystemExit(f"\nServer error ({e.response.status_code}): {detail}\n") from e
 
-    print("\nKUBERA voice loop — Enter or 'v' to talk, 'confirm' for a confirmed turn, 'q' to quit.")
+    print("\nKUBERA voice loop — Enter or 'v' to talk, 'confirm' for a confirmed turn, "
+          "'q' to quit.")
     while True:
         cmd = input("\n[Enter/v]=talk  confirm  q > ").strip().lower()
         if cmd == "q":
@@ -174,7 +185,8 @@ def main() -> int:
         elif cmd == "confirm":
             confirm = True
         else:
-            print(f"Unknown input '{cmd}'. Press Enter or 'v' to talk, 'confirm' for a confirmed turn, 'q' to quit.")
+            print(f"Unknown input '{cmd}'. Press Enter or 'v' to talk, 'confirm' for a "
+                  "confirmed turn, 'q' to quit.")
             continue
         audio = record_push_to_talk()
         report = run_voice_turn(audio, transcriber, chat_fn, speaker, state,

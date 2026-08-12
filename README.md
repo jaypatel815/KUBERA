@@ -109,8 +109,10 @@ pip install -r requirements-voice.txt      # once; audio deps stay out of the ba
 python scripts\talk.py                     # Enter = talk, Enter again = stop, q = quit
 ```
 
-Local Whisper transcribes you; Windows' voice speaks the reply (set `KUBERA_TTS=edge`
-for neural voices, `KUBERA_STT=openai` if local Whisper won't install on your Python).
+Local Whisper transcribes you; Windows' voice speaks the reply. **The default voice is
+robotic — fix it:** `pip install edge-tts soundfile`, then `set KUBERA_TTS=edge` for
+neural voices (`set KUBERA_VOICE=en-US-AndrewNeural` is the most natural; Guy is the
+default, Aria for a female voice). `KUBERA_STT=openai` if local Whisper won't install.
 Replies come back voice-shaped: no tables, numbers rounded for the ear. Typing `confirm`
 before a turn is the ONLY way to send a confirmed request — saying "yes" never is.
 

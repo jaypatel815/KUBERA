@@ -3,8 +3,20 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
-## 2026-08-11 — Gemini (Antigravity) — talk.py CPU device fix & test_llm.py env isolation
-Fixed: (1) `scripts/talk.py` threw `RuntimeError: Library cublas64_12.dll is not found` on Windows when `faster-whisper` defaulted to CUDA. Added `device="cpu"` to `WhisperModel("small", device="cpu", compute_type="int8")` so local STT runs reliably on CPU without CUDA DLL dependencies. (2) Added `'v'` key as an input shortcut alongside `[Enter]` to start push-to-talk recording in `scripts/talk.py`. (3) `test_llm.py` failed `test_build_provider_allows_keyless_custom_endpoint` when `OPENAI_BASE_URL` was set in `.env` (Ollama setup); added `monkeypatch.delenv("OPENAI_BASE_URL", raising=False)` and explicit `openai_base_url="https://api.openai.com/v1"` parameter to isolate fail-fast testing.
+## 2026-08-12 — MILESTONE: first spoken conversation (T071 ✔) + naturalness pass
+Owner talked to KUBERA and it answered aloud — market snapshot with data-quality
+skepticism (flagged DIA's wide spread) and an offer to go deeper. T071 accepted.
+Owner feedback: sounds robotic → diagnosis: default SAPI TTS, not the words.
+Shipped: KUBERA_VOICE env for edge neural-voice selection (AndrewNeural recommended),
+VOICE_STYLE prosody rules (contractions, short varied sentences, natural openers, never
+read digit strings — guard-tested), README voice ladder. T072 filed: human-grade TTS
+backends (OpenAI TTS, local Kokoro). Also folded in field lint fixes on talk.py.
+Verified: verify.py PASS — 209 passed, 3 skipped.
+Next: owner flips KUBERA_TTS=edge tonight; T072 or T069/T050 next build.
+Blockers: none.
+
+## 2026-08-11 — Gemini (Antigravity) — talk.py CPU device fix & HTTP 503 error reporting
+Fixed: (1) `scripts/talk.py` threw `RuntimeError: Library cublas64_12.dll is not found` on Windows when `faster-whisper` defaulted to CUDA. Added `device="cpu"` to `WhisperModel("small", device="cpu", compute_type="int8")` so local STT runs reliably on CPU without CUDA DLL dependencies. (2) Added `'v'` key as an input shortcut alongside `[Enter]` to start push-to-talk recording in `scripts/talk.py`. (3) Added `httpx.HTTPStatusError` exception handling in `scripts/talk.py` so 503/502 server responses print the server's actionable `detail` message (e.g. missing Alpaca or LLM keys in `.env`). (4) `test_llm.py` failed `test_build_provider_allows_keyless_custom_endpoint` when `OPENAI_BASE_URL` was set in `.env` (Ollama setup); added `monkeypatch.delenv("OPENAI_BASE_URL", raising=False)` and explicit `openai_base_url="https://api.openai.com/v1"` parameter to isolate fail-fast testing.
 Verified: all 189 tests pass.
 Next: T050 (regime pack) or T061 (IPS).
 Blockers: none.
