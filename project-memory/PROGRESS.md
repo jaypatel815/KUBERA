@@ -9,6 +9,20 @@ Verified: all 189 tests pass.
 Next: T045 (KUBERA MCP server) or T047 (Claude Agent SDK provider setup).
 Blockers: none.
 
+## 2026-08-12 — Owner doctrine captured → regime intelligence pack ticketed (T050–T056)
+The owner delivered a detailed trading doctrine (day-type classification: trending vs
+consolidation vs breakout; range trading at the edges; RVOL + volume-confirmed breakouts
+vs fakeouts; VWAP; the no-trade condition as a first-class decision; options theta/IV
+caveats). Preserved verbatim-in-spirit at docs/research/regime-trading-notes.md — READ IT
+before building T050–T056. Seven tickets seeded: regime classifier, support/resistance,
+intraday VWAP/RVOL, breakout detector, range strategy + regime router, no-trade condition
+in the paper loop, structured exit_plan ("how long to hold"). Data-honesty constraint
+threaded through: IEX feed = relative volume only until SIP upgrade (D006).
+"KUBERA decides for me" = already true on paper (T032 loop); live authority stays behind
+§7.4 — reaffirmed with the owner.
+Next: T050 is the natural opener; T045 (MCP server) still pending in Phase 4.
+Blockers: none.
+
 ## 2026-08-12 — MILESTONE: claude-sdk live on owner's Max (T047 ✔) + usage-parse fix
 Owner activated LLM_PROVIDER=claude-sdk and ran a live turn: KUBERA (Claude brain)
 corrected the question's premise via get_portfolio (owner holds 19.46 SPY ≈ $15k — the

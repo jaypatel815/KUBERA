@@ -12,6 +12,16 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 - [ ] T007 — **Phase 1 sign-off, nearly done:** verify.py passed on Windows 68/68 incl. the 3 live paper tests (per Gemini's 2026-08-11 session ✔). Remaining: `alembic -c backend\alembic.ini upgrade head` + `python scripts\sync.py` + open `http://127.0.0.1:8000/portfolio` once.
 - [x] T008 — pre-commit installed — done 2026-08-11 (owner). Sandbox-side caveat: I003.
 
+## Backlog — Regime intelligence pack (owner's doctrine: docs/research/regime-trading-notes.md — READ IT FIRST)
+- [ ] T050 — Regime classifier (`analysis/regime.py`): from daily bars — range-width percentile (vs trailing history), RVOL (IEX-relative, labeled per D006), higher-high/lower-low trend structure → classify trending_up / trending_down / range_bound / breakout_watch with the underlying numbers + confidence; known-answer tests on synthetic regime fixtures (reuse BULL/BEAR/CHOP).
+- [ ] T051 — Support/resistance estimation: swing-high/low clustering over a lookback; returns levels + touch counts; feeds briefing + range strategy; hand-computed tests.
+- [ ] T052 — Intraday data: minute bars + session VWAP + intraday RVOL in market_data (timeframe param); VWAP labeled IEX-feed; tests with fixture minute bars.
+- [ ] T053 — Breakout detector with volume confirmation: range escape + RVOL expansion threshold + hold-outside check; explicitly annotates weak-volume escapes as suspected fakeouts; tests both paths.
+- [ ] T054 — Range strategy template + regime router: support→long→resistance on the T030 contract, and a meta-strategy that picks momentum/range/CASH by T050 regime; backtested across all three synthetic regimes (must beat naive always-momentum in CHOP).
+- [ ] T055 — No-trade condition as first-class: paper loop gains "no_trade" signal_log action with reasons (expected move < cost threshold, RVOL floor, regime=quiet) + max-trades-per-day overtrading guard; tests prove the loop can conclude "there isn't a trade today".
+- [ ] T056 — exit_plan in briefings/chat: structured hold-horizon guidance per thesis (range: levels; momentum: trend-break level; time-based fallback) — the "how long do I hold" answer as data, not prose.
+- [ ] (future, logged) Options awareness: theta/IV warnings in low-vol regimes live in the doctrine; full options analytics is a separate future phase — do not build ad hoc.
+
 ## Backlog — Phase 2: Analysis & insight engine (agents)
 - [ ] T023 — Fundamentals + news ingestion: evaluate the owner's existing FMP/FRED keys (D009) vs Alpaca news; verify key validity + tier limits first, then pick and integrate one source.
 - [ ] T016 — Schwab Trader API read-only sync (owner's real thinkorswim account): positions + balances alongside Alpaca paper, same timestamped model shapes. Prereqs: owner confirms Schwab developer app/keys are active; agent verifies current API capabilities (paper endpoint? scopes?) before building. Live orders out of scope pending §7.4. (D009)
