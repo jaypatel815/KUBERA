@@ -2,6 +2,22 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D020 — Quant-gaps review: build the measurement layer (2026-08-13)
+Gemini's "what would a quant find missing" review — best cross-agent review yet
+(dispositions binding in docs/research/quant-gaps-review-2026-08-13.md). BUILT
+same-session: trade_excursions (MAE/MFE + winners'-MAE stop-calibration number,
+close-to-close labeled) and Sortino/Omega (downside-honest ratios that refuse to
+fake numbers without downside). NEW T088–T093: execution quality (slippage, dep
+T036), live MAE/MFE, liquidity-aware costs (live spreads + conservative ADV cap),
+ATTRIBUTION pack (persist regime/sub-strategy/entry-bucket in signal_log — the
+"is the classifier adding value" question), parameter stability sweeps
+(anti-curve-fit), portfolio risk summary + daily reconciliation + degradation
+detection. ENRICHED: T068 ranking criteria, T077b band-calibration. Its traps
+section independently matches D017/D019 rejections — three agents converged on
+the same discipline. The theme: KUBERA can now DECIDE well; D020 is about
+MEASURING whether the decisions actually work. Fills data (T036) is the single
+biggest unlock left.
+
 ## D019 — Event-intelligence batch: take the base rates, gate the ML, keep the honesty (2026-08-13)
 Owner's fourth batch (sell-the-news / NLP / XGBoost). Dispositions binding in
 docs/research/event-intelligence-review-2026-08-13.md. The rumor/news/pricing

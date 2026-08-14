@@ -81,6 +81,40 @@ def sma(values: Sequence[float], window: int) -> float:
     return sum(tail) / window
 
 
+def sortino(
+    returns: Sequence[float],
+    risk_free_rate: float = 0.0,
+    periods_per_year: int = TRADING_DAYS,
+) -> float:
+    """Annualized Sortino ratio (T064b/D020): Sharpe's numerator over DOWNSIDE
+    deviation only — sqrt(mean(min(r - rf_per_period, 0)^2)) across the FULL
+    sample (zeros included), target = the per-period risk-free rate. For a trader
+    who cares about not losing money, punishing only downside volatility is the
+    honest denominator. Raises when there is no downside at all (undefined)."""
+    if len(returns) < 2:
+        raise ValueError(f"need at least 2 returns, got {len(returns)}")
+    rf_per_period = risk_free_rate / periods_per_year
+    downside_sq = [min(r - rf_per_period, 0.0) ** 2 for r in returns]
+    dd = sqrt(sum(downside_sq) / len(returns))
+    if dd == 0:
+        raise ValueError("no downside in sample — Sortino undefined (nice problem)")
+    return (mean(returns) - rf_per_period) / dd * sqrt(periods_per_year)
+
+
+def omega(returns: Sequence[float], threshold: float = 0.0) -> float | None:
+    """Omega ratio (D020): sum of gains above `threshold` / sum of shortfalls
+    below it. Direction-of-tail honesty that Sharpe cannot see: grinding gains
+    with occasional blowups scores differently from flat-with-big-wins.
+    None when there are no shortfalls (undefined, not infinite skill)."""
+    if not returns:
+        raise ValueError("need at least 1 return")
+    gains = sum(r - threshold for r in returns if r > threshold)
+    shortfalls = sum(threshold - r for r in returns if r < threshold)
+    if shortfalls == 0:
+        return None
+    return gains / shortfalls
+
+
 def true_ranges(
     highs: Sequence[float], lows: Sequence[float], closes: Sequence[float]
 ) -> list[float]:

@@ -75,6 +75,70 @@ def trade_stats(weights: Sequence[float], equity_curve: Sequence[float]) -> Trad
     )
 
 
+@dataclass(frozen=True)
+class TradeExcursions:
+    n_trades: int
+    per_trade: list[dict]           # {"return", "mae", "mfe"} per trade
+    avg_mae_frac: float | None      # average worst dip DURING trades (negative)
+    worst_mae_frac: float | None
+    avg_mfe_frac: float | None      # average best run-up during trades
+    winners_avg_mae_frac: float | None  # how much WINNERS dipped before winning —
+                                        # the stop-calibration number (D020)
+    note: str
+
+
+def trade_excursions(
+    weights: Sequence[float], closes: Sequence[float]
+) -> TradeExcursions:
+    """MAE/MFE per trade (D020 gap 3): for each contiguous 1.0-weight run a..b,
+    the entry basis is closes[a-1] (the decision close); MAE = the worst close
+    during the trade vs entry, MFE = the best. If 90% of winners dipped 2%
+    before recovering, a 1.5% stop is killing winners — this is the data that
+    calibrates stops. Close-to-close only (intraday extremes need T036 fills)."""
+    if len(weights) != len(closes):
+        raise ValueError("weights and closes must be equal length")
+    if any(w not in (0.0, 1.0) for w in weights):
+        raise ValueError("trade extraction requires 0/1 weights (long-only contract)")
+    if any(c <= 0 for c in closes):
+        raise ValueError("closes must be > 0")
+
+    per_trade: list[dict] = []
+    i, n = 0, len(weights)
+    while i < n:
+        if weights[i] == 1.0:
+            a = i
+            while i < n and weights[i] == 1.0:
+                i += 1
+            b = i - 1
+            base = closes[a - 1] if a > 0 else closes[0]
+            path = closes[a:b + 1]
+            per_trade.append({
+                "return": closes[b] / base - 1.0,
+                "mae": min(path) / base - 1.0,
+                "mfe": max(path) / base - 1.0,
+            })
+        else:
+            i += 1
+
+    if not per_trade:
+        return TradeExcursions(0, [], None, None, None, None,
+                               "no trades to measure")
+    maes = [t["mae"] for t in per_trade]
+    mfes = [t["mfe"] for t in per_trade]
+    winners = [t for t in per_trade if t["return"] > 0]
+    return TradeExcursions(
+        n_trades=len(per_trade),
+        per_trade=per_trade,
+        avg_mae_frac=sum(maes) / len(maes),
+        worst_mae_frac=min(maes),
+        avg_mfe_frac=sum(mfes) / len(mfes),
+        winners_avg_mae_frac=(sum(t["mae"] for t in winners) / len(winners)
+                              if winners else None),
+        note=("close-to-close excursions from backtest paths; intraday extremes "
+              "and live-fill versions arrive with the fills sync (T036/T088)"),
+    )
+
+
 def calmar(equity_curve: Sequence[float], periods_per_year: int = 252) -> float | None:
     """CAGR / max drawdown; None when the curve never drew down (undefined)."""
     dd = max_drawdown_frac(equity_curve)

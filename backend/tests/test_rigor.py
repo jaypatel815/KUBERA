@@ -14,7 +14,7 @@ from test_strategies import CHOP, DATES
 from backtest.engine import run_backtest
 from backtest.ledger import is_promoted, promote_template
 from backtest.paper_loop import run_paper_cycle
-from backtest.stats import calmar, trade_stats, walk_forward
+from backtest.stats import calmar, trade_excursions, trade_stats, walk_forward
 from backtest.strategies import make_momentum, make_regime_router
 from data.alpaca import AlpacaClient
 from data.market_data import MarketDataClient
@@ -46,6 +46,39 @@ def test_trade_stats_edges():
         trade_stats([0.5], [1.0])
     with pytest.raises(ValueError, match="equal length"):
         trade_stats([0.0], [1.0, 1.0])
+
+
+def test_trade_excursions_hand():
+    # one trade over bars 1-3: entry basis closes[0]=100; path [100, 95, 110]
+    # MAE = 95/100-1 = -5%; MFE = +10%; return = +10% (a winner that dipped 5%)
+    ex = trade_excursions([0.0, 1.0, 1.0, 1.0, 0.0],
+                          [100.0, 100.0, 95.0, 110.0, 100.0])
+    assert ex.n_trades == 1
+    assert ex.per_trade[0]["mae"] == pytest.approx(-0.05)
+    assert ex.per_trade[0]["mfe"] == pytest.approx(0.10)
+    assert ex.per_trade[0]["return"] == pytest.approx(0.10)
+    assert ex.winners_avg_mae_frac == pytest.approx(-0.05)  # the stop-calibration number
+    assert "T036" in ex.note  # honesty: close-to-close until fills exist
+
+
+def test_trade_excursions_no_trades_and_validation():
+    assert trade_excursions([0.0, 0.0], [100.0, 100.0]).n_trades == 0
+    with pytest.raises(ValueError, match="0/1"):
+        trade_excursions([0.5], [100.0])
+
+
+def test_sortino_and_omega_hand():
+    from analysis.metrics import omega, sortino
+
+    returns = [0.1, -0.05, 0.02, -0.01]
+    # downside dev (target 0, full sample): sqrt((0.0025 + 0.0001)/4) = 0.0254951
+    # mean 0.015 -> sortino (ppy=1) = 0.015/0.0254951 = 0.58835
+    assert sortino(returns, periods_per_year=1) == pytest.approx(0.58835, abs=1e-4)
+    # omega(0): gains 0.12 / shortfalls 0.06 = 2.0
+    assert omega(returns) == pytest.approx(2.0)
+    assert omega([0.1, 0.2]) is None  # no shortfalls: undefined, not infinite skill
+    with pytest.raises(ValueError, match="no downside"):
+        sortino([0.1, 0.2])
 
 
 def test_calmar_hand():

@@ -3,6 +3,25 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — D020: quant-gaps review — the measurement layer begins
+Gemini's best review yet (repo-aware; its traps section independently re-derived our
+D017/D019 rejections — three agents converged on the same discipline). BUILT the two
+pure-math top picks same-session: trade_excursions (MAE/MFE per trade + WINNERS'
+average MAE — the stop-calibration number; close-to-close labeled until T036 fills)
+and Sortino + Omega in metrics (downside-only honesty; both refuse to fake a value
+when there's no downside — error/None, never infinity). NEW T088–T093: execution
+quality (slippage_bps, dep T036) · live MAE/MFE · liquidity-aware costs (live
+spread_bps + conservative ADV cap) · ATTRIBUTION pack (persist regime/sub-strategy/
+entry-bucket at order time — answers "is the classifier adding value") · parameter
+stability sweeps (anti-curve-fit) · portfolio risk summary + daily reconciliation +
+degradation detection. ENRICHED: T068 ranking criteria, T077b band calibration.
+Theme on record: KUBERA can now DECIDE well; D020 is about MEASURING whether the
+decisions work. T036 fills = the single biggest unlock left.
+Verified: verify.py PASS — 422 passed, 3 skipped.
+Next: T036 (fills sync — unlocks T088/T089/T091 attribution family) or T091 schema
+prep; T082 Orb pack still prime Gemini bait.
+Blockers: none.
+
 ## 2026-08-13 — T086 done: position triage — "should I average down?" answered honestly
 analysis/triage.py judges an existing position against the LIVE exit plan (tool
 composes regime + levels + ATR + active breakout, then compares entry vs latest trade):
