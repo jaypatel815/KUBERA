@@ -149,6 +149,9 @@ class BacktestRun(Base):
     # T064 promotion gate: "pending" | "passed_walk_forward" | "failed_walk_forward"
     promotion_status: Mapped[str] = mapped_column(String(24), default="pending",
                                                  server_default="pending")
+    # T092 parameter stability: JSON StabilityReport recorded beside the promotion —
+    # a strategy that only works at one magic parameter is curve-fit, not edge.
+    stability_json: Mapped[str | None] = mapped_column(String(2048), default=None)
 
 
 class InvestmentPolicy(Base):

@@ -113,6 +113,29 @@ def promote_template(
     return wf, row
 
 
+def attach_stability(session: Session, template: str, symbol: str,
+                     report: dict) -> int:
+    """T092: record a StabilityReport (as dict) on the LATEST run for this
+    (template, symbol) — the stability evidence lives beside the promotion.
+    Returns the run id; raises if no run exists to attach to."""
+    rows = session.execute(
+        select(BacktestRun).where(BacktestRun.symbol == symbol.upper())
+        .order_by(BacktestRun.ts.desc())
+    ).scalars().all()
+    for r in rows:
+        try:
+            if json.loads(r.params_json).get("template") == template:
+                r.stability_json = json.dumps(report, sort_keys=True)
+                session.commit()
+                return r.id
+        except (TypeError, ValueError):
+            continue
+    raise ValueError(
+        f"no recorded run for template={template} symbol={symbol.upper()} — "
+        "run a backtest (or promote) first, then attach stability"
+    )
+
+
 def is_promoted(session: Session, template: str, symbol: str) -> bool:
     """Any recorded run for this (template, symbol) that passed the walk-forward?"""
     rows = session.execute(

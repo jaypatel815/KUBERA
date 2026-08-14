@@ -60,7 +60,17 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 - [ ] T089 — Live MAE/MFE (D020, dep T036): extend trade_excursions to live positions with intraday extremes; winners'-MAE stop-calibration line joins the T062 weekly review.
 - [ ] T090 — Liquidity-aware costs (D020): live bid-ask spread_bps in briefings/sizing (quotes already fetched); ADV-based position cap (IEX ADV understates → binds earlier = conservative, labeled); per-symbol cost replaces the fixed-bps assumption.
 - [ ] T091b — Attribution follow-ups: holding-period distribution (entry↔exit ts pairing), weekly-review integration (T062), regime-attribution line in the EOD report; costs decomposition once T090 lands per-symbol spreads.
-- [ ] T092 — Parameter stability sweeps (D020): templates across neighboring params (momentum 30..90…); works-only-at-60 = curve-fit; stability summary recorded beside promotions in the ledger.
+- [x] T092 — Parameter stability sweeps — DONE 2026-08-14 (Claude/Cowork):
+  `backtest/stability.py` — SWEEPS map (momentum lookback 20–90, sma_cross fast,
+  mean_reversion window, range lookback), pure `stability_report` verdicts
+  (insufficient / reject / curve_fit / stable; plateau = ≥50% of other points
+  hold ≥50% of best Sharpe AND median > 0 — all hand-tested incl. the exact-
+  boundary case), engine-only `run_sweep` (no ledger spam; never-invested
+  params score 0 with warning). `stability_json` on backtest_runs (migration
+  8d2d7f6c98b8) via `ledger.attach_stability` (lands on the template's latest
+  run, loud failure otherwise). CLI `scripts/sweep.py momentum SPY [--record]`.
+  Follow-up parked in T064b: surface stability verdict in run_backtest tool
+  output + block promotion on curve_fit (needs owner sign-off on strictness).
 - [ ] T093 — Portfolio risk summary + reconciliation + degradation (D020 #4/#5, D021 gap 4): portfolio-level vol from position correlations + marginal risk contribution + effective bets (1/Σw²) extending T079; daily snapshot-vs-broker reconciliation in health_check; strategy-decay DEMOTION — live equity vs backtest expectation (CUSUM-style drift), sustained deviation flips ledger promotion_status to "demoted" → the loop's existing require_promotion refuses new buys automatically (the T064 gate's twin: earn the loop, KEEP earning it).
 - [ ] T087 — Open-trade monitor (owner Q&A; deps T074/T082/T036): watch held positions during RTH — alert when session RVOL collapses under a breakout thesis, VWAP churn rises, exit-plan invalidation approaches/hits, or the event guard window opens; Windows toast + Orb surface v1, voice barge-in with T074. Advisory only — execution stays in the loop's rails.
 - [ ] (advisory note for T077b/T085) Fractional-Kelly sizing VIEW from T077 win-rate/payoff — advisory-only, capped, never autopilot; single-trade "probability of profit" remains rejected per D017.

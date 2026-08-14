@@ -3,6 +3,20 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T092: the curve-fit detector — one magic number is not an edge
+backtest/stability.py: sweep a template across its parameter neighborhood and
+demand a PLATEAU. Pure verdict logic hand-tested (plateau→stable, isolated
+spike→curve_fit, all-negative→reject, <3 points→insufficient, exact-boundary
+half-support case pinned); metric is annualized Sharpe of the equity curve so
+leverage can't fake breadth; never-invested params score 0 with a warning
+instead of crashing on the undefined-Sharpe constant curve. run_sweep is
+engine-only (no ledger spam); the evidence lands beside promotions via
+ledger.attach_stability → new stability_json column (migration 8d2d7f6c98b8,
+sed ritual applied). CLI: python scripts\sweep.py momentum SPY --record.
+Verified: verify.py PASS — 522 passed (+11), 3 skipped.
+Next: T090 liquidity-aware costs (unblocked; quotes already fetched), or T093
+portfolio risk summary now that T079 correlations exist.
+
 ## 2026-08-14 — T079: the overlap guard — "that's not diversification, that's the same bet"
 Built the deterministic engine behind the pre-trade concentration warning:
 analysis/correlation.py — pairwise Pearson correlation of daily log returns
