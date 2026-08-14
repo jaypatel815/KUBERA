@@ -3,6 +3,19 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T097: KUBERA got a face — and it watches the cursor
+Owner sent a reference image (voxel head dissolving into a particle network) and
+asked for a face that follows the mouse. Shipped inside orb.html with ZERO
+changes to the voice loop: a procedurally generated depth-mapped voxel face
+(two-ellipse silhouette, carved brow/sockets/pupils/nose/lips/chin — sanity-
+rendered offline before shipping and it reads as a face). Head rotates toward
+the cursor with smoothing, pupils track with extra gain, gaze wanders when the
+mouse goes quiet, lips move with the real TTS amplitude, thinking shimmers, and
+the left edge dissolves into a drifting wireframe network like the reference.
+State colors unchanged (idle gold / listening teal / thinking violet / speaking
+gold) so the face IS the orb. Frontend-only; verify gate untouched but run.
+Owner: restart the server, open localhost:8000, move the mouse.
+
 ## 2026-08-14 — I015: the provider that wasn't — brain_check + startup announcement
 Owner corrected the record: .env says claude-sdk (verified — masked read), yet
 the timeout error came from the OpenAI provider aimed at local Ollama. Claude's

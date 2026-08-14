@@ -38,7 +38,7 @@
 </style>
 </head>
 <body>
-<div id="hint">click the orb or hold SPACE to talk &nbsp;·&nbsp; type below if you must</div>
+<div id="hint">click the face or hold SPACE to talk &nbsp;·&nbsp; type below if you must</div>
 <div id="stage">
   <canvas id="orb" width="520" height="520"></canvas>
   <div id="status">idle</div>
@@ -59,35 +59,149 @@ const statusEl = document.getElementById("status");
 const errEl = document.getElementById("err");
 function setMode(m) { S.mode = m; statusEl.textContent = m; }
 
-// ------------------------------------------------------------------ orb
+// ------------------------------------------------------------------ face (T097)
+// A depth-mapped voxel face, generated procedurally (no assets, no libraries).
+// The head turns toward the cursor, the pupils track it with extra gain, the
+// mouth voxels move with KUBERA's real speech amplitude, and loose particles
+// dissolve off the left side into a drifting wireframe network. Same canvas,
+// same click contract, same state colors as the orb it replaces.
 const canvas = document.getElementById("orb"), ctx = canvas.getContext("2d");
-const CX = 260, CY = 260;
-function drawOrb() {
+const CX = 260, CY = 250;
+
+// --- build the point cloud: head silhouette from two ellipses, depth dome,
+// features carved on top. c = columns from center (mirrored), r = rows.
+const ROWS = 46, VS = 7;                    // grid rows, voxel spacing (px)
+function halfWidth(r) {
+  let w = 0;
+  const a = (r - 14) / 15;                  // cranium: center row 14, ry 15, rx 16
+  if (Math.abs(a) <= 1) w = 16 * Math.sqrt(1 - a * a);
+  const b = (r - 30) / 15;                  // jaw: center row 30, ry 15, rx 12
+  if (Math.abs(b) <= 1) w = Math.max(w, 12 * Math.sqrt(1 - b * b) * (1 - (r - 30) / 55));
+  return w;
+}
+function cellDepth(r, c) {                  // -> {d, kind} | null
+  const w = halfWidth(r);
+  if (w < 1 || c > w) return null;
+  let d = 3 + 4 * Math.sqrt(Math.max(0, 1 - (c / w) * (c / w)));  // dome
+  let kind = "skin";
+  if (r >= 15 && r <= 16 && c >= 2 && c <= 9) d += 1.5;           // brow ridge
+  if (r >= 17 && r <= 20 && c >= 3 && c <= 9) {                   // eye sockets
+    if (r >= 18 && r <= 19 && c >= 5 && c <= 6) { d = 6; kind = "pupil"; }
+    else return { d: 0, kind: "socket" };                          // hollow
+  }
+  if (c <= 1 && r >= 17 && r <= 27) d += Math.min(4, (r - 17) * 0.45); // nose bridge
+  if (r >= 26 && r <= 27 && c <= 2) d = 9;                        // nose tip
+  if (r === 28 && c >= 2 && c <= 3) d = 4;                        // nostril shadow
+  if (r >= 31 && r <= 33 && c <= 7) { d = 7.5; kind = "mouth"; }  // lips
+  if (r >= 38 && r <= 42 && c <= 4) d += 1;                       // chin
+  return { d, kind };
+}
+const voxels = [];
+for (let r = 0; r < ROWS; r++) {
+  const w = halfWidth(r);
+  for (let c = 0; c <= 17; c++) {
+    const cell = cellDepth(r, c);
+    if (!cell || cell.kind === "socket") continue;
+    for (const sx of c === 0 ? [1] : [1, -1]) {
+      // left-edge voxels are "loose" — they wander, like the dissolving reference
+      const loose = sx < 0 && c > w - 3 ? 0.4 + Math.random() * 0.9 : 0;
+      voxels.push({
+        x: sx * c * VS, y: (r - ROWS / 2) * VS, z: cell.d * 6, d: cell.d,
+        kind: cell.kind, loose, seed: Math.random() * 7,
+        shade: 0.82 + Math.random() * 0.36,   // per-voxel brightness variance
+      });
+    }
+  }
+}
+
+// --- drifting wireframe halo (the dissolved network on the left)
+const halo = [];
+for (let i = 0; i < 70; i++) halo.push({
+  x: CX - 40 - Math.random() * 210, y: 60 + Math.random() * 400,
+  vx: -(0.15 + Math.random() * 0.45), vy: (Math.random() - 0.5) * 0.3,
+  s: 1.5 + Math.random() * 2.5,
+});
+
+// --- cursor -> gaze
+let mx = innerWidth / 2, my = innerHeight / 2, lastMove = 0, yaw = 0, pitch = 0;
+addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; lastMove = S.t; });
+
+function drawFace() {
   S.t += 0.016;
   ctx.clearRect(0, 0, 520, 520);
   const [r, g, b] = COLORS[S.mode] || COLORS.idle;
-  const breathe = 1 + 0.035 * Math.sin(S.t * (S.mode === "thinking" ? 4.2 : 1.6));
-  const radius = (S.mode === "idle" ? 92 : 100) * breathe * (1 + S.amp * 0.55);
-  // outer glow
-  const glow = ctx.createRadialGradient(CX, CY, radius * 0.2, CX, CY, radius * 2.4);
-  glow.addColorStop(0, `rgba(${r},${g},${b},0.55)`);
-  glow.addColorStop(0.5, `rgba(${r},${g},${b},0.10)`);
+
+  // gaze target: cursor when fresh, slow wander when you walk away
+  const idleGaze = S.t - lastMove > 4;
+  const ty = idleGaze ? 0.25 * Math.sin(S.t * 0.35)
+                      : Math.max(-0.55, Math.min(0.55, (mx / innerWidth - 0.5) * 1.2));
+  const tp = idleGaze ? 0.10 * Math.sin(S.t * 0.23)
+                      : Math.max(-0.32, Math.min(0.32, (my / innerHeight - 0.5) * 0.75));
+  yaw += (ty - yaw) * 0.07; pitch += (tp - pitch) * 0.07;
+
+  // ambient glow so the state color reads from across the room
+  const glow = ctx.createRadialGradient(CX, CY, 30, CX, CY, 260);
+  glow.addColorStop(0, `rgba(${r},${g},${b},${0.16 + S.amp * 0.22})`);
   glow.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = glow;
-  ctx.beginPath(); ctx.arc(CX, CY, radius * 2.4, 0, 7); ctx.fill();
-  // wobbling core (soft blob: several offset circles)
-  for (let i = 0; i < 3; i++) {
-    const wob = Math.sin(S.t * 2.1 + i * 2.1) * 6 * (1 + S.amp * 2);
-    const core = ctx.createRadialGradient(CX + wob, CY - wob, 4, CX, CY, radius);
-    core.addColorStop(0, `rgba(${Math.min(r+55,255)},${Math.min(g+55,255)},${b+40},0.9)`);
-    core.addColorStop(1, `rgba(${r},${g},${b},0.12)`);
-    ctx.fillStyle = core;
-    ctx.beginPath(); ctx.arc(CX, CY, radius - i * 7, 0, 7); ctx.fill();
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, 520, 520);
+
+  // halo network first (behind the face)
+  ctx.lineWidth = 1;
+  for (const n of halo) {
+    n.x += n.vx; n.y += n.vy;
+    if (n.x < -20) { n.x = CX - 30 - Math.random() * 60; n.y = 60 + Math.random() * 400; }
+    for (const m of halo) {
+      const dx = n.x - m.x, dy = n.y - m.y, dd = dx * dx + dy * dy;
+      if (dd > 0 && dd < 3025) {
+        ctx.strokeStyle = `rgba(${r},${g},${b},${0.28 * (1 - dd / 3025)})`;
+        ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(m.x, m.y); ctx.stroke();
+      }
+    }
+    ctx.fillStyle = `rgba(${r},${g},${b},0.55)`;
+    ctx.fillRect(n.x, n.y, n.s, n.s);
   }
+
+  // face voxels: rotate toward gaze, project, paint far-to-near
+  const cy_ = Math.cos(yaw), sy_ = Math.sin(yaw);
+  const cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const breathe = 1 + 0.012 * Math.sin(S.t * (S.mode === "thinking" ? 3.6 : 1.4));
+  const think = S.mode === "thinking" ? 1 : 0;
+  const projected = [];
+  for (const v of voxels) {
+    let x = v.x, y = v.y, z = v.z - 27;      // recenters depth around 0
+    if (v.loose) {                            // dissolving left edge
+      x -= v.loose * (18 + 14 * Math.sin(S.t * 0.9 + v.seed));
+      y += v.loose * 10 * Math.sin(S.t * 0.7 + v.seed * 2);
+    }
+    if (think) {                              // thinking: the surface shimmers
+      x += 1.6 * Math.sin(S.t * 4 + v.seed * 5);
+      y += 1.6 * Math.cos(S.t * 3.4 + v.seed * 4);
+    }
+    let x1 = x * cy_ + z * sy_, z1 = -x * sy_ + z * cy_;
+    let y1 = y * cp - z1 * sp;  z1 = y * sp + z1 * cp;
+    let px = CX + x1 * breathe, py = CY + y1 * breathe;
+    if (v.kind === "pupil") { px += yaw * 26; py += pitch * 22; }  // eyes lead the turn
+    if (v.kind === "mouth" && S.mode === "speaking")
+      py += Math.sin(S.t * 26 + v.x * 0.3) * S.amp * 5;            // lips ride the audio
+    projected.push({ px, py, z1, v });
+  }
+  projected.sort((p, q) => p.z1 - q.z1);      // far first, nose paints last
+  for (const p of projected) {
+    const v = p.v;
+    const persp = 1 + p.z1 * 0.004;
+    const size = (2.6 + v.d * 0.42) * persp;
+    let lum = v.shade * (0.45 + v.d * 0.075) * (1 + S.amp * 0.5);
+    if (v.kind === "pupil") lum *= 1.9;
+    if (v.kind === "mouth") lum *= 1.15 + S.amp * 0.6;
+    ctx.fillStyle = `rgba(${Math.min(255, r * lum + 30)},${Math.min(255, g * lum + 30)},${
+      Math.min(255, b * lum + 34)},${Math.min(1, 0.35 + v.d * 0.09)})`;
+    ctx.fillRect(p.px - size / 2, p.py - size / 2, size, size);
+  }
+
   S.amp *= 0.92; // decay toward calm
-  requestAnimationFrame(drawOrb);
+  requestAnimationFrame(drawFace);
 }
-drawOrb();
+drawFace();
 
 // ------------------------------------------------------------------ log
 const logEl = document.getElementById("log");
