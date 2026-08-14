@@ -102,6 +102,9 @@ def health() -> dict:
         # Config state only — never config values.
         "alpaca_configured": s.alpaca_configured,
         "paper_mode": s.alpaca_paper,
+        # I011 diagnostics: which brain, and how many tools it SHOULD see
+        "llm_provider": s.llm_provider,
+        "tools_registered": len(registry.names()),
     }
 
 

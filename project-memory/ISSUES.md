@@ -72,6 +72,32 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   then `rm -f .git/*.lock` and delete `.git/objects/**/tmp_obj_*`. Windows/Antigravity/other
   agents are unaffected. Resolved 2026-08-11.
 
+## I011 — claude-sdk turn denied get_portfolio + hallucinated tool names (2026-08-14)
+OBSERVED (owner transcripts, LLM_PROVIDER=claude-sdk per owner): (1) "check my
+current portfolio positions" -> model denied having a portfolio tool and listed
+NONEXISTENT tools (get_market_data, submit_verdict — distortions of prose, not
+real schemas) while the I010 priming HAD fired (footer proved it); (2) rephrasing
+to the suggested wording produced a correct morning-brief-style answer. A model
+holding real schemas doesn't misspell them; a model with NO tools improvising
+from prompt prose does. PRIME SUSPECT: the SDK MCP bridge silently degrading
+(version drift) on the owner's machine — some turns get zero tools.
+DEFENSES/DIAGNOSTICS SHIPPED:
+1. Bridge telemetry: provider logs "claude-sdk: bridged N registry tools" every
+   call + WARNING on mismatch; /health now reports llm_provider + tools_registered.
+2. Deflection check v3: primed-only trails count as "model called nothing"
+   (the denial transcript is a named test); "list the tickers you're holding"
+   added to the patterns; portfolio-ish questions asking for tickers now flagged
+   even when the user named none (get_portfolio lists them itself).
+3. FABRICATION GUARD: if no tool has EVER run in the conversation and none ran
+   this turn, yet the reply carries 3+ precise figures absent from the primed
+   snapshot -> "⚠ Unverified numbers ... re-ask" footer. Numbers must come from
+   tools, never memory.
+OWNER VERIFICATION (do once): restart the server; watch the log for
+"claude-sdk: bridged 24 registry tools" on a chat turn. If the line is missing
+or shows a mismatch: pip install -U claude-agent-sdk and restart. /health also
+shows llm_provider + tools_registered for a quick screenshot check.
+STATUS: defenses shipped; bridge verification pending on the owner's machine.
+
 ## I010 — "check my portfolio for SPY" answered with "how many shares do you hold?" (2026-08-14)
 FOURTH strike, same class: the most direct get_portfolio request possible, answered
 by asking the user for data the tool holds. The I008 deflection regex didn't fire

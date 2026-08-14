@@ -3,6 +3,22 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — I011: bridge telemetry + fabrication guard — trust nothing that skipped the tools
+Owner transcripts on claude-sdk: one turn denied get_portfolio and hallucinated
+tool names (get_market_data/submit_verdict — prose distortions) while priming HAD
+fired; a rephrase worked perfectly. Diagnosis: the SDK MCP bridge likely degrading
+silently on some turns (version drift) — a model with real schemas doesn't misspell
+them. Shipped: (1) bridge telemetry — "bridged N registry tools" logged per call,
+WARNING on mismatch, /health reports llm_provider + tools_registered; (2) deflection
+v3 — primed-only trails = "model called nothing" (the denial transcript is a named
+test), "list the tickers" pattern, portfolio-ish ticker-asks flagged without a named
+ticker; (3) FABRICATION GUARD — 3+ precise figures with zero tool history and none
+in the primed snapshot -> "Unverified numbers" footer (numbers come from tools,
+never memory). Owner verification: restart, watch for "bridged 24 registry tools";
+mismatch -> pip install -U claude-agent-sdk.
+Verified: verify.py PASS — 462 passed, 3 skipped.
+Blockers: bridge verification pending on owner machine (steps in I011).
+
 ## 2026-08-14 — I010: portfolio auto-priming — from instructions to architecture
 Fourth deflection transcript ("check my portfolio for SPY" -> "how many shares do
 you hold?"). Verdict accepted: prompt rules don't stick on the local brain, so the

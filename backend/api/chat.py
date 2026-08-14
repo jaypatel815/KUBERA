@@ -95,7 +95,8 @@ def ensure_symbol_alignment(reply: str, user_text: str, trail: list[dict]) -> st
 _ASKS_FOR_SYMBOL = re.compile(
     r"which (ticker|symbol)|let me know (the|which) (ticker|symbol)"
     r"|tell me (which|the) (ticker|symbol)|what (ticker|symbol)"
-    r"|know the symbol|name the (ticker|symbol)",
+    r"|know the symbol|name the (ticker|symbol)"
+    r"|list the tickers|tickers you('re| are) holding|which tickers",
     re.IGNORECASE,
 )
 _ASKS_FOR_POSITION_DETAILS = re.compile(
@@ -110,9 +111,18 @@ _PORTFOLIO_INTENT = re.compile(
 )
 
 
+def _model_calls(trail: list[dict]) -> list[dict]:
+    """Trail entries the MODEL initiated (server-side auto-priming excluded, I011)."""
+    return [t for t in trail
+            if not (isinstance(t.get("arguments"), dict)
+                    and t["arguments"].get("auto_primed"))]
+
+
 def ensure_no_deflection(reply: str, user_text: str, trail: list[dict]) -> str:
-    """The user gave what was needed and got asked for it back, with no data touched."""
-    if trail:
+    """The user gave what was needed and got asked for it back, with no data touched.
+    Primed-only trails count as 'the model called nothing' — I011's transcript
+    showed a model denying get_portfolio while the primed data sat in its prompt."""
+    if _model_calls(trail):
         return reply
     asks_symbol = bool(_ASKS_FOR_SYMBOL.search(reply))
     asks_position = bool(_ASKS_FOR_POSITION_DETAILS.search(reply))
@@ -134,6 +144,13 @@ def ensure_no_deflection(reply: str, user_text: str, trail: list[dict]) -> str:
             "get_regime, get_exit_plan, triage_position if you hold it) but called "
             "none of them — a model miss, not a missing capability. Re-ask, or "
             "switch to the claude-sdk brain for real decisions._"
+        )
+    if asks_symbol and portfolioish:
+        return (
+            f"{reply}\n\n_⚠ Deflection check: you asked about YOUR portfolio — "
+            "get_portfolio lists your tickers, quantities, and cost basis itself; "
+            "nobody needed to ask you for them. A model miss, not a missing "
+            "capability. Re-ask._"
         )
     return reply
 
@@ -171,6 +188,29 @@ def prime_portfolio(system: str, user_text: str, ctx: ToolContext,
         tool_asofs["get_portfolio"] = str(result["asof"])
     log.info("portfolio primed into system prompt (%d positions)", len(positions))
     return system + snapshot
+
+
+# Fabrication guard (I011): precise-looking figures with no data source anywhere.
+_NUMERIC_TOKEN = re.compile(r"\$\d[\d,]*(?:\.\d+)?|\d+\.\d+\s?%|\d+\.\d{2,}")
+
+
+def ensure_grounded_numbers(reply: str, trail: list[dict],
+                            conversation_has_tool_rows: bool,
+                            primed_text: str = "") -> str:
+    """If NO tool has ever run in this conversation and the model called none this
+    turn, yet the reply carries 3+ precise figures that don't appear in the primed
+    snapshot — those numbers came from nowhere. Say so."""
+    if conversation_has_tool_rows or _model_calls(trail):
+        return reply
+    tokens = _NUMERIC_TOKEN.findall(reply)
+    unexplained = [t for t in tokens if t not in primed_text]
+    if len(unexplained) < 3:
+        return reply
+    return (
+        f"{reply}\n\n_⚠ Unverified numbers: no data tools ran in this conversation, "
+        "but the reply contains specific figures. Treat them as UNRELIABLE and "
+        "re-ask — KUBERA's numbers must come from tools, never from memory._"
+    )
 
 
 def ensure_recency_line(reply: str, tool_asofs: dict[str, str]) -> str:
@@ -238,7 +278,9 @@ def run_chat_turn(
     schemas = registry.schemas()
     trail: list[dict] = []
     tool_asofs: dict[str, str] = {}  # tool name -> asof from its actual result
+    base_system = system
     system = prime_portfolio(system, user_text, ctx, trail, tool_asofs)  # I010
+    primed_text = system[len(base_system):]  # for the fabrication guard (I011)
     total_in = total_out = 0
     reply = None
 
@@ -279,14 +321,23 @@ def run_chat_turn(
         db.commit()
 
         if not reply.wants_tools:
+            has_tool_rows = db.execute(
+                select(ChatMessage.id).where(
+                    ChatMessage.conversation_id == conversation_id,
+                    ChatMessage.role == "tool",
+                ).limit(1)
+            ).first() is not None
             return ChatTurnResult(
                 conversation_id=conversation_id,
-                reply=ensure_no_deflection(
-                    ensure_symbol_alignment(
-                        ensure_recency_line(reply.text or "", tool_asofs),
+                reply=ensure_grounded_numbers(
+                    ensure_no_deflection(
+                        ensure_symbol_alignment(
+                            ensure_recency_line(reply.text or "", tool_asofs),
+                            user_text, trail,
+                        ),
                         user_text, trail,
                     ),
-                    user_text, trail,
+                    trail, has_tool_rows, primed_text,
                 ),
                 tool_trail=trail, input_tokens=total_in, output_tokens=total_out,
                 stop_reason=reply.stop_reason,

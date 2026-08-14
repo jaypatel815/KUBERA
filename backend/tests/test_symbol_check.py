@@ -144,6 +144,44 @@ def test_position_details_deflection_needs_portfolio_context():
         trail=[{"name": "get_portfolio", "arguments": {}}])
 
 
+def test_the_denied_portfolio_tool_transcript_is_caught():
+    # I011: priming ran (auto_primed in trail) yet the model denied the tool and
+    # asked the user to "list the tickers you're holding"
+    from api.chat import ensure_no_deflection
+
+    reply = ensure_no_deflection(
+        "I don't have a direct tool to pull your full current portfolio positions "
+        "list. ... To get started, just list the tickers you're holding "
+        "(e.g., AAPL, TSLA, SPY).",
+        "can you check my current portfolio positions",
+        trail=[{"name": "get_portfolio", "arguments": {"auto_primed": True}}],
+    )
+    assert "⚠ Deflection check" in reply
+    assert "get_portfolio lists your tickers" in reply
+
+
+def test_fabrication_guard():
+    from api.chat import ensure_grounded_numbers
+
+    fabricated = ("SPY last close $777.84, support at 773.75 with 3 touches, "
+                  "expected move p95 +3.74%, up-probability 56.6%.")
+    # no tools ever, none this turn, numbers not in primed text -> flagged
+    flagged = ensure_grounded_numbers(fabricated, [], False, "")
+    assert "⚠ Unverified numbers" in flagged
+    # the model actually called a tool -> silent
+    assert "Unverified" not in ensure_grounded_numbers(
+        fabricated, [{"name": "get_regime", "arguments": {"symbol": "SPY"}}],
+        False, "")
+    # conversation already has tool rows (numbers may come from history) -> silent
+    assert "Unverified" not in ensure_grounded_numbers(fabricated, [], True, "")
+    # numbers present in the primed snapshot -> grounded -> silent
+    primed = "AUTO-FETCHED PORTFOLIO: SPY mv $777.84 ... 773.75 ... +3.74% 56.6%"
+    assert "Unverified" not in ensure_grounded_numbers(fabricated, [], False, primed)
+    # fewer than 3 precise figures -> silent (casual numbers are fine)
+    assert "Unverified" not in ensure_grounded_numbers(
+        "SPY rose about 1.20% today.", [], False, "")
+
+
 def test_human_age():
     assert human_age(28) == "28s"
     assert human_age(840) == "14m"

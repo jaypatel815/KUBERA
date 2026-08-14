@@ -19,11 +19,14 @@ tests run without the package and minor SDK type changes don't break us.
 
 import asyncio
 import json
+import logging
 import os
 from typing import Any
 
 from api.tools import ConfirmationRequiredError, ToolContext, ToolError, registry
 from settings import ConfigError, KuberaSettings
+
+log = logging.getLogger("kubera.claude_sdk")
 
 SDK_SERVER_NAME = "kubera"
 BUILTIN_DENYLIST = ["Bash", "Read", "Write", "Edit", "Glob", "Grep", "WebSearch"]
@@ -119,10 +122,20 @@ class ClaudeSDKProvider:
                 self._settings.claude_code_oauth_token.get_secret_value(),
             )
         self.last_tool_events = []
+        sdk_tools = self._make_sdk_tools(sdk)
         server = sdk.create_sdk_mcp_server(
-            name=SDK_SERVER_NAME, version="1.0.0", tools=self._make_sdk_tools(sdk)
+            name=SDK_SERVER_NAME, version="1.0.0", tools=sdk_tools
         )
         allowed = [f"mcp__{SDK_SERVER_NAME}__{n}" for n in registry.names()]
+        # I011 diagnostic: if the bridge silently degrades (SDK version drift), the
+        # model improvises tool names from prose — this line is the tell in the log.
+        self.bridged_tool_count = len(sdk_tools)
+        log.info("claude-sdk: bridged %d registry tools (%d allowed)",
+                 len(sdk_tools), len(allowed))
+        if len(sdk_tools) != len(registry.names()):
+            log.warning("claude-sdk BRIDGE MISMATCH: %d sdk tools vs %d registry "
+                        "tools — update claude-agent-sdk (I011)",
+                        len(sdk_tools), len(registry.names()))
         options = sdk.ClaudeAgentOptions(
             system_prompt=system,
             # Dict form per current Python reference; if the installed SDK version wants
