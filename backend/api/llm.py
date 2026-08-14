@@ -46,11 +46,21 @@ class LLMReply:
         return len(self.tool_calls) > 0
 
 
+DEFAULT_TIMEOUT = 300.0  # seconds; settings.llm_timeout_seconds overrides (I014)
+
+
 def _post(url: str, headers: dict, payload: dict, provider: str,
-          transport: httpx.BaseTransport | None) -> dict:
+          transport: httpx.BaseTransport | None,
+          timeout: float = DEFAULT_TIMEOUT) -> dict:
     try:
-        with httpx.Client(timeout=120.0, transport=transport) as http:
+        with httpx.Client(timeout=timeout, transport=transport) as http:
             resp = http.post(url, headers=headers, json=payload)
+    except httpx.TimeoutException as e:
+        raise LLMError(
+            f"timeout: {provider} did not answer within {timeout:.0f}s "
+            f"(long prompts on slow/local models can exceed this — raise "
+            f"LLM_TIMEOUT_SECONDS in .env)"
+        ) from e
     except httpx.HTTPError as e:
         raise LLMError(f"Network error calling {provider}: {e!r}") from e
     if resp.status_code == 401:
@@ -65,10 +75,12 @@ def _post(url: str, headers: dict, payload: dict, provider: str,
 
 class AnthropicProvider:
     def __init__(self, api_key: str, model: str,
-                 transport: httpx.BaseTransport | None = None):
+                 transport: httpx.BaseTransport | None = None,
+                 timeout: float = DEFAULT_TIMEOUT):
         self._key = api_key
         self.model = model
         self._transport = transport
+        self.timeout = timeout
 
     @staticmethod
     def _to_messages(neutral: list[dict]) -> list[dict]:
@@ -109,7 +121,7 @@ class AnthropicProvider:
         d = _post(
             ANTHROPIC_URL,
             {"x-api-key": self._key, "anthropic-version": "2023-06-01"},
-            payload, "anthropic", self._transport,
+            payload, "anthropic", self._transport, timeout=self.timeout,
         )
         text_parts, calls = [], []
         for block in d.get("content", []):
@@ -133,11 +145,13 @@ class OpenAIProvider:
 
     def __init__(self, api_key: str, model: str,
                  transport: httpx.BaseTransport | None = None,
-                 base_url: str = "https://api.openai.com/v1"):
+                 base_url: str = "https://api.openai.com/v1",
+                 timeout: float = DEFAULT_TIMEOUT):
         self._key = api_key
         self.model = model
         self._transport = transport
         self._url = base_url.rstrip("/") + "/chat/completions"
+        self.timeout = timeout
 
     @staticmethod
     def _to_messages(system: str, neutral: list[dict]) -> list[dict]:
@@ -173,7 +187,7 @@ class OpenAIProvider:
                 for t in tools
             ]
         d = _post(self._url, {"Authorization": f"Bearer {self._key}"},
-                  payload, "openai", self._transport)
+                  payload, "openai", self._transport, timeout=self.timeout)
         msg = d["choices"][0]["message"]
         calls = [
             ToolCallRequest(tc["id"], tc["function"]["name"],
@@ -202,7 +216,8 @@ def build_provider(settings: KuberaSettings | None = None,
                 "in .env. Add it, or set LLM_PROVIDER=openai."
             )
         return AnthropicProvider(s.anthropic_api_key.get_secret_value(),
-                                 s.anthropic_model, transport)
+                                 s.anthropic_model, transport,
+                                 timeout=s.llm_timeout_seconds)
     if provider == "openai":
         # Local/compat endpoints (e.g. Ollama) don't need a real key — allow a dummy.
         is_custom_endpoint = "api.openai.com" not in s.openai_base_url
@@ -214,7 +229,8 @@ def build_provider(settings: KuberaSettings | None = None,
                 "LLM_PROVIDER=anthropic."
             )
         return OpenAIProvider(key or "not-needed", s.openai_model, transport,
-                              base_url=s.openai_base_url)
+                              base_url=s.openai_base_url,
+                              timeout=s.llm_timeout_seconds)
     if provider in ("claude-sdk", "claude_sdk", "max"):
         if not s.claude_code_oauth_token:
             raise ConfigError(

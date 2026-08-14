@@ -16,6 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.context import assemble_context
+from api.llm import LLMError
 from api.persona import build_system_prompt
 from api.tools import ConfirmationRequiredError, ToolContext, ToolError, registry
 from data.ips import format_ips_for_prompt, get_ips
@@ -249,6 +250,50 @@ def _history(db: Session, conversation_id: int) -> list[dict]:
     return neutral
 
 
+# Schema-leak guard (I013): a real transcript showed "I'd like to update the IPS"
+# answered with an 8-row markdown table of our internal parameter names
+# (max_drawdown_frac, target_annual_return_frac, ...). Parameter names are wiring,
+# not conversation — the human answer is one question: "what would you like to
+# change?". Deterministic detection: underscore-bearing property names from the
+# registry's own schemas; 3+ distinct ones surfacing in a reply is a schema dump,
+# unless the user explicitly asked to see fields or used the jargon themselves.
+_ASKS_FOR_FIELDS = re.compile(
+    r"\bfields?\b|\bparameters?\b|\bschemas?\b"
+    r"|what (can|do) (i|you) (change|update|set|adjust)",
+    re.IGNORECASE,
+)
+
+
+def _schema_tokens() -> frozenset[str]:
+    """Underscore-bearing parameter names across all registered tools (on demand,
+    so tools registered after import are included)."""
+    return frozenset(
+        name
+        for s in registry.schemas()
+        for name in s["parameters"].get("properties", {})
+        if "_" in name
+    )
+
+
+def ensure_no_schema_dump(text: str, user_text: str) -> str:
+    if _ASKS_FOR_FIELDS.search(user_text):
+        return text  # user explicitly asked what's changeable — showing fields is fine
+    tokens = _schema_tokens()
+    in_user = {t for t in tokens if re.search(rf"\b{re.escape(t)}\b", user_text)}
+    if len(in_user) >= 2:
+        return text  # user speaks the schema; mirroring it back isn't a dump
+    leaked = {t for t in tokens if re.search(rf"\b{re.escape(t)}\b", text)}
+    if len(leaked) < 3:
+        return text
+    log.warning("schema dump in reply — internal names leaked: %s", sorted(leaked))
+    return (
+        text
+        + "\n\n⚠ Pacing check: this reply exposed KUBERA's internal field names "
+          "instead of asking a plain question. Ignore the jargon — just say what "
+          "you want in your own words and KUBERA will translate."
+    )
+
+
 def run_chat_turn(
     db: Session,
     provider,
@@ -294,7 +339,33 @@ def run_chat_turn(
     budget = get_settings().context_budget_chars
     for _round in range(max_tool_rounds):
         history = assemble_context(_history(db, conversation_id), budget)
-        reply = provider.complete(system, history, schemas)
+        try:
+            reply = provider.complete(system, history, schemas)
+        except LLMError as e:
+            # I014: a real 19k-char IPS brief died here with a raw ReadTimeout
+            # leaking to the owner. The user message is already committed (above),
+            # so nothing is lost — say so, in words, and keep the thread usable.
+            log.error("LLM call failed mid-turn (round %d): %s", _round, e)
+            is_timeout = "timeout" in str(e).lower() or "timed out" in str(e).lower()
+            apology = (
+                "Your message reached me and is saved — but my language model "
+                + ("timed out while working on it. Long messages take longer, "
+                   "especially on local models; the wait limit is tunable via "
+                   "LLM_TIMEOUT_SECONDS in .env. "
+                   if is_timeout else
+                   "couldn't be reached (network problem — details are in the "
+                   "server log). ")
+                + "Nothing was lost: say \"try again\" and I'll pick up exactly "
+                  "where we left off."
+            )
+            db.add(ChatMessage(conversation_id=conversation_id, role="assistant",
+                               content=apology))
+            db.commit()
+            return ChatTurnResult(
+                conversation_id=conversation_id, reply=apology, tool_trail=trail,
+                input_tokens=total_in, output_tokens=total_out,
+                stop_reason="llm_error",
+            )
 
         for ev in (getattr(provider, "last_tool_events", None) or []):
             trail.append({"name": ev["name"], "arguments": ev["arguments"]})
@@ -331,15 +402,18 @@ def run_chat_turn(
             ).first() is not None
             return ChatTurnResult(
                 conversation_id=conversation_id,
-                reply=ensure_grounded_numbers(
-                    ensure_no_deflection(
-                        ensure_symbol_alignment(
-                            ensure_recency_line(reply.text or "", tool_asofs),
+                reply=ensure_no_schema_dump(
+                    ensure_grounded_numbers(
+                        ensure_no_deflection(
+                            ensure_symbol_alignment(
+                                ensure_recency_line(reply.text or "", tool_asofs),
+                                user_text, trail,
+                            ),
                             user_text, trail,
                         ),
-                        user_text, trail,
+                        trail, has_tool_rows, primed_text,
                     ),
-                    trail, has_tool_rows, primed_text,
+                    user_text,
                 ),
                 tool_trail=trail, input_tokens=total_in, output_tokens=total_out,
                 stop_reason=reply.stop_reason,

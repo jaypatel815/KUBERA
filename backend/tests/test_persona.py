@@ -46,5 +46,8 @@ def test_nonnegotiable_keywords_present():
         "routing",  # I008: question -> tools map
         "exactly one missing thing",  # pacing: one question per turn, no forms
         "avg_entry_price",  # pacing: entry price lives in get_portfolio — look first
+        "schemas are private",  # I013: field lists are wiring, not conversation
+        "what would you like to change?",  # I013: the one-line human reply
+        "extract what maps to your tools",  # I013: long briefs get action, not menus
     ):
         assert keyword in prompt, f"missing persona keyword: {keyword}"

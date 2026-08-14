@@ -4,6 +4,27 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I013 [FIXED — verify on owner machine] — "I'd like to update the IPS" → KUBERA
+  dumped an 8-row markdown table of INTERNAL parameter names (max_drawdown_frac,
+  target_annual_return_frac, ...) and asked the owner to pick fields. Menus and
+  schema tables are the opposite of the one-question pacing doctrine. Defenses:
+  (1) persona rule "SCHEMAS ARE PRIVATE" — field lists are wiring; the human reply
+  is "Sure — what would you like to change?"; long briefs get extraction + action,
+  not menus; (2) update_ips description now orders conversational collection and
+  forbids displaying its parameter list; (3) deterministic ensure_no_schema_dump
+  in chat.py — 3+ distinct underscore-bearing schema property names in a reply
+  (when the user neither asked for fields nor used the jargon) → "⚠ Pacing check"
+  footer + WARNING log. Owner transcript is a named test. Logged 2026-08-14.
+- I014 [FIXED — verify on owner machine] — the 19k-char IPS brief (I012 resend)
+  died with raw "Network error calling openai: ReadTimeout('timed out')" shown to
+  the owner (note: provider was openai/local at the time, not claude-sdk). Fixes:
+  (1) LLM timeout now settings-driven — LLM_TIMEOUT_SECONDS, default 300s (was
+  hard-coded 120s), wired through both httpx providers; timeout errors carry the
+  knob's name, never a raw repr; (2) run_chat_turn catches LLMError mid-turn: the
+  user message is ALREADY committed before the call, so the reply now says so
+  ("saved — say 'try again'"), persists the apology as the assistant row, returns
+  stop_reason="llm_error" — thread stays usable, recovery replay is a named test.
+  Logged 2026-08-14.
 - I012 [FIXED — verify on owner machine] — Owner's full IPS brief (a ~14-section
   message: $1k→$1M goal, horizons, contribution scenarios, drawdown/options policy)
   bounced with `POST /api/chat 422`. Cause: `ChatRequest.message max_length=6000`

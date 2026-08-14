@@ -83,6 +83,15 @@ class KuberaSettings(BaseSettings):
         validation_alias=AliasChoices("KUBERA_CONTEXT_BUDGET_CHARS",),
     )
 
+    # How long one LLM call may take. Local models (Ollama) chewing a long IPS
+    # brief blew through the old hard-coded 120s (I014); default is generous and
+    # env-tunable rather than guessed.
+    llm_timeout_seconds: float = Field(
+        default=300.0, ge=10, le=1800,
+        validation_alias=AliasChoices("KUBERA_LLM_TIMEOUT_SECONDS",
+                                      "LLM_TIMEOUT_SECONDS"),
+    )
+
     # D007: SQLite now, Postgres+pgvector at Phase 3 — switching is a URL change.
     database_url: str = Field(
         default=f"sqlite:///{(REPO_ROOT / 'kubera.sqlite3').as_posix()}",

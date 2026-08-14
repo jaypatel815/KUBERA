@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — I013+I014: schemas are private + a timeout that keeps the thread
+Owner transcript, two failures in one conversation. First: "update the IPS" was
+answered with a table of our internal parameter names — a form, not a colleague.
+Persona gained "SCHEMAS ARE PRIVATE" (the reply is 'what would you like to
+change?'; briefs get extraction, not menus), update_ips's description now forbids
+showing its field list, and chat.py gained ensure_no_schema_dump: 3+ internal
+underscore-names in a reply (user didn't ask for fields / doesn't speak schema) →
+⚠ Pacing footer. His exact menu reply is a named test. Second: the resent IPS
+brief hit a ReadTimeout, raw error on screen — on provider=openai (likely local),
+not claude-sdk. Timeout is now LLM_TIMEOUT_SECONDS (default 300s, was 120 fixed),
+timeout errors name the knob, and run_chat_turn catches LLMError: user text was
+committed pre-call, so the reply says "saved — say 'try again'" and the recovery
+replay is tested end-to-end. Audited remaining tool descriptions: only update_ips
+was menu-bait. Verified: verify.py PASS — 486 passed (+11), 3 skipped.
+Owner: restart backend, resend the brief; if it times out again the message is
+kept — say "try again", or raise LLM_TIMEOUT_SECONDS in .env.
+
 ## 2026-08-14 — I012: the IPS brief that didn't fit + goal_math (tool #25)
 Owner poured his actual investment policy into the chat — 14 sections, $1k→$1M,
 horizon math, contribution scenarios, "challenge my assumptions" — and got a 422.

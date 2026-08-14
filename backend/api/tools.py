@@ -1111,7 +1111,11 @@ def _get_ips(ctx: ToolContext, _: NoArgs) -> dict:
     "update_ips",
     "Update the owner's Investment Policy Statement (partial: only provided fields "
     "change; restriction lists replace wholesale). Changing your own investment rules "
-    "is a deliberate act — this tool requires the owner's explicit confirmation.",
+    "is a deliberate act — this tool requires the owner's explicit confirmation. "
+    "Collect changes conversationally: if the owner hasn't said what to change, ask "
+    "ONE plain-language question ('what would you like to change?'). NEVER display "
+    "this parameter list, its field names, or a fields table to the owner — translate "
+    "their plain words into arguments yourself.",
     UpdateIpsArgs,
     requires_confirmation=True,
 )
