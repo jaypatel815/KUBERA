@@ -22,6 +22,7 @@ from analysis.benchmark import compare
 from analysis.breakout import detect_breakouts
 from analysis.briefing import PositionContext, build_briefing
 from analysis.confluence import assess_confluence
+from analysis.correlation import overlap_report
 from analysis.exit_plan import build_exit_plan
 from analysis.expected_move import expected_move
 from analysis.goal_math import goal_scenarios
@@ -1049,6 +1050,53 @@ def _get_attribution(ctx: ToolContext, _: NoArgs) -> dict:
         "activity_by_regime": activity,
         "fills_analyzed": len(attributed),
         "asof": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+class CorrelationArgs(LenientArgs):
+    candidate: str | None = Field(
+        default=None, max_length=10,
+        description="Optional symbol being CONSIDERED — checked for overlap "
+                    "against current holdings",
+    )
+    days: int = Field(default=130, ge=40, le=750,
+                      description="History window for daily returns")
+
+
+@registry.tool(
+    "get_correlation",
+    "Correlation & overlap guard (T079): pairwise correlation of daily returns "
+    "across current holdings (plus an optional candidate symbol), per-symbol beta "
+    "vs SPY, and portfolio beta. Flags pairs above 0.80 — SPY+QQQ+AAPL feels like "
+    "three positions but trades like one. Run this BEFORE recommending any new "
+    "buy; a flagged candidate means added exposure, not diversification — say so. "
+    "Correlations are historical estimates from the window, not guarantees.",
+    CorrelationArgs,
+)
+def _get_correlation(ctx: ToolContext, p: CorrelationArgs) -> dict:
+    alpaca: AlpacaClient = ctx.require("alpaca")
+    market: MarketDataClient = ctx.require("market")
+    positions = alpaca.get_positions()
+    held = summarize(positions)
+    weights = {v.symbol: v.weight_frac for v in held.positions}
+    candidate = p.candidate.upper() if p.candidate else None
+    symbols = sorted(set(weights) | ({candidate} if candidate else set()))
+    if not symbols:
+        raise ToolError("no holdings and no candidate — nothing to correlate")
+    closes: dict[str, list[float]] = {}
+    for sym in symbols:
+        bars = market.get_daily_bars(sym, days=p.days)
+        closes[sym] = [b.close for b in bars.bars]
+    bench = market.get_daily_bars("SPY", days=p.days)
+    report = overlap_report(
+        closes, [b.close for b in bench.bars],
+        weights=weights, candidate=candidate,
+    )
+    return {
+        **asdict(report),
+        "window_days_requested": p.days,
+        "asof": datetime.now(timezone.utc).isoformat(),
+        "source": bench.source,
     }
 
 

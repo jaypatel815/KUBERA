@@ -394,6 +394,25 @@ def symbol_expected_move(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/correlation")
+def portfolio_correlation(
+    candidate: str | None = None,
+    days: int = 130,
+    alpaca: AlpacaClient = Depends(get_alpaca_client),
+    market: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """Overlap guard (T079): holdings correlation matrix + betas, via the chat tool."""
+    try:
+        return registry.execute(
+            "get_correlation", {"candidate": candidate, "days": days},
+            ToolContext(alpaca=alpaca, market=market),
+        )
+    except (ToolError, ToolArgumentError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except (MarketDataError, AlpacaError) as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/news")
 def market_news(
     symbols: str | None = None,

@@ -3,6 +3,38 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T079: the overlap guard — "that's not diversification, that's the same bet"
+Built the deterministic engine behind the pre-trade concentration warning:
+analysis/correlation.py — pairwise Pearson correlation of daily log returns
+(shared trailing windows; <20 observations = refused with a warning, never
+guessed), per-symbol OLS beta vs SPY, portfolio beta from position weights
+(coverage-warned when history gaps), 0.80+ pairs flagged, and the candidate
+check that says "QQQ correlates 0.97 with your SPY — added exposure, not
+diversification". Tool #27 get_correlation (description orders the model to
+run it before any buy recommendation) + GET /api/correlation. All statistics
+hand-computed in tests (y=2x → 1.0, constructed zero-covariance vectors → 0.0,
+doubled returns → beta 2.0). T093's portfolio-risk summary builds on this.
+Verified: verify.py PASS — 511 passed (+14), 3 skipped.
+Next: T092 parameter stability sweeps or T090 liquidity costs (both unblocked).
+
+## 2026-08-14 — T097 v5: anatomy pass — the skull under the hologram
+Owner approved the rod technique, rejected the anatomy (11-point critique).
+Kept: rods, palette, density system, behaviors. Changed: silhouette is now an
+elongated tapered skull with per-side sinusoidal wobble (organic, slightly
+asymmetric — no more sphere); pupils/eyeballs DELETED per spec — eyes are now
+irregular horizontally-elongated feathered cavities (angular rim modulation,
+different size per side, darker toward center, particles veiling them);
+structural nose (stronger bridge ramp, projection, nostril dark mass); mouth
+de-lined into a broad shallow cavity partially lost in the field; NEW dark
+dense chin mass (density floor raised while brightness drops — the
+"computational shadow beard") with fragmentation moved BELOW it; cascade
+narrowed to a top-biased central column with escaping floaters — reads as the
+face dissolving, not a torso. Composition ~60/15/25 face/transition/network.
+Offline preview validated the anatomy before the port; cursor-follow (head
+only now), lip amp, shimmer, scan, glitch, CDN fallback all intact.
+node --check + no-uGaze guard + verify PASS 497/3.
+Owner: hard-refresh localhost:8000.
+
 ## 2026-08-14 — T097 v4: the strict spec — microscopic rods, density features, continuous dissolve
 Owner delivered a full visual spec (three references, STRICT): elements must be
 tiny vertical luminous rods (NOT squares/voxels/mesh), features must emerge from
