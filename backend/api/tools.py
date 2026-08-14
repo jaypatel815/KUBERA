@@ -13,7 +13,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -163,6 +163,20 @@ registry = ToolRegistry()
 
 class NoArgs(BaseModel):
     pass
+
+
+class LenientArgs(BaseModel):
+    """Base for optional-heavy arg models (I009): weaker models send the STRING
+    'None', 'null', 'N/A', or '' for absent values — observed twice in real logs
+    on record_decision. Normalize nullish strings to real None BEFORE validation
+    so an honest attempt to journal doesn't die on formatting."""
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def _nullish_to_none(cls, v):
+        if isinstance(v, str) and v.strip().lower() in ("", "none", "null", "n/a", "na"):
+            return None
+        return v
 
 
 class SymbolArgs(BaseModel):
@@ -590,9 +604,14 @@ def _get_macro_context(ctx: ToolContext, _: NoArgs) -> dict:
     }
 
 
-class RecordDecisionArgs(BaseModel):
+class RecordDecisionArgs(LenientArgs):
     symbol: str = Field(min_length=1, max_length=10)
     verdict: str = Field(pattern="^(buy|add|hold|trim|sell|avoid)$")
+
+    @field_validator("verdict", mode="before")
+    @classmethod
+    def _lowercase_verdict(cls, v):  # models shout "BUY" — meet them halfway (I009)
+        return v.strip().lower() if isinstance(v, str) else v
     confidence: float = Field(ge=0, le=1,
                               description="Your stated confidence (persona caps apply)")
     thesis: str = Field(min_length=10, max_length=1000)
@@ -624,7 +643,7 @@ def _record_decision(ctx: ToolContext, p: RecordDecisionArgs) -> dict:
     return {"recorded": True, "decision": decision_as_dict(row)}
 
 
-class MarkDecisionArgs(BaseModel):
+class MarkDecisionArgs(LenientArgs):
     decision_id: int = Field(ge=1)
     followed: bool = Field(description="True = owner followed the call; False = overrode it")
     note: str | None = Field(default=None, max_length=500)
@@ -911,7 +930,7 @@ def _size_position(ctx: ToolContext, p: SymbolArgs) -> dict:
     }
 
 
-class TriageArgs(SymbolArgs):
+class TriageArgs(LenientArgs, SymbolArgs):
     entry_price: float = Field(gt=0, description="The owner's entry price")
     days_held: int | None = Field(default=None, ge=0,
                                   description="Sessions held, if known")
@@ -1032,7 +1051,7 @@ def _get_attribution(ctx: ToolContext, _: NoArgs) -> dict:
     }
 
 
-class UpdateIpsArgs(BaseModel):
+class UpdateIpsArgs(LenientArgs):
     """Only provided fields change; restriction lists REPLACE wholesale."""
 
     objectives: str | None = Field(default=None, max_length=500)

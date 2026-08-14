@@ -72,6 +72,19 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   then `rm -f .git/*.lock` and delete `.git/objects/**/tmp_obj_*`. Windows/Antigravity/other
   agents are unaffected. Resolved 2026-08-11.
 
+## I009 — record_decision rejected: model sent "None"/""/"BUY" (2026-08-14)
+OBSERVED (owner-pasted server logs): two record_decision attempts failed pydantic
+validation — the string "None" and empty strings for absent optionals, and a
+SHOUTED "BUY" against the lowercase verdict pattern. Silver lining: the T063
+persona rule WORKED (the model tried to journal); the arguments were sloppy.
+FIX: LenientArgs base model — wildcard before-validator maps ""/"None"/"null"/
+"N/A" to real None; verdict lowercased before pattern check. Applied to
+record_decision, mark_decision, triage_position, update_ips (the optional-heavy
+models). Both failing payloads are now verbatim passing tests; real validation
+(bad verdicts, bad numbers) still rejects.
+STATUS: fixed. Pattern note: third local-brain formatting issue — T096 (tool
+subsetting) and the claude-sdk recommendation stand.
+
 ## I008 — "Which ticker?" asked back to a user who NAMED the ticker (2026-08-14)
 OBSERVED (owner transcript, day after I007, same brain suspected): "Since I
 currently hold SPY, should I continue holding?" -> model asked "tell me which

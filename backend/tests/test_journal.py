@@ -11,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 from test_alpaca import paper_settings
 
 from api.main import app
-from api.tools import ToolContext, ToolError, registry
+from api.tools import ToolArgumentError, ToolContext, ToolError, registry
 from data.journal import (
     list_decisions,
     mark_decision,
@@ -116,6 +116,45 @@ def test_record_and_journal_tools_roundtrip(db):
     assert j["summary"]["overridden"] == 1
     assert j["summary"]["hit_rate"] is None
     assert j["decisions"][0]["key_risk"] == "momentum persists"
+
+
+def test_lenient_args_accept_the_exact_failing_payloads(db):
+    # I009: both payloads below are verbatim shapes from real failure logs.
+    # Payload 1: the string "None" for absent optionals
+    out = registry.execute("record_decision", {
+        "symbol": "SPY", "verdict": "hold", "confidence": 0.6,
+        "thesis": "trend intact; staying the course",
+        "entry_price": 640.0, "target_price": "None", "regime_confidence": "None",
+    }, ToolContext(db=db))
+    assert out["recorded"] is True
+    assert out["decision"]["target_price"] is None
+    assert out["decision"]["regime_confidence"] is None
+
+    # Payload 2: SHOUTED verdict + empty strings for absent optionals
+    out2 = registry.execute("record_decision", {
+        "symbol": "SPY", "verdict": "BUY", "confidence": 0.55,
+        "thesis": "breakout held with volume confirmation",
+        "entry_price": "", "target_price": "", "stop_price": "",
+        "regime_confidence": "",
+    }, ToolContext(db=db))
+    assert out2["recorded"] is True
+    assert out2["decision"]["verdict"] == "buy"
+    assert out2["decision"]["entry_price"] is None
+
+    # normalization never weakens REAL validation
+    with pytest.raises(ToolArgumentError):
+        registry.execute("record_decision", {
+            "symbol": "SPY", "verdict": "YOLO", "confidence": 0.5,
+            "thesis": "this should still be rejected properly",
+        }, ToolContext(db=db))
+
+
+def test_lenient_args_cover_triage_days_held(db):
+    from api.tools import TriageArgs
+
+    args = TriageArgs(symbol="SPY", entry_price="640.5", days_held="None")
+    assert args.entry_price == pytest.approx(640.5)  # numeric strings still coerce
+    assert args.days_held is None
 
 
 def test_mark_unknown_id_is_tool_error(db):
