@@ -2,6 +2,23 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D019 — Event-intelligence batch: take the base rates, gate the ML, keep the honesty (2026-08-13)
+Owner's fourth batch (sell-the-news / NLP / XGBoost). Dispositions binding in
+docs/research/event-intelligence-review-2026-08-13.md. The rumor/news/pricing
+decomposition maps ~70% onto existing work (T077 shipped bands = the pricing leg;
+T076 = the calendar; T023 = consensus/surprises). NEW: T083 event reaction base
+rates (deterministic post-earnings move history split by beat/miss + runup — the
+honest "hold through earnings?" answer), T084 transcripts/filings as LABELED
+context via the existing LLM layer (no FinBERT; Lazy-Prices YoY filing-diff filed
+as Phase 7 §7.7 research). ENRICHED: T076 priced-for-perfection flag, T023
+tier-verification now explicitly covers transcripts. RE-REJECTED per D017, no new
+evidence: 99.9% accuracy framing; ALSO rejected: XGBoost EPS predictor NOW (Phase 7
+behind §7.7 + T064 gate; free-tier fundamentals aren't point-in-time — restatement
+bias corrupts training), directive outputs with invented confidence ("Sell 50%,
+85/100" violates persona). HYGIENE: the batch reused shipped ticket IDs
+(T075/76/77) — external AIs must be given the AGENTS.md resume prompt so they
+propose against real repo state.
+
 ## D018 — Cross-agent review: build the small safety nets now, vote the backlog order, park Schwab (2026-08-13)
 Owner uploaded a repo-aware review (dispositions binding in docs/research/
 agent-review-2026-08-13.md). BUILT same-session: stale-data detection

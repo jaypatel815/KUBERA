@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — D019: event-intelligence batch reconciled — base rates in, ML gated
+Owner's fourth batch (sell-the-news/NLP/XGBoost). Adopted the honest core: T083 event
+reaction base rates (post-earnings moves by beat/miss + pre-event runup from our own
+bars — evidence, not prophecy) and T084 transcripts-as-labeled-context via the existing
+LLM layer; T076 gains the priced-for-perfection flag; T023 tier check now covers
+transcripts explicitly. Re-rejected per D017 (no new evidence): 99.9% accuracy; also
+rejected now: XGBoost EPS predictor (Phase 7 behind §7.7 + T064; free fundamentals
+aren't point-in-time — training would learn corrupted history) and directive outputs
+with invented confidence (persona guard). HYGIENE FLAG: the batch reused shipped IDs
+T075/76/77 — external AIs need the AGENTS.md resume prompt before proposing.
+Dispositions: docs/research/event-intelligence-review-2026-08-13.md.
+Verified: verify.py PASS — 349 passed, 3 skipped (memory/docs session).
+Next builds unchanged: T080 macro (quick win), T075 confluence, T063 journal; T083
+becomes buildable the moment T023 lands earnings dates. Owner action: T023's key
+check is the gate on this whole thread — worth doing soon.
+Blockers: none.
+
 ## 2026-08-13 — T062 done: morning brief, EOD report, weekly review — KUBERA starts the day with you
 api/brief.py composes three reads, every number deterministic + timestamped, LLM only
 narrates: MORNING — account, risk (tier/breaker/DQS), and for each holding + SPY the
