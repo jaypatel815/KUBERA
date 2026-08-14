@@ -97,6 +97,10 @@ http://127.0.0.1:8000/api/size/SPY                          how many shares coul
                                                             from your equity, the ATR stop, cap headroom, and
                                                             the current risk tier — with the stop price and
                                                             what limited it. Zero when entries are paused
+http://127.0.0.1:8000/api/triage/SPY?entry_price=640        I'm IN the trade — hold, exit, or add? judged
+                                                            against the live exit plan; averaging down is never
+                                                            called "lowering your average" — range adds only at
+                                                            the edge, trend adds only on strength
 http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
 http://127.0.0.1:8000/api/backtests                         the results ledger: every recorded backtest
 POST /api/backtests/run?strategy=momentum&symbol=SPY        run + record a backtest (use /docs to click it)

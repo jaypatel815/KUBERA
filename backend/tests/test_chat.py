@@ -66,7 +66,7 @@ def test_text_only_turn_persists_and_returns(db):
     assert roles == ["user", "assistant"]
     assert "KUBERA" in p.calls[0]["system"]  # persona in place
     assert "VOICE MODE" not in p.calls[0]["system"]  # text mode by default
-    assert len(p.calls[0]["tools"]) == 22  # registry schemas offered
+    assert len(p.calls[0]["tools"]) == 23  # registry schemas offered
 
 
 def test_voice_flag_reaches_system_prompt(db):

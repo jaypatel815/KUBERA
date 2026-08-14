@@ -378,6 +378,26 @@ def symbol_intraday(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/triage/{symbol}")
+def position_triage(
+    symbol: str,
+    entry_price: float,
+    days_held: int | None = None,
+    market: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """I'm in the trade — hold, exit, or add? Judged against the live exit plan."""
+    try:
+        return registry.execute(
+            "triage_position",
+            {"symbol": symbol, "entry_price": entry_price, "days_held": days_held},
+            ToolContext(market=market),
+        )
+    except ToolError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/exit-plan/{symbol}")
 def symbol_exit_plan(
     symbol: str,

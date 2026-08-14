@@ -29,6 +29,7 @@ from analysis.macro import compose_macro_context
 from analysis.metrics import atr
 from analysis.portfolio import summarize, win_loss
 from analysis.regime import classify_regime
+from analysis.triage import triage_position
 from backtest.ledger import run_and_record
 from backtest.strategies import TEMPLATES, build_strategy
 from data.alpaca import AlpacaClient
@@ -905,6 +906,75 @@ def _size_position(ctx: ToolContext, p: SymbolArgs) -> dict:
         },
         "asof": acct.asof.isoformat(),
         "source": f"{acct.source} + {bars.source}",
+    }
+
+
+class TriageArgs(SymbolArgs):
+    entry_price: float = Field(gt=0, description="The owner's entry price")
+    days_held: int | None = Field(default=None, ge=0,
+                                  description="Sessions held, if known")
+
+
+@registry.tool(
+    "triage_position",
+    "You're IN a trade — now what? Builds the current exit plan for the symbol and "
+    "judges the owner's position against it: EXIT (invalidation closed through, or "
+    "downtrend — adding to a dead thesis is increasing exposure, never 'lowering "
+    "an average'), EXIT_AT_TARGET (range trade complete), or HOLD with an honest "
+    "add-assessment (range adds only at the edge; trend adds only on strength, "
+    "never on dips toward the break level). Flags an expired review clock. Narrate "
+    "the verdict WITH its reason and the unrealized P&L.",
+    TriageArgs,
+)
+def _triage_position(ctx: ToolContext, p: TriageArgs) -> dict:
+    market: MarketDataClient = ctx.require("market")
+    bars = market.get_daily_bars(p.symbol, days=250)
+    if len(bars.bars) < 21:
+        raise ToolError(
+            f"only {len(bars.bars)} daily bars for '{p.symbol}' — need at least 21"
+        )
+    highs = [b.high for b in bars.bars]
+    lows = [b.low for b in bars.bars]
+    closes = [b.close for b in bars.bars]
+    dates = [b.date for b in bars.bars]
+    volumes = [b.volume for b in bars.bars]
+
+    reading = classify_regime(highs, lows, closes, volumes, dates,
+                              volume_feed=bars.source)
+    levels = find_levels(highs, lows, closes, dates)
+    atr_value = atr(highs, lows, closes) if len(bars.bars) >= 15 else None
+    scan = detect_breakouts(highs, lows, closes, volumes, dates)
+    plan = build_exit_plan(
+        reading.regime, closes[-1],
+        atr_value=atr_value,
+        support=levels.nearest_support.price if levels.nearest_support else None,
+        resistance=(levels.nearest_resistance.price
+                    if levels.nearest_resistance else None),
+        sma=reading.sma,
+        breakout_boundary=(scan.latest.boundary
+                           if scan.active and scan.latest else None),
+        breakout_direction=(scan.latest.direction
+                            if scan.active and scan.latest else None),
+    )
+    trade = market.get_latest_trade(p.symbol)
+    triage = triage_position(
+        p.entry_price, trade.price, plan.thesis_type,
+        invalidation_level=plan.invalidation_level,
+        target_level=plan.target_level,
+        review_horizon_days=plan.review_horizon_days,
+        days_held=p.days_held,
+        atr_value=atr_value,
+    )
+    return {
+        "symbol": bars.symbol,
+        "triage": asdict(triage),
+        "exit_plan": asdict(plan),
+        "regime": reading.regime,
+        "last_price": trade.price,
+        "price_stale": trade.stale,
+        "entry_price": p.entry_price,
+        "asof": bars.asof.isoformat(),
+        "source": bars.source,
     }
 
 

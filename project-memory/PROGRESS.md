@@ -3,6 +3,25 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T086 done: position triage — "should I average down?" answered honestly
+analysis/triage.py judges an existing position against the LIVE exit plan (tool
+composes regime + levels + ATR + active breakout, then compares entry vs latest trade):
+EXIT when invalidation is closed through — with the sentence that matters: "adding here
+is increasing exposure to a losing idea, not lowering an average" (asserted in tests);
+EXIT_AT_TARGET when the range completes ("wanting more is a NEW thesis"); otherwise
+HOLD with an honest add-assessment — range adds allowed ONLY in the lower quarter of
+the invalidation→target span (buy support, never mid-range: "worst risk/reward"),
+trend adds NEVER blessed on dips ("the market arguing with the thesis" — adds happen
+on strength). Review-clock expiry flagged. Every reading carries unrealized P&L,
+distance to invalidation/target, risk_remaining_atr, and the standing honesty note
+pointing at size_position for combined-risk math. triage_position (registry 23,
+guards ×3) + GET /api/triage/{symbol}?entry_price=&days_held=.
+Verified: verify.py PASS — 418 passed, 3 skipped.
+Owner Q&A scoreboard: #4 scale-out/average-down now SHIPPED (5 of 7 fully live).
+Next: T087 trade monitor (needs T074/T082 rails) or T081 pairs; T082 Orb = Gemini bait.
+Owner: ask the Orb "I'm in SPY from 640, should I add or get out?"
+Blockers: none.
+
 ## 2026-08-13 — T085 done: "how many shares?" answered by voice
 size_position tool (registry 22, guards ×3) + GET /api/size/{symbol}: exact new-buy qty
 = min(risk_notional × tier_multiplier, cap_headroom) with tier 3+/breaker → 0 and a
