@@ -3,6 +3,19 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T097 v3: holographic — voxel columns, hollow eyes, the cascade
+Owner's second reference (frontal head of stacked voxel columns dissolving
+downward into a wireframe cascade) + the word "holographic". Rebuilt the
+renderer on the same sculpt: 3 stacked depth layers per sample (~23k points,
+volumetric column look), per-column brightness striping, speckled ice/navy/mid
+palette (offline-tuned preview matched the reference closely before porting),
+dark eye hollows with glowing tracking pupils, scan-band sweeping down the
+face, holo flicker + z-instability, rare row-glitch. The side halo became THE
+CASCADE: 230-node undulating wireframe network hanging below the jaw (sways at
+35% of head yaw). Rest pose now frontal per reference; cursor-follow, pupil
+lead, lip amp, thinking shimmer all kept. node --check OK, verify PASS 497/3.
+Owner: hard-refresh localhost:8000.
+
 ## 2026-08-14 — T097 v2: the face grew up — sculpted 3D head on WebGL
 Owner: v1 too pixelated vs his reference. Rebuilt: continuous sculpted depth
 field (skull dome + ~18 gaussian features: brow/sockets/eyeballs/nose/lips/

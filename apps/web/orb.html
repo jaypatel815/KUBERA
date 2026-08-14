@@ -60,13 +60,14 @@ const statusEl = document.getElementById("status");
 const errEl = document.getElementById("err");
 function setMode(m) { S.mode = m; statusEl.textContent = m; }
 
-// ------------------------------------------------------------------ face v2 (T097)
-// A sculpted 3D particle head (~12k GPU points), tuned offline against the
-// owner's reference image before porting. Continuous depth field (skull dome +
-// gaussian features: brow, sockets, eyeballs, nose, lips, chin, cheekbones),
-// Lambertian shading baked at build, WebGL points with additive glow. The head
-// turns toward the cursor, pupils lead the turn, lips ride the TTS amplitude,
-// thinking shimmers, and the left edge dissolves into a wireframe network.
+// ------------------------------------------------------------------ face v3 (T097)
+// HOLOGRAPHIC head, tuned offline against the owner's second reference:
+// ~23k GPU points in stacked voxel columns (3 depth layers for volume),
+// speckled ice/navy palette, dark eye hollows with glowing tracking pupils,
+// scan-line sweep + flicker + occasional glitch, and below the jaw the head
+// dissolves into a slowly undulating wireframe network cascade. The head
+// follows the cursor (frontal rest pose per the reference), pupils lead,
+// lips ride the TTS amplitude, thinking shimmers.
 // Falls back to a simple pulse if three.js can't load — voice always works.
 const canvas = document.getElementById("orb");
 let mx = innerWidth / 2, my = innerHeight / 2, lastMove = 0;
@@ -125,16 +126,21 @@ function initFace3D() {
   renderer.setSize(520, 520, false);
   renderer.setClearColor(0x000000, 0);
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(40, 1, 10, 2000);
-  camera.position.z = 330;
+  // head (y +95..-86) + network cascade (down to -253): frame the whole column
+  const camera = new THREE.PerspectiveCamera(55, 1, 10, 2000);
+  camera.position.set(0, -75, 330);
+  camera.lookAt(0, -75, 0);
   const head = new THREE.Group();
   scene.add(head);
 
-  // build attributes: position, baked shade, kind (0 skin / 1 iris / 2 pupil / 3 mouth), seed, loose
-  const P = [], SH = [], K = [], SD = [], LO = [];
-  const STEP = 1.35, EPS = 1.2;
-  for (let y = -95; y <= 86; y += STEP) {
-    for (let x = -75; x <= 75; x += STEP) {
+  // build attributes: 3 stacked depth layers per surface sample (volumetric
+  // voxel-column look), speckled palette class, per-column brightness stripe.
+  // kind: 0 skin / 1 eye hollow / 2 pupil / 3 mouth
+  const P = [], SH = [], K = [], SD = [], PAL = [];
+  const XSTEP = 2.2, YSTEP = 1.1, EPS = 1.2;
+  const LAYER_Z = [0, -2.2, -4.4], LAYER_S = [1.0, 0.55, 0.32];
+  for (let y = -95; y <= 86; y += YSTEP) {
+    for (let x = -75; x <= 75; x += XSTEP) {
       const z = faceDepth(x, y);
       if (z === null) continue;
       const zx1 = faceDepth(x + EPS, y), zx0 = faceDepth(x - EPS, y);
@@ -144,18 +150,24 @@ function initFace3D() {
       else {
         const gx = (zx1 - zx0) / (2 * EPS), gy = (zy1 - zy0) / (2 * EPS);
         const n = Math.sqrt(gx * gx + gy * gy + 1);
-        s = Math.max(0, (-gx / n) * -0.45 + (-gy / n) * -0.35 + (1 / n) * 0.82);
+        s = Math.max(0, (-gx / n) * -0.3 + (-gy / n) * -0.45 + (1 / n) * 0.85);
       }
-      s = 0.22 + 0.78 * s;                       // ambient lift (kills ridge speckle)
+      s = 0.22 + 0.78 * s;
+      const colHash = Math.abs(Math.sin(Math.round(x / XSTEP) * 12.9898) * 43758.5453) % 1;
+      s *= 0.72 + 0.5 * colHash;                 // vertical column striping
       const eye = Math.min(Math.hypot(x - 26, y + 17), Math.hypot(x + 26, y + 17));
       let k = 0;
       if (eye < 2.8) k = 2;
-      else if (eye < 8.5) k = 1;
+      else if (eye < 10) { k = 1; s *= 0.28; }   // dark hollows, baked
       else if (Math.abs(x) < 20 && y > 40 && y < 58) k = 3;
-      const w = faceWidth(y);
-      const lo = x < 0 ? Math.min(1, Math.max(0, (-x - (w - 14)) / 14)) * (0.3 + Math.random() * 0.7) : 0;
-      P.push(x, -y, z - 30);                     // three.js y is up
-      SH.push(s); K.push(k); SD.push(Math.random() * 10); LO.push(lo);
+      // speckled two-tone palette: mostly mid blue, pale ice in lit areas, navy flecks
+      const rr = Math.random();
+      const pal = rr < 0.16 + 0.30 * Math.max(0, s - 0.45) ? 2
+                : (rr > 0.82 || s < 0.30) ? 0 : 1;
+      for (let L = 0; L < 3; L++) {
+        P.push(x, -y, z - 30 + LAYER_Z[L]);      // three.js y is up
+        SH.push(s * LAYER_S[L]); K.push(k); SD.push(Math.random() * 10); PAL.push(pal);
+      }
     }
   }
   const geo = new THREE.BufferGeometry();
@@ -163,7 +175,7 @@ function initFace3D() {
   geo.setAttribute("aShade", new THREE.Float32BufferAttribute(SH, 1));
   geo.setAttribute("aKind", new THREE.Float32BufferAttribute(K, 1));
   geo.setAttribute("aSeed", new THREE.Float32BufferAttribute(SD, 1));
-  geo.setAttribute("aLoose", new THREE.Float32BufferAttribute(LO, 1));
+  geo.setAttribute("aPal", new THREE.Float32BufferAttribute(PAL, 1));
 
   const mat = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -171,65 +183,76 @@ function initFace3D() {
       uTime: { value: 0 }, uAmp: { value: 0 }, uMode: { value: 0 },
       uColor: { value: new THREE.Color() }, uGaze: { value: new THREE.Vector2() },
       uPR: { value: renderer.getPixelRatio() },
+      uScanY: { value: 200 }, uGlitch: { value: 0 },
     },
     vertexShader: `
-      attribute float aShade, aKind, aSeed, aLoose;
-      uniform float uTime, uAmp, uMode, uPR;
+      attribute float aShade, aKind, aSeed, aPal;
+      uniform float uTime, uAmp, uMode, uPR, uGlitch;
       uniform vec2 uGaze;
-      varying float vShade, vKind, vSeed;
+      varying float vShade, vKind, vSeed, vPal, vY;
       void main() {
         vec3 p = position;
-        if (aLoose > 0.0) {                      // left edge dissolves
-          p.x -= aLoose * (26.0 + 18.0 * sin(uTime * 0.9 + aSeed));
-          p.y += aLoose * 12.0 * sin(uTime * 0.7 + aSeed * 2.0);
-          p.z += aLoose * 10.0 * cos(uTime * 0.6 + aSeed);
-        }
-        if (uMode > 1.5 && uMode < 2.5)          // thinking: surface shimmer
+        p.z += 0.8 * sin(uTime * 7.0 + aSeed * 9.0);          // holo instability
+        p.x += uGlitch * (fract(sin(floor(position.y / 3.0) * 7.13) * 371.7) - 0.5) * 14.0;
+        if (uMode > 1.5 && uMode < 2.5)                        // thinking shimmer
           p.xy += 1.4 * vec2(sin(uTime * 4.0 + aSeed * 5.0), cos(uTime * 3.4 + aSeed * 4.0));
         if (aKind > 1.5 && aKind < 2.5) p.xy += uGaze * 6.0;   // pupils lead
-        if (aKind > 2.5 && uMode > 2.5)          // lips ride the audio
+        if (aKind > 2.5 && uMode > 2.5)                        // lips ride the audio
           p.y += sin(uTime * 26.0 + position.x * 0.35) * uAmp * 6.0;
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
-        gl_PointSize = uPR * (2.6 + aShade * 1.4) * (300.0 / -mv.z);
-        vShade = aShade; vKind = aKind; vSeed = aSeed;
+        gl_PointSize = uPR * (2.3 + aShade * 1.3) * (300.0 / -mv.z);
+        vShade = aShade; vKind = aKind; vSeed = aSeed; vPal = aPal; vY = position.y;
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `
       uniform vec3 uColor;
-      uniform float uAmp;
-      varying float vShade, vKind, vSeed;
+      uniform float uAmp, uTime, uScanY;
+      varying float vShade, vKind, vSeed, vPal, vY;
       void main() {
         float jit = 0.85 + 0.30 * fract(sin(vSeed * 91.7) * 43758.5);
         float s = vShade * jit * (1.0 + uAmp * 0.5);
-        vec3 col = mix(vec3(0.16, 0.30, 0.55), uColor, 0.45) * s * 1.35;
-        if (vKind > 0.5 && vKind < 1.5) col *= 0.30;                       // iris ring
+        vec3 base = vec3(0.30, 0.45, 0.72);                    // mid blue
+        if (vPal < 0.5) base = vec3(0.10, 0.16, 0.36);         // navy fleck
+        else if (vPal > 1.5) base = vec3(0.80, 0.88, 1.00);    // ice
+        vec3 col = mix(base * s, uColor * s, 0.35);
+        col += exp(-pow(vY - uScanY, 2.0) / 220.0) * 0.25 * uColor;  // scan sweep
+        col *= 0.95 + 0.05 * sin(uTime * 13.7 + vSeed);        // holo flicker
         if (vKind > 1.5 && vKind < 2.5) col = mix(uColor, vec3(1.0), 0.55) * 1.6;  // pupil
-        if (vKind > 2.5) col *= 1.0 + uAmp * 0.8;                          // lips
-        gl_FragColor = vec4(col, 0.85);
+        if (vKind > 2.5) col *= 1.0 + uAmp * 0.8;              // lips
+        gl_FragColor = vec4(col, 0.9);
       }`,
   });
   head.add(new THREE.Points(geo, mat));
 
-  // dissolved wireframe network drifting off to the left (scene space; doesn't turn)
-  const NODES = 90, MAXSEG = 500;
-  const nodes = Array.from({ length: NODES }, () => ({
-    x: -40 - Math.random() * 170, y: (Math.random() - 0.5) * 260,
-    z: (Math.random() - 0.5) * 60,
-    vx: -(0.10 + Math.random() * 0.30), vy: (Math.random() - 0.5) * 0.2,
-  }));
+  // the cascade: a wireframe network the head dissolves into below the jaw
+  const NODES = 230, MAXSEG = 900, LINK2 = 34 * 34;
+  const nodes = [];
+  for (let i = 0; i < NODES; i++) {
+    const t = Math.random();
+    const spread = 52 + 48 * Math.sin(Math.min(1, t) * Math.PI * 0.85);
+    nodes.push({
+      bx: (Math.random() * 2 - 1) * spread,
+      by: -(78 + t * 175) + (Math.random() * 16 - 8),
+      bz: (Math.random() * 2 - 1) * 40,
+      ph: Math.random() * 6.28,
+      x: 0, y: 0, z: 0,
+    });
+  }
+  const beard = new THREE.Group();
+  scene.add(beard);
   const nodeGeo = new THREE.BufferGeometry();
   nodeGeo.setAttribute("position", new THREE.Float32BufferAttribute(new Float32Array(NODES * 3), 3));
-  const nodeMat = new THREE.PointsMaterial({ size: 2.6, transparent: true, opacity: 0.7,
+  const nodeMat = new THREE.PointsMaterial({ size: 3.0, transparent: true, opacity: 0.8,
     blending: THREE.AdditiveBlending, depthWrite: false });
-  scene.add(new THREE.Points(nodeGeo, nodeMat));
+  beard.add(new THREE.Points(nodeGeo, nodeMat));
   const segGeo = new THREE.BufferGeometry();
   segGeo.setAttribute("position", new THREE.Float32BufferAttribute(new Float32Array(MAXSEG * 6), 3));
-  const segMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.16,
+  const segMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.18,
     blending: THREE.AdditiveBlending, depthWrite: false });
-  scene.add(new THREE.LineSegments(segGeo, segMat));
+  beard.add(new THREE.LineSegments(segGeo, segMat));
 
   const MODE_N = { idle: 0, listening: 1, thinking: 2, speaking: 3 };
-  let yaw = 0.35, pitch = 0;
+  let yaw = 0, pitch = 0, glitch = 0;
   (function animate() {
     S.t += 0.016;
     const [r, g, b] = COLORS[S.mode] || COLORS.idle;
@@ -239,33 +262,42 @@ function initFace3D() {
     mat.uniforms.uTime.value = S.t;
     mat.uniforms.uAmp.value = S.amp;
     mat.uniforms.uMode.value = MODE_N[S.mode] || 0;
+    mat.uniforms.uScanY.value = 100 - ((S.t * 45) % 320);      // sweeping scan band
+    if (Math.random() < 0.004) glitch = 1;                     // rare holo glitch
+    glitch *= 0.86;
+    mat.uniforms.uGlitch.value = glitch;
 
-    // gaze: cursor when fresh; rest in the reference's 3/4 pose when you leave
+    // gaze: cursor when fresh; frontal rest pose (per reference) when idle
     const idleGaze = S.t - lastMove > 4;
-    const ty = idleGaze ? 0.35 + 0.16 * Math.sin(S.t * 0.3)
+    const ty = idleGaze ? 0.10 * Math.sin(S.t * 0.3)
                         : Math.max(-0.7, Math.min(0.7, (mx / innerWidth - 0.5) * 1.3));
-    const tp = idleGaze ? 0.06 * Math.sin(S.t * 0.23)
+    const tp = idleGaze ? 0.05 * Math.sin(S.t * 0.23)
                         : Math.max(-0.4, Math.min(0.4, (my / innerHeight - 0.5) * 0.8));
     yaw += (ty - yaw) * 0.07; pitch += (tp - pitch) * 0.07;
     head.rotation.y = yaw;
     head.rotation.x = -pitch;
+    beard.rotation.y = yaw * 0.35;                             // sways, not rigid
     mat.uniforms.uGaze.value.set((ty - yaw) * 3 + yaw * 0.5, -(pitch * 0.6));
     head.scale.setScalar(1 + 0.012 * Math.sin(S.t * (S.mode === "thinking" ? 3.6 : 1.4))
                            + S.amp * 0.015);
 
-    // halo update
+    // cascade update: slow undulation around anchored base positions
     const np = nodeGeo.attributes.position.array;
     const sp = segGeo.attributes.position.array;
     let seg = 0;
     for (let i = 0; i < NODES; i++) {
       const n = nodes[i];
-      n.x += n.vx; n.y += n.vy;
-      if (n.x < -260) { n.x = -50 - Math.random() * 40; n.y = (Math.random() - 0.5) * 260; }
+      n.x = n.bx + 6 * Math.sin(S.t * 0.50 + n.ph);
+      n.y = n.by + 4 * Math.sin(S.t * 0.40 + n.ph * 2);
+      n.z = n.bz + 6 * Math.cos(S.t * 0.45 + n.ph);
       np[i * 3] = n.x; np[i * 3 + 1] = n.y; np[i * 3 + 2] = n.z;
+    }
+    for (let i = 0; i < NODES && seg < MAXSEG; i++) {
+      const n = nodes[i];
       for (let j = i + 1; j < NODES && seg < MAXSEG; j++) {
         const m = nodes[j];
-        const dx = n.x - m.x, dy = n.y - m.y;
-        if (dx * dx + dy * dy < 900) {
+        const dx = n.x - m.x, dy = n.y - m.y, dz = n.z - m.z;
+        if (dx * dx + dy * dy + dz * dz < LINK2) {
           sp[seg * 6] = n.x; sp[seg * 6 + 1] = n.y; sp[seg * 6 + 2] = n.z;
           sp[seg * 6 + 3] = m.x; sp[seg * 6 + 4] = m.y; sp[seg * 6 + 5] = m.z;
           seg++;
