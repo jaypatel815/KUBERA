@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — I010: portfolio auto-priming — from instructions to architecture
+Fourth deflection transcript ("check my portfolio for SPY" -> "how many shares do
+you hold?"). Verdict accepted: prompt rules don't stick on the local brain, so the
+data now arrives regardless of model obedience. prime_portfolio in the chat layer:
+portfolio intent detected -> get_portfolio executed SERVER-SIDE before the model
+speaks -> compact snapshot (per-position qty/avg/mv/unrealized + equity/cash)
+injected into the system prompt with "Answer from THIS data. Do NOT ask for share
+counts..." Audited: trail gains {get_portfolio, auto_primed:true}, recency footer
+sees the asof; silent no-op without intent or broker; a priming failure never kills
+the turn. Deflection detector v2 also fires on asks-for-position-details. The
+transcript is a named test; the chat E2E now asserts the primed fetch precedes the
+model's own call.
+Verified: verify.py PASS — 456 passed, 3 skipped.
+I007–I010 arc closed for portfolio asks: structurally impossible to deflect now.
+Owner: ask "check my portfolio" again — the numbers arrive before the model can ask.
+Blockers: none.
+
 ## 2026-08-14 — I009: lenient tool args — sloppy "None"/""/"BUY" no longer kills journaling
 Owner pasted server logs: record_decision failed twice — string "None" and "" for
 absent optionals, SHOUTED "BUY" vs the lowercase pattern. Silver lining: the T063

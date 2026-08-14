@@ -72,6 +72,25 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   then `rm -f .git/*.lock` and delete `.git/objects/**/tmp_obj_*`. Windows/Antigravity/other
   agents are unaffected. Resolved 2026-08-11.
 
+## I010 — "check my portfolio for SPY" answered with "how many shares do you hold?" (2026-08-14)
+FOURTH strike, same class: the most direct get_portfolio request possible, answered
+by asking the user for data the tool holds. The I008 deflection regex didn't fire
+(it watched for asks-for-SYMBOL; this asked for shares/cost basis). Prompt rules
+(ROUTING, PACING, look-before-asking) demonstrably do NOT stick on the local brain.
+ESCALATION — from instructions to architecture:
+1. PORTFOLIO AUTO-PRIMING (prime_portfolio in api/chat.py): portfolio intent in the
+   user text -> the CHAT LAYER executes get_portfolio server-side and injects a
+   compact snapshot into the system prompt ("Answer from THIS data. Do NOT ask for
+   share counts...") — deterministic, audited in the trail as auto_primed, feeds
+   the recency footer, silent no-op without intent/broker, never crashes the turn.
+   Deflection is now structurally impossible for portfolio questions.
+2. Deflection detector v2: also fires on asks-for-position-details (shares/cost
+   basis/entry price) when the context is portfolio-ish. This transcript is a
+   named test.
+STATUS: fixed structurally. The pattern (I007-I010) is closed for portfolio asks;
+symbol-question deflections still rely on detector + brain quality. claude-sdk
+recommendation unchanged; T096 tool-subsetting still queued.
+
 ## I009 — record_decision rejected: model sent "None"/""/"BUY" (2026-08-14)
 OBSERVED (owner-pasted server logs): two record_decision attempts failed pydantic
 validation — the string "None" and empty strings for absent optionals, and a

@@ -1,9 +1,50 @@
-"""I007 defenses — the symbol-alignment post-check (from a real transcript where
-'should I buy SPY' was answered with a TSLA sizing table) and human-readable ages."""
+"""I007–I010 defenses — symbol alignment, deflection detection, human-readable
+ages, and portfolio auto-priming (all born from real owner transcripts)."""
 
+import httpx
+from test_alpaca import ACCOUNT_JSON, POSITIONS_JSON, paper_settings
 
 from api.chat import _user_tickers, ensure_symbol_alignment
+from data.alpaca import AlpacaClient
 from data.market_data import human_age
+
+
+def _alpaca_fake() -> AlpacaClient:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "/v2/account" in request.url.path:
+            return httpx.Response(200, json=ACCOUNT_JSON)
+        return httpx.Response(200, json=POSITIONS_JSON)
+
+    return AlpacaClient(settings=paper_settings(), transport=httpx.MockTransport(handler))
+
+
+def test_portfolio_priming_puts_data_in_front_of_the_model():
+    from api.chat import prime_portfolio
+    from api.tools import ToolContext
+
+    trail, asofs = [], {}
+    with _alpaca_fake() as a:
+        system = prime_portfolio(
+            "BASE PROMPT", "can you check my portfolio for a positions on spy",
+            ToolContext(alpaca=a), trail, asofs,
+        )
+    assert "AUTO-FETCHED PORTFOLIO" in system
+    assert "Do NOT ask the user for share counts" in system
+    assert trail == [{"name": "get_portfolio", "arguments": {"auto_primed": True}}]
+    assert "get_portfolio" in asofs  # recency footer sees the primed fetch
+
+
+def test_portfolio_priming_is_a_silent_noop_without_intent_or_broker():
+    from api.chat import prime_portfolio
+    from api.tools import ToolContext
+
+    # no portfolio intent: untouched
+    with _alpaca_fake() as a:
+        assert prime_portfolio("BASE", "what regime is SPY in?",
+                               ToolContext(alpaca=a), [], {}) == "BASE"
+    # intent but no broker in context: untouched (never crashes the turn)
+    assert prime_portfolio("BASE", "check my portfolio",
+                           ToolContext(), [], {}) == "BASE"
 
 
 def _trail(*symbols):
@@ -74,6 +115,33 @@ def test_deflection_check_stays_silent_when_appropriate():
     # ticker named but the reply doesn't ask for one: silent
     assert "Deflection" not in ensure_no_deflection(
         "SPY closed higher.", "should I hold SPY?", trail=[])
+
+
+def test_the_check_my_portfolio_deflection_is_caught():
+    from api.chat import ensure_no_deflection
+
+    reply = ensure_no_deflection(
+        "I'd be happy to check your SPY portfolio position! ... How many shares "
+        "of SPY do you hold? What's your average purchase price / total cost basis?",
+        "can you check my portfolio for a positions on spy",
+        trail=[],
+    )
+    assert "⚠ Deflection check" in reply
+    assert "get_portfolio" in reply and "should have looked" in reply
+
+
+def test_position_details_deflection_needs_portfolio_context():
+    from api.chat import ensure_no_deflection
+
+    # asking for cost basis is legitimate when nothing suggests we'd have it
+    assert "Deflection" not in ensure_no_deflection(
+        "what's your average purchase price?",
+        "I bought some gold coins last year", trail=[])
+    # and silent when tools actually ran
+    assert "Deflection" not in ensure_no_deflection(
+        "how many shares do you hold elsewhere?",
+        "check my portfolio",
+        trail=[{"name": "get_portfolio", "arguments": {}}])
 
 
 def test_human_age():

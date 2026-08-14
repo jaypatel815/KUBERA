@@ -183,7 +183,12 @@ def test_chat_endpoint_end_to_end():
         assert r.status_code == 200
         body = r.json()
         assert "AAPL" in body["reply"]
-        assert body["tool_calls"] == [{"name": "get_portfolio", "arguments": {}}]
+        # I010: "my portfolio" now auto-primes a server-side fetch (first trail
+        # entry) before the model's own call — both are audited
+        assert body["tool_calls"] == [
+            {"name": "get_portfolio", "arguments": {"auto_primed": True}},
+            {"name": "get_portfolio", "arguments": {}},
+        ]
         assert body["conversation_id"] >= 1
         h = client.get(f"/api/chat/{body['conversation_id']}")
         assert h.status_code == 200
