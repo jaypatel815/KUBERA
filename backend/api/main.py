@@ -240,6 +240,26 @@ def symbol_levels(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/expected-move/{symbol}")
+def symbol_expected_move(
+    symbol: str,
+    horizon_days: int = 5,
+    days: int = 420,
+    market: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """How far does this thing usually travel in N days? Ranges, never targets."""
+    try:
+        return registry.execute(
+            "get_expected_move",
+            {"symbol": symbol, "horizon_days": horizon_days, "days": days},
+            ToolContext(market=market),
+        )
+    except ToolError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/intraday/{symbol}")
 def symbol_intraday(
     symbol: str,

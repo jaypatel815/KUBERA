@@ -60,7 +60,7 @@ def test_registry_rejects_duplicate_names():
 
 def test_schemas_export_shape():
     schemas = registry.schemas()
-    assert len(schemas) == len(registry.names()) == 12
+    assert len(schemas) == len(registry.names()) == 13
     by_name = {s["name"]: s for s in schemas}
     assert "get_portfolio" in by_name
     bars = by_name["get_daily_bars"]
@@ -130,9 +130,9 @@ def test_api_lists_tools():
     r = client.get("/api/tools")
     assert r.status_code == 200
     body = r.json()
-    assert body["count"] == 12
+    assert body["count"] == 13
     assert {t["name"] for t in body["tools"]} == {
         "get_portfolio", "get_latest", "get_daily_bars", "compare_benchmark",
         "get_symbol_briefing", "run_backtest", "get_ips", "update_ips", "get_regime",
-        "get_levels", "get_breakouts", "get_intraday",
+        "get_levels", "get_breakouts", "get_intraday", "get_expected_move",
     }

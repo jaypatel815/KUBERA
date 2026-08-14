@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T077 done: expected moves as distributions — ranges, never targets
+analysis/expected_move.py: overlapping horizon-day returns over the trailing lookback
+→ percentile bands via statistics.quantiles(method="inclusive") (hand-verified:
+3-sample p05 = −0.08 interpolation), up_frac, median |move|, payoff ratio (avg winner
+/ avg loser; None when one side is empty — all-up history has no ratio, tested). Vol
+clustering per D016: each sample tagged with trailing-vol at its start, terciled;
+reading reports the CURRENT tercile + bands from matching history only — the
+quiet-tape test proves conditioned p95 shrinks >5x vs wild-contaminated unconditional.
+Honesty hard-coded: every reading carries "NOT a forecast" + the overlap-
+autocorrelation caveat; tool description orders ranges-not-targets narration.
+get_expected_move (registry 13, guards ×3) + GET /api/expected-move/{symbol}.
+Verified: verify.py PASS — 322 passed, 3 skipped.
+Next: T067 DQS (the coaching centerpiece) or T062 briefs (both fed now); T077b
+(Monte Carlo + loop integration) queued. Owner: /api/expected-move/SPY?horizon_days=5
+or ask the Orb "how far does SPY usually move in a week?".
+Blockers: none.
+
 ## 2026-08-13 — T054+T055 done: the router picks the playbook; "no trade today" is now a decision
 T054: make_range (long only the lower half of the trailing range, flat above) +
 make_regime_router (structure→momentum, range→range trading, else CASH) on the

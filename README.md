@@ -63,6 +63,10 @@ http://127.0.0.1:8000/api/intraday/SPY                      what kind of day is 
                                                             price side + crossings (churn = no trend), and
                                                             intraday RVOL — today's volume at this point vs
                                                             the same point on prior days
+http://127.0.0.1:8000/api/expected-move/SPY?horizon_days=5  how far does it usually travel in N days? percentile
+                                                            bands (in % and price), historical win rate, payoff
+                                                            ratio, conditioned on the current volatility regime.
+                                                            Ranges, never targets — the past, not a forecast
 http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
 http://127.0.0.1:8000/api/backtests                         the results ledger: every recorded backtest
 POST /api/backtests/run?strategy=momentum&symbol=SPY        run + record a backtest (use /docs to click it)

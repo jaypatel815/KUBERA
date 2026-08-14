@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from analysis.benchmark import compare
 from analysis.breakout import detect_breakouts
 from analysis.briefing import PositionContext, build_briefing
+from analysis.expected_move import expected_move
 from analysis.intraday import build_session_read
 from analysis.levels import find_levels
 from analysis.portfolio import summarize, win_loss
@@ -424,6 +425,41 @@ def _get_intraday(ctx: ToolContext, p: IntradayArgs) -> dict:
         "symbol": bars.symbol,
         "timeframe": bars.timeframe,
         "intraday": asdict(reading),
+        "asof": bars.asof.isoformat(),
+        "source": bars.source,
+    }
+
+
+class ExpectedMoveArgs(SymbolArgs):
+    horizon_days: int = Field(default=5, ge=1, le=60,
+                              description="Holding window in trading days")
+    days: int = Field(default=420, ge=60, le=3650,
+                      description="Calendar days of history behind the distribution")
+
+
+@registry.tool(
+    "get_expected_move",
+    "Historical distribution of N-day returns for one symbol — the honest anchor "
+    "for sizing and exits: percentile bands (p05..p95, in both return and price "
+    "terms), the share of historical windows that were up, typical |move| size, "
+    "and the payoff ratio (avg winner vs avg loser). Bands are also conditioned "
+    "on the current volatility regime (vol clusters). This is the PAST as a "
+    "distribution, NEVER a forecast — present ranges, not targets, and say so.",
+    ExpectedMoveArgs,
+)
+def _get_expected_move(ctx: ToolContext, p: ExpectedMoveArgs) -> dict:
+    market: MarketDataClient = ctx.require("market")
+    bars = market.get_daily_bars(p.symbol, days=p.days)
+    closes = [b.close for b in bars.bars]
+    try:
+        reading = expected_move(
+            closes, [b.date for b in bars.bars], horizon_days=p.horizon_days
+        )
+    except ValueError as e:
+        raise ToolError(str(e)) from e
+    return {
+        "symbol": bars.symbol,
+        "expected_move": asdict(reading),
         "asof": bars.asof.isoformat(),
         "source": bars.source,
     }
