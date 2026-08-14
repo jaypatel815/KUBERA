@@ -58,7 +58,17 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 - [ ] T096 — Per-brain tool subsetting (I008): 24 tools overwhelm small local models (two routing failures observed). Offer the FULL registry to strong brains (claude-sdk/anthropic/openai) and a curated core set (~10: portfolio, briefing, regime, exit plan, triage, size, latest, brief, risk, journal) to local/OPENAI_BASE_URL brains; setting-overridable; guard test that the curated set stays a subset of the registry.
 - [ ] T088 — Execution quality (D020, dep T036): fills gain signal_price/submitted_price/fill_price + slippage_bps; implementation-shortfall + time-of-day fill-quality reports ("don't buy the open" becomes evidence, not heuristic).
 - [ ] T089 — Live MAE/MFE (D020, dep T036): extend trade_excursions to live positions with intraday extremes; winners'-MAE stop-calibration line joins the T062 weekly review.
-- [ ] T090 — Liquidity-aware costs (D020): live bid-ask spread_bps in briefings/sizing (quotes already fetched); ADV-based position cap (IEX ADV understates → binds earlier = conservative, labeled); per-symbol cost replaces the fixed-bps assumption.
+- [x] T090 — Liquidity-aware costs — DONE 2026-08-14 (Claude/Cowork):
+  `analysis/liquidity.py` (spread_bps, half-spread per-side cost with 0.5bps
+  floor, ADV over trailing 20 sessions, 1%-participation cap — all hand-tested:
+  99.90/100.10 → 20bps/10bps, 1M ADV → 10k-share cap). ADV cap now BINDS inside
+  size_position (binding="adv_cap", IEX-understates note in every payload;
+  shared BARS_JSON fixture given realistic uniform volume — RVOL-invariant).
+  Tool `get_liquidity` (#28, guard bumps ×3; refuses one-sided quotes: "spread
+  math would be fiction") + `GET /api/liquidity/{symbol}`. Remaining half
+  parked in T091b/T062b: spread-aware cost line in briefings + paper-loop
+  per-symbol cost_bps replacing the flat assumption (needs a quote fetch in
+  the loop path — separate decision).
 - [ ] T091b — Attribution follow-ups: holding-period distribution (entry↔exit ts pairing), weekly-review integration (T062), regime-attribution line in the EOD report; costs decomposition once T090 lands per-symbol spreads.
 - [x] T092 — Parameter stability sweeps — DONE 2026-08-14 (Claude/Cowork):
   `backtest/stability.py` — SWEEPS map (momentum lookback 20–90, sma_cross fast,

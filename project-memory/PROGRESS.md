@@ -3,6 +3,21 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T090: liquidity costs — the spread is a fee and thin volume is a wall
+analysis/liquidity.py: spread_bps (hand-tested 20bps case), per-side cost =
+half-spread floored at 0.5bps (replaces the flat assumption when a quote
+exists), trailing-20-session ADV, and the 1%-participation cap — labeled
+honestly everywhere: IEX sample volume UNDERSTATES the consolidated tape, so
+the cap binds early, which is the safe direction. The cap now BINDS in
+size_position ("adv_cap" joins blocked/position_cap/risk_budget; THIN-symbol
+test proves 5 shares max on 500 ADV) — required making the shared BARS_JSON
+fixture's volume realistic (uniform 4M: RVOL ratios unchanged, legacy sizing
+expectations unchanged; fix-the-fixture lesson applied deliberately this
+time). Tool #28 get_liquidity refuses one-sided quotes ("spread math would be
+fiction") + /api/liquidity/{symbol}.
+Verified: verify.py PASS — 532 passed (+10), 3 skipped.
+Next: T093 portfolio risk summary (T079 correlations now exist to build on).
+
 ## 2026-08-14 — T092: the curve-fit detector — one magic number is not an edge
 backtest/stability.py: sweep a template across its parameter neighborhood and
 demand a PLATEAU. Pure verdict logic hand-tested (plateau→stable, isolated

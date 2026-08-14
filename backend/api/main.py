@@ -394,6 +394,21 @@ def symbol_expected_move(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/liquidity/{symbol}")
+def symbol_liquidity(
+    symbol: str,
+    market: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """T090: spread cost + ADV participation cap, via the chat tool."""
+    try:
+        return registry.execute("get_liquidity", {"symbol": symbol},
+                                ToolContext(market=market))
+    except (ToolError, ToolArgumentError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/correlation")
 def portfolio_correlation(
     candidate: str | None = None,

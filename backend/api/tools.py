@@ -28,6 +28,12 @@ from analysis.expected_move import expected_move
 from analysis.goal_math import goal_scenarios
 from analysis.intraday import build_session_read
 from analysis.levels import find_levels
+from analysis.liquidity import (
+    IEX_NOTE,
+    average_daily_volume,
+    liquidity_profile,
+    participation_cap_shares,
+)
 from analysis.macro import compose_macro_context
 from analysis.metrics import atr
 from analysis.portfolio import summarize, win_loss
@@ -901,6 +907,15 @@ def _size_position(ctx: ToolContext, p: SymbolArgs) -> dict:
     binding = "blocked" if blocked_reason else (
         "position_cap" if cap_headroom < sized.risk_notional * multiplier
         else "risk_budget")
+
+    # T090: participation cap — never be more than 1% of a day's (IEX-sample)
+    # volume. IEX understates consolidated ADV, so this binds early: conservative.
+    adv = average_daily_volume([b.volume for b in bars.bars])
+    adv_cap_qty = round(participation_cap_shares(adv), 3)
+    if not blocked_reason and qty > adv_cap_qty:
+        qty = adv_cap_qty
+        effective_notional = round(qty * price, 2)
+        binding = "adv_cap"
     return {
         "symbol": symbol,
         "qty": qty,
@@ -926,6 +941,9 @@ def _size_position(ctx: ToolContext, p: SymbolArgs) -> dict:
             "tier": ({"level": tier.level, "name": tier.name,
                       "multiplier": multiplier} if tier else None),
             "breaker_tripped": engine.tripped,
+            "adv_shares": round(adv, 0),
+            "adv_cap_qty": adv_cap_qty,
+            "adv_note": IEX_NOTE,
         },
         "asof": acct.asof.isoformat(),
         "source": f"{acct.source} + {bars.source}",
@@ -1051,6 +1069,37 @@ def _get_attribution(ctx: ToolContext, _: NoArgs) -> dict:
         "fills_analyzed": len(attributed),
         "asof": datetime.now(timezone.utc).isoformat(),
     }
+
+
+@registry.tool(
+    "get_liquidity",
+    "What does trading this symbol actually cost? Live bid-ask spread in bps, "
+    "estimated per-side cost (half-spread, floored), IEX-sample average daily "
+    "volume, and the 1%-of-ADV participation cap in shares and dollars. Use "
+    "before sizing a real order and when a 'cheap' symbol has an expensive "
+    "spread. ALWAYS narrate the IEX caveat: sample-feed volume understates the "
+    "consolidated tape, so the cap is deliberately conservative. Disclose quote "
+    "staleness.",
+    SymbolArgs,
+)
+def _get_liquidity(ctx: ToolContext, p: SymbolArgs) -> dict:
+    market: MarketDataClient = ctx.require("market")
+    symbol = p.symbol.upper()
+    quote = market.get_latest_quote(symbol)
+    if quote.bid <= 0 or quote.ask <= 0:
+        raise ToolError(
+            f"no live two-sided quote for '{symbol}' (bid/ask unavailable — "
+            "market closed or symbol illiquid); spread math would be fiction"
+        )
+    bars = market.get_daily_bars(symbol, days=40)
+    if len(bars.bars) < 5:
+        raise ToolError(f"only {len(bars.bars)} daily bars for '{symbol}' — "
+                        "cannot estimate ADV honestly")
+    prof = liquidity_profile(
+        symbol, quote.bid, quote.ask, [b.volume for b in bars.bars],
+        quote.age_human, quote.stale,
+    )
+    return {**asdict(prof), "asof": quote.asof.isoformat(), "source": quote.source}
 
 
 class CorrelationArgs(LenientArgs):
