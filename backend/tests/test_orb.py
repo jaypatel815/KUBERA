@@ -16,6 +16,10 @@ def test_root_serves_orb_page():
     assert "KUBERA" in r.text
     assert "orb" in r.text.lower()
     assert "confirm this turn" in r.text  # the deliberate-gesture UI is present
+    # patience (owner feedback): pauses don't end the turn; silence timer + send-now
+    assert "SILENCE_SEND_MS" in r.text
+    assert "pauses are fine" in r.text
+    assert "continuous = true" in r.text
 
 
 def test_tts_503_without_edge_tts(monkeypatch):

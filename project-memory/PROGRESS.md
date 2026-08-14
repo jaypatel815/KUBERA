@@ -3,6 +3,26 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — Conversational pacing: the Orb learned patience, the persona learned turns
+Owner feedback with transcript: (1) the Orb sent his speech the moment he paused;
+(2) KUBERA interrogates with numbered 4-question forms + capability menus; (3) it
+asked for his entry price when get_portfolio ALREADY carries avg_entry_price (third
+capability-denial, same lesson).
+Shipped: ORB — recognition rewritten with patience: continuous=true, mic stays open
+across engine restarts (onend → restart while wantListening), every sound resets a
+2.8s silence timer (SILENCE_SEND_MS), send fires only on real quiet OR click-the-orb
+send-now; trailing interim text included so the last words never drop; status line
+says "pauses are fine". Hold-Space release still = send immediately (full manual
+control). PERSONA — PACING rule (guard-tested): ask for exactly ONE missing thing
+and stop, never numbered question lists or capability menus, positions/entry
+prices/balances are already in get_portfolio — look before asking; full analysis
+only once inputs exist. VOICE_STYLE unchanged (already ~120 words).
+Verified: verify.py PASS — 449 passed, 3 skipped (orb assertions extended).
+Remaining truth: mid-KUBERA-speech interruption (barge-in) needs the realtime stack
+— that's T074, unchanged. Owner: refresh the Orb page (Ctrl+F5) and talk with
+pauses; click the orb when you're done — or just wait ~3 seconds.
+Blockers: none.
+
 ## 2026-08-14 — I008: "which ticker?" deflection — second strike on the local brain
 Owner's next transcript: "I hold SPY, should I keep holding?" → model asked for the
 ticker, claimed no recent-performance function exists (get_symbol_briefing IS it),

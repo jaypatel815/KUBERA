@@ -44,5 +44,7 @@ def test_nonnegotiable_keywords_present():
         "answer the question that was asked",  # I007: no sizing tables for opinion questions
         "never ask for a symbol the user already named",  # I008: no deflection
         "routing",  # I008: question -> tools map
+        "exactly one missing thing",  # pacing: one question per turn, no forms
+        "avg_entry_price",  # pacing: entry price lives in get_portfolio — look first
     ):
         assert keyword in prompt, f"missing persona keyword: {keyword}"

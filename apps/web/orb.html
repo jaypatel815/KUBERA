@@ -104,28 +104,54 @@ function addTurn(who, text, chips) {
 }
 
 // ------------------------------------------------------------------ speech in
+// Patience (owner feedback 2026-08-14): a thinking pause is NOT the end of your
+// sentence. The mic stays open across pauses; your words only send after
+// SILENCE_SEND_MS of true quiet — or immediately when you click the orb again.
 const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null;
+const SILENCE_SEND_MS = 2800;
+let rec = null, silenceTimer = null, finalBuf = "", lastInterim = "", wantListening = false;
+
+function armSilenceTimer() {
+  clearTimeout(silenceTimer);
+  silenceTimer = setTimeout(finishListening, SILENCE_SEND_MS);
+}
+function finishListening() {
+  clearTimeout(silenceTimer);
+  wantListening = false;
+  if (rec) { rec.onend = null; try { rec.stop(); } catch (_) {} }
+  const text = (finalBuf + " " + lastInterim).trim();
+  finalBuf = ""; lastInterim = "";
+  if (text) send(text); else setMode("idle");
+}
 function startListening() {
   if (S.mode !== "idle") return;
   if (!Rec) { errEl.textContent = "Speech recognition needs Chrome or Edge — typing still works."; return; }
   rec = new Rec();
-  rec.lang = "en-US"; rec.interimResults = true;
+  rec.lang = "en-US"; rec.interimResults = true; rec.continuous = true;
+  wantListening = true; finalBuf = ""; lastInterim = "";
   setMode("listening");
-  let finalText = "";
+  statusEl.textContent = "listening — pauses are fine; click the orb to send now";
   rec.onresult = (e) => {
     S.amp = Math.min(1, S.amp + 0.25);
-    finalText = Array.from(e.results).map(r => r[0].transcript).join(" ");
-    statusEl.textContent = "listening — " + finalText.slice(-42);
+    lastInterim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const r = e.results[i];
+      if (r.isFinal) finalBuf += r[0].transcript + " ";
+      else lastInterim = r[0].transcript;
+    }
+    armSilenceTimer();  // every sound resets the clock — send only on real quiet
+    statusEl.textContent = "listening — " + (finalBuf + lastInterim).slice(-42);
   };
-  rec.onerror = (e) => { errEl.textContent = "mic: " + e.error; setMode("idle"); };
-  rec.onend = () => {
-    if (finalText.trim()) send(finalText.trim());
-    else setMode("idle");
+  rec.onerror = (e) => {
+    if (e.error === "no-speech" || e.error === "aborted") return;  // quiet restarts are normal
+    errEl.textContent = "mic: " + e.error; wantListening = false; setMode("idle");
+  };
+  rec.onend = () => {  // the engine restarts itself on silence — keep the mic open
+    if (wantListening) { try { rec.start(); } catch (_) {} }
   };
   rec.start();
 }
-function stopListening() { if (rec && S.mode === "listening") rec.stop(); }
+function stopListening() { if (S.mode === "listening") finishListening(); }
 
 canvas.addEventListener("click", () =>
   S.mode === "listening" ? stopListening() : startListening());
