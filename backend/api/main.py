@@ -370,6 +370,24 @@ def symbol_expected_move(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/news")
+def market_news(
+    symbols: str | None = None,
+    limit: int = 8,
+    market: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """Recent headlines (D022), optionally ?symbols=SPY,AAPL — via the chat tool."""
+    syms = [s.strip() for s in symbols.split(",") if s.strip()] if symbols else None
+    try:
+        return registry.execute(
+            "get_news", {"symbols": syms, "limit": limit}, ToolContext(market=market),
+        )
+    except (ToolError, ToolArgumentError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/goal-math")
 def goal_math_endpoint(start: float = 1000.0, target: float = 1_000_000.0) -> dict:
     """Deterministic goal arithmetic (I012): required CAGR per horizon, FV with

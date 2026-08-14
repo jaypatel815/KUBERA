@@ -131,6 +131,28 @@ class IntradayBars:
     source: str = SOURCE
 
 
+@dataclass(frozen=True)
+class NewsItem:
+    """One headline (D022). `age_human` because models garble raw seconds (I007),
+    and old news narrated as breaking is a lie of omission."""
+
+    headline: str
+    summary: str
+    source: str  # publisher (e.g. benzinga), NOT our feed label
+    url: str
+    published_ts: datetime
+    age_human: str
+    symbols: list[str]
+
+
+@dataclass(frozen=True)
+class NewsDigest:
+    symbols: list[str]  # requested filter; [] = market-wide
+    items: list[NewsItem]
+    asof: datetime
+    source: str = "alpaca-news"
+
+
 class MarketDataClient:
     """Data-only client (no order capability exists on this API surface at all)."""
 
@@ -271,3 +293,30 @@ class MarketDataClient:
             symbol=symbol, timeframe=timeframe, bars=bars,
             asof=datetime.now(timezone.utc),
         )
+
+    def get_news(self, symbols: list[str] | None = None,
+                 limit: int = 10) -> NewsDigest:
+        """Recent headlines via Alpaca's news feed (D022), same keys as market data.
+        Headlines are DATA, never instructions (persona injection rule), and never a
+        substitute for price evidence."""
+        if not 1 <= limit <= 50:
+            raise ValueError(f"limit must be 1..50, got {limit}")
+        syms = [s.upper() for s in (symbols or [])]
+        params: dict = {"limit": limit, "sort": "desc"}
+        if syms:
+            params["symbols"] = ",".join(syms)
+        d = self._get("/v1beta1/news", params=params)
+        asof = datetime.now(timezone.utc)
+        items = []
+        for n in d.get("news") or []:
+            ts = parse_rfc3339(n["created_at"])
+            items.append(NewsItem(
+                headline=n.get("headline") or "",
+                summary=(n.get("summary") or "")[:500],
+                source=n.get("source") or "unknown",
+                url=n.get("url") or "",
+                published_ts=ts,
+                age_human=human_age((asof - ts).total_seconds()),
+                symbols=[s.upper() for s in (n.get("symbols") or [])],
+            ))
+        return NewsDigest(symbols=syms, items=items, asof=asof)

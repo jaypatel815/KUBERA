@@ -46,6 +46,9 @@ def test_nonnegotiable_keywords_present():
         "routing",  # I008: question -> tools map
         "exactly one missing thing",  # pacing: one question per turn, no forms
         "avg_entry_price",  # pacing: entry price lives in get_portfolio — look first
+        "agentic default",  # D022: composite questions get a silent tool fan-out
+        "act first, speak once",  # D022: no tool narration, no "which check?" asks
+        "one synthesized answer",  # D022: weave, don't list tool outputs
         "schemas are private",  # I013: field lists are wiring, not conversation
         "what would you like to change?",  # I013: the one-line human reply
         "extract what maps to your tools",  # I013: long briefs get action, not menus

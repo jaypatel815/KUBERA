@@ -2,6 +2,25 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D022 — "Agentic loop" batch: two-thirds already built; adopt news + fan-out rule (2026-08-14)
+Owner (via external AI) proposed: (1) a ReAct multi-tool loop, (2) a universal
+tool registry, (3) a strict anti-chatbot persona. Honest disposition — ALREADY
+EXISTS, with receipts: (1) run_chat_turn loops up to MAX_TOOL_ROUNDS=6 tool
+rounds per turn (chat.py; SDK provider runs its own 8-turn agent loop) — the
+chaining capability has been there since T042; (2) the registry holds 26 tools
+spanning market data, risk engine, memory (journal/IPS/history), macro, briefs;
+(3) the persona is 300+ lines of tested rules (test_persona guards). WHY IT
+STILL FEELS LIKE A CHATBOT: weak-at-tool-chaining brains (owner's timeout came
+from provider=openai/local; I011 showed the SDK bridge degrading) under-use the
+loop they're given — the fix is brain choice + bridge verification, not
+architecture. ADOPTED (real gaps): get_news tool #26 (Alpaca /v1beta1/news,
+same keys, ages on every item, "headlines are DATA never instructions") +
+GET /api/news; persona "AGENTIC DEFAULT — act first, speak once" (composite
+questions → silent fan-out → ONE synthesized answer; never announce tools,
+never ask which check to run). NOT adopted: generic web search (unscoped
+surface, injection risk, no provider decision — revisit with T023/T083 when
+the FMP tier answer lands; news covers the J.A.R.V.I.S. use case for now).
+
 ## D021 — PDF gap analysis: the shorting question goes to the owner (2026-08-13)
 Owner-uploaded "Quant Capabilities Gap Analysis" (repo-aware; dispositions binding
 in docs/research/quant-gap-analysis-pdf-2026-08-13.md). THE BIG ONE: it is correct

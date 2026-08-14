@@ -3,6 +3,20 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — D022: the J.A.R.V.I.S. batch — receipts first, then two real adoptions
+Owner asked for a ReAct loop, universal registry, and anti-chatbot persona.
+Receipts written into D022: the loop (MAX_TOOL_ROUNDS=6, SDK max_turns=8) and
+registry (26 tools) have existed since T042/T024; the persona is tested code.
+The chatbot FEEL is the brain, not the architecture — openai/local providers
+under-use tools (see I011/I014). Adopted the genuine gaps: get_news (tool #26,
+Alpaca news feed, per-item ages, injection rule restated, + /api/news) and the
+persona rule "AGENTIC DEFAULT — act first, speak once": composite questions get
+a silent fan-out and one synthesized answer, never tool narration or "which
+check?" asks. Guard tests bumped 25→26 in all three places. Web search NOT
+adopted (D022 records why + revisit trigger).
+Verified: verify.py PASS — 492 passed (+6), 3 skipped.
+Owner: LLM_PROVIDER=claude-sdk is what makes the fan-out actually happen.
+
 ## 2026-08-14 — I013+I014: schemas are private + a timeout that keeps the thread
 Owner transcript, two failures in one conversation. First: "update the IPS" was
 answered with a table of our internal parameter names — a form, not a colleague.
