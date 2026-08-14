@@ -3,6 +3,20 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — Owner capability Q&A → three tickets (T085–T087)
+Owner asked seven "can KUBERA…" questions. Answers on record: options contract picks =
+future phase (doctrine caveat only, no ad-hoc build); probability-of-profit sizing =
+reframed to risk-based sizing (shipped) + historical win/payoff context (T077) — single-
+trade probability claims stay rejected (D017), fractional-Kelly noted as advisory-only
+future view; entry/exit = shipped (router/levels/breakouts/exit plans); scale-out vs
+average-down = machinery exists via invalidation + DQS, dedicated advisor ticketed
+T086; exact quantity = shipped in the loop, chat exposure ticketed T085 (quick win);
+vol-dies-after-entry = observable on demand (T052), proactive monitoring ticketed T087
+(deps T074/T082/T036); when NOT to trade = strongest muscle (T055/T067/T064/breaker,
+all logged). No code this session — memory only.
+Next: T085 is a 30-minute wiring win; T086 after; T081 pairs still queued.
+Blockers: none.
+
 ## 2026-08-13 — T064 done: the promotion gate — strategies must EARN the paper loop
 backtest/stats.py: per-trade stats from the 0/1-weight contract (hand case: +21%/−10%
 → PF 2.1, open-at-end flagged), Calmar (None when undefined), and the ANCHORED
