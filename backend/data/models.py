@@ -8,7 +8,16 @@ guarantees tz-aware UTC on read, on SQLite today and Postgres later (D007).
 
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, String, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import TypeDecorator
 
@@ -212,3 +221,31 @@ class Transaction(Base):
     price: Mapped[float] = mapped_column(Float)
     occurred_at: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
     source: Mapped[str] = mapped_column(String(32))
+
+
+class DecisionJournal(Base):
+    """Every recommendation KUBERA makes, captured AT decision time (T063, D016/D018):
+    the verdict with its regime context, entry/target/stop, and — critically — whether
+    the owner FOLLOWED or OVERRODE it. Six months from now, "why did I buy that?" and
+    "how calibrated is KUBERA?" are answered from this table, not from memory."""
+
+    __tablename__ = "decision_journal"
+    __table_args__ = (Index("ix_journal_symbol_ts", "symbol", "ts"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ts: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    symbol: Mapped[str] = mapped_column(String(16))
+    verdict: Mapped[str] = mapped_column(String(16))  # buy|add|hold|trim|sell|avoid
+    confidence: Mapped[float] = mapped_column(Float)  # stated 0..1, capped by persona
+    thesis: Mapped[str] = mapped_column(String(1000))
+    horizon_days: Mapped[int | None] = mapped_column(Integer, default=None)
+    entry_price: Mapped[float | None] = mapped_column(Float, default=None)
+    target_price: Mapped[float | None] = mapped_column(Float, default=None)
+    stop_price: Mapped[float | None] = mapped_column(Float, default=None)
+    key_risk: Mapped[str | None] = mapped_column(String(500), default=None)
+    regime: Mapped[str | None] = mapped_column(String(24), default=None)
+    regime_confidence: Mapped[float | None] = mapped_column(Float, default=None)
+    followed: Mapped[bool | None] = mapped_column(Boolean, default=None)  # None=unmarked
+    follow_note: Mapped[str | None] = mapped_column(String(500), default=None)
+    conversation_id: Mapped[int | None] = mapped_column(Integer, default=None)
+    source: Mapped[str] = mapped_column(String(24), default="chat")

@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T063 done: the decision journal — "why did I buy that?" now has an answer
+decision_journal table (migration 080e1c184167, UTCDateTime→sed as usual) captures every
+recommendation AT decision time: verdict/confidence/thesis/horizon/entry/target/stop/
+key-risk + regime context (D016), and the owner's FOLLOW or OVERRIDE with a note (D018 —
+override-rate is the behavioral metric that will feed T067b). The model journals ITSELF:
+persona CORE_RULES gains "a recommendation that isn't journaled didn't happen" +
+mark_decision on owner report (keyword guard-tested). get_journal returns entries +
+summary with v1 calibration: aged entries (past horizon, with entry + direction; hold
+excluded) judged on direction vs latest price — hit_rate narrated as a process check,
+never a performance claim. Registry 19 tools (record_decision, mark_decision,
+get_journal); GET /api/journal.
+Verified: verify.py PASS — 368 passed, 3 skipped.
+Next: T075 confluence is the last regime-pack item; T082 Orb pack for Gemini; T081
+pairs or T064 rigor for the backtest track. Owner: recommendations now self-record —
+ask "show me my decision journal" after your next few chats.
+Blockers: none.
+
 ## 2026-08-13 — T080 done: macro context — the broad-market weather report
 data/fred.py: minimal httpx client for four documented series (T10Y2Y, VIXCLS, DFII10,
 DFF); skips FRED's "." missing-value placeholders and returns each series' latest REAL

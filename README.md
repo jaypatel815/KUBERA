@@ -81,6 +81,10 @@ http://127.0.0.1:8000/api/macro                             the macro weather: y
                                                             bucket, real rates, fed funds — cautionary signals
                                                             counted, each series dated. Needs a free
                                                             FRED_API_KEY in .env (link in .env.example)
+http://127.0.0.1:8000/api/journal                           the decision journal: every recommendation KUBERA
+                                                            made (with regime, entry, target, stop at decision
+                                                            time), whether you followed or overrode it, and
+                                                            direction-hit calibration once entries age
 http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
 http://127.0.0.1:8000/api/backtests                         the results ledger: every recorded backtest
 POST /api/backtests/run?strategy=momentum&symbol=SPY        run + record a backtest (use /docs to click it)

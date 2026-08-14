@@ -285,6 +285,24 @@ def brief(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/journal")
+def journal(
+    limit: int = 20,
+    market: MarketDataClient = Depends(get_market_client),
+    session=Depends(get_db_session),
+) -> dict:
+    """The decision journal: every recommendation, follow/override, calibration."""
+    try:
+        return registry.execute(
+            "get_journal", {"limit": limit},
+            ToolContext(market=market, db=session),
+        )
+    except ToolError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/risk")
 def risk_status(
     alpaca: AlpacaClient = Depends(get_alpaca_client),

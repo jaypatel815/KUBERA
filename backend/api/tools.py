@@ -10,6 +10,7 @@ LLM function-calling APIs consume (Anthropic/OpenAI/Gemini formats derive direct
 """
 
 from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 from typing import Any, Callable
 
 from pydantic import BaseModel, Field, ValidationError
@@ -31,6 +32,14 @@ from data.alpaca import AlpacaClient
 from data.fred import SERIES, FredClient
 from data.history import equity_history
 from data.ips import get_ips, ips_as_dict, upsert_ips
+from data.journal import (
+    VERDICTS,
+    decision_as_dict,
+    list_decisions,
+    mark_decision,
+    record_decision,
+    summarize_decisions,
+)
 from data.market_data import MarketDataClient
 from data.models import SignalLog
 from risk.dqs import score_decisions
@@ -572,6 +581,99 @@ def _get_macro_context(ctx: ToolContext, _: NoArgs) -> dict:
         "macro": asdict(context),
         "asof": obs["vix"].asof.isoformat(),
         "source": "fred",
+    }
+
+
+class RecordDecisionArgs(BaseModel):
+    symbol: str = Field(min_length=1, max_length=10)
+    verdict: str = Field(pattern="^(buy|add|hold|trim|sell|avoid)$")
+    confidence: float = Field(ge=0, le=1,
+                              description="Your stated confidence (persona caps apply)")
+    thesis: str = Field(min_length=10, max_length=1000)
+    horizon_days: int | None = Field(default=None, ge=1, le=730)
+    entry_price: float | None = Field(default=None, gt=0)
+    target_price: float | None = Field(default=None, gt=0)
+    stop_price: float | None = Field(default=None, gt=0)
+    key_risk: str | None = Field(default=None, max_length=500)
+    regime: str | None = Field(default=None, max_length=24)
+    regime_confidence: float | None = Field(default=None, ge=0, le=1)
+
+
+@registry.tool(
+    "record_decision",
+    "Journal a recommendation you just made — REQUIRED after any actionable verdict "
+    "(buy/add/hold/trim/sell/avoid). Capture the context AT decision time: regime, "
+    "entry, target, stop, key risk, horizon. A recommendation that isn't journaled "
+    "didn't happen; the journal is how calibration gets measured.",
+    RecordDecisionArgs,
+)
+def _record_decision(ctx: ToolContext, p: RecordDecisionArgs) -> dict:
+    db = ctx.require("db")
+    row = record_decision(db, symbol=p.symbol.upper(), verdict=p.verdict,
+                          confidence=p.confidence, thesis=p.thesis,
+                          horizon_days=p.horizon_days, entry_price=p.entry_price,
+                          target_price=p.target_price, stop_price=p.stop_price,
+                          key_risk=p.key_risk, regime=p.regime,
+                          regime_confidence=p.regime_confidence)
+    return {"recorded": True, "decision": decision_as_dict(row)}
+
+
+class MarkDecisionArgs(BaseModel):
+    decision_id: int = Field(ge=1)
+    followed: bool = Field(description="True = owner followed the call; False = overrode it")
+    note: str | None = Field(default=None, max_length=500)
+
+
+@registry.tool(
+    "mark_decision",
+    "Mark whether the owner FOLLOWED or OVERRODE a journaled recommendation (find the "
+    "id via get_journal). Override-rate versus outcomes is a key behavioral metric — "
+    "record it without judgment, coach with it later.",
+    MarkDecisionArgs,
+)
+def _mark_decision(ctx: ToolContext, p: MarkDecisionArgs) -> dict:
+    db = ctx.require("db")
+    try:
+        row = mark_decision(db, p.decision_id, p.followed, p.note)
+    except ValueError as e:
+        raise ToolError(str(e)) from e
+    return {"marked": True, "decision": decision_as_dict(row)}
+
+
+class JournalArgs(BaseModel):
+    limit: int = Field(default=20, ge=1, le=200)
+
+
+@registry.tool(
+    "get_journal",
+    "Recent journaled decisions + summary: counts by verdict, average stated "
+    "confidence, follow/override/unmarked counts, and v1 calibration — for aged "
+    "entries, did the price move in the verdict's direction after the horizon? "
+    f"(verdicts: {', '.join(VERDICTS)}; 'hold' is excluded from hit-rate). Narrate "
+    "hit-rate as a process check, never a performance promise.",
+    JournalArgs,
+)
+def _get_journal(ctx: ToolContext, p: JournalArgs) -> dict:
+    db = ctx.require("db")
+    rows = list_decisions(db, limit=p.limit)
+
+    lookup = None
+    if ctx.market is not None:
+        cache: dict[str, float | None] = {}
+
+        def lookup(symbol: str) -> float | None:  # noqa: F811 — deliberate closure
+            if symbol not in cache:
+                try:
+                    cache[symbol] = ctx.market.get_latest_trade(symbol).price
+                except Exception:  # noqa: BLE001 — a dead symbol shouldn't kill the journal
+                    cache[symbol] = None
+            return cache[symbol]
+
+    summary = summarize_decisions(rows, price_lookup=lookup)
+    return {
+        "decisions": [decision_as_dict(r) for r in rows],
+        "summary": asdict(summary),
+        "asof": datetime.now(timezone.utc).isoformat(),
     }
 
 
