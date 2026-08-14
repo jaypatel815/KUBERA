@@ -98,13 +98,17 @@ python scripts\paper_trade.py SPY --strategy momentum              # one cycle
 python scripts\paper_trade.py SPY --strategy momentum --loop 3600  # hourly, Ctrl+C to stop
 ```
 
-Each cycle: strategy reads real bars → target position → **volatility-parity sizing**
-(a buy may risk at most 1% of equity if its 2×ATR stop is hit — size shrinks
-automatically as the symbol gets wilder; sells are never blocked) → **fail-closed risk
-gate** (20% per-symbol cap, 3% daily-loss circuit breaker) → market order on the paper
-account. Every
-decision — ordered, rejected, or no-action — is written to the `signal_log` table with the
-data snapshot it was based on. Strategies: momentum, sma_cross, mean_reversion, buy_and_hold.
+Each cycle: strategy reads real bars → **no-trade check** (overtrading guard: max 5
+orders/day; expected move vs cost floor; quiet-market check — low RVOL in a tight
+range means the market isn't interested; "there isn't a trade today" is a logged,
+first-class decision) → **volatility-parity sizing** (a buy may risk at most 1% of
+equity if its 2×ATR stop is hit; sells are never blocked by any of this) →
+**fail-closed risk gate** (20% per-symbol cap, 3% daily-loss circuit breaker) →
+market order on the paper account. Every decision — ordered, rejected, no-action, or
+no-trade — is written to the `signal_log` table with the data snapshot it was based
+on. Strategies: momentum, sma_cross, mean_reversion, buy_and_hold, **range** (trades
+only the edges, refuses trends), and **regime_router** — the meta-strategy that first
+asks "what kind of market is this?" and then picks momentum, range trading, or cash.
 Paper only: there is deliberately no code path to real money.
 
 The circuit breaker persists to the database — restarting the loop cannot bypass a trip.

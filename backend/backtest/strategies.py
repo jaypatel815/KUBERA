@@ -1,8 +1,16 @@
-"""Strategy templates on the T030 contract: closes-so-far -> target weight [0..1]."""
+"""Strategy templates on the T030 contract: closes-so-far -> target weight [0..1].
+
+T054 adds the doctrine pair: a range trader that only trades the edges of a
+range-bound market (and refuses trends), and a regime router that picks
+momentum / range / CASH from the price structure. NOTE the honest limitation:
+the T030 contract is closes-only (D010), so in-backtest regime detection is
+price-structure only (`_regime_lite`) — no volume. The LIVE paper loop has full
+OHLCV and layers the volume-aware no-trade checks on top (T055)."""
 
 from typing import Callable, Sequence
 
 from analysis.metrics import sma
+from analysis.regime import swing_points
 
 
 def buy_and_hold(closes: Sequence[float]) -> float:
@@ -47,6 +55,8 @@ TEMPLATES: dict[str, Callable[[], Callable[[Sequence[float]], float]]] = {
     "momentum": lambda: make_momentum(lookback=60),
     "sma_cross": lambda: make_sma_cross(fast=50, slow=200),
     "mean_reversion": lambda: make_mean_reversion(window=20, band_frac=0.05),
+    "range": lambda: make_range(lookback=40),
+    "regime_router": lambda: make_regime_router(lookback=40, momentum_lookback=60),
 }
 
 
@@ -74,3 +84,76 @@ def make_mean_reversion(window: int = 20, band_frac: float = 0.05):
 
     mean_reversion.__name__ = f"mean_reversion_{window}"
     return mean_reversion
+
+
+def _regime_lite(closes: Sequence[float], lookback: int, span: int = 1) -> str:
+    """Price-only trend structure: 'up' | 'down' | 'none' | 'unknown'. Mirrors the
+    T050 classifier's structure logic (swing HH/HL, SMA-slope fallback for monotone
+    series) but from closes alone — the T030 contract carries no volume, so this is
+    deliberately structure-only. span=1 so short-period chop still forms swings.
+    'none' means CHECKED and rangy; 'unknown' means not enough evidence to judge —
+    callers that require a range must refuse on 'unknown' (an early bear looks
+    exactly like an unknowable one until the structure resolves)."""
+    window = closes[-min(len(closes), 4 * lookback):]
+    dates = [str(i) for i in range(len(window))]
+    highs = swing_points(window, dates, span, "high")
+    lows = swing_points(window, dates, span, "low")
+    if len(highs) >= 2 and len(lows) >= 2:
+        if highs[-1].price > highs[-2].price and lows[-1].price > lows[-2].price:
+            return "up"
+        if highs[-1].price < highs[-2].price and lows[-1].price < lows[-2].price:
+            return "down"
+        return "none"
+    if len(closes) >= lookback + 5:
+        sma_now, sma_prev = sma(closes, lookback), sma(closes[:-5], lookback)
+        if sma_now > sma_prev and closes[-1] > sma_now:
+            return "up"
+        if sma_now < sma_prev and closes[-1] < sma_now:
+            return "down"
+        return "none"
+    return "unknown"
+
+
+def make_range(lookback: int = 40, entry_frac: float = 0.5):
+    """Range trading, doctrine-faithful: trade the edges, never the middle, and
+    ONLY in a range. Long while the close sits in the lower `entry_frac` of the
+    trailing `lookback`-bar range; flat in the upper part; and REFUSES to trade
+    at all when the price structure is trending ('a range detected inside a
+    downtrend is a falling knife'). Stateless on the closes prefix."""
+    if lookback < 2:
+        raise ValueError(f"lookback must be >= 2, got {lookback}")
+    if not 0 < entry_frac < 1:
+        raise ValueError(f"entry_frac must be in (0, 1), got {entry_frac}")
+
+    def range_trader(closes: Sequence[float]) -> float:
+        if len(closes) < lookback:
+            return 0.0
+        if _regime_lite(closes, lookback) != "none":
+            return 0.0  # trending OR unverifiable structure: not a range — stand down
+        window = closes[-lookback:]
+        lo, hi = min(window), max(window)
+        if hi <= lo:
+            return 0.0  # degenerate (zero-width) range: nothing to trade
+        pos = (closes[-1] - lo) / (hi - lo)
+        return 1.0 if pos <= entry_frac else 0.0
+
+    range_trader.__name__ = f"range_{lookback}"
+    return range_trader
+
+
+def make_regime_router(lookback: int = 40, momentum_lookback: int = 60,
+                       entry_frac: float = 0.5):
+    """The meta-strategy (T054): first determine what kind of market it is, then
+    pick the playbook — trending structure -> momentum (which itself goes to cash
+    in downtrends), no structure -> range trading (which refuses non-ranges).
+    CASH emerges whenever the chosen playbook declines; that is a feature."""
+    mom = make_momentum(lookback=momentum_lookback)
+    rng = make_range(lookback=lookback, entry_frac=entry_frac)
+
+    def regime_router(closes: Sequence[float]) -> float:
+        if _regime_lite(closes, lookback) in ("up", "down"):
+            return mom(closes)
+        return rng(closes)
+
+    regime_router.__name__ = f"regime_router_{lookback}_{momentum_lookback}"
+    return regime_router

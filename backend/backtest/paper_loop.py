@@ -19,9 +19,11 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from analysis.metrics import atr
+from analysis.regime import classify_regime
 from backtest.engine import Strategy
 from data.alpaca import AlpacaClient
 from data.market_data import MarketDataClient
@@ -38,7 +40,7 @@ ATR_WINDOW = 14  # bars for the vol-parity sizer (T078); buys need ATR_WINDOW+1 
 
 @dataclass(frozen=True)
 class CycleResult:
-    action: str  # "ordered" | "rejected" | "no_action"
+    action: str  # "ordered" | "rejected" | "no_action" | "no_trade" (T055)
     symbol: str
     signal_weight: float
     target_value: float
@@ -57,9 +59,15 @@ def run_paper_cycle(
     allocation_frac: float = 0.15,
     history_days: int = 400,
     min_trade_value: float = MIN_TRADE_VALUE,
+    # T055 — the no-trade condition (buys only; reducing risk is never blocked):
+    max_trades_per_day: int = 5,   # overtrading guard across ALL symbols/strategies
+    min_atr_frac: float = 0.001,   # expected-move proxy: ATR/price below this can't clear costs
+    rvol_floor: float = 0.3,       # quiet-market check (with a bottom-quartile range width)
 ) -> CycleResult:
     if not 0 < allocation_frac <= 1:
         raise ValueError(f"allocation_frac must be in (0, 1], got {allocation_frac}")
+    if max_trades_per_day < 1 or min_atr_frac < 0 or rvol_floor < 0:
+        raise ValueError("max_trades_per_day >= 1; min_atr_frac and rvol_floor >= 0")
     symbol = symbol.upper()
 
     # 1. data snapshot
@@ -108,8 +116,50 @@ def run_paper_cycle(
             log_row("no_action", reason, None)
             return CycleResult("no_action", symbol, weight, target_value,
                                current_value, reason)
-        atr_value = atr([b.high for b in bars.bars], [b.low for b in bars.bars],
-                        closes, window=ATR_WINDOW)
+        highs = [b.high for b in bars.bars]
+        lows = [b.low for b in bars.bars]
+        atr_value = atr(highs, lows, closes, window=ATR_WINDOW)
+
+        # T055: is there actually a trade today? Cash is a decision, logged as one.
+        no_trade: list[str] = []
+        today_start = datetime.now(timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0)
+        ordered_today = db.execute(
+            select(func.count()).select_from(SignalLog).where(
+                SignalLog.action == "ordered", SignalLog.ts >= today_start)
+        ).scalar_one()
+        if ordered_today >= max_trades_per_day:
+            no_trade.append(
+                f"overtrading guard: {ordered_today} orders already placed today "
+                f"(max {max_trades_per_day}) — the biggest enemy is overtrading"
+            )
+        atr_frac = atr_value / last_price
+        if atr_frac < min_atr_frac:
+            no_trade.append(
+                f"expected move too small to clear costs: ATR is {atr_frac:.4%} of "
+                f"price (floor {min_atr_frac:.4%})"
+            )
+        if len(bars.bars) >= 21:  # enough history for the full regime classifier
+            reading = classify_regime(
+                highs, lows, closes, [b.volume for b in bars.bars],
+                [b.date for b in bars.bars], volume_feed=bars.source,
+            )
+            if (reading.rvol is not None and reading.rvol < rvol_floor
+                    and reading.range_width_percentile is not None
+                    and reading.range_width_percentile <= 0.25):
+                no_trade.append(
+                    f"quiet market: RVOL {reading.rvol:.2f} (floor {rvol_floor}) in a "
+                    f"bottom-quartile range width — the market is not interested "
+                    f"(feed: {bars.source})"
+                )
+        if no_trade:
+            reason = ("no trade today: " + "; ".join(no_trade)
+                      + " — capital preserved by design")
+            log_row("no_trade", reason, None)
+            log.info("cycle NO_TRADE %s: %s", symbol, reason)
+            return CycleResult("no_trade", symbol, weight, target_value,
+                               current_value, reason)
+
         sized = volatility_parity_notional(
             acct.equity, last_price, atr_value, delta,
             risk_frac=risk.limits.risk_per_trade_frac,

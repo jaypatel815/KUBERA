@@ -1,4 +1,5 @@
-"""Paper loop (T032) — every path hand-computed: order, reject, no-action, breaker.
+"""Paper loop (T032 + T055) — every path hand-computed: order, reject, no-action,
+breaker, and the no-trade condition (overtrading guard, quiet market, cost floor).
 No network; MockTransport + in-memory DB. Equity 100k, default risk cap 20% = 20k."""
 
 import httpx
@@ -147,3 +148,97 @@ def test_circuit_breaker_blocks_second_cycle(db):
 def test_bad_allocation_rejected(db):
     with pytest.raises(ValueError):
         run_cycle(db, FakeBroker(), allocation=0.0)
+
+
+# --- T055: the no-trade condition — cash as a logged decision -----------------
+
+def _seed_orders(db, n):
+    from datetime import datetime, timezone
+    for i in range(n):
+        db.add(SignalLog(
+            strategy="seed", symbol="SPY", signal_weight=1.0, equity=100_000.0,
+            current_value=0.0, target_value=1.0, action="ordered", reasons=None,
+            order_external_id=f"seed-{i}", bars_asof=datetime.now(timezone.utc),
+            source="test", ts=datetime.now(timezone.utc),
+        ))
+    db.commit()
+
+
+def test_overtrading_guard_blocks_the_sixth_buy(db):
+    _seed_orders(db, 5)
+    broker = FakeBroker()
+    r = run_cycle(db, broker, allocation=0.15)
+    assert r.action == "no_trade"
+    assert "overtrading guard" in r.detail and "capital preserved" in r.detail
+    assert broker.order_posts == []
+    rows = db.execute(select(SignalLog)).scalars().all()
+    assert rows[-1].action == "no_trade"  # cash is a first-class, logged decision
+
+
+def test_sells_are_never_blocked_by_no_trade_guards(db):
+    _seed_orders(db, 5)  # overtrading guard active...
+    broker = FakeBroker(positions=[position_json(qty=10.0, market_value=1790.0)])
+    flat = lambda closes: 0.0  # noqa: E731
+    flat.__name__ = "always_flat"
+    r = run_cycle(db, broker, strategy=flat)  # ...but reducing risk is always allowed
+    assert r.action == "ordered"
+    assert broker.order_posts[0]["side"] == "sell"
+
+
+def _bars_json(rows):
+    return {"symbol": "SPY", "next_page_token": None, "bars": [
+        {"t": f"2026-{(i // 28) + 1:02d}-{(i % 28) + 1:02d}T04:00:00Z",
+         "o": c, "h": c + m, "l": c - m, "c": c, "v": v}
+        for i, (c, m, v) in enumerate(rows)
+    ]}
+
+
+def run_cycle_with_bars(db, bars_json):
+    broker = FakeBroker()
+    always_long = lambda closes: 1.0  # noqa: E731
+    always_long.__name__ = "always_long"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "/bars" in request.url.path:
+            return httpx.Response(200, json=bars_json)
+        return broker(request)
+
+    transport = httpx.MockTransport(handler)
+    with AlpacaClient(settings=paper_settings(), transport=transport) as alpaca, \
+         MarketDataClient(settings=paper_settings(), transport=transport) as market:
+        return run_paper_cycle(db, alpaca, market, RiskEngine(), always_long, "SPY",
+                               allocation_frac=0.15), broker
+
+
+def test_quiet_market_is_a_no_trade(db):
+    # 40 wide bars (95/105) then 25 narrow bars (99.75/100.25); final volume
+    # collapses to 0.2x -> RVOL 0.2 in a bottom-quartile range width = no trade
+    rows = [(95.0 if i % 2 else 105.0, 0.25, 1_000_000.0) for i in range(40)]
+    rows += [(99.75 if i % 2 else 100.25, 0.25, 1_000_000.0) for i in range(24)]
+    rows += [(100.25, 0.25, 200_000.0)]
+    r, broker = run_cycle_with_bars(db, _bars_json(rows))
+    assert r.action == "no_trade"
+    assert "quiet market" in r.detail and "RVOL 0.20" in r.detail
+    assert broker.order_posts == []
+
+
+def test_tiny_expected_move_is_a_no_trade(db):
+    # dead-flat tape: ATR is 0.01% of price — no move can clear costs
+    rows = [(100.0, 0.005, 1_000_000.0)] * 30
+    r, broker = run_cycle_with_bars(db, _bars_json(rows))
+    assert r.action == "no_trade"
+    assert "expected move too small" in r.detail
+    assert broker.order_posts == []
+
+
+def test_no_trade_params_validated(db):
+    with pytest.raises(ValueError, match="max_trades_per_day"):
+        run_cycle_with_bars_kwargs = None  # noqa: F841 — clarity only
+        broker = FakeBroker()
+        transport = httpx.MockTransport(broker)
+        strategy = lambda closes: 1.0  # noqa: E731
+        strategy.__name__ = "s"
+        with AlpacaClient(settings=paper_settings(), transport=transport) as a, \
+             MarketDataClient(settings=paper_settings(), transport=transport) as m:
+            run_paper_cycle(db, a, m, RiskEngine(), strategy, "SPY",
+                            max_trades_per_day=0)

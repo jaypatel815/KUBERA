@@ -3,6 +3,27 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T054+T055 done: the router picks the playbook; "no trade today" is now a decision
+T054: make_range (long only the lower half of the trailing range, flat above) +
+make_regime_router (structure→momentum, range→range trading, else CASH) on the
+closes-only T030 contract via _regime_lite (swing HH/HL + SMA-slope fallback).
+THE CATCH OF THE SESSION: first cut leaked longs in bars 39–44 of the BEAR fixture —
+between lookback and lookback+5 bars, structure is UNKNOWABLE, and the range trader
+treated "can't tell" as "no trend" and bought the falling knife. Fix: _regime_lite
+gained an explicit "unknown" state; the range trader refuses anything but a CHECKED
+"none". Acceptance: router beats always-momentum in CHOP (0.0 vs >100%), rides BULL,
+flat through BEAR. Also learned/encoded: engine weights sit one bar after decisions
+(no-lookahead shift) — hand test documents it.
+T055: paper loop's new no_trade action (buys only; sells always allowed): overtrading
+guard (5/day across everything), ATR cost floor (T077 proxy), quiet-market check via
+the full classifier (RVOL < 0.3 + bottom-quartile width). Every no_trade row logs its
+reasons + "capital preserved by design".
+Verified: verify.py PASS — 311 passed, 3 skipped.
+Next: T077 expected-move engine (replaces the ATR proxy, feeds T056 exits), or T075
+confluence, or T067 DQS. Owner: python scripts\paper_trade.py SPY --strategy
+regime_router — KUBERA now picks the playbook AND can conclude "nothing today".
+Blockers: none.
+
 ## 2026-08-13 — T052 done: intraday VWAP + time-of-day RVOL — the doctrine's backbone
 First ticket of the D018 build order. data: get_intraday_bars(timeframe 1Min…1Hour,
 days<=30) — tz-aware UTC bar starts. analysis/intraday.py: sessions grouped by ET date
