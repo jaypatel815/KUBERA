@@ -2,6 +2,27 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D021 — PDF gap analysis: the shorting question goes to the owner (2026-08-13)
+Owner-uploaded "Quant Capabilities Gap Analysis" (repo-aware; dispositions binding
+in docs/research/quant-gap-analysis-pdf-2026-08-13.md). THE BIG ONE: it is correct
+that T081 pairs is impossible long-only and that beta-hedging needs a short SPY
+leg — but long-only is a DELIBERATE safety rail for this owner, so the choice is
+escalated: (a) long-only proxy, (b) paper-short behind hard rails, (c) defer until
+30d of DQS evidence. OWNER DECIDED (2026-08-13): (c) DEFER — stay long-only
+until ~30 days of paper DQS history proves discipline under the current rails;
+revisit ON EVIDENCE around 2026-09-12 (DQS trend, override rate, tier-trip
+frequency are the inputs). T081 stays parked; everything else proceeds.
+ADOPTED: strategy-decay DEMOTION into T093 (CUSUM drift vs backtest expectation →
+ledger flips to "demoted" → existing require_promotion refuses automatically — the
+T064 gate's twin). NEW: T094 HRP (with a written scale trigger — not for a
+3-position book), T095 Fama-French factor loadings (free Ken French data, OLS,
+dep 60+ snapshot returns). ENRICHED: T068 universe-screener framing. DEFERRED
+with written triggers: nonlinear impact models + VWAP/TWAP slicing (T090's ADV
+cap makes the problem structurally impossible at this scale). Convergence note:
+six reviews in, the backlog is decision- and data-constrained, not idea-
+constrained — the unlocks are the shorting decision, T036 fills, T023 keys,
+T005 push.
+
 ## D020 — Quant-gaps review: build the measurement layer (2026-08-13)
 Gemini's "what would a quant find missing" review — best cross-agent review yet
 (dispositions binding in docs/research/quant-gaps-review-2026-08-13.md). BUILT

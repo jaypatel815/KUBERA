@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — D021: the shorting question asked and ANSWERED — defer 30 days
+Owner-uploaded PDF gap analysis (sixth batch, repo-aware). Its key catch: T081 pairs
+is impossible long-only — and long-only is a deliberate rail, so the choice went to
+the owner. DECIDED: defer ~30 days; long-only stands until paper DQS history proves
+discipline; revisit on evidence ≈2026-09-12 (DQS trend, override rate, tier trips).
+ADOPTED: strategy-decay DEMOTION into T093 (CUSUM drift vs backtest expectation →
+promotion_status flips to "demoted" → the loop's gate refuses automatically — T064's
+twin). NEW: T094 HRP (written scale trigger), T095 Fama-French loadings (free Ken
+French data, dep 60+ snapshot returns). ENRICHED: T068 universe-screener. DEFERRED
+with triggers: impact models/VWAP slicing (the ADV cap makes the problem impossible
+at this scale). Convergence recorded: six reviews in, the backlog is decision- and
+data-constrained — unlocks are T036 fills, T023 keys, T005 push, and now the clock
+on the shorting revisit. Dispositions: docs/research/quant-gap-analysis-pdf-….md.
+Verified: verify.py PASS — 422 passed, 3 skipped (memory session).
+Next: T036 fills sync is now clearly the top build (unlocks T088/T089/T091).
+Blockers: none.
+
 ## 2026-08-13 — D020: quant-gaps review — the measurement layer begins
 Gemini's best review yet (repo-aware; its traps section independently re-derived our
 D017/D019 rejections — three agents converged on the same discipline). BUILT the two
