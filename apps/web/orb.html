@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>KUBERA</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #07070c; color: #e8e4d8; overflow: hidden;
+    font-family: "Segoe UI", -apple-system, system-ui, sans-serif; }
+  #stage { position: fixed; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; }
+  #orb { cursor: pointer; }
+  #status { margin-top: 6px; font-size: 13px; letter-spacing: 3px; text-transform: uppercase;
+    color: #8a815f; user-select: none; }
+  #hint { position: fixed; top: 18px; width: 100%; text-align: center; font-size: 12px;
+    color: #55503e; letter-spacing: 1px; }
+  #log { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%);
+    width: min(680px, 92vw); max-height: 30vh; overflow-y: auto; font-size: 14px;
+    line-height: 1.55; -webkit-mask-image: linear-gradient(transparent, black 18%);
+    mask-image: linear-gradient(transparent, black 18%); }
+  .turn { margin: 10px 0; }
+  .you { color: #6f9f9b; }
+  .kub { color: #d9c98a; }
+  .chips { margin-top: 4px; }
+  .chip { display: inline-block; font-size: 10.5px; letter-spacing: 1px; color: #7d7457;
+    border: 1px solid #2e2b20; border-radius: 999px; padding: 1px 9px; margin-right: 6px; }
+  #bar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    width: min(680px, 92vw); display: flex; gap: 8px; align-items: center; }
+  #typed { flex: 1; background: #101018; border: 1px solid #23232e; border-radius: 10px;
+    color: #e8e4d8; padding: 11px 14px; font-size: 14px; outline: none; }
+  #typed:focus { border-color: #4a4433; }
+  label.cf { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #8a815f;
+    user-select: none; white-space: nowrap; }
+  input[type=checkbox] { accent-color: #c9a227; }
+  #err { position: fixed; bottom: 4px; width: 100%; text-align: center; font-size: 11px;
+    color: #a05c5c; }
+</style>
+</head>
+<body>
+<div id="hint">click the orb or hold SPACE to talk &nbsp;·&nbsp; type below if you must</div>
+<div id="stage">
+  <canvas id="orb" width="520" height="520"></canvas>
+  <div id="status">idle</div>
+</div>
+<div id="log"></div>
+<div id="bar">
+  <input id="typed" placeholder="…or type to KUBERA" autocomplete="off">
+  <label class="cf"><input type="checkbox" id="confirm"> confirm this turn</label>
+</div>
+<div id="err"></div>
+
+<script>
+// ------------------------------------------------------------------ state
+const S = { mode: "idle", conversationId: null, amp: 0, t: 0 };
+const COLORS = { idle: [201,162,39], listening: [78,168,160], thinking: [148,108,214],
+                 speaking: [222,186,80] };
+const statusEl = document.getElementById("status");
+const errEl = document.getElementById("err");
+function setMode(m) { S.mode = m; statusEl.textContent = m; }
+
+// ------------------------------------------------------------------ orb
+const canvas = document.getElementById("orb"), ctx = canvas.getContext("2d");
+const CX = 260, CY = 260;
+function drawOrb() {
+  S.t += 0.016;
+  ctx.clearRect(0, 0, 520, 520);
+  const [r, g, b] = COLORS[S.mode] || COLORS.idle;
+  const breathe = 1 + 0.035 * Math.sin(S.t * (S.mode === "thinking" ? 4.2 : 1.6));
+  const radius = (S.mode === "idle" ? 92 : 100) * breathe * (1 + S.amp * 0.55);
+  // outer glow
+  const glow = ctx.createRadialGradient(CX, CY, radius * 0.2, CX, CY, radius * 2.4);
+  glow.addColorStop(0, `rgba(${r},${g},${b},0.55)`);
+  glow.addColorStop(0.5, `rgba(${r},${g},${b},0.10)`);
+  glow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(CX, CY, radius * 2.4, 0, 7); ctx.fill();
+  // wobbling core (soft blob: several offset circles)
+  for (let i = 0; i < 3; i++) {
+    const wob = Math.sin(S.t * 2.1 + i * 2.1) * 6 * (1 + S.amp * 2);
+    const core = ctx.createRadialGradient(CX + wob, CY - wob, 4, CX, CY, radius);
+    core.addColorStop(0, `rgba(${Math.min(r+55,255)},${Math.min(g+55,255)},${b+40},0.9)`);
+    core.addColorStop(1, `rgba(${r},${g},${b},0.12)`);
+    ctx.fillStyle = core;
+    ctx.beginPath(); ctx.arc(CX, CY, radius - i * 7, 0, 7); ctx.fill();
+  }
+  S.amp *= 0.92; // decay toward calm
+  requestAnimationFrame(drawOrb);
+}
+drawOrb();
+
+// ------------------------------------------------------------------ log
+const logEl = document.getElementById("log");
+function addTurn(who, text, chips) {
+  const div = document.createElement("div");
+  div.className = "turn";
+  div.innerHTML = `<span class="${who === "you" ? "you" : "kub"}">${
+    who === "you" ? "you" : "kubera"}</span> — ${text.replace(/</g, "&lt;")}` +
+    (chips && chips.length
+      ? `<div class="chips">${chips.map(c => `<span class="chip">${c}</span>`).join("")}</div>`
+      : "");
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ------------------------------------------------------------------ speech in
+const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+function startListening() {
+  if (S.mode !== "idle") return;
+  if (!Rec) { errEl.textContent = "Speech recognition needs Chrome or Edge — typing still works."; return; }
+  rec = new Rec();
+  rec.lang = "en-US"; rec.interimResults = true;
+  setMode("listening");
+  let finalText = "";
+  rec.onresult = (e) => {
+    S.amp = Math.min(1, S.amp + 0.25);
+    finalText = Array.from(e.results).map(r => r[0].transcript).join(" ");
+    statusEl.textContent = "listening — " + finalText.slice(-42);
+  };
+  rec.onerror = (e) => { errEl.textContent = "mic: " + e.error; setMode("idle"); };
+  rec.onend = () => {
+    if (finalText.trim()) send(finalText.trim());
+    else setMode("idle");
+  };
+  rec.start();
+}
+function stopListening() { if (rec && S.mode === "listening") rec.stop(); }
+
+canvas.addEventListener("click", () =>
+  S.mode === "listening" ? stopListening() : startListening());
+window.addEventListener("keydown", (e) => {
+  if (e.code === "Space" && document.activeElement !== typedEl) { e.preventDefault(); startListening(); }
+});
+window.addEventListener("keyup", (e) => {
+  if (e.code === "Space" && document.activeElement !== typedEl) { e.preventDefault(); stopListening(); }
+});
+
+// ------------------------------------------------------------------ chat + voice out
+const typedEl = document.getElementById("typed");
+const confirmEl = document.getElementById("confirm");
+typedEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && typedEl.value.trim()) { send(typedEl.value.trim()); typedEl.value = ""; }
+});
+
+let audioCtx = null, analyser = null;
+function trackAmplitude(audio) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const src = audioCtx.createMediaElementSource(audio);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    src.connect(analyser); analyser.connect(audioCtx.destination);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    (function pump() {
+      if (S.mode !== "speaking") return;
+      analyser.getByteFrequencyData(data);
+      S.amp = Math.min(1, data.reduce((a, v) => a + v, 0) / data.length / 90);
+      requestAnimationFrame(pump);
+    })();
+  } catch (_) { /* amplitude is decoration; never break speech */ }
+}
+
+async function send(text) {
+  errEl.textContent = "";
+  addTurn("you", text);
+  setMode("thinking");
+  const confirm = confirmEl.checked;
+  confirmEl.checked = false; // one deliberate turn at a time
+  try {
+    const r = await fetch("/api/chat", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, conversation_id: S.conversationId,
+                             voice: true, confirm })
+    });
+    if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+    const body = await r.json();
+    S.conversationId = body.conversation_id;
+    addTurn("kubera", body.reply, (body.tool_calls || []).map(t => t.name));
+    setMode("speaking");
+    const audio = new Audio("/api/tts?text=" + encodeURIComponent(body.reply.slice(0, 2000)));
+    audio.crossOrigin = "anonymous";
+    audio.onended = () => setMode("idle");
+    audio.onerror = () => { errEl.textContent = "voice unavailable (is edge-tts installed in the server venv?) — reply shown above"; setMode("idle"); };
+    trackAmplitude(audio);
+    await audio.play();
+  } catch (e) {
+    errEl.textContent = String(e.message || e);
+    setMode("idle");
+  }
+}
+</script>
+</body>
+</html>

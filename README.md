@@ -102,7 +102,14 @@ python scripts\risk_reset.py --note "reviewed the drawdown"   # reset (asks you 
 via `RiskLimits.cooldown_hours`). There is no override flag — that's the feature: the
 person who set the limit shouldn't be able to remove it in the moment it starts hurting.
 
-**Talk to KUBERA out loud** (server running, then in a second terminal):
+**The KUBERA Orb** — the voice-first web interface. Install the server-side voice once
+(`pip install edge-tts` in the venv), start the server, then open **http://127.0.0.1:8000/**
+in Chrome or Edge. Click the orb (or hold Space) and talk; it turns teal listening, violet
+thinking, gold speaking — with chips showing which tools it used. Type in the box if you
+must; tick "confirm this turn" for confirmation-gated actions (that tick is the deliberate
+gesture — saying yes is not).
+
+**Talk to KUBERA in the terminal instead** (server running, then in a second terminal):
 
 ```
 pip install -r requirements-voice.txt      # once; audio deps stay out of the backend

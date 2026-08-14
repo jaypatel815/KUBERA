@@ -3,6 +3,21 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-12 — T073 done: THE KUBERA ORB (Phase 5 opened early)
+Owner wants Zoey OS-like experience (fetched zoeyos.com: voice-first workspace, living
+visuals, visible agent work). Built the Orb: apps/web/orb.html served at GET / — canvas
+orb with state-driven glow (idle/listening/thinking/speaking + audio-amplitude reaction),
+browser SpeechRecognition for STT (Chrome/Edge), POST /api/chat(voice=true), streaming
+GET /api/tts (edge-tts as lazy SERVER dep — 503 with install hint; text capped 2k),
+tool-call chips per reply ("watch the work happen"), typed fallback, and the confirm
+checkbox as the deliberate gesture. Tests: root route, tts 503/streaming/empty (fake
+edge_tts). Owner setup: pip install edge-tts in the server venv, open localhost:8000.
+Zoey's sub-second feel needs a realtime pipeline → T074 filed (LiveKit/Pipecat/OpenAI
+Realtime + barge-in; verify landscape at build).
+Verified: verify.py PASS — 213 passed, 3 skipped.
+Next: owner opens the Orb; T074/T072 for voice polish, or back to T050/T069 substance.
+Blockers: none.
+
 ## 2026-08-12 — MILESTONE: first spoken conversation (T071 ✔) + naturalness pass
 Owner talked to KUBERA and it answered aloud — market snapshot with data-quality
 skepticism (flagged DIA's wide spread) and an offer to go deeper. T071 accepted.

@@ -52,6 +52,43 @@ def get_alpaca_client(s: KuberaSettings = Depends(get_settings)):
         client.close()
 
 
+@app.get("/", include_in_schema=False)
+def orb():
+    """The KUBERA Orb — voice-first web interface (T073)."""
+    from pathlib import Path
+
+    from fastapi.responses import FileResponse, PlainTextResponse
+    page = Path(__file__).resolve().parents[2] / "apps" / "web" / "orb.html"
+    if not page.exists():
+        return PlainTextResponse("Orb UI missing: apps/web/orb.html", status_code=404)
+    return FileResponse(page, media_type="text/html")
+
+
+@app.get("/api/tts")
+async def tts(text: str, voice: str = "en-US-AndrewNeural"):
+    """Stream neural speech (MP3) for the Orb. Needs `pip install edge-tts` in the
+    server venv — 503 with instructions otherwise."""
+    from fastapi.responses import StreamingResponse
+    try:
+        import edge_tts  # noqa: PLC0415 - optional dependency, lazy on purpose
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="TTS needs edge-tts in the SERVER venv: pip install edge-tts",
+        )
+    text = text.strip()[:2000]
+    if not text:
+        raise HTTPException(status_code=422, detail="empty text")
+
+    async def stream():
+        communicate = edge_tts.Communicate(text, voice)
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                yield chunk["data"]
+
+    return StreamingResponse(stream(), media_type="audio/mpeg")
+
+
 @app.get("/health")
 def health() -> dict:
     """Liveness check. Every KUBERA payload is timestamped (AGENTS.md: no undated data)."""
