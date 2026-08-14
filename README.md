@@ -88,8 +88,11 @@ python scripts\paper_trade.py SPY --strategy momentum              # one cycle
 python scripts\paper_trade.py SPY --strategy momentum --loop 3600  # hourly, Ctrl+C to stop
 ```
 
-Each cycle: strategy reads real bars → target position → **fail-closed risk gate** (20%
-per-symbol cap, 3% daily-loss circuit breaker) → market order on the paper account. Every
+Each cycle: strategy reads real bars → target position → **volatility-parity sizing**
+(a buy may risk at most 1% of equity if its 2×ATR stop is hit — size shrinks
+automatically as the symbol gets wilder; sells are never blocked) → **fail-closed risk
+gate** (20% per-symbol cap, 3% daily-loss circuit breaker) → market order on the paper
+account. Every
 decision — ordered, rejected, or no-action — is written to the `signal_log` table with the
 data snapshot it was based on. Strategies: momentum, sma_cross, mean_reversion, buy_and_hold.
 Paper only: there is deliberately no code path to real money.

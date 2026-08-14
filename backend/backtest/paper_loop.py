@@ -21,16 +21,19 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from analysis.metrics import atr
 from backtest.engine import Strategy
 from data.alpaca import AlpacaClient
 from data.market_data import MarketDataClient
 from data.models import SignalLog
 from risk.engine import OrderRequest, RiskEngine
 from risk.persistence import persist_risk_state, restore_risk_state
+from risk.sizing import volatility_parity_notional
 
 log = logging.getLogger("kubera.paper_loop")
 
 MIN_TRADE_VALUE = 100.0  # ignore dust rebalances below this notional
+ATR_WINDOW = 14  # bars for the vol-parity sizer (T078); buys need ATR_WINDOW+1 bars
 
 
 @dataclass(frozen=True)
@@ -94,10 +97,37 @@ def run_paper_cycle(
         ))
         db.commit()
 
-    # 4. delta -> order
+    # 4. delta -> vol-parity sizing (buys only; T078) -> order
     delta = target_value - current_value
+    sizing_note = None
+    if delta > 0:
+        # Fail closed: a buy without enough history to size honestly is no trade.
+        if len(bars.bars) < ATR_WINDOW + 1:
+            reason = (f"insufficient history for ATR({ATR_WINDOW}) sizing: "
+                      f"{len(bars.bars)} bars < {ATR_WINDOW + 1}")
+            log_row("no_action", reason, None)
+            return CycleResult("no_action", symbol, weight, target_value,
+                               current_value, reason)
+        atr_value = atr([b.high for b in bars.bars], [b.low for b in bars.bars],
+                        closes, window=ATR_WINDOW)
+        sized = volatility_parity_notional(
+            acct.equity, last_price, atr_value, delta,
+            risk_frac=risk.limits.risk_per_trade_frac,
+            stop_atr_multiple=risk.limits.stop_atr_multiple,
+        )
+        if sized.binding == "risk":
+            sizing_note = (
+                f"vol-parity sizing bound the buy: {delta:.2f} -> "
+                f"{sized.allowed_notional:.2f} (ATR {atr_value:.2f}, stop distance "
+                f"{sized.stop_distance:.2f}, risk budget {sized.risk_dollars:.2f} = "
+                f"{risk.limits.risk_per_trade_frac:.1%} of equity)"
+            )
+            delta = sized.allowed_notional
     if abs(delta) < min_trade_value:
-        log_row("no_action", f"delta {delta:.2f} below min trade {min_trade_value:.2f}", None)
+        reason = f"delta {delta:.2f} below min trade {min_trade_value:.2f}"
+        if sizing_note:
+            reason += f" ({sizing_note})"
+        log_row("no_action", reason, None)
         return CycleResult("no_action", symbol, weight, target_value, current_value,
                            f"within {min_trade_value:.0f} of target")
 
@@ -119,8 +149,10 @@ def run_paper_cycle(
         return CycleResult("rejected", symbol, weight, target_value, current_value, reasons)
 
     placed = alpaca.place_order(symbol, side, qty)
-    log_row("ordered", None, placed.external_id)
+    log_row("ordered", sizing_note, placed.external_id)
     detail = f"{side} {qty} {symbol} @ ~{last_price:.2f} (order {placed.status})"
+    if sizing_note:
+        detail += f" — {sizing_note}"
     log.info("cycle ORDERED: %s", detail)
     return CycleResult("ordered", symbol, weight, target_value, current_value,
                        detail, placed.external_id)

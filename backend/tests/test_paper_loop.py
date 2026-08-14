@@ -17,8 +17,11 @@ BARS_JSON = {
     "symbol": "SPY",
     "next_page_token": None,
     "bars": [
+        # +1/day with ±1 H/L margins -> every true range is exactly 2.0 -> ATR = 2.0,
+        # so the T078 vol-parity ceiling is 1% * 100k / (2 * 2.0) * 179 = 44,750 —
+        # comfortably above every delta in these tests: legacy expectations unchanged.
         {"t": f"2026-{(i // 28) + 1:02d}-{(i % 28) + 1:02d}T04:00:00Z",
-         "o": 1, "h": 1, "l": 1, "c": 100.0 + i, "v": 1}
+         "o": 100.0 + i, "h": 101.0 + i, "l": 99.0 + i, "c": 100.0 + i, "v": 1}
         for i in range(80)  # rising: momentum(lookback<=78) will be long; last close 179
     ],
 }

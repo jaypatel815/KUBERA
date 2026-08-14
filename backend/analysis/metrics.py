@@ -81,6 +81,53 @@ def sma(values: Sequence[float], window: int) -> float:
     return sum(tail) / window
 
 
+def true_ranges(
+    highs: Sequence[float], lows: Sequence[float], closes: Sequence[float]
+) -> list[float]:
+    """True range per bar (Wilder): max(H-L, |H-prevC|, |L-prevC|). Returns n-1 values
+    (the first bar has no previous close). Gaps are captured by the prev-close terms —
+    close is deliberately NOT required to sit inside [low, high] (real feeds gap)."""
+    n = len(closes)
+    if not (len(highs) == len(lows) == n):
+        raise ValueError("highs, lows, closes must be equal length")
+    if n < 2:
+        raise ValueError(f"need at least 2 bars, got {n}")
+    for i in range(n):
+        if highs[i] <= 0 or lows[i] <= 0 or closes[i] <= 0:
+            raise ValueError(f"bar {i}: prices must be > 0")
+        if lows[i] > highs[i]:
+            raise ValueError(f"bar {i}: low {lows[i]} > high {highs[i]}")
+    return [
+        max(
+            highs[i] - lows[i],
+            abs(highs[i] - closes[i - 1]),
+            abs(lows[i] - closes[i - 1]),
+        )
+        for i in range(1, n)
+    ]
+
+
+def atr(
+    highs: Sequence[float],
+    lows: Sequence[float],
+    closes: Sequence[float],
+    window: int = 14,
+) -> float:
+    """Average True Range as of the LAST bar, Wilder's smoothing (the standard):
+    seed = simple mean of the first `window` true ranges, then
+    ATR_i = (ATR_{i-1} * (window-1) + TR_i) / window. Price units, not a fraction.
+    Requires window+1 bars (one to anchor the first TR)."""
+    if window < 1:
+        raise ValueError(f"window must be >= 1, got {window}")
+    trs = true_ranges(highs, lows, closes)
+    if len(trs) < window:
+        raise ValueError(f"need at least {window + 1} bars for ATR({window}), got {len(closes)}")
+    value = sum(trs[:window]) / window
+    for tr in trs[window:]:
+        value = (value * (window - 1) + tr) / window
+    return value
+
+
 def max_drawdown_frac(values: Sequence[float]) -> float:
     """Largest peak-to-trough decline as a positive fraction (0.25 == fell 25%)."""
     _check_values(values)

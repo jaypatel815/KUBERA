@@ -40,6 +40,10 @@ class RiskLimits:
     # Cooling-off period: after a trip, reset() is refused for this many hours.
     # Default ~20h pushes the reset past "one more trade" into the next session.
     cooldown_hours: float = 20.0
+    # Vol-parity sizing (T078): max loss per trade if the ATR-based stop is hit, as a
+    # fraction of equity. Band capped at 5% — beyond that isn't sizing, it's gambling.
+    risk_per_trade_frac: float = 0.01
+    stop_atr_multiple: float = 2.0
 
     def __post_init__(self):
         if not 0 < self.max_position_frac <= 1:
@@ -50,6 +54,14 @@ class RiskLimits:
             )
         if not 0 <= self.cooldown_hours <= 24 * 7:
             raise ValueError(f"cooldown_hours must be in [0, 168], got {self.cooldown_hours}")
+        if not 0 < self.risk_per_trade_frac <= 0.05:
+            raise ValueError(
+                f"risk_per_trade_frac must be in (0, 0.05], got {self.risk_per_trade_frac}"
+            )
+        if not 0 < self.stop_atr_multiple <= 10:
+            raise ValueError(
+                f"stop_atr_multiple must be in (0, 10], got {self.stop_atr_multiple}"
+            )
 
 
 @dataclass(frozen=True)

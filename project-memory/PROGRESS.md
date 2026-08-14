@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T078 done: vol-parity sizing — position size now answers to volatility
+Built: Wilder ATR (true_ranges + atr) in analysis/metrics with hand-computed tests;
+risk/sizing.py volatility_parity_notional — a buy may risk at most
+equity × risk_per_trade_frac (default 1%, RiskLimits hard-bands it ≤5%) if the
+stop_atr_multiple×ATR stop is hit, so size shrinks as volatility grows. Paper loop:
+buys sized BEFORE the gate (sizing note logged on bound orders + in SignalLog.reasons),
+sells untouched (reducing risk is never blocked), <ATR_WINDOW+1 bars → no_action
+fail-closed. Design decision worth keeping: the sizer ONLY shrinks the request — the
+RiskEngine's 20% cap still rejects oversized targets loudly; no silent auto-resize of a
+rule violation. Legacy loop tests pass unchanged (fixture H/L made sane: ATR=2 → ceiling
+44,750 above all legacy deltas). Whipsaw test: ATR 41 → 15k request sized to 12.195
+shares — hand-walked.
+Verified: verify.py PASS — 256 passed, 3 skipped.
+Next: T051 support/resistance or T053 breakout detector (regime pack), or T080 macro
+context (quick win). Owner: nothing to do — sizing is automatic in paper_trade.py.
+Blockers: none.
+
 ## 2026-08-13 — "Institutional precision" batch reviewed (D017): pillars validated, T080/T081 minted
 Owner's second batch (quant-fund framing). Verdict: the Three Pillars — E[X] over win
 rate, execution discipline, no-trade selectivity — are correct AND already our
