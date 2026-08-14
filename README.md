@@ -59,6 +59,10 @@ http://127.0.0.1:8000/api/levels/SPY                        where are support an
 http://127.0.0.1:8000/api/breakouts/SPY                     did it break out — and did the break HOLD? every
                                                             escape judged on volume + hold: confirmed, failed
                                                             (fakeout completed), unconfirmed, or pending
+http://127.0.0.1:8000/api/intraday/SPY                      what kind of day is it SO FAR? session VWAP with
+                                                            price side + crossings (churn = no trend), and
+                                                            intraday RVOL — today's volume at this point vs
+                                                            the same point on prior days
 http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
 http://127.0.0.1:8000/api/backtests                         the results ledger: every recorded backtest
 POST /api/backtests/run?strategy=momentum&symbol=SPY        run + record a backtest (use /docs to click it)

@@ -3,6 +3,25 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T052 done: intraday VWAP + time-of-day RVOL — the doctrine's backbone
+First ticket of the D018 build order. data: get_intraday_bars(timeframe 1Min…1Hour,
+days<=30) — tz-aware UTC bar starts. analysis/intraday.py: sessions grouped by ET date
+(zoneinfo; tzdata dep added for the owner's Windows — a 20:30-ET after-hours bar stays
+with its ET day even past UTC midnight; boundary TESTED), RTH filter default-on,
+cumulative session VWAP on typical price (hand case: 5000/500=10.0), VWAP crossings
+counter (running-VWAP side flips — the "crossing without holding = no trend" churn
+signal), and intraday RVOL implemented as the doctrine defines it: today's cumulative
+volume at this time-of-day vs prior sessions' cumulative volume by the SAME ET time
+(hand case: 600 vs 300 → 2.0; a later prior-session bar proves the cutoff). Zero-volume
+degrades to None honestly; D006 note on every reading. get_intraday tool (registry 12,
+guards ×3 bumped) + GET /api/intraday/{symbol}.
+Verified: verify.py PASS (12 new tests; full suite green).
+Next per D018 order: T055 no-trade condition (+T054 router alongside), or T075
+confluence which just unblocked. Owner: /api/intraday/SPY during market hours, or ask
+the Orb "what kind of day is SPY having?" — note: pip install -r backend/requirements.txt
+again (tzdata added).
+Blockers: none.
+
 ## 2026-08-13 — D018: cross-agent review reconciled + three safety nets built
 Owner uploaded a repo-aware review (best one yet — it read our memory files). ~70% was
 priority votes on existing tickets (accepted: T052 → T055 → T077 → T067/T062; no new

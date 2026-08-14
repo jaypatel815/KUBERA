@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from analysis.benchmark import compare
 from analysis.breakout import detect_breakouts
 from analysis.briefing import PositionContext, build_briefing
+from analysis.intraday import build_session_read
 from analysis.levels import find_levels
 from analysis.portfolio import summarize, win_loss
 from analysis.regime import classify_regime
@@ -381,6 +382,48 @@ def _get_breakouts(ctx: ToolContext, p: BreakoutArgs) -> dict:
         "symbol": bars.symbol,
         "breakouts": asdict(scan),
         "volume_feed": bars.source,  # D006: RVOL is relative to this feed only
+        "asof": bars.asof.isoformat(),
+        "source": bars.source,
+    }
+
+
+class IntradayArgs(SymbolArgs):
+    timeframe: str = Field(
+        default="5Min", pattern="^(1Min|5Min|15Min|30Min|1Hour)$",
+        description="Bar size for the session read",
+    )
+    days: int = Field(
+        default=9, ge=1, le=30,
+        description="Calendar days to fetch (9 gives ~5 prior sessions of RVOL context)",
+    )
+
+
+@registry.tool(
+    "get_intraday",
+    "Today's session read for one symbol: session VWAP with price side and distance, "
+    "VWAP crossings (many = churn, no trend — be selective), cumulative volume, and "
+    "intraday RVOL — today's volume at this point of the day vs the same point in "
+    "prior sessions (the honest 'is the market interested?' measure; IEX-relative, "
+    "never absolute, per D006). Regular hours only by default. This is the 'what "
+    "kind of day is it so far' companion to get_regime's daily view.",
+    IntradayArgs,
+)
+def _get_intraday(ctx: ToolContext, p: IntradayArgs) -> dict:
+    market: MarketDataClient = ctx.require("market")
+    bars = market.get_intraday_bars(p.symbol, timeframe=p.timeframe, days=p.days)
+    if not bars.bars:
+        raise ToolError(
+            f"no intraday bars for '{p.symbol}' — check the symbol, or the market "
+            "may not have opened yet today"
+        )
+    try:
+        reading = build_session_read(bars.bars, volume_feed=bars.source)
+    except ValueError as e:
+        raise ToolError(str(e)) from e
+    return {
+        "symbol": bars.symbol,
+        "timeframe": bars.timeframe,
+        "intraday": asdict(reading),
         "asof": bars.asof.isoformat(),
         "source": bars.source,
     }

@@ -240,6 +240,26 @@ def symbol_levels(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/intraday/{symbol}")
+def symbol_intraday(
+    symbol: str,
+    timeframe: str = "5Min",
+    days: int = 9,
+    market: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """What kind of day is it so far? Session VWAP + intraday RVOL, via the chat tool."""
+    try:
+        return registry.execute(
+            "get_intraday",
+            {"symbol": symbol, "timeframe": timeframe, "days": days},
+            ToolContext(market=market),
+        )
+    except ToolError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/breakouts/{symbol}")
 def symbol_breakouts(
     symbol: str,

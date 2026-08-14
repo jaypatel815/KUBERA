@@ -93,6 +93,28 @@ class DailyBars:
     source: str = SOURCE
 
 
+INTRADAY_TIMEFRAMES = ("1Min", "5Min", "15Min", "30Min", "1Hour")
+
+
+@dataclass(frozen=True)
+class IntradayBar:
+    ts: datetime  # bar START time, tz-aware UTC (Alpaca convention)
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float
+
+
+@dataclass(frozen=True)
+class IntradayBars:
+    symbol: str
+    timeframe: str
+    bars: list[IntradayBar]
+    asof: datetime
+    source: str = SOURCE
+
+
 class MarketDataClient:
     """Data-only client (no order capability exists on this API surface at all)."""
 
@@ -190,3 +212,44 @@ class MarketDataClient:
             for b in (d.get("bars") or [])
         ]
         return DailyBars(symbol=symbol, bars=bars, asof=datetime.now(timezone.utc))
+
+    def get_intraday_bars(
+        self, symbol: str, timeframe: str = "5Min", days: int = 7
+    ) -> IntradayBars:
+        """Intraday OHLCV (T052). Timestamps are bar STARTS, tz-aware UTC.
+        IEX feed (D006): volumes are a small sample of the consolidated tape —
+        valid for the symbol's own relative measures (session VWAP shape, RVOL),
+        never for absolute volume claims."""
+        if timeframe not in INTRADAY_TIMEFRAMES:
+            raise ValueError(
+                f"timeframe must be one of {INTRADAY_TIMEFRAMES}, got {timeframe!r}"
+            )
+        if not 1 <= days <= 30:
+            raise ValueError(f"days must be 1..30 for intraday, got {days}")
+        symbol = symbol.upper()
+        start = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        d = self._get(
+            f"/v2/stocks/{symbol}/bars",
+            params={
+                "timeframe": timeframe,
+                "start": start,
+                "feed": FEED,
+                "limit": 10000,
+                "adjustment": "split",
+            },
+        )
+        bars = [
+            IntradayBar(
+                ts=parse_rfc3339(b["t"]),
+                open=float(b["o"]),
+                high=float(b["h"]),
+                low=float(b["l"]),
+                close=float(b["c"]),
+                volume=float(b["v"]),
+            )
+            for b in (d.get("bars") or [])
+        ]
+        return IntradayBars(
+            symbol=symbol, timeframe=timeframe, bars=bars,
+            asof=datetime.now(timezone.utc),
+        )
