@@ -72,6 +72,28 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   then `rm -f .git/*.lock` and delete `.git/objects/**/tmp_obj_*`. Windows/Antigravity/other
   agents are unaffected. Resolved 2026-08-11.
 
+## I008 — "Which ticker?" asked back to a user who NAMED the ticker (2026-08-14)
+OBSERVED (owner transcript, day after I007, same brain suspected): "Since I
+currently hold SPY, should I continue holding?" -> model asked "tell me which
+ticker", claimed a "recent-performance function" doesn't exist (get_symbol_briefing
+IS that function), confused get_brief (owner's daily brief) with
+get_symbol_briefing, and called ZERO tools. The I007 symbol check was correctly
+silent — no tools ran, nothing to compare.
+DIAGNOSIS: local-model tool routing failing at 24 tools; reading-comprehension miss
+on the named symbol. Pattern across I007+I008: the tool layer is blameless both
+times; the LOCAL BRAIN is the failure surface.
+DEFENSES SHIPPED (same day):
+1. ensure_no_deflection post-check: named ticker + ZERO tool calls + reply asks
+   for a symbol -> footer naming the tools that DO answer it. Both transcripts are
+   named tests now.
+2. Persona ROUTING map: question -> tools ("should I hold X" -> briefing + regime
+   + exit plan + triage), "never claim a capability is missing without checking
+   the tool list", "never ask for a symbol the user already named" (guard-tested).
+STANDING RECOMMENDATION (owner): LLM_PROVIDER=claude-sdk for real decisions; the
+local brain is fine for casual queries only. T096 filed: per-brain tool subsetting
+so small models see a curated toolset instead of all 24.
+STATUS: defenses shipped; monitor. Two strikes on the local brain are data.
+
 ## I007 — Model answered "should I buy SPY?" with a TSLA sizing table (2026-08-14)
 OBSERVED (owner transcript, 04:31 UTC): user asked about SPY; the model called
 size_position for TSLA and presented a confident sizing table for the wrong ticker,

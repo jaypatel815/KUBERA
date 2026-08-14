@@ -46,6 +46,36 @@ def test_ticker_extraction():
     assert _user_tickers("compare SPY, QQQ and AAPL") == {"SPY", "QQQ", "AAPL"}
 
 
+def test_the_hold_spy_deflection_transcript_is_caught():
+    from api.chat import ensure_no_deflection
+
+    reply = ensure_no_deflection(
+        "I'm happy to pull the latest price ... If you tell me which ticker "
+        "you're interested in (e.g., AAPL, TSLA, etc.) ... Just let me know the "
+        "symbol and which of those options you'd like.",
+        "Since I currently hold SPY stocks, do you think I should continue holding?",
+        trail=[],
+    )
+    assert "⚠ Deflection check" in reply
+    assert "SPY" in reply and "get_symbol_briefing" in reply
+    assert "model miss, not a missing capability" in reply
+
+
+def test_deflection_check_stays_silent_when_appropriate():
+    from api.chat import ensure_no_deflection
+
+    # tools ran: silent (even if the reply asks a follow-up)
+    assert "Deflection" not in ensure_no_deflection(
+        "which ticker did you mean?", "should I hold SPY?",
+        trail=[{"name": "get_regime", "arguments": {"symbol": "SPY"}}])
+    # no ticker named: asking for one is legitimate
+    assert "Deflection" not in ensure_no_deflection(
+        "let me know the symbol", "can you check a stock for me?", trail=[])
+    # ticker named but the reply doesn't ask for one: silent
+    assert "Deflection" not in ensure_no_deflection(
+        "SPY closed higher.", "should I hold SPY?", trail=[])
+
+
 def test_human_age():
     assert human_age(28) == "28s"
     assert human_age(840) == "14m"

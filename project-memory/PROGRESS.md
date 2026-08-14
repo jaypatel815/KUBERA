@@ -3,6 +3,25 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — I008: "which ticker?" deflection — second strike on the local brain
+Owner's next transcript: "I hold SPY, should I keep holding?" → model asked for the
+ticker, claimed no recent-performance function exists (get_symbol_briefing IS it),
+confused get_brief with get_symbol_briefing, called ZERO tools. I007's symbol check
+was correctly silent (nothing ran → nothing to compare). Shipped:
+(1) ensure_no_deflection post-check — named ticker + empty tool trail + asks-for-
+symbol phrasing → footer naming the tools that DO answer ("a model miss, not a
+missing capability"); the transcript is a named test.
+(2) Persona ROUTING map — question→tools ("should I hold X" → briefing + regime +
+exit plan + triage), "never claim a capability is missing without checking the tool
+list", "never ask for a symbol the user already named" (guard-tested).
+(3) I008 logged; T096 filed: per-brain tool subsetting (24 tools overwhelm small
+local models — curated core set for local brains).
+PATTERN ON RECORD: two strikes, both model-level, tool layer blameless both times.
+Standing recommendation: LLM_PROVIDER=claude-sdk for real decisions.
+Verified: verify.py PASS — 449 passed, 3 skipped.
+Owner: switch the brain, re-ask; the answer should route to briefing+regime+exit plan.
+Blockers: none.
+
 ## 2026-08-14 — I007: the SPY→TSLA wrong-symbol reply — three defenses shipped
 Owner pasted a real transcript: "should I buy and hold SPY?" answered with a TSLA
 sizing table + directive tone + "price age ≈ 28 s marked stale" at 04:31 UTC (market

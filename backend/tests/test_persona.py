@@ -42,5 +42,7 @@ def test_nonnegotiable_keywords_present():
         "learning quantitative investing",  # educational mode
         "record_decision",  # journal discipline (T063): unjournaled = didn't happen
         "answer the question that was asked",  # I007: no sizing tables for opinion questions
+        "never ask for a symbol the user already named",  # I008: no deflection
+        "routing",  # I008: question -> tools map
     ):
         assert keyword in prompt, f"missing persona keyword: {keyword}"

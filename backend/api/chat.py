@@ -89,6 +89,34 @@ def ensure_symbol_alignment(reply: str, user_text: str, trail: list[dict]) -> st
     )
 
 
+# Deflection post-check (I008): a real transcript showed "I hold SPY, should I keep
+# holding?" answered with "tell me which ticker" and ZERO tool calls. If the user
+# NAMED a ticker, no tools ran, and the reply asks for a symbol -> flag it.
+_ASKS_FOR_SYMBOL = re.compile(
+    r"which (ticker|symbol)|let me know (the|which) (ticker|symbol)"
+    r"|tell me (which|the) (ticker|symbol)|what (ticker|symbol)"
+    r"|know the symbol|name the (ticker|symbol)",
+    re.IGNORECASE,
+)
+
+
+def ensure_no_deflection(reply: str, user_text: str, trail: list[dict]) -> str:
+    """The user gave a symbol and got asked for one back, with no data touched."""
+    if trail or not _ASKS_FOR_SYMBOL.search(reply):
+        return reply
+    asked = _user_tickers(user_text)
+    if not asked:
+        return reply
+    named = ", ".join(sorted(asked))
+    return (
+        f"{reply}\n\n_⚠ Deflection check: you already named {named}. KUBERA has the "
+        "tools to answer this (get_symbol_briefing for recent performance, "
+        "get_regime, get_exit_plan, triage_position if you hold it) but called none "
+        "of them — a model miss, not a missing capability. Re-ask, or switch to the "
+        "claude-sdk brain for real decisions._"
+    )
+
+
 def ensure_recency_line(reply: str, tool_asofs: dict[str, str]) -> str:
     """Post-check (T043): a data-grounded reply must carry a date. If the model used
     tools but stated no recency, append a deterministic footer from the ACTUAL tool
@@ -196,8 +224,11 @@ def run_chat_turn(
         if not reply.wants_tools:
             return ChatTurnResult(
                 conversation_id=conversation_id,
-                reply=ensure_symbol_alignment(
-                    ensure_recency_line(reply.text or "", tool_asofs),
+                reply=ensure_no_deflection(
+                    ensure_symbol_alignment(
+                        ensure_recency_line(reply.text or "", tool_asofs),
+                        user_text, trail,
+                    ),
                     user_text, trail,
                 ),
                 tool_trail=trail, input_tokens=total_in, output_tokens=total_out,
