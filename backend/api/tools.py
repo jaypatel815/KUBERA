@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from analysis.benchmark import compare
 from analysis.briefing import PositionContext, build_briefing
 from analysis.portfolio import summarize, win_loss
+from analysis.regime import classify_regime
 from backtest.ledger import run_and_record
 from backtest.strategies import TEMPLATES, build_strategy
 from data.alpaca import AlpacaClient
@@ -252,6 +253,49 @@ def _get_symbol_briefing(ctx: ToolContext, p: BriefingArgs) -> dict:
     )
     return {
         "briefing": asdict(briefing),
+        "asof": bars.asof.isoformat(),
+        "source": bars.source,
+    }
+
+
+class RegimeArgs(SymbolArgs):
+    days: int = Field(
+        default=250, ge=40, le=3650,
+        description="Calendar days of history (250 gives ~170 bars — enough for a "
+                    "meaningful range-width percentile)",
+    )
+
+
+@registry.tool(
+    "get_regime",
+    "Classify the market regime for one symbol from daily bars: trending_up / "
+    "trending_down / range_bound / breakout_watch, with the evidence behind it — "
+    "swing structure (higher highs/lows), 20-bar range and its width percentile, "
+    "RVOL (relative volume, labeled by feed), range escapes with fakeout suspicion, "
+    "and a per-signal confidence checklist. Use it to pick the playbook: trend-follow "
+    "in trends, trade edges in ranges, wait in coils — and remember 'no trade today' "
+    "is a valid conclusion. Narration must state the as-of date and the feed caveat.",
+    RegimeArgs,
+)
+def _get_regime(ctx: ToolContext, p: RegimeArgs) -> dict:
+    market: MarketDataClient = ctx.require("market")
+    bars = market.get_daily_bars(p.symbol, days=p.days)
+    if len(bars.bars) < 21:
+        raise ToolError(
+            f"only {len(bars.bars)} daily bars for '{p.symbol}' — need at least 21 "
+            "to classify a regime (check the symbol or widen days)"
+        )
+    reading = classify_regime(
+        [b.high for b in bars.bars],
+        [b.low for b in bars.bars],
+        [b.close for b in bars.bars],
+        [b.volume for b in bars.bars],
+        [b.date for b in bars.bars],
+        volume_feed=bars.source,
+    )
+    return {
+        "symbol": bars.symbol,
+        "regime": asdict(reading),
         "asof": bars.asof.isoformat(),
         "source": bars.source,
     }

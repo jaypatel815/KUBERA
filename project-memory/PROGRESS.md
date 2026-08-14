@@ -3,6 +3,25 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T050 done: regime classifier — the doctrine becomes code
+The regime pack opener. analysis/regime.py classifies from daily bars, faithful to
+docs/research/regime-trading-notes.md: swing-based HH/HL structure (strict local extrema,
+SMA-slope fallback since monotone series have no swings), standing 20-bar range + width
+percentile across trailing rolling windows (low percentile = the coil), close-escape vs
+the prior window with suspected_fakeout when RVOL < 1.0 (the $100→$106→$99 lesson),
+RVOL against the symbol's own baseline with volume_feed REQUIRED (D006 label + SIP
+caveat in every reading). Decision order matters and is tested: a matured trend outranks
+its own escapes. Confidence = fixed 3-signal checklist per label (0.35 + 0.15/pass, cap
+0.9 — a daily-bar heuristic never claims certainty); checks dict returned so chat can
+say WHY. Shipped reachable: get_regime tool (9 total) + GET /api/regime/{symbol}.
+Tests: sawtooth trend fixtures with rising/falling swings, stationary triangle,
+coil (13/76 percentile hand-walked), volume-confirmed breakout (15/77), fakeout twin,
+plus micro known-answers for rvol/escape/swings/fallback and full validation.
+Verified: verify.py PASS — 234 passed, 3 skipped.
+Next: T051 support/resistance (feeds the range strategy) or T053 breakout detector;
+T054 router wants both. Owner: ask the Orb "what regime is SPY in?" once server restarts.
+Blockers: none.
+
 ## 2026-08-12 — T073 done: THE KUBERA ORB (Phase 5 opened early)
 Owner wants Zoey OS-like experience (fetched zoeyos.com: voice-first workspace, living
 visuals, visible agent work). Built the Orb: apps/web/orb.html served at GET / — canvas
