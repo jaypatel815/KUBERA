@@ -223,6 +223,23 @@ def symbol_regime(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/levels/{symbol}")
+def symbol_levels(
+    symbol: str,
+    days: int = 250,
+    market: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """Where are support and resistance? — via the same tool the chat layer uses."""
+    try:
+        return registry.execute(
+            "get_levels", {"symbol": symbol, "days": days}, ToolContext(market=market)
+        )
+    except ToolError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 def get_llm_provider(s: KuberaSettings = Depends(get_settings)):
     """Yield the configured LLM provider, or 503 with an actionable message."""
     try:

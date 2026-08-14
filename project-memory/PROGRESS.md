@@ -3,6 +3,24 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T051 done: support/resistance — "repeated rejections define the range"
+Built analysis/levels.py: swing highs/lows (regime.py's swing_points promoted to public,
+shared) pooled and clustered by price proximity (sorted greedy walk, running-mean join
+within tolerance_frac=1%); a cluster becomes a LEVEL only with >= min_touches swings
+(default 2). Levels carry price (member mean), touches, provenance kind — support /
+resistance / mixed (support-becomes-resistance detected and tested), first/last touch
+dates, signed distance from last close; reading includes nearest support + resistance
+(positional, any provenance — "trade the edges"). Reachable now: get_levels tool
+(registry = 10; count guards bumped in 3 test files) + GET /api/levels/{symbol}. Tests:
+two hand-walked micro fixtures (3-touch S/R + dropped stray; mixed-kind breakdown with
+nearest_support=None), tolerance/min_touches behavior, validation, 60-bar triangle
+through tool + endpoint (7-touch levels at 94.5/105.5).
+Verified: verify.py PASS — 269 passed, 3 skipped.
+Next: T053 breakout detector (T050's escape + T051's levels + RVOL threshold) is now
+fully fed; then T054 range strategy + router. Owner: ask the Orb "where's support on
+SPY?" or open /api/levels/SPY.
+Blockers: none.
+
 ## 2026-08-13 — T078 done: vol-parity sizing — position size now answers to volatility
 Built: Wilder ATR (true_ranges + atr) in analysis/metrics with hand-computed tests;
 risk/sizing.py volatility_parity_notional — a buy may risk at most

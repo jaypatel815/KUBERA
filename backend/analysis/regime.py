@@ -147,10 +147,11 @@ def _width_percentile(
     return sum(1 for w in others if w <= current + tol) / len(others)
 
 
-def _swing_points(
+def swing_points(
     values: Sequence[float], dates: Sequence[str], span: int, kind: str
 ) -> list[SwingPoint]:
-    """Strict local extrema: above/below EVERY bar within `span` on both sides."""
+    """Strict local extrema: above/below EVERY bar within `span` on both sides.
+    Public: analysis.levels (T051) clusters these into support/resistance."""
     out = []
     for i in range(span, len(values) - span):
         neighbors = [values[j] for j in range(i - span, i + span + 1) if j != i]
@@ -171,8 +172,8 @@ def _structure(
 ) -> tuple[str, str, list[SwingPoint], list[SwingPoint]]:
     window = min(len(closes), 4 * range_lookback)
     h, lo, d = highs[-window:], lows[-window:], dates[-window:]
-    swing_highs = _swing_points(h, d, swing_span, "high")
-    swing_lows = _swing_points(lo, d, swing_span, "low")
+    swing_highs = swing_points(h, d, swing_span, "high")
+    swing_lows = swing_points(lo, d, swing_span, "low")
 
     if len(swing_highs) >= 2 and len(swing_lows) >= 2:
         sh, sl = swing_highs[-2:], swing_lows[-2:]

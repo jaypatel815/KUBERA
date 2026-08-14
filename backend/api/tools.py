@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 
 from analysis.benchmark import compare
 from analysis.briefing import PositionContext, build_briefing
+from analysis.levels import find_levels
 from analysis.portfolio import summarize, win_loss
 from analysis.regime import classify_regime
 from backtest.ledger import run_and_record
@@ -296,6 +297,45 @@ def _get_regime(ctx: ToolContext, p: RegimeArgs) -> dict:
     return {
         "symbol": bars.symbol,
         "regime": asdict(reading),
+        "asof": bars.asof.isoformat(),
+        "source": bars.source,
+    }
+
+
+class LevelsArgs(SymbolArgs):
+    days: int = Field(
+        default=250, ge=40, le=3650,
+        description="Calendar days of history to scan for swing rejections",
+    )
+
+
+@registry.tool(
+    "get_levels",
+    "Support and resistance levels for one symbol, from clustered swing highs/lows: "
+    "each level has a price, touch count (repeated rejections make a level real — "
+    "weight 5 touches over 2), kind (support/resistance/mixed provenance), and signed "
+    "distance from the last close; plus the nearest support and resistance. Doctrine: "
+    "trade the edges of a range, not the middle; an escape through a level needs "
+    "volume confirmation (cross-check get_regime). State the as-of date.",
+    LevelsArgs,
+)
+def _get_levels(ctx: ToolContext, p: LevelsArgs) -> dict:
+    market: MarketDataClient = ctx.require("market")
+    bars = market.get_daily_bars(p.symbol, days=p.days)
+    if len(bars.bars) < 20:
+        raise ToolError(
+            f"only {len(bars.bars)} daily bars for '{p.symbol}' — need at least 20 "
+            "to estimate levels (check the symbol or widen days)"
+        )
+    reading = find_levels(
+        [b.high for b in bars.bars],
+        [b.low for b in bars.bars],
+        [b.close for b in bars.bars],
+        [b.date for b in bars.bars],
+    )
+    return {
+        "symbol": bars.symbol,
+        "levels": asdict(reading),
         "asof": bars.asof.isoformat(),
         "source": bars.source,
     }

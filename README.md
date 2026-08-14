@@ -53,6 +53,9 @@ http://127.0.0.1:8000/api/regime/SPY                        what kind of market 
                                                             breakout-watch, with swing structure, range width
                                                             percentile, RVOL and fakeout suspicion — all evidence
                                                             shown, feed labeled, never certain
+http://127.0.0.1:8000/api/levels/SPY                        where are support and resistance? clustered swing
+                                                            rejections with touch counts (2 touches make a level,
+                                                            5 make a strong one) + nearest edge above and below
 http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
 http://127.0.0.1:8000/api/backtests                         the results ledger: every recorded backtest
 POST /api/backtests/run?strategy=momentum&symbol=SPY        run + record a backtest (use /docs to click it)
