@@ -92,10 +92,14 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
   refuses automatically (promote→demote→refused proven in test);
   `scripts/decay_check.py [--demote]` with the ACCOUNT-PROXY limitation
   printed every run.
-- [ ] T093b — Snapshot-vs-broker reconciliation (T093 part 2): health_check
-  gains a daily check comparing the latest account_snapshot equity vs live
-  broker equity (threshold ~0.5%, market-hours aware); Windows toast on drift.
-  Small, unblocked, good first ticket for any agent.
+- [x] T093b — Snapshot-vs-broker reconciliation — DONE 2026-08-14 (Claude/
+  Cowork): health_check gains check_reconciliation — latest account_snapshot
+  equity vs live /api/account, warns above 0.5% drift with the snapshot's age
+  and the remedy named ("run sync.py; drift that SURVIVES a fresh sync is not
+  normal"). Owns exactly ONE failure mode (both sides reachable, disagreeing);
+  stays quiet when server-down/no-snapshot — those belong to the existing
+  checks. Wired into run_checks → the owner's every-5-min scheduled task and
+  --notify toast get it for free. 3 tests (drift/quiet/cannot-judge).
 - [ ] T087 — Open-trade monitor (owner Q&A; deps T074/T082/T036): watch held positions during RTH — alert when session RVOL collapses under a breakout thesis, VWAP churn rises, exit-plan invalidation approaches/hits, or the event guard window opens; Windows toast + Orb surface v1, voice barge-in with T074. Advisory only — execution stays in the loop's rails.
 - [ ] (advisory note for T077b/T085) Fractional-Kelly sizing VIEW from T077 win-rate/payoff — advisory-only, capped, never autopilot; single-trade "probability of profit" remains rejected per D017.
 - [ ] T083 — Event reaction base rates (D019, dep T023 dates): for each historical earnings date, compute from our daily bars the event-day + next-day moves split by beat/miss, and the pre-event runup into each; surface in briefings/chat as BASE RATES ("6 of the last 8 beats still closed down") — the evidence-based answer to "should I hold through earnings", no prediction claimed. Deterministic, hand-computed tests.

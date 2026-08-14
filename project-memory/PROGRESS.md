@@ -3,6 +3,19 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T093b: reconciliation — the DB and the broker must agree
+Small ticket, closed same day it was minted. health_check now compares the
+latest account_snapshot equity against the live broker (/api/account) and
+warns above 0.5% drift — with the snapshot age and the remedy in the message
+(stale-after-market-moves is normal, run sync.py; drift surviving a fresh sync
+is an incident). Deliberately owns ONE failure mode: both sides reachable but
+disagreeing — server-down and never-synced stay with their existing checks, so
+no double-reporting. Rides the owner's every-5-min scheduled health check and
+Windows toast unchanged. T093 is now fully closed (parts 1+2+3).
+Verified: verify.py PASS — 547 passed (+3), 3 skipped.
+Next: T068 watchlist + opportunity ranking (criteria defined in D020), or
+T060 TWR the day the owner makes his first deposit.
+
 ## 2026-08-14 — T093: the book as one number — and promotions that expire
 Two halves of the same discipline. MEASURE: analysis/portfolio_risk.py —
 portfolio vol √(w'Cw) (hand-tested at correlation extremes: ρ=1 → 0.2, ρ=0 →

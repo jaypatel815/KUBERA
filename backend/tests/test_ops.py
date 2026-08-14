@@ -108,3 +108,53 @@ def test_check_sync_freshness(db):
 
     problems = health_check.check_sync_freshness(db, 30, now=now + timedelta(hours=1))
     assert len(problems) == 1 and "65 min old" in problems[0]
+
+
+def _acct_client(equity: float | None, status: int = 200) -> httpx.Client:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if equity is None:
+            raise httpx.ConnectError("refused")
+        return httpx.Response(status, json={"equity": equity, "cash": 1.0})
+    return httpx.Client(transport=httpx.MockTransport(handler))
+
+
+def _snapshot(db, equity: float):
+    acct = BrokerAccount(broker="alpaca-paper", external_id="A2")
+    db.add(acct)
+    db.flush()
+    now = datetime(2026, 8, 14, 15, 0, 0, tzinfo=timezone.utc)
+    db.add(AccountSnapshot(account_id=acct.id, equity=equity, cash=1.0,
+                           buying_power=1.0, asof=now, source="alpaca-paper"))
+    db.commit()
+    return now
+
+
+def test_reconciliation_flags_drift(db):
+    # snapshot 100,000 vs broker 101,000 -> 0.99% drift > 0.5% threshold
+    now = _snapshot(db, 100_000.0)
+    problems = health_check.check_reconciliation(
+        "http://test", db, client=_acct_client(101_000.0), now=now)
+    assert len(problems) == 1
+    assert "RECONCILIATION" in problems[0]
+    assert "0.99%" in problems[0]
+    assert "sync.py" in problems[0]  # the remedy is named
+
+
+def test_reconciliation_quiet_within_threshold(db):
+    # 100,000 vs 100,200 -> 0.2% drift: fine
+    now = _snapshot(db, 100_000.0)
+    assert health_check.check_reconciliation(
+        "http://test", db, client=_acct_client(100_200.0), now=now) == []
+
+
+def test_reconciliation_quiet_when_it_cannot_judge(db):
+    # no snapshot: freshness check owns that story
+    assert health_check.check_reconciliation(
+        "http://test", db, client=_acct_client(100_000.0)) == []
+    # server down: check_server owns that story
+    _snapshot(db, 100_000.0)
+    assert health_check.check_reconciliation(
+        "http://test", db, client=_acct_client(None)) == []
+    # bad payload (equity 0): refuse to divide, stay quiet
+    assert health_check.check_reconciliation(
+        "http://test", db, client=_acct_client(0.0)) == []

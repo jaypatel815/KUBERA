@@ -70,10 +70,53 @@ def check_sync_freshness(
     return []
 
 
+RECON_DRIFT_FRAC = 0.005  # 0.5% snapshot-vs-broker drift triggers a warning
+
+
+def check_reconciliation(base_url: str, db: Session,
+                         drift_frac: float = RECON_DRIFT_FRAC,
+                         client: httpx.Client | None = None,
+                         now: datetime | None = None) -> list[str]:
+    """T093b: does our recorded state still match the broker? Compares the
+    latest account_snapshot equity against the live server's /api/account.
+    Quiet when the server is down or no snapshot exists — those conditions are
+    already reported by check_server / check_sync_freshness; this check owns
+    exactly one failure mode: BOTH sides reachable but disagreeing."""
+    latest = db.execute(
+        select(AccountSnapshot).order_by(AccountSnapshot.asof.desc())
+    ).scalars().first()
+    if latest is None:
+        return []
+    try:
+        c = client or httpx.Client(timeout=5.0)
+        r = c.get(f"{base_url}/api/account")
+        if r.status_code != 200:
+            return []
+        live = float(r.json().get("equity", 0.0))
+    except Exception:  # noqa: BLE001 — server-down is check_server's report
+        return []
+    if live <= 0:
+        return []
+    drift = abs(live - latest.equity) / live
+    if drift <= drift_frac:
+        return []
+    now = now or datetime.now(timezone.utc)
+    asof = latest.asof if latest.asof.tzinfo else latest.asof.replace(tzinfo=timezone.utc)
+    age_min = (now - asof).total_seconds() / 60
+    return [
+        f"RECONCILIATION: snapshot equity {latest.equity:,.2f} vs broker "
+        f"{live:,.2f} — drift {drift:.2%} (threshold {drift_frac:.1%}); snapshot "
+        f"is {age_min:.0f} min old. A stale snapshot after market moves is "
+        "normal — run scripts/sync.py; drift that SURVIVES a fresh sync is not "
+        "normal — investigate before trusting any number"
+    ]
+
+
 def run_checks(base_url: str, db: Session, max_sync_age_min: float) -> list[str]:
     problems = check_server(base_url)
     problems += check_breaker(db)
     problems += check_sync_freshness(db, max_sync_age_min)
+    problems += check_reconciliation(base_url, db)
     return problems
 
 
