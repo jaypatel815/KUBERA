@@ -359,6 +359,22 @@ def symbol_intraday(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/exit-plan/{symbol}")
+def symbol_exit_plan(
+    symbol: str,
+    market: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """How long do I hold? Invalidation, target, review horizon — as data."""
+    try:
+        return registry.execute(
+            "get_exit_plan", {"symbol": symbol}, ToolContext(market=market)
+        )
+    except ToolError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/confluence/{symbol}")
 def symbol_confluence(
     symbol: str,

@@ -21,10 +21,12 @@ from analysis.benchmark import compare
 from analysis.breakout import detect_breakouts
 from analysis.briefing import PositionContext, build_briefing
 from analysis.confluence import assess_confluence
+from analysis.exit_plan import build_exit_plan
 from analysis.expected_move import expected_move
 from analysis.intraday import build_session_read
 from analysis.levels import find_levels
 from analysis.macro import compose_macro_context
+from analysis.metrics import atr
 from analysis.portfolio import summarize, win_loss
 from analysis.regime import classify_regime
 from backtest.ledger import run_and_record
@@ -739,6 +741,71 @@ def _get_confluence(ctx: ToolContext, p: SymbolArgs) -> dict:
         "confluence": asdict(reading),
         "gaps": {"intraday": intraday_why, "session": session_why},
         "volume_feed": bars.source,
+        "asof": bars.asof.isoformat(),
+        "source": bars.source,
+    }
+
+
+@registry.tool(
+    "get_exit_plan",
+    "'How long do I hold?' as data, keyed to the regime thesis: invalidation level "
+    "(the CLOSE that kills the thesis), target (ranges only — trends are ridden, "
+    "not targeted), review horizon in sessions, stop distance in ATRs, and "
+    "reward/risk when both ends exist. Downtrends return an exit plan, not a hold "
+    "(long-only). Narrate the levels with their reasons; never turn a review point "
+    "into a price target.",
+    SymbolArgs,
+)
+def _get_exit_plan(ctx: ToolContext, p: SymbolArgs) -> dict:
+    market: MarketDataClient = ctx.require("market")
+    bars = market.get_daily_bars(p.symbol, days=250)
+    if len(bars.bars) < 21:
+        raise ToolError(
+            f"only {len(bars.bars)} daily bars for '{p.symbol}' — need at least 21"
+        )
+    highs = [b.high for b in bars.bars]
+    lows = [b.low for b in bars.bars]
+    closes = [b.close for b in bars.bars]
+    dates = [b.date for b in bars.bars]
+    volumes = [b.volume for b in bars.bars]
+
+    reading = classify_regime(highs, lows, closes, volumes, dates,
+                              volume_feed=bars.source)
+    levels = find_levels(highs, lows, closes, dates)
+    atr_value = atr(highs, lows, closes) if len(bars.bars) >= 15 else None
+
+    boundary = None
+    direction = None
+    scan = detect_breakouts(highs, lows, closes, volumes, dates)
+    if scan.active and scan.latest is not None:
+        boundary = scan.latest.boundary
+        direction = scan.latest.direction
+
+    p95 = None
+    try:
+        em = expected_move(closes, dates, horizon_days=5)
+        p95 = em.unconditional.percentiles["p95"]
+    except ValueError:
+        pass
+
+    plan = build_exit_plan(
+        reading.regime, closes[-1],
+        atr_value=atr_value,
+        support=levels.nearest_support.price if levels.nearest_support else None,
+        resistance=(levels.nearest_resistance.price
+                    if levels.nearest_resistance else None),
+        sma=reading.sma,
+        breakout_boundary=boundary,
+        breakout_direction=direction,
+        expected_move_p95=p95,
+    )
+    return {
+        "symbol": bars.symbol,
+        "regime": reading.regime,
+        "regime_confidence": reading.confidence,
+        "last_close": closes[-1],
+        "as_of_date": dates[-1],
+        "exit_plan": asdict(plan),
         "asof": bars.asof.isoformat(),
         "source": bars.source,
     }

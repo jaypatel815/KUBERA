@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T056 done: exit plans — THE REGIME PACK IS COMPLETE (T050–T056 + T075)
+"How long do I hold?" is now data keyed to the thesis: analysis/exit_plan.py returns
+invalidation level (the CLOSE that kills the thesis) with its reason, target (ranges
+only — trends are RIDDEN, not targeted; the p95 band is a review point and the code
+says so), review horizon in sessions (range 10 / trend 5 / breakout = T053's window /
+downtrend 1), stop_distance_atr, reward_risk (guarded against stale levels), and
+doctrine notes (mid-range = worst RR; downside break = exit information for a
+long-only book; coil = expansion picks the plan). get_exit_plan composes regime +
+levels + ATR + active breakout + expected-move p95 in one call (registry 21) +
+GET /api/exit-plan/{symbol}.
+Verified: verify.py PASS — 389 passed, 3 skipped.
+THE OWNER'S DOCTRINE IS FULLY CODE: day-typing (T050), edges (T051), intraday
+VWAP/RVOL (T052), volume-judged breakouts (T053), router (T054), no-trade (T055),
+exits (T056), confluence (T075) — every claim tested, every number dated.
+Next: T081 pairs / T064 rigor / T082 Orb (Gemini) / T023 key check (owner).
+Blockers: none.
+
 ## 2026-08-13 — T075 done: timeframe confluence — the regime pack's capstone
 analysis/confluence.py: assess_confluence takes plain values (decoupled from the
 reading dataclasses — the TOOL extracts) and adjusts the DAILY confidence only, never
