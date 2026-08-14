@@ -3,6 +3,24 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — Owner suggestion batch reconciled (D016): T075–T079 minted, four tickets sharpened
+Owner delivered a 5-part improvement review. Reconciled without duplication (dispositions
+binding in docs/research/owner-suggestions-2026-08-13.md): NEW T075 multi-timeframe
+confluence (after T052; volume-delta deferred to SIP) · T076 event-risk calendar guard
+(FRED/earnings → pause/scale before FOMC/CPI/NFP) · T077 expected-move distribution
+engine (rolling percentile bands, never point forecasts; feeds T055's cost threshold +
+T056 exits) · T078 ATR vol-parity sizing (MIN with existing 20% cap — only ever shrinks)
+· T079 correlation/overlap guard (engine behind T066's pre-trade correlation check).
+EXTENDED: T067 tiers now ENFORCED in the paper loop (25/50/75/100% budget → stricter
+R/R / half size / entry pause / breaker), T063 captures regime+targets and calibrates
+(human-gated re-weighting), T064 walk-forward = promotion gate, T062 briefs go
+voice-first. AGENTS.md gains agent-strengths defaults (Claude math/tests · Gemini UI/web
+· ChatGPT ideation-as-data). Already covered: T074, T052, process-over-outcome persona.
+Verified: verify.py PASS — 234 passed, 3 skipped (docs/memory session; suite untouched).
+Next: T051 support/resistance or T053 breakout detector remain the natural builds;
+T077/T078 are strong candidates right after — both are pure deterministic analysis.
+Blockers: none.
+
 ## 2026-08-13 — T050 done: regime classifier — the doctrine becomes code
 The regime pack opener. analysis/regime.py classifies from daily bars, faithful to
 docs/research/regime-trading-notes.md: swing-based HH/HL structure (strict local extrema,

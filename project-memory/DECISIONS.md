@@ -2,6 +2,21 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D016 — Owner suggestion batch: sharper alpha, graduated risk, calibrated learning (2026-08-13)
+Owner delivered a 5-part improvement batch; per-item dispositions are binding in
+docs/research/owner-suggestions-2026-08-13.md. NEW tickets T075–T079 (multi-timeframe
+regime confluence · event-risk calendar guard · expected-move distribution engine ·
+ATR/vol-parity sizing (MIN with existing caps — can only shrink) · correlation/overlap
+guard). EXTENDED in place: T067 DQS tiers get enforcement teeth in the paper loop
+(25/50/75/100% of daily budget → stricter R/R, half size, entry pause, breaker), T063
+journal captures regime+confidence+entry/target/stop and runs calibration passes, T064
+walk-forward becomes the paper-loop promotion gate, T062 briefs gain voice delivery +
+event risk/DQS content. Already covered, not duplicated: T074 realtime voice, T052
+intraday VWAP/RVOL, process-over-outcome persona rule. Deferred with reasons: GARCH
+(rolling percentile bands first), volume-delta momentum (needs SIP, D006), PWA push
+(Phase 5). Boundary kept: automatic strategy re-weighting stays human-gated — calibration
+PROPOSES, owner ratifies. AGENTS.md gains agent-strengths defaults.
+
 ## D015 — Voice-first owner: voice is a primary interface, not a Phase-5 afterthought (2026-08-12)
 Owner will primarily TALK to KUBERA. Consequences: (a) chat layer now has voice mode —
 ChatRequest.voice → persona VOICE_STYLE (no markdown/tables, ear-rounded numbers, ~120
