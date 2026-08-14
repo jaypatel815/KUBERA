@@ -22,7 +22,7 @@ from analysis.benchmark import compare
 from analysis.breakout import detect_breakouts
 from analysis.briefing import PositionContext, build_briefing
 from analysis.confluence import assess_confluence
-from analysis.correlation import overlap_report
+from analysis.correlation import log_returns, overlap_report, pearson
 from analysis.exit_plan import build_exit_plan
 from analysis.expected_move import expected_move
 from analysis.goal_math import goal_scenarios
@@ -35,8 +35,9 @@ from analysis.liquidity import (
     participation_cap_shares,
 )
 from analysis.macro import compose_macro_context
-from analysis.metrics import atr
+from analysis.metrics import atr, volatility
 from analysis.portfolio import summarize, win_loss
+from analysis.portfolio_risk import portfolio_risk
 from analysis.regime import classify_regime
 from analysis.triage import triage_position
 from backtest.ledger import run_and_record
@@ -1100,6 +1101,66 @@ def _get_liquidity(ctx: ToolContext, p: SymbolArgs) -> dict:
         quote.age_human, quote.stale,
     )
     return {**asdict(prof), "asof": quote.asof.isoformat(), "source": quote.source}
+
+
+class PortfolioRiskArgs(LenientArgs):
+    days: int = Field(default=130, ge=40, le=750,
+                      description="History window for vols/correlations")
+
+
+@registry.tool(
+    "get_portfolio_risk",
+    "The BOOK's joint risk (T093): portfolio-level annualized volatility from "
+    "position weights, per-symbol vols and pairwise correlations; each symbol's "
+    "risk CONTRIBUTION (they sum to the portfolio vol — '62% of your risk is "
+    "SPY' is arithmetic); effective bets (1/sum w²); diversification ratio. Use "
+    "for 'how risky is my portfolio?' and whenever position-level rails all "
+    "pass but holdings look similar. Estimates from the trailing window — "
+    "narrate as measurement, never as a guarantee.",
+    PortfolioRiskArgs,
+)
+def _get_portfolio_risk(ctx: ToolContext, p: PortfolioRiskArgs) -> dict:
+    alpaca: AlpacaClient = ctx.require("alpaca")
+    market: MarketDataClient = ctx.require("market")
+    held = summarize(alpaca.get_positions())
+    if not held.positions:
+        raise ToolError("no positions — an empty book has no portfolio risk")
+    warnings: list[str] = []
+    closes: dict[str, list[float]] = {}
+    weights_all = {v.symbol: v.weight_frac for v in held.positions}
+    for sym in sorted(weights_all):
+        bars = market.get_daily_bars(sym, days=p.days)
+        series = [b.close for b in bars.bars]
+        if len(series) < 21:
+            warnings.append(f"{sym}: only {len(series)} bars — excluded "
+                            "(vol/correlation would be guesswork)")
+            continue
+        closes[sym] = series
+    if not closes:
+        raise ToolError("no holding has enough history for a risk estimate")
+    symbols = sorted(closes)
+    rets = {s: log_returns(closes[s]) for s in symbols}
+    vols = [volatility(rets[s]) for s in symbols]
+    wsum = sum(weights_all[s] for s in symbols)
+    weights = [weights_all[s] / wsum for s in symbols]
+    if wsum < 0.99:
+        warnings.append(f"estimate covers {wsum:.0%} of the book by weight — "
+                        "excluded holdings are not in these numbers")
+    corr = [[1.0] * len(symbols) for _ in symbols]
+    for i, a in enumerate(symbols):
+        for j in range(i + 1, len(symbols)):
+            b = symbols[j]
+            n = min(len(rets[a]), len(rets[b]))
+            c = pearson(rets[a][-n:], rets[b][-n:])
+            corr[i][j] = corr[j][i] = c
+    risk = portfolio_risk(symbols, weights, vols, corr)
+    return {
+        **asdict(risk),
+        "warnings": risk.warnings + warnings,
+        "window_days_requested": p.days,
+        "asof": datetime.now(timezone.utc).isoformat(),
+        "source": "alpaca-data-iex",
+    }
 
 
 class CorrelationArgs(LenientArgs):

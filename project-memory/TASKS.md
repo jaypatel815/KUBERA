@@ -81,7 +81,21 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
   run, loud failure otherwise). CLI `scripts/sweep.py momentum SPY [--record]`.
   Follow-up parked in T064b: surface stability verdict in run_backtest tool
   output + block promotion on curve_fit (needs owner sign-off on strictness).
-- [ ] T093 — Portfolio risk summary + reconciliation + degradation (D020 #4/#5, D021 gap 4): portfolio-level vol from position correlations + marginal risk contribution + effective bets (1/Σw²) extending T079; daily snapshot-vs-broker reconciliation in health_check; strategy-decay DEMOTION — live equity vs backtest expectation (CUSUM-style drift), sustained deviation flips ledger promotion_status to "demoted" → the loop's existing require_promotion refuses new buys automatically (the T064 gate's twin: earn the loop, KEEP earning it).
+- [x] T093 (parts 1+3) — Portfolio risk + CUSUM demotion — DONE 2026-08-14
+  (Claude/Cowork): `analysis/portfolio_risk.py` (σ_p = √(w'Cw) hand-tested at
+  ρ=1/0/−1, Euler contributions summing exactly to σ_p, effective bets 1/Σw²,
+  diversification ratio, ≥60%-one-name warning) → tool #29 get_portfolio_risk
+  + GET /api/portfolio-risk (thin-history holdings excluded with coverage
+  warning). `backtest/decay.py`: expected_daily_return from the promoted run,
+  one-sided CUSUM shortfall (hand-tested crossing day incl. an fp-boundary
+  lesson), `demote()` flips passed→demoted so the loop's require_promotion
+  refuses automatically (promote→demote→refused proven in test);
+  `scripts/decay_check.py [--demote]` with the ACCOUNT-PROXY limitation
+  printed every run.
+- [ ] T093b — Snapshot-vs-broker reconciliation (T093 part 2): health_check
+  gains a daily check comparing the latest account_snapshot equity vs live
+  broker equity (threshold ~0.5%, market-hours aware); Windows toast on drift.
+  Small, unblocked, good first ticket for any agent.
 - [ ] T087 — Open-trade monitor (owner Q&A; deps T074/T082/T036): watch held positions during RTH — alert when session RVOL collapses under a breakout thesis, VWAP churn rises, exit-plan invalidation approaches/hits, or the event guard window opens; Windows toast + Orb surface v1, voice barge-in with T074. Advisory only — execution stays in the loop's rails.
 - [ ] (advisory note for T077b/T085) Fractional-Kelly sizing VIEW from T077 win-rate/payoff — advisory-only, capped, never autopilot; single-trade "probability of profit" remains rejected per D017.
 - [ ] T083 — Event reaction base rates (D019, dep T023 dates): for each historical earnings date, compute from our daily bars the event-day + next-day moves split by beat/miss, and the pre-event runup into each; surface in briefings/chat as BASE RATES ("6 of the last 8 beats still closed down") — the evidence-based answer to "should I hold through earnings", no prediction claimed. Deterministic, hand-computed tests.

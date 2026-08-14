@@ -394,6 +394,22 @@ def symbol_expected_move(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/portfolio-risk")
+def portfolio_risk_endpoint(
+    days: int = 130,
+    alpaca: AlpacaClient = Depends(get_alpaca_client),
+    market: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """T093: the book's joint risk — vol, contributions, effective bets."""
+    try:
+        return registry.execute("get_portfolio_risk", {"days": days},
+                                ToolContext(alpaca=alpaca, market=market))
+    except (ToolError, ToolArgumentError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except (MarketDataError, AlpacaError) as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/liquidity/{symbol}")
 def symbol_liquidity(
     symbol: str,

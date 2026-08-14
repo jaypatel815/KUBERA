@@ -3,6 +3,22 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T093: the book as one number — and promotions that expire
+Two halves of the same discipline. MEASURE: analysis/portfolio_risk.py —
+portfolio vol √(w'Cw) (hand-tested at correlation extremes: ρ=1 → 0.2, ρ=0 →
+0.1414, ρ=−1 → 0), Euler risk contributions that sum EXACTLY to portfolio vol
+("62% of your risk is SPY" is arithmetic), effective bets, diversification
+ratio, one-bet warning at ≥60% concentration — tool #29 get_portfolio_risk +
+/api/portfolio-risk. ENFORCE: backtest/decay.py — the promoted run's implicit
+daily promise vs live returns through a one-sided CUSUM (crossing-day test
+taught an fp lesson: a threshold exactly ON an accumulation boundary is
+untestable — 20×0.0005 = 0.010000000000000002); on sustained shortfall,
+demote() flips the ledger row and the EXISTING promotion gate refuses new buys
+— no new code path. scripts/decay_check.py prints the account-proxy caveat
+every run. T093b minted for the reconciliation half (small, unblocked).
+Verified: verify.py PASS — 544 passed (+12), 3 skipped.
+Next: T093b, or T068 watchlist ranking (criteria already defined in D020).
+
 ## 2026-08-14 — T090: liquidity costs — the spread is a fee and thin volume is a wall
 analysis/liquidity.py: spread_bps (hand-tested 20bps case), per-side cost =
 half-spread floored at 0.5bps (replaces the flat assumption when a quote
