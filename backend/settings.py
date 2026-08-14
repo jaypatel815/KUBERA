@@ -89,6 +89,22 @@ class KuberaSettings(BaseSettings):
         validation_alias=AliasChoices("DATABASE_URL", "KUBERA_DATABASE_URL"),
     )
 
+    # Macro context (T080). Owner already holds a FRED key (D009).
+    fred_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("FRED_API_KEY", "KUBERA_FRED_API_KEY"),
+    )
+
+    def require_fred(self) -> "KuberaSettings":
+        """Return self if the FRED key is present; raise ConfigError otherwise."""
+        if not self.fred_api_key or not self.fred_api_key.get_secret_value():
+            raise ConfigError(
+                "Missing required config: FRED_API_KEY. Get a free key at "
+                "https://fred.stlouisfed.org/docs/api/api_key.html and add it to .env "
+                "at the repo root. Never commit .env."
+            )
+        return self
+
     def require_alpaca(self) -> "KuberaSettings":
         """Return self if Alpaca credentials are present; raise ConfigError otherwise."""
         missing = []

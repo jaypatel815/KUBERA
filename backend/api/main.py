@@ -19,6 +19,7 @@ from api.tools import ToolArgumentError, ToolContext, ToolError, registry
 from backtest.ledger import list_runs
 from data.alpaca import AlpacaClient, AlpacaError
 from data.db import make_engine, make_session_factory
+from data.fred import FredClient, FredError
 from data.history import equity_history
 from data.market_data import MarketDataClient, MarketDataError
 from data.models import ChatMessage
@@ -237,6 +238,29 @@ def symbol_levels(
     except ToolError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+def get_fred_client(s: KuberaSettings = Depends(get_settings)):
+    """Yield a FRED client, or 503 with an actionable message if unconfigured."""
+    try:
+        client = FredClient(settings=s)
+    except ConfigError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    try:
+        yield client
+    finally:
+        client.close()
+
+
+@app.get("/api/macro")
+def macro_context(fred: FredClient = Depends(get_fred_client)) -> dict:
+    """Yield curve, VIX, real rates — the macro weather, via the chat layer's tool."""
+    try:
+        return registry.execute("get_macro_context", {}, ToolContext(fred=fred))
+    except ToolError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except FredError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
 

@@ -77,6 +77,10 @@ http://127.0.0.1:8000/api/brief?type=morning                your day, composed: 
                                                             decisions + reasons) and type=weekly (you vs SPY,
                                                             discipline, lessons). Best enjoyed by voice: ask
                                                             the Orb "give me my morning brief"
+http://127.0.0.1:8000/api/macro                             the macro weather: yield-curve inversion, VIX
+                                                            bucket, real rates, fed funds — cautionary signals
+                                                            counted, each series dated. Needs a free
+                                                            FRED_API_KEY in .env (link in .env.example)
 http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
 http://127.0.0.1:8000/api/backtests                         the results ledger: every recorded backtest
 POST /api/backtests/run?strategy=momentum&symbol=SPY        run + record a backtest (use /docs to click it)

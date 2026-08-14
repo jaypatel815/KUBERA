@@ -22,11 +22,13 @@ from analysis.briefing import PositionContext, build_briefing
 from analysis.expected_move import expected_move
 from analysis.intraday import build_session_read
 from analysis.levels import find_levels
+from analysis.macro import compose_macro_context
 from analysis.portfolio import summarize, win_loss
 from analysis.regime import classify_regime
 from backtest.ledger import run_and_record
 from backtest.strategies import TEMPLATES, build_strategy
 from data.alpaca import AlpacaClient
+from data.fred import SERIES, FredClient
 from data.history import equity_history
 from data.ips import get_ips, ips_as_dict, upsert_ips
 from data.market_data import MarketDataClient
@@ -65,6 +67,7 @@ class ToolContext:
 
     alpaca: AlpacaClient | None = None
     market: MarketDataClient | None = None
+    fred: "FredClient | None" = None
     db: Session | None = None
     confirmed: bool = False
 
@@ -545,6 +548,31 @@ def _get_brief(ctx: ToolContext, p: BriefArgs) -> dict:
     if p.type == "eod":
         return compose_eod_report(db, alpaca)
     return compose_weekly_review(db, alpaca, ctx.require("market"))
+
+
+@registry.tool(
+    "get_macro_context",
+    "The broad-market weather report from FRED: 10y-2y yield-curve spread "
+    "(inversion flagged), VIX with bucket (calm/normal/elevated/stressed), 10-year "
+    "real rate, fed funds rate, and a cautionary-signal count. CONTEXT for framing "
+    "— never a trade signal by itself, and each series carries its own observation "
+    "date (FRED calendars differ) which the narration must state.",
+    NoArgs,
+)
+def _get_macro_context(ctx: ToolContext, _: NoArgs) -> dict:
+    fred: FredClient = ctx.require("fred")
+    obs = {name: fred.latest(series_id) for name, series_id in SERIES.items()}
+    context = compose_macro_context(
+        yield_curve=(obs["yield_curve_10y2y"].date, obs["yield_curve_10y2y"].value),
+        vix=(obs["vix"].date, obs["vix"].value),
+        real_rate=(obs["real_rate_10y"].date, obs["real_rate_10y"].value),
+        fed_funds=(obs["fed_funds"].date, obs["fed_funds"].value),
+    )
+    return {
+        "macro": asdict(context),
+        "asof": obs["vix"].asof.isoformat(),
+        "source": "fred",
+    }
 
 
 class UpdateIpsArgs(BaseModel):

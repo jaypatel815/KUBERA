@@ -3,6 +3,22 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T080 done: macro context — the broad-market weather report
+data/fred.py: minimal httpx client for four documented series (T10Y2Y, VIXCLS, DFII10,
+DFF); skips FRED's "." missing-value placeholders and returns each series' latest REAL
+observation with ITS OWN date (FRED calendars differ — narration must show dates);
+400 → actionable "check FRED_API_KEY" error; settings.require_fred fail-fast +
+.env.example entry. analysis/macro.py: pure composition with conventions documented in
+the module (inversion = caution-not-a-timer; VIX calm/normal/elevated/stressed at
+15/20/30; real rate >2 restrictive) → labeled reads + cautionary-signal list + count +
+"never a trade signal by itself". get_macro_context tool (registry 16; ToolContext
+gains a fred slot) + GET /api/macro (503 with key instructions when unconfigured).
+Verified: verify.py PASS — 359 passed, 3 skipped (ruff auto-sorted one import block).
+Next: T075 confluence or T063 decision journal are the top builds; T082 Orb pack is
+prime Gemini bait. Owner: put FRED_API_KEY in .env (free key, link in .env.example),
+restart, then ask the Orb "what's the macro picture?" or open /api/macro.
+Blockers: none.
+
 ## 2026-08-13 — D019: event-intelligence batch reconciled — base rates in, ML gated
 Owner's fourth batch (sell-the-news/NLP/XGBoost). Adopted the honest core: T083 event
 reaction base rates (post-earnings moves by beat/miss + pre-event runup from our own
