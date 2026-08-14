@@ -71,6 +71,12 @@ http://127.0.0.1:8000/api/risk                              your risk dashboard:
                                                             current tier (1 stricter → 2 half-size → 3 paused →
                                                             4 breaker), lockout state, and your Decision Quality
                                                             Score — process over outcome
+http://127.0.0.1:8000/api/brief?type=morning                your day, composed: overnight gaps (staleness
+                                                            flagged), regime + expected move + nearest levels
+                                                            per holding, risk status. Also type=eod (today's
+                                                            decisions + reasons) and type=weekly (you vs SPY,
+                                                            discipline, lessons). Best enjoyed by voice: ask
+                                                            the Orb "give me my morning brief"
 http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
 http://127.0.0.1:8000/api/backtests                         the results ledger: every recorded backtest
 POST /api/backtests/run?strategy=momentum&symbol=SPY        run + record a backtest (use /docs to click it)

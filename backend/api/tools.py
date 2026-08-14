@@ -516,6 +516,37 @@ def _get_risk_status(ctx: ToolContext, _: NoArgs) -> dict:
     }
 
 
+class BriefArgs(BaseModel):
+    type: str = Field(
+        default="morning", pattern="^(morning|eod|weekly)$",
+        description="morning = pre-open read; eod = today's decisions + risk; "
+                    "weekly = investment-committee review",
+    )
+
+
+@registry.tool(
+    "get_brief",
+    "Compose the owner's brief: 'morning' (account, risk tier + DQS, and for each "
+    "holding + SPY: overnight gap with staleness, regime, expected 5-day move, "
+    "nearest support/resistance), 'eod' (today's ordered/rejected/no-trade "
+    "decisions with reasons, day P&L, budget consumption), or 'weekly' (equity vs "
+    "SPY, discipline counts, facts_for_lessons). All numbers are computed and "
+    "timestamped — narrate them per the voice rules, draw lessons ONLY from "
+    "facts_for_lessons, and state data recency. Missing sections say why.",
+    BriefArgs,
+)
+def _get_brief(ctx: ToolContext, p: BriefArgs) -> dict:
+    from api.brief import compose_eod_report, compose_morning_brief, compose_weekly_review
+
+    db = ctx.require("db")
+    alpaca: AlpacaClient = ctx.require("alpaca")
+    if p.type == "morning":
+        return compose_morning_brief(db, alpaca, ctx.require("market"))
+    if p.type == "eod":
+        return compose_eod_report(db, alpaca)
+    return compose_weekly_review(db, alpaca, ctx.require("market"))
+
+
 class UpdateIpsArgs(BaseModel):
     """Only provided fields change; restriction lists REPLACE wholesale."""
 

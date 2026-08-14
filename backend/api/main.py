@@ -240,6 +240,27 @@ def symbol_levels(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/brief")
+def brief(
+    type: str = "morning",
+    alpaca: AlpacaClient = Depends(get_alpaca_client),
+    market: MarketDataClient = Depends(get_market_client),
+    session=Depends(get_db_session),
+) -> dict:
+    """Morning brief / EOD report / weekly review — via the chat layer's tool."""
+    try:
+        return registry.execute(
+            "get_brief", {"type": type},
+            ToolContext(alpaca=alpaca, market=market, db=session),
+        )
+    except ToolArgumentError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except ToolError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except (AlpacaError, MarketDataError) as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/risk")
 def risk_status(
     alpaca: AlpacaClient = Depends(get_alpaca_client),

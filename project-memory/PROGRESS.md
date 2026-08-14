@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T062 done: morning brief, EOD report, weekly review — KUBERA starts the day with you
+api/brief.py composes three reads, every number deterministic + timestamped, LLM only
+narrates: MORNING — account, risk (tier/breaker/DQS), and for each holding + SPY the
+overnight gap (latest trade vs last close, stale flag surfaced — Friday's price never
+poses as live), regime + confidence, expected 5-day band, nearest support/resistance.
+EOD — every decision today with its reasons (no_trade reasons shine here), day P&L vs
+day-start, budget consumption. WEEKLY — the investment-committee review: equity vs SPY
+with excess return from snapshots, discipline counts (orders / deliberate no-trades /
+rejections / tier restrictions), and facts_for_lessons with the narration rule "draw
+lessons from these facts only — never invent numbers". Missing data degrades to
+{available: False, why} — the gap is information. T068/T076 absences stated in payload.
+get_brief tool (registry 15, guards ×3) + GET /api/brief?type=morning|eod|weekly.
+Verified: verify.py PASS — 349 passed, 3 skipped.
+Next: T080 macro context (quick win) or T075 confluence or T063 journal. Owner: say
+"give me my morning brief" to the Orb — it narrates the whole thing; or /api/brief.
+Blockers: none.
+
 ## 2026-08-13 — T067 done: graduated risk tiers ENFORCED + Decision Quality Score
 The owner's commitment device grows a ladder. risk/tiers.py: daily-loss-budget
 consumption → tier 0–4; the paper loop enforces (buys only, sells always exempt):
