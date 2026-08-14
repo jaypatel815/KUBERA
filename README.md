@@ -142,6 +142,12 @@ python scripts\paper_trade.py SPY --strategy regime_router --loop 3600  # hourly
 An unpromoted pair gets a logged `no_trade` ("promotion gate") instead of orders —
 `--skip-promotion-gate` exists, but using it defeats the point.
 
+The loop also respects the clock: a closed market means no orders (nothing queues
+for the open print), and new buys wait out the first 30 minutes after the open
+(doctrine; `--entry-delay 0` disables, `--after-hours` bypasses the guard). Sells
+are never delayed. `scripts\sync.py` now also pulls your executed fills into the
+database each run — the ground truth behind slippage and attribution reports.
+
 Each cycle: strategy reads real bars → **no-trade check** (overtrading guard: max 5
 orders/day; expected move vs cost floor; quiet-market check — low RVOL in a tight
 range means the market isn't interested; "there isn't a trade today" is a logged,

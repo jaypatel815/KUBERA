@@ -17,6 +17,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 from data.alpaca import AlpacaClient  # noqa: E402
 from data.db import make_engine, make_session_factory  # noqa: E402
+from data.fills import sync_fills  # noqa: E402
 from data.sync import sync_once  # noqa: E402
 
 
@@ -32,7 +33,9 @@ def main() -> int:
     while True:
         with AlpacaClient() as client, factory() as session:
             r = sync_once(session, client)
-            print(f"synced {r.positions} positions, equity {r.equity:.2f}, asof {r.asof:%H:%M:%S}")
+            f = sync_fills(session, client)
+            print(f"synced {r.positions} positions, equity {r.equity:.2f}, "
+                  f"fills +{f.inserted}/{f.skipped} known, asof {r.asof:%H:%M:%S}")
         if not args.loop:
             return 0
         time.sleep(args.loop)

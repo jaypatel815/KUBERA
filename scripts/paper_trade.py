@@ -38,6 +38,13 @@ def main() -> int:
                         help="bypass the T064 walk-forward requirement (buys only "
                              "run for promoted strategies by default — promote via "
                              "scripts/promote.py)")
+    parser.add_argument("--after-hours", action="store_true",
+                        help="bypass the market-hours guard (orders placed while "
+                             "closed queue for the open print — the thing the "
+                             "doctrine forbids)")
+    parser.add_argument("--entry-delay", type=int, default=30, metavar="MIN",
+                        help="no new buys in the first MIN minutes after the open "
+                             "(doctrine: never the open print; 0 disables)")
     args = parser.parse_args()
 
     strategy = build_strategy(args.strategy)
@@ -50,7 +57,9 @@ def main() -> int:
             r = run_paper_cycle(db, alpaca, market, risk, strategy,
                                 args.symbol, allocation_frac=args.allocation,
                                 require_promotion=not args.skip_promotion_gate,
-                                template=args.strategy)
+                                template=args.strategy,
+                                enforce_market_hours=not args.after_hours,
+                                entry_delay_minutes=args.entry_delay)
             print(f"[{r.action.upper()}] {args.strategy} on {r.symbol}: "
                   f"weight={r.signal_weight:.2f} current={r.current_value:.2f} "
                   f"target={r.target_value:.2f} — {r.detail}")

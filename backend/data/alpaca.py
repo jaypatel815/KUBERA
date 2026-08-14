@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 import httpx
 
 from data._http import build_client, checked_get
+from data.market_data import parse_rfc3339
 from settings import ConfigError, KuberaSettings, get_settings
 
 PAPER_BASE_URL = "https://paper-api.alpaca.markets"
@@ -61,6 +62,38 @@ class Position:
     source: str = SOURCE
 
 
+
+
+@dataclass(frozen=True)
+class Fill:
+    """One executed fill from the activities feed (T036) — the ground truth that
+    slippage/attribution (T088/T091) are built on."""
+
+    external_id: str
+    symbol: str
+    side: str
+    qty: float
+    price: float
+    occurred_at: datetime
+    order_id: str
+    fill_type: str  # "fill" | "partial_fill"
+    asof: datetime
+    source: str = SOURCE
+
+
+@dataclass(frozen=True)
+class Clock:
+    """The broker's own market clock — no local timezone guessing."""
+
+    is_open: bool
+    timestamp: datetime
+    next_open: datetime
+    next_close: datetime
+    asof: datetime
+    source: str = SOURCE
+
+
+
 class AlpacaClient:
     """Paper-account client. `AlpacaClient()` for real use; inject settings/transport in tests."""
 
@@ -87,10 +120,11 @@ class AlpacaClient:
     def __exit__(self, *exc) -> None:
         self.close()
 
-    def _get(self, path: str) -> httpx.Response:
+    def _get(self, path: str, params: dict | None = None) -> httpx.Response:
         return checked_get(
             self._http,
             path,
+            params=params,
             error_cls=AlpacaError,
             label="Alpaca",
             unauthorized_hint=(
@@ -109,6 +143,39 @@ class AlpacaClient:
             cash=float(d["cash"]),
             equity=float(d["equity"]),
             buying_power=float(d["buying_power"]),
+            asof=datetime.now(timezone.utc),
+        )
+
+
+    def get_fills(self, after: datetime | None = None) -> list[Fill]:
+        """Executed fills (activities API), oldest first. `after` filters server-side."""
+        params: dict = {"direction": "asc", "page_size": 100}
+        if after is not None:
+            params["after"] = after.isoformat()
+        rows = self._get("/v2/account/activities/FILL", params=params).json()
+        out = []
+        for r in rows:
+            out.append(Fill(
+                external_id=str(r["id"]),
+                symbol=str(r["symbol"]).upper(),
+                side=str(r["side"]),
+                qty=float(r["qty"]),
+                price=float(r["price"]),
+                occurred_at=parse_rfc3339(r["transaction_time"]),
+                order_id=str(r.get("order_id") or ""),
+                fill_type=str(r.get("type") or "fill"),
+                asof=datetime.now(timezone.utc),
+            ))
+        return out
+
+    def get_clock(self) -> Clock:
+        """Market open/closed per the BROKER — the loop's market-hours guard (T036)."""
+        d = self._get("/v2/clock").json()
+        return Clock(
+            is_open=bool(d["is_open"]),
+            timestamp=parse_rfc3339(d["timestamp"]),
+            next_open=parse_rfc3339(d["next_open"]),
+            next_close=parse_rfc3339(d["next_close"]),
             asof=datetime.now(timezone.utc),
         )
 

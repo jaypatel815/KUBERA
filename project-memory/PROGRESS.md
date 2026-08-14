@@ -3,6 +3,24 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T036 done: fills are ground truth now + the loop respects the clock
+The biggest unlock ships. data: get_fills (activities API) + get_clock (the BROKER'S
+clock — is_open/next_open, no local tz guessing); data/fills.py syncs fills into
+transactions deduped per (account, external_id) — rerun-safe, proven by test.
+Loop: enforce_market_hours — closed market → no_action with the honest reason ("an
+order now would queue for the open print — the entry the doctrine forbids"), logged
+with source=alpaca-clock; entry_delay_minutes joins the T055 no-trade reasons for
+BUYS only (9:40 ET blocked at delay 30, 10:31 proceeds, 9:35 SELL passes — all
+tested; ET math via the broker timestamp + zoneinfo). scripts/sync.py syncs fills
+every run ("fills +N/M known"); paper_trade.py guards ON by default (--after-hours
+escape, --entry-delay 30 default per doctrine). Owner-visible: the loop now refuses
+to trade a closed market and won't buy the open print unless told to.
+Verified: verify.py PASS — 429 passed, 3 skipped (ruff trimmed one unused import).
+UNLOCKED: T088 slippage, T089 live MAE/MFE, T091 attribution, T060 TWR — the whole
+measurement family now has its data source. Owner: run python scripts\sync.py to
+start accumulating fills.
+Blockers: none.
+
 ## 2026-08-13 — D021: the shorting question asked and ANSWERED — defer 30 days
 Owner-uploaded PDF gap analysis (sixth batch, repo-aware). Its key catch: T081 pairs
 is impossible long-only — and long-only is a deliberate rail, so the choice went to

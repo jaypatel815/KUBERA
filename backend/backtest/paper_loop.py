@@ -68,12 +68,45 @@ def run_paper_cycle(
     # for (template, symbol) in the ledger. Sells remain always allowed.
     require_promotion: bool = False,
     template: str | None = None,
+    # T036 — market-hours guard + entry timing ("never the open print"):
+    enforce_market_hours: bool = False,
+    entry_delay_minutes: int = 0,
 ) -> CycleResult:
     if not 0 < allocation_frac <= 1:
         raise ValueError(f"allocation_frac must be in (0, 1], got {allocation_frac}")
     if max_trades_per_day < 1 or min_atr_frac < 0 or rvol_floor < 0:
         raise ValueError("max_trades_per_day >= 1; min_atr_frac and rvol_floor >= 0")
+    if not 0 <= entry_delay_minutes <= 120:
+        raise ValueError(f"entry_delay_minutes must be 0..120, got {entry_delay_minutes}")
     symbol = symbol.upper()
+
+    # T036: the market-hours guard — a market order placed while closed silently
+    # queues for the open (the exact open-print entry the doctrine forbids).
+    entry_delay_active = False
+    if enforce_market_hours:
+        clock = alpaca.get_clock()
+        if not clock.is_open:
+            reason = (
+                f"market closed (broker clock {clock.timestamp.isoformat()}); "
+                f"next open {clock.next_open.isoformat()} — an order now would "
+                "queue for the open print"
+            )
+            db.add(SignalLog(
+                strategy=getattr(strategy, "__name__", "strategy"), symbol=symbol,
+                signal_weight=0.0, equity=0.0, current_value=0.0, target_value=0.0,
+                action="no_action", reasons=reason, order_external_id=None,
+                bars_asof=clock.asof, source="alpaca-clock",
+            ))
+            db.commit()
+            log.info("cycle NO_ACTION %s: %s", symbol, reason)
+            return CycleResult("no_action", symbol, 0.0, 0.0, 0.0, reason)
+        if entry_delay_minutes > 0:
+            from analysis.intraday import ET  # broker time -> ET session math
+
+            now_et = clock.timestamp.astimezone(ET)
+            open_et = now_et.replace(hour=9, minute=30, second=0, microsecond=0)
+            minutes_since_open = (now_et - open_et).total_seconds() / 60.0
+            entry_delay_active = 0 <= minutes_since_open < entry_delay_minutes
 
     # 1. data snapshot
     bars = market.get_daily_bars(symbol, days=history_days)
@@ -167,6 +200,11 @@ def run_paper_cycle(
 
         # T055: is there actually a trade today? Cash is a decision, logged as one.
         no_trade: list[str] = []
+        if entry_delay_active:
+            no_trade.append(
+                f"entry delay: inside the first {entry_delay_minutes} minutes after "
+                "the open — never the open print (doctrine); sells unaffected"
+            )
         today_start = datetime.now(timezone.utc).replace(
             hour=0, minute=0, second=0, microsecond=0)
         ordered_today = db.execute(
