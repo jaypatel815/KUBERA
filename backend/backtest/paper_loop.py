@@ -64,6 +64,10 @@ def run_paper_cycle(
     max_trades_per_day: int = 5,   # overtrading guard across ALL symbols/strategies
     min_atr_frac: float = 0.001,   # expected-move proxy: ATR/price below this can't clear costs
     rvol_floor: float = 0.3,       # quiet-market check (with a bottom-quartile range width)
+    # T064 — the promotion gate: when True, BUYS require a passed walk-forward run
+    # for (template, symbol) in the ledger. Sells remain always allowed.
+    require_promotion: bool = False,
+    template: str | None = None,
 ) -> CycleResult:
     if not 0 < allocation_frac <= 1:
         raise ValueError(f"allocation_frac must be in (0, 1], got {allocation_frac}")
@@ -109,6 +113,19 @@ def run_paper_cycle(
     # 4. delta -> vol-parity sizing (buys only; T078) -> order
     delta = target_value - current_value
     sizing_note = None
+    if delta > 0 and require_promotion:
+        from backtest.ledger import is_promoted  # local import avoids a cycle
+
+        if template is None or not is_promoted(db, template, symbol):
+            reason = (
+                f"promotion gate (T064): template {template!r} has no "
+                f"passed_walk_forward run for {symbol} in the ledger — run "
+                "scripts/promote.py first; new entries refused, sells unaffected"
+            )
+            log_row("no_trade", reason, None)
+            log.warning("cycle NO_TRADE %s: %s", symbol, reason)
+            return CycleResult("no_trade", symbol, weight, target_value,
+                               current_value, reason)
     if delta > 0:
         # Fail closed: a buy without enough history to size honestly is no trade.
         if len(bars.bars) < ATR_WINDOW + 1:

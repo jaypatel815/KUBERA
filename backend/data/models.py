@@ -146,6 +146,9 @@ class BacktestRun(Base):
     n_rebalances: Mapped[int] = mapped_column()
     total_cost_frac: Mapped[float] = mapped_column(Float)
     source: Mapped[str] = mapped_column(String(32))
+    # T064 promotion gate: "pending" | "passed_walk_forward" | "failed_walk_forward"
+    promotion_status: Mapped[str] = mapped_column(String(24), default="pending",
+                                                 server_default="pending")
 
 
 class InvestmentPolicy(Base):

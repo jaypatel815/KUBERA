@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T064 done: the promotion gate — strategies must EARN the paper loop
+backtest/stats.py: per-trade stats from the 0/1-weight contract (hand case: +21%/−10%
+→ PF 2.1, open-at-end flagged), Calmar (None when undefined), and the ANCHORED
+walk-forward: one no-lookahead run, equity segmented, pass = overall > 0 AND ≥ half
+the segments non-negative. Honesty in the docstring: parameterless templates can't
+overfit, so this screens CONSISTENCY across periods — and flat curves fail (overall 0
+is not > 0; no free promotions). Ledger: promotion_status (migration 04e68aa1c90a),
+promote_template records verdict + segment returns into params_json, is_promoted is
+per (template, symbol) — SPY evidence doesn't transfer to AAPL. Loop: require_promotion
+refuses unpromoted BUYS as a logged no_trade (sells always exempt); scripts/promote.py
+CLI; paper_trade.py now gates BY DEFAULT with --skip-promotion-gate as the deliberate
+escape. Proven in tests: momentum FAILS promotion on chop history, the router PASSES.
+Verified: verify.py PASS — 401 passed, 3 skipped.
+Next: T081 pairs (must pass this gate to run — fitting), T082 Orb (Gemini), owner:
+run `python scripts\promote.py regime_router SPY` before the next paper session.
+Blockers: none.
+
 ## 2026-08-13 — T056 done: exit plans — THE REGIME PACK IS COMPLETE (T050–T056 + T075)
 "How long do I hold?" is now data keyed to the thesis: analysis/exit_plan.py returns
 invalidation level (the CLOSE that kills the thesis) with its reason, target (ranges

@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backtest.engine import BacktestResult, Strategy, run_backtest
+from backtest.stats import WalkForwardResult, walk_forward
 from data.market_data import MarketDataClient
 from data.models import BacktestRun
 
@@ -82,3 +83,48 @@ def run_and_record(
     )
     row = record_run(session, result, symbol, strategy_params, cost_bps, bars.source)
     return result, row
+
+
+def promote_template(
+    session: Session,
+    market: MarketDataClient,
+    strategy: Strategy,
+    template: str,
+    symbol: str,
+    days: int = 730,
+    n_segments: int = 4,
+    cost_bps: float = 5.0,
+) -> tuple[WalkForwardResult, BacktestRun]:
+    """The T064 promotion gate: run the anchored walk-forward on real history and
+    record the verdict. The paper loop (require_promotion) honors ONLY runs whose
+    promotion_status is 'passed_walk_forward' for this (template, symbol) pair."""
+    result, row = run_and_record(
+        session, market, strategy,
+        {"template": template, "walk_forward_segments": n_segments},
+        symbol, days=days, cost_bps=cost_bps,
+    )
+    wf = walk_forward(result.equity_curve, n_segments=n_segments)
+    row.promotion_status = "passed_walk_forward" if wf.passed else "failed_walk_forward"
+    params = json.loads(row.params_json)
+    params["segment_returns"] = [round(r, 6) for r in wf.segment_returns]
+    params["walk_forward_criteria"] = wf.criteria
+    row.params_json = json.dumps(params, sort_keys=True)
+    session.commit()
+    return wf, row
+
+
+def is_promoted(session: Session, template: str, symbol: str) -> bool:
+    """Any recorded run for this (template, symbol) that passed the walk-forward?"""
+    rows = session.execute(
+        select(BacktestRun).where(
+            BacktestRun.symbol == symbol.upper(),
+            BacktestRun.promotion_status == "passed_walk_forward",
+        )
+    ).scalars().all()
+    for r in rows:
+        try:
+            if json.loads(r.params_json).get("template") == template:
+                return True
+        except (TypeError, ValueError):
+            continue
+    return False

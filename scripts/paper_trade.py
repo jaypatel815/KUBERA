@@ -34,6 +34,10 @@ def main() -> int:
                         help="fraction of account equity this strategy may manage")
     parser.add_argument("--loop", type=int, metavar="SECONDS", default=0,
                         help="repeat every N seconds (default: one cycle)")
+    parser.add_argument("--skip-promotion-gate", action="store_true",
+                        help="bypass the T064 walk-forward requirement (buys only "
+                             "run for promoted strategies by default — promote via "
+                             "scripts/promote.py)")
     args = parser.parse_args()
 
     strategy = build_strategy(args.strategy)
@@ -44,7 +48,9 @@ def main() -> int:
     while True:
         with AlpacaClient() as alpaca, MarketDataClient() as market, factory() as db:
             r = run_paper_cycle(db, alpaca, market, risk, strategy,
-                                args.symbol, allocation_frac=args.allocation)
+                                args.symbol, allocation_frac=args.allocation,
+                                require_promotion=not args.skip_promotion_gate,
+                                template=args.strategy)
             print(f"[{r.action.upper()}] {args.strategy} on {r.symbol}: "
                   f"weight={r.signal_weight:.2f} current={r.current_value:.2f} "
                   f"target={r.target_value:.2f} — {r.detail}")

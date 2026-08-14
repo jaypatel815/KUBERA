@@ -121,12 +121,18 @@ python scripts\backtest_demo.py                 # SPY, ~2 years: buy-and-hold vs
 python scripts\backtest_demo.py AAPL --days 365 # SMA-cross vs mean-reversion, with costs
 ```
 
-Let a strategy trade your **paper** account (migrate the DB first — see above):
+Let a strategy trade your **paper** account (migrate the DB first — see above).
+**Strategies must EARN the loop:** run the walk-forward promotion gate first — it
+backtests the pair on real history and only a pass unlocks new buys (sells always work):
 
 ```
-python scripts\paper_trade.py SPY --strategy momentum              # one cycle
-python scripts\paper_trade.py SPY --strategy momentum --loop 3600  # hourly, Ctrl+C to stop
+python scripts\promote.py regime_router SPY     # PASS/FAIL + per-segment returns
+python scripts\paper_trade.py SPY --strategy regime_router              # one cycle
+python scripts\paper_trade.py SPY --strategy regime_router --loop 3600  # hourly
 ```
+
+An unpromoted pair gets a logged `no_trade` ("promotion gate") instead of orders —
+`--skip-promotion-gate` exists, but using it defeats the point.
 
 Each cycle: strategy reads real bars → **no-trade check** (overtrading guard: max 5
 orders/day; expected move vs cost floor; quiet-market check — low RVOL in a tight
