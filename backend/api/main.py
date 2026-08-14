@@ -303,6 +303,25 @@ def journal(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/size/{symbol}")
+def size_position(
+    symbol: str,
+    alpaca: AlpacaClient = Depends(get_alpaca_client),
+    market: MarketDataClient = Depends(get_market_client),
+    session=Depends(get_db_session),
+) -> dict:
+    """How many shares would the risk rails allow right now? Every input shown."""
+    try:
+        return registry.execute(
+            "size_position", {"symbol": symbol},
+            ToolContext(alpaca=alpaca, market=market, db=session),
+        )
+    except ToolError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except (AlpacaError, MarketDataError) as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/risk")
 def risk_status(
     alpaca: AlpacaClient = Depends(get_alpaca_client),

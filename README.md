@@ -93,6 +93,10 @@ http://127.0.0.1:8000/api/exit-plan/SPY                     how long do I hold? 
                                                             (ranges only — trends are ridden, not targeted),
                                                             review clock, stop distance in ATRs, reward/risk —
                                                             the plan keyed to WHY you'd be in the trade
+http://127.0.0.1:8000/api/size/SPY                          how many shares could I buy RIGHT NOW? exact qty
+                                                            from your equity, the ATR stop, cap headroom, and
+                                                            the current risk tier — with the stop price and
+                                                            what limited it. Zero when entries are paused
 http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
 http://127.0.0.1:8000/api/backtests                         the results ledger: every recorded backtest
 POST /api/backtests/run?strategy=momentum&symbol=SPY        run + record a backtest (use /docs to click it)

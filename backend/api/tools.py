@@ -48,6 +48,7 @@ from data.models import SignalLog
 from risk.dqs import score_decisions
 from risk.engine import RiskEngine
 from risk.persistence import restore_risk_state
+from risk.sizing import volatility_parity_notional
 from risk.tiers import current_tier
 
 
@@ -808,6 +809,102 @@ def _get_exit_plan(ctx: ToolContext, p: SymbolArgs) -> dict:
         "exit_plan": asdict(plan),
         "asof": bars.asof.isoformat(),
         "source": bars.source,
+    }
+
+
+@registry.tool(
+    "size_position",
+    "'How many shares should I buy?' — the exact quantity the risk rails would "
+    "allow for a NEW BUY right now: max loss = risk_per_trade_frac of equity at a "
+    "2xATR stop, capped by the 20% per-symbol headroom (existing position counted), "
+    "scaled by the current risk tier (halved at tier 2, ZERO at tier 3+ or with the "
+    "breaker tripped). Every input is returned — narrate the qty WITH its stop "
+    "price and what was binding. Advisory for the owner's manual trades; the paper "
+    "loop enforces the same math itself. Disclose price staleness.",
+    SymbolArgs,
+)
+def _size_position(ctx: ToolContext, p: SymbolArgs) -> dict:
+    alpaca: AlpacaClient = ctx.require("alpaca")
+    market: MarketDataClient = ctx.require("market")
+    db = ctx.require("db")
+
+    acct = alpaca.get_account()
+    positions = alpaca.get_positions()
+    symbol = p.symbol.upper()
+    current_value = next(
+        (pos.market_value for pos in positions if pos.symbol == symbol), 0.0)
+
+    bars = market.get_daily_bars(symbol, days=60)
+    if len(bars.bars) < 15:
+        raise ToolError(
+            f"only {len(bars.bars)} daily bars for '{symbol}' — need 15 for the "
+            "ATR stop; cannot size honestly"
+        )
+    atr_value = atr([b.high for b in bars.bars], [b.low for b in bars.bars],
+                    [b.close for b in bars.bars])
+    trade = market.get_latest_trade(symbol)
+    price = trade.price
+
+    engine = RiskEngine()
+    restore_risk_state(db, engine)
+    limits = engine.limits
+
+    tier = None
+    multiplier = 1.0
+    blocked_reason = None
+    if engine.tripped:
+        blocked_reason = f"circuit breaker tripped: {engine.trip_reason}"
+    elif engine.day_start_equity is not None:
+        tier = current_tier(engine.day_start_equity, acct.equity,
+                            limits.daily_loss_limit_frac)
+        if tier.level >= 3:
+            blocked_reason = (f"risk tier {tier.level} ({tier.name}): "
+                              f"{tier.budget_consumed_frac:.0%} of the daily loss "
+                              "budget consumed — new entries paused")
+        elif tier.level >= 2:
+            multiplier = 0.5
+
+    sized = volatility_parity_notional(
+        acct.equity, price, atr_value, float("inf"),
+        risk_frac=limits.risk_per_trade_frac,
+        stop_atr_multiple=limits.stop_atr_multiple,
+    )
+    cap = limits.max_position_frac * acct.equity
+    cap_headroom = max(0.0, cap - current_value)
+    effective_notional = 0.0 if blocked_reason else min(
+        sized.risk_notional * multiplier, cap_headroom)
+    qty = round(effective_notional / price, 3) if price > 0 else 0.0
+
+    binding = "blocked" if blocked_reason else (
+        "position_cap" if cap_headroom < sized.risk_notional * multiplier
+        else "risk_budget")
+    return {
+        "symbol": symbol,
+        "qty": qty,
+        "notional": round(effective_notional, 2),
+        "binding": binding,
+        "blocked_reason": blocked_reason,
+        "inputs": {
+            "equity": acct.equity,
+            "cash": acct.cash,
+            "price": price,
+            "price_age_seconds": trade.age_seconds,
+            "price_stale": trade.stale,
+            "atr": atr_value,
+            "stop_distance": sized.stop_distance,
+            "stop_price": round(price - sized.stop_distance, 2),
+            "risk_dollars": sized.risk_dollars,
+            "risk_per_trade_frac": limits.risk_per_trade_frac,
+            "risk_notional": round(sized.risk_notional, 2),
+            "position_cap": round(cap, 2),
+            "current_position_value": current_value,
+            "cap_headroom": round(cap_headroom, 2),
+            "tier": ({"level": tier.level, "name": tier.name,
+                      "multiplier": multiplier} if tier else None),
+            "breaker_tripped": engine.tripped,
+        },
+        "asof": acct.asof.isoformat(),
+        "source": f"{acct.source} + {bars.source}",
     }
 
 

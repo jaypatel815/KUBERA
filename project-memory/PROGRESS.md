@@ -3,6 +3,20 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T085 done: "how many shares?" answered by voice
+size_position tool (registry 22, guards ×3) + GET /api/size/{symbol}: exact new-buy qty
+= min(risk_notional × tier_multiplier, cap_headroom) with tier 3+/breaker → 0 and a
+blocked_reason; risk leg from the T078 sizer (equity × 1% / 2×ATR), cap headroom counts
+the existing position, price = LATEST TRADE with age + stale flag disclosed (not
+yesterday's close), stop_price returned so the narration can say "111 shares, stop
+175, risking $1,000". `binding` names the limiter. Hand-proven: cap binds at 111.732 sh
+(100k clean), tier-2 halving → 110.056, tier 3 pause, breaker block, headroom erosion
+by held position, thin-history refusal.
+Verified: verify.py PASS — 408 passed, 3 skipped.
+Next: T086 position triage or T081 pairs; owner: ask the Orb "how many shares of SPY
+could I buy right now?" — it'll answer with the stop and what limited it.
+Blockers: none.
+
 ## 2026-08-13 — Owner capability Q&A → three tickets (T085–T087)
 Owner asked seven "can KUBERA…" questions. Answers on record: options contract picks =
 future phase (doctrine caveat only, no ad-hoc build); probability-of-profit sizing =
