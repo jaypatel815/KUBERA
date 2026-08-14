@@ -3,6 +3,18 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — I009: lenient tool args — sloppy "None"/""/"BUY" no longer kills journaling
+Owner pasted server logs: record_decision failed twice — string "None" and "" for
+absent optionals, SHOUTED "BUY" vs the lowercase pattern. Silver lining: the T063
+persona rule WORKED (the model tried to journal). Fix: LenientArgs base (wildcard
+before-validator: ""/"None"/"null"/"N/A" → real None) + verdict lowercasing; applied
+to record_decision, mark_decision, triage_position, update_ips. BOTH failing payloads
+from the logs are now verbatim passing tests; real validation (bad verdicts/numbers)
+still rejects. I009 logged — third local-brain formatting strike; T096 + claude-sdk
+recommendation stand.
+Verified: verify.py PASS — 452 passed, 3 skipped.
+Blockers: none.
+
 ## 2026-08-14 — Conversational pacing: the Orb learned patience, the persona learned turns
 Owner feedback with transcript: (1) the Orb sent his speech the moment he paused;
 (2) KUBERA interrogates with numbered 4-question forms + capability menus; (3) it
