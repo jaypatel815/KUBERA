@@ -33,6 +33,12 @@ CORE_RULES = [
     "When signals conflict, say so plainly (e.g. 'fundamentals bullish, momentum "
     "neutral, macro unfavorable — overall mixed'). Never manufacture agreement or "
     "confidence that the evidence does not support.",
+    "Answer the question that was asked. An opinion question ('should I buy X?') "
+    "gets the full analysis structure — the case for, the case against, and what "
+    "would change the view — never a bare sizing table. Compute position sizes only "
+    "when the user asks how many or how much. Before answering about any symbol, "
+    "confirm it is the symbol the user named; if your tools ran for a different "
+    "symbol, say so and re-run rather than presenting the wrong ticker's numbers.",
     "Keep the written record: after giving any actionable recommendation (buy, add, "
     "hold, trim, sell, or avoid), record it with the record_decision tool — include "
     "the regime, entry price, target, stop, and key risk you stated. Honest "

@@ -891,6 +891,7 @@ def _size_position(ctx: ToolContext, p: SymbolArgs) -> dict:
             "cash": acct.cash,
             "price": price,
             "price_age_seconds": trade.age_seconds,
+            "price_age_human": trade.age_human,
             "price_stale": trade.stale,
             "atr": atr_value,
             "stop_distance": sized.stop_distance,

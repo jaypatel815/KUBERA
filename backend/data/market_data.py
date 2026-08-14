@@ -52,6 +52,7 @@ class LatestTrade:
     exchange_ts: datetime
     asof: datetime
     age_seconds: float  # asof - exchange_ts; how old the market event actually is
+    age_human: str      # "28s" / "14m" / "7h 52m" — models garble raw seconds (I007)
     stale: bool         # age_seconds > MAX_DATA_AGE_SECONDS — never present as live
     source: str = SOURCE
 
@@ -66,13 +67,28 @@ class LatestQuote:
     exchange_ts: datetime
     asof: datetime
     age_seconds: float
+    age_human: str
     stale: bool
     source: str = SOURCE
 
 
-def _age_and_staleness(exchange_ts: datetime, asof: datetime) -> tuple[float, bool]:
+def human_age(seconds: float) -> str:
+    """Narration-safe age: '28s', '14m', '7h 52m', '3d 4h'. Never raw seconds."""
+    s = max(0, int(seconds))
+    if s < 60:
+        return f"{s}s"
+    if s < 3600:
+        return f"{s // 60}m"
+    if s < 86400:
+        h, m = divmod(s, 3600)
+        return f"{h}h {m // 60}m"
+    d, rem = divmod(s, 86400)
+    return f"{d}d {rem // 3600}h"
+
+
+def _age_and_staleness(exchange_ts: datetime, asof: datetime) -> tuple[float, str, bool]:
     age = (asof - exchange_ts).total_seconds()
-    return age, age > MAX_DATA_AGE_SECONDS
+    return age, human_age(age), age > MAX_DATA_AGE_SECONDS
 
 
 @dataclass(frozen=True)
@@ -154,7 +170,7 @@ class MarketDataClient:
         t = d["trade"]
         exchange_ts = parse_rfc3339(t["t"])
         asof = datetime.now(timezone.utc)
-        age, stale = _age_and_staleness(exchange_ts, asof)
+        age, age_h, stale = _age_and_staleness(exchange_ts, asof)
         return LatestTrade(
             symbol=symbol,
             price=float(t["p"]),
@@ -162,6 +178,7 @@ class MarketDataClient:
             exchange_ts=exchange_ts,
             asof=asof,
             age_seconds=age,
+            age_human=age_h,
             stale=stale,
         )
 
@@ -171,7 +188,7 @@ class MarketDataClient:
         q = d["quote"]
         exchange_ts = parse_rfc3339(q["t"])
         asof = datetime.now(timezone.utc)
-        age, stale = _age_and_staleness(exchange_ts, asof)
+        age, age_h, stale = _age_and_staleness(exchange_ts, asof)
         return LatestQuote(
             symbol=symbol,
             bid=float(q["bp"]),
@@ -181,6 +198,7 @@ class MarketDataClient:
             exchange_ts=exchange_ts,
             asof=asof,
             age_seconds=age,
+            age_human=age_h,
             stale=stale,
         )
 

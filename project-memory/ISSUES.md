@@ -71,3 +71,26 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   next git write. Fix (Cowork sessions only): call the `allow_cowork_file_delete` tool once,
   then `rm -f .git/*.lock` and delete `.git/objects/**/tmp_obj_*`. Windows/Antigravity/other
   agents are unaffected. Resolved 2026-08-11.
+
+## I007 — Model answered "should I buy SPY?" with a TSLA sizing table (2026-08-14)
+OBSERVED (owner transcript, 04:31 UTC): user asked about SPY; the model called
+size_position for TSLA and presented a confident sizing table for the wrong ticker,
+answered an opinion question with a directive, misread age_seconds as "28 s" (the
+market was closed — the price was hours old; stale=True was CORRECT), and advised
+"refresh the quote" overnight. The TOOL layer behaved correctly throughout — this
+was model-level misdirection (brain unknown; local models are more prone).
+DEFENSES SHIPPED (same day):
+1. ensure_symbol_alignment post-check in api/chat.py — deterministic: if the user
+   NAMED tickers and every tool call used different ones, a warning footer is
+   appended ("answer may be misdirected — re-ask"). Conservative: silent when no
+   ticker named or any overlap. The exact transcript is a named test.
+2. age_human on latest trade/quote + size_position ("7h 52m", never raw seconds) —
+   models garble seconds arithmetic; give them words.
+3. Persona CORE_RULE: "Answer the question that was asked" — opinion questions get
+   the analysis structure, sizing only on "how many"; wrong-symbol tools must be
+   re-run, not presented. Guard-tested.
+RESIDUAL RISK: the footer flags but cannot rewrite a wrong answer; weaker local
+models remain more prone. Recommendation to owner: prefer the claude-sdk brain for
+real decisions; treat any "Symbol check" footer as a hard stop.
+STATUS: defenses shipped; monitor for recurrence.
+

@@ -41,5 +41,6 @@ def test_nonnegotiable_keywords_present():
         "process quality, not outcome",  # coaching doctrine (Gemini spec, D014)
         "learning quantitative investing",  # educational mode
         "record_decision",  # journal discipline (T063): unjournaled = didn't happen
+        "answer the question that was asked",  # I007: no sizing tables for opinion questions
     ):
         assert keyword in prompt, f"missing persona keyword: {keyword}"

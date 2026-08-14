@@ -46,6 +46,48 @@ def _cap(text: str, limit: int = MAX_STORED_CHARS) -> str:
 
 _RECENCY_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}|as of", re.IGNORECASE)
 
+# Symbol-alignment post-check (I007): a real transcript showed the model answering a
+# question about SPY by sizing TSLA. The tool layer echoed what it was asked — the
+# model misdirected it. Deterministic guard: if the user NAMED tickers and every
+# tool call used different ones, flag the reply. Conservative by design: no tickers
+# named, or any overlap -> silent.
+_TICKER_PATTERN = re.compile(r"\$([A-Za-z]{1,5})\b|\b([A-Z]{2,5})\b")
+_TICKER_STOPWORDS = frozenset({
+    "OK", "US", "USA", "ETF", "AI", "PM", "AM", "CEO", "IPO", "FED", "CPI", "GDP",
+    "YTD", "EOD", "RSI", "SMA", "ATR", "VWAP", "IPS", "DQS", "USD", "BUY", "SELL",
+    "HOLD", "THE", "AND", "FOR", "NOT", "ALL", "CAN", "DID", "YES", "NO", "DO",
+    "IF", "IS", "IT", "ME", "MY", "OF", "ON", "OR", "SO", "TO", "UP", "WE", "GO",
+    "IMO", "LOL", "ASAP", "TODAY", "NOW",
+})
+
+
+def _user_tickers(text: str) -> set[str]:
+    out: set[str] = set()
+    for m in _TICKER_PATTERN.finditer(text):
+        dollar, bare = m.group(1), m.group(2)
+        if dollar:
+            out.add(dollar.upper())  # $spy is always a ticker claim
+        elif bare and bare not in _TICKER_STOPWORDS:
+            out.add(bare)
+    return out
+
+
+def ensure_symbol_alignment(reply: str, user_text: str, trail: list[dict]) -> str:
+    """Post-check (I007): the user named tickers; did the tools run for ANY of them?"""
+    asked = _user_tickers(user_text)
+    used = {
+        str(t["arguments"]["symbol"]).upper()
+        for t in trail
+        if isinstance(t.get("arguments"), dict) and t["arguments"].get("symbol")
+    }
+    if not asked or not used or (asked & used):
+        return reply
+    return (
+        f"{reply}\n\n_⚠ Symbol check: you asked about {', '.join(sorted(asked))} but "
+        f"the tools ran for {', '.join(sorted(used))}. This answer may be misdirected "
+        "— please re-ask, naming the symbol._"
+    )
+
 
 def ensure_recency_line(reply: str, tool_asofs: dict[str, str]) -> str:
     """Post-check (T043): a data-grounded reply must carry a date. If the model used
@@ -154,7 +196,10 @@ def run_chat_turn(
         if not reply.wants_tools:
             return ChatTurnResult(
                 conversation_id=conversation_id,
-                reply=ensure_recency_line(reply.text or "", tool_asofs),
+                reply=ensure_symbol_alignment(
+                    ensure_recency_line(reply.text or "", tool_asofs),
+                    user_text, trail,
+                ),
                 tool_trail=trail, input_tokens=total_in, output_tokens=total_out,
                 stop_reason=reply.stop_reason,
             )
@@ -187,10 +232,13 @@ def run_chat_turn(
     # Bounded loop exhausted: return honestly rather than spinning.
     return ChatTurnResult(
         conversation_id=conversation_id,
-        reply=ensure_recency_line(
-            (reply.text if reply and reply.text else
-             f"(stopped after {max_tool_rounds} tool rounds without a final answer)"),
-            tool_asofs,
+        reply=ensure_symbol_alignment(
+            ensure_recency_line(
+                (reply.text if reply and reply.text else
+                 f"(stopped after {max_tool_rounds} tool rounds without a final answer)"),
+                tool_asofs,
+            ),
+            user_text, trail,
         ),
         tool_trail=trail, input_tokens=total_in, output_tokens=total_out,
         stop_reason="max_tool_rounds",

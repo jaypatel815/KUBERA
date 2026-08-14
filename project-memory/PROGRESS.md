@@ -3,6 +3,27 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — I007: the SPY→TSLA wrong-symbol reply — three defenses shipped
+Owner pasted a real transcript: "should I buy and hold SPY?" answered with a TSLA
+sizing table + directive tone + "price age ≈ 28 s marked stale" at 04:31 UTC (market
+closed — the price was HOURS old; the stale flag was right, the narration wasn't).
+Tool layer blameless; model-level misdirection. Shipped same-session:
+(1) ensure_symbol_alignment in chat — deterministic post-check like the recency
+footer: user-named tickers vs tool-call symbols; zero overlap → "⚠ Symbol check …
+answer may be misdirected — re-ask" appended. The exact transcript is a named test
+(test_the_spy_tsla_transcript_is_caught). Conservative: silent without named tickers
+or with any overlap; stopword list keeps ETF/AI/CEO etc. from false-firing.
+(2) age_human on trades/quotes + size_position ("7h 52m", never raw seconds) — stop
+models garbling seconds arithmetic.
+(3) Persona CORE_RULE "Answer the question that was asked" (opinion → analysis
+structure; sizing only on how-many; wrong-symbol tools re-run, never presented) —
+guard-tested. I007 logged with residual-risk note: prefer the claude-sdk brain for
+real decisions; treat any Symbol-check footer as a hard stop.
+Verified: verify.py PASS — 445 passed, 3 skipped.
+Next: back to the queue (T090/T093) or Gemini takes T082. Owner: re-ask your SPY
+question — and if you were on the local brain, switch LLM_PROVIDER=claude-sdk.
+Blockers: none.
+
 ## 2026-08-14 — T091 done: attribution — every outcome credited to the conditions that opened it
 signal_log now carries regime_label (the loop persists what the classifier saw — on
 ordered, no_trade, AND rejected rows, so restraint is attributable too),
