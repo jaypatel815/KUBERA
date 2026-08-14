@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.orm import Session
 
 from analysis.benchmark import compare
+from analysis.breakout import detect_breakouts
 from analysis.briefing import PositionContext, build_briefing
 from analysis.levels import find_levels
 from analysis.portfolio import summarize, win_loss
@@ -336,6 +337,47 @@ def _get_levels(ctx: ToolContext, p: LevelsArgs) -> dict:
     return {
         "symbol": bars.symbol,
         "levels": asdict(reading),
+        "asof": bars.asof.isoformat(),
+        "source": bars.source,
+    }
+
+
+class BreakoutArgs(SymbolArgs):
+    days: int = Field(
+        default=250, ge=40, le=3650,
+        description="Calendar days of history to scan for breakout events",
+    )
+
+
+@registry.tool(
+    "get_breakouts",
+    "Breakout events for one symbol — the doctrine's full three-part test: fresh "
+    "range escape + volume expansion (RVOL at the break) + hold-outside check. Each "
+    "event has direction, boundary, status (confirmed / failed=completed fakeout / "
+    "unconfirmed=held on weak volume / pending) and how many bars it held. `active` "
+    "means the latest break is still live. Never trust an escape without volume; a "
+    "'failed' event is the $100->$106->$99 lesson. State the as-of date.",
+    BreakoutArgs,
+)
+def _get_breakouts(ctx: ToolContext, p: BreakoutArgs) -> dict:
+    market: MarketDataClient = ctx.require("market")
+    bars = market.get_daily_bars(p.symbol, days=p.days)
+    if len(bars.bars) < 21:
+        raise ToolError(
+            f"only {len(bars.bars)} daily bars for '{p.symbol}' — need at least 21 "
+            "to scan for breakouts (check the symbol or widen days)"
+        )
+    scan = detect_breakouts(
+        [b.high for b in bars.bars],
+        [b.low for b in bars.bars],
+        [b.close for b in bars.bars],
+        [b.volume for b in bars.bars],
+        [b.date for b in bars.bars],
+    )
+    return {
+        "symbol": bars.symbol,
+        "breakouts": asdict(scan),
+        "volume_feed": bars.source,  # D006: RVOL is relative to this feed only
         "asof": bars.asof.isoformat(),
         "source": bars.source,
     }

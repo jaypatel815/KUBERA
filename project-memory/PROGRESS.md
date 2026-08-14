@@ -3,6 +3,24 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T053 done: breakout detector — escape + volume + HOLD, as events
+analysis/breakout.py scans daily bars for fresh range escapes (a bar whose close exits
+the prior L-bar extremes while the previous bar hadn't — continuations extend, never
+restart) and judges each event on the doctrine's three parts: RVOL at the break
+(RVOL_CONFIRM/RVOL_FAKEOUT imported from regime.py), hold-outside tracking
+(held_bars = consecutive closes beyond the boundary), status judged ONCE on the first
+hold_confirm bars: confirmed / failed / unconfirmed / pending, plus scan-level
+`active`. The named test test_the_hundred_to_106_to_99_lesson locks the owner's
+canonical fakeout: volume-confirmed escape that returns inside → FAILED regardless of
+volume. Fixture lesson worth remembering: degenerate h=l=c bars made the 99-return
+look like a down-escape — the fix was a realistic range floor in the FIXTURE, not code.
+Reachable: get_breakouts tool (registry 11; guards bumped ×3) + GET /api/breakouts/…
+Verified: verify.py PASS — 278 passed, 3 skipped.
+Next: T054 range strategy + regime router (T050+T051+T053 all feed it now) — the meta-
+strategy that picks momentum/range/CASH. Owner: /api/breakouts/SPY or ask the Orb
+"did SPY break out recently?".
+Blockers: none.
+
 ## 2026-08-13 — T051 done: support/resistance — "repeated rejections define the range"
 Built analysis/levels.py: swing highs/lows (regime.py's swing_points promoted to public,
 shared) pooled and clustered by price proximity (sorted greedy walk, running-mean join
