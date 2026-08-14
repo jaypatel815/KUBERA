@@ -67,6 +67,10 @@ http://127.0.0.1:8000/api/expected-move/SPY?horizon_days=5  how far does it usua
                                                             bands (in % and price), historical win rate, payoff
                                                             ratio, conditioned on the current volatility regime.
                                                             Ranges, never targets — the past, not a forecast
+http://127.0.0.1:8000/api/risk                              your risk dashboard: daily loss budget consumed,
+                                                            current tier (1 stricter → 2 half-size → 3 paused →
+                                                            4 breaker), lockout state, and your Decision Quality
+                                                            Score — process over outcome
 http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
 http://127.0.0.1:8000/api/backtests                         the results ledger: every recorded backtest
 POST /api/backtests/run?strategy=momentum&symbol=SPY        run + record a backtest (use /docs to click it)

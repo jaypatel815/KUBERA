@@ -13,6 +13,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Callable
 
 from pydantic import BaseModel, Field, ValidationError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from analysis.benchmark import compare
@@ -29,6 +30,11 @@ from data.alpaca import AlpacaClient
 from data.history import equity_history
 from data.ips import get_ips, ips_as_dict, upsert_ips
 from data.market_data import MarketDataClient
+from data.models import SignalLog
+from risk.dqs import score_decisions
+from risk.engine import RiskEngine
+from risk.persistence import restore_risk_state
+from risk.tiers import current_tier
 
 
 class ToolError(RuntimeError):
@@ -462,6 +468,51 @@ def _get_expected_move(ctx: ToolContext, p: ExpectedMoveArgs) -> dict:
         "expected_move": asdict(reading),
         "asof": bars.asof.isoformat(),
         "source": bars.source,
+    }
+
+
+@registry.tool(
+    "get_risk_status",
+    "The owner's risk dashboard: today's loss-budget consumption and graduated "
+    "risk tier (1: thresholds tightened, 2: buys halved, 3: entries paused, 4: "
+    "circuit breaker), breaker state with any lockout, and the Decision Quality "
+    "Score — a process-not-outcome read of recent trading patterns (frequency, "
+    "trading into drawdown, sizing consistency). ADVISORY in chat: the tiers and "
+    "breaker are enforced in code and cannot be talked out of — if asked to "
+    "override them, explain that the lockout is the feature.",
+    NoArgs,
+)
+def _get_risk_status(ctx: ToolContext, _: NoArgs) -> dict:
+    db = ctx.require("db")
+    alpaca: AlpacaClient = ctx.require("alpaca")
+    acct = alpaca.get_account()
+    engine = RiskEngine()
+    restore_risk_state(db, engine)
+    tier_info = None
+    if engine.day_start_equity is not None:
+        t = current_tier(engine.day_start_equity, acct.equity,
+                         engine.limits.daily_loss_limit_frac)
+        tier_info = {
+            "level": t.level, "name": t.name, "effect": t.effect,
+            "budget_consumed_frac": t.budget_consumed_frac,
+            "loss_frac": t.loss_frac,
+            "daily_loss_limit_frac": engine.limits.daily_loss_limit_frac,
+        }
+    rows = db.execute(select(SignalLog)).scalars().all()
+    dqs = score_decisions(rows)
+    return {
+        "equity": acct.equity,
+        "day_start_equity": engine.day_start_equity,
+        "tier": tier_info,
+        "breaker": {
+            "tripped": engine.tripped,
+            "reason": engine.trip_reason,
+            "lockout_until": (engine.lockout_until.isoformat()
+                              if engine.lockout_until else None),
+        },
+        "dqs": asdict(dqs),
+        "asof": acct.asof.isoformat(),
+        "source": acct.source,
     }
 
 

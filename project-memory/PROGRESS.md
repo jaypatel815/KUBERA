@@ -3,6 +3,25 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T067 done: graduated risk tiers ENFORCED + Decision Quality Score
+The owner's commitment device grows a ladder. risk/tiers.py: daily-loss-budget
+consumption → tier 0–4; the paper loop enforces (buys only, sells always exempt):
+tier 1 ≥25% doubles the no-trade floors, tier 2 ≥50% halves new-buy notional, tier 3
+≥75% pauses entries as a logged no_trade, tier 4 = the breaker, untouched. Precedence
+subtlety handled: when the breaker is TRIPPED the tier logic steps aside so the gate
+rejects loudly ("halted") instead of a soft no_trade — tested explicitly. risk/dqs.py:
+process-not-outcome DQS v1 from signal_log — frequency vs the overtrading guard,
+trading-into-drawdown share, sizing CV, restraint (no_trade count) scored FREE; empty
+window = 100 ("no activity, no bad habits"). Honesty: v1 scores the loop's pattern;
+owner-fill scoring + follow/override rate = T067b (needs T036/T063). get_risk_status
+tool (registry 14) + GET /api/risk. One sandbox lesson re-learned: endpoint tests with
+in-memory SQLite need StaticPool (TestClient threads).
+Verified: verify.py PASS — 337 passed, 3 skipped.
+Next: T062 briefs (morning/EOD — now has regime, intraday, expected-move, risk status
+to compose from) or T075 confluence or T080 macro. Owner: ask the Orb "what's my risk
+status?" or open /api/risk.
+Blockers: none.
+
 ## 2026-08-13 — T077 done: expected moves as distributions — ranges, never targets
 analysis/expected_move.py: overlapping horizon-day returns over the trailing lookback
 → percentile bands via statistics.quantiles(method="inclusive") (hand-verified:

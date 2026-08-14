@@ -31,6 +31,7 @@ from data.models import SignalLog
 from risk.engine import OrderRequest, RiskEngine
 from risk.persistence import persist_risk_state, restore_risk_state
 from risk.sizing import volatility_parity_notional
+from risk.tiers import current_tier
 
 log = logging.getLogger("kubera.paper_loop")
 
@@ -120,6 +121,33 @@ def run_paper_cycle(
         lows = [b.low for b in bars.bars]
         atr_value = atr(highs, lows, closes, window=ATR_WINDOW)
 
+        # T067: graduated risk tiers — friction BEFORE the breaker. Only while the
+        # breaker is untripped (a tripped breaker must reject loudly at the gate).
+        tier = None
+        tier_note = None
+        eff_min_atr_frac, eff_rvol_floor = min_atr_frac, rvol_floor
+        size_multiplier = 1.0
+        if not risk.tripped and risk.day_start_equity is not None:
+            tier = current_tier(
+                risk.day_start_equity, acct.equity, risk.limits.daily_loss_limit_frac
+            )
+            if tier.level >= 1:
+                tier_note = (
+                    f"risk tier {tier.level} ({tier.name}): "
+                    f"{tier.budget_consumed_frac:.0%} of the daily loss budget "
+                    f"consumed — {tier.effect}"
+                )
+            if tier.level >= 1:
+                eff_min_atr_frac, eff_rvol_floor = min_atr_frac * 2, rvol_floor * 2
+            if tier.level >= 2:
+                size_multiplier = 0.5
+            if tier.level >= 3:
+                reason = f"no trade today: {tier_note} — capital preserved by design"
+                log_row("no_trade", reason, None)
+                log.warning("cycle NO_TRADE %s: %s", symbol, reason)
+                return CycleResult("no_trade", symbol, weight, target_value,
+                                   current_value, reason)
+
         # T055: is there actually a trade today? Cash is a decision, logged as one.
         no_trade: list[str] = []
         today_start = datetime.now(timezone.utc).replace(
@@ -134,22 +162,22 @@ def run_paper_cycle(
                 f"(max {max_trades_per_day}) — the biggest enemy is overtrading"
             )
         atr_frac = atr_value / last_price
-        if atr_frac < min_atr_frac:
+        if atr_frac < eff_min_atr_frac:
             no_trade.append(
                 f"expected move too small to clear costs: ATR is {atr_frac:.4%} of "
-                f"price (floor {min_atr_frac:.4%})"
+                f"price (floor {eff_min_atr_frac:.4%})"
             )
         if len(bars.bars) >= 21:  # enough history for the full regime classifier
             reading = classify_regime(
                 highs, lows, closes, [b.volume for b in bars.bars],
                 [b.date for b in bars.bars], volume_feed=bars.source,
             )
-            if (reading.rvol is not None and reading.rvol < rvol_floor
+            if (reading.rvol is not None and reading.rvol < eff_rvol_floor
                     and reading.range_width_percentile is not None
                     and reading.range_width_percentile <= 0.25):
                 no_trade.append(
-                    f"quiet market: RVOL {reading.rvol:.2f} (floor {rvol_floor}) in a "
-                    f"bottom-quartile range width — the market is not interested "
+                    f"quiet market: RVOL {reading.rvol:.2f} (floor {eff_rvol_floor}) "
+                    f"in a bottom-quartile range width — the market is not interested "
                     f"(feed: {bars.source})"
                 )
         if no_trade:
@@ -173,6 +201,12 @@ def run_paper_cycle(
                 f"{risk.limits.risk_per_trade_frac:.1%} of equity)"
             )
             delta = sized.allowed_notional
+        if size_multiplier < 1.0:
+            delta = delta * size_multiplier
+            half_note = f"{tier_note}: buy notional halved to {delta:.2f}"
+            sizing_note = f"{sizing_note}; {half_note}" if sizing_note else half_note
+        elif tier_note:
+            sizing_note = f"{sizing_note}; {tier_note}" if sizing_note else tier_note
     if abs(delta) < min_trade_value:
         reason = f"delta {delta:.2f} below min trade {min_trade_value:.2f}"
         if sizing_note:

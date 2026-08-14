@@ -240,6 +240,22 @@ def symbol_levels(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/risk")
+def risk_status(
+    alpaca: AlpacaClient = Depends(get_alpaca_client),
+    session=Depends(get_db_session),
+) -> dict:
+    """Loss budget, risk tier, breaker state, and Decision Quality Score."""
+    try:
+        return registry.execute(
+            "get_risk_status", {}, ToolContext(alpaca=alpaca, db=session)
+        )
+    except ToolError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except AlpacaError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/expected-move/{symbol}")
 def symbol_expected_move(
     symbol: str,
