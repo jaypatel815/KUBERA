@@ -3,6 +3,21 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T097 v4: the strict spec — microscopic rods, density features, continuous dissolve
+Owner delivered a full visual spec (three references, STRICT): elements must be
+tiny vertical luminous rods (NOT squares/voxels/mesh), features must emerge from
+particle DENSITY + brightness + feathered dark recesses, mouth stays whole, jaw
+fragments continuously into a chaotic neural cascade (no gap, floaters outside
+the silhouette, progressive transparency), frontal, restrained glow. Built:
+~40k sprites masked to thin rods in the fragment shader (gl_PointCoord band +
+seed-varied height), density dropout tracking shade, elliptical feathered eye
+recesses (offline preview caught the cartoon-disk eyes + premature mouth
+fragmentation — both fixed in port), frag band below the lower lip with
+animated drift, 565-node top-biased cascade with per-vertex fade colors (fake
+progressive transparency under additive). All behaviors kept: cursor-follow,
+pupil lead, lip amp, shimmer, scan, glitch, CDN fallback. node --check OK,
+verify PASS 497/3. Owner: hard-refresh localhost:8000.
+
 ## 2026-08-14 — T097 v3: holographic — voxel columns, hollow eyes, the cascade
 Owner's second reference (frontal head of stacked voxel columns dissolving
 downward into a wireframe cascade) + the word "holographic". Rebuilt the
