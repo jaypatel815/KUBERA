@@ -370,6 +370,18 @@ def symbol_expected_move(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/goal-math")
+def goal_math_endpoint(start: float = 1000.0, target: float = 1_000_000.0) -> dict:
+    """Deterministic goal arithmetic (I012): required CAGR per horizon, FV with
+    contributions, years-to-target, daily-compounding reality check."""
+    try:
+        return registry.execute(
+            "goal_math", {"start": start, "target": target}, ToolContext(),
+        )
+    except (ToolError, ToolArgumentError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
 @app.get("/api/intraday/{symbol}")
 def symbol_intraday(
     symbol: str,
@@ -471,7 +483,7 @@ class ChatRequest(BaseModel):
     """`conversation_id`: omit (or send 0) to start a new conversation; reuse the id
     from a previous response to continue that thread."""
 
-    message: str = Field(min_length=1, max_length=6000)
+    message: str = Field(min_length=1, max_length=20000)  # room for an IPS brief (I012)
     conversation_id: int | None = None
     # T043: explicit user confirmation for confirmation-gated tools (future order tools).
     # Comes from YOUR request — the model cannot set this.

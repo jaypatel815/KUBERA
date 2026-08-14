@@ -25,7 +25,9 @@ from settings import get_settings
 log = logging.getLogger("kubera.chat")
 
 MAX_TOOL_ROUNDS = 6
-MAX_STORED_CHARS = 6000  # tool results are capped before storage and LLM replay
+MAX_STORED_CHARS = 24000  # capped before storage/replay; raised from 6k after a real
+# owner message (a full IPS brief) bounced off the old limit (I012). The T044
+# context budget manages total history size; individual messages deserve room.
 
 
 @dataclass(frozen=True)

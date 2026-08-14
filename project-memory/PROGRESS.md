@@ -3,6 +3,22 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — I012: the IPS brief that didn't fit + goal_math (tool #25)
+Owner poured his actual investment policy into the chat — 14 sections, $1k→$1M,
+horizon math, contribution scenarios, "challenge my assumptions" — and got a 422.
+Two caps conspired: ChatRequest max_length=6000 rejected it, and MAX_STORED_CHARS
+=6000 would have truncated the stored copy the model replays even if the first cap
+were raised alone. Fixed both: request 20k, storage 24k (storage > request, so user
+text survives whole). Then made the message answerable: analysis/goal_math.py —
+required_cagr (10y needs 99.5%/yr — hand-tested against 10^0.3), future_value with
+monthly contributions, years_to_target (None = "not in 100 years", honest),
+daily_return_reality (1.02^252 ≈ 147x/yr — the "2–5%/day" conversation-ender).
+goal_math registered as tool #25 (+ GET /api/goal-math; all three guard tests
+bumped 24→25); description orders the model to challenge unrealistic assumptions
+with these numbers, note says contributions dominate at small sizes.
+Verified: verify.py PASS — 475 passed (+13 hand-computed), 3 skipped.
+Owner: restart backend, resend the IPS message unchanged — it fits now.
+
 ## 2026-08-14 — I011: bridge telemetry + fabrication guard — trust nothing that skipped the tools
 Owner transcripts on claude-sdk: one turn denied get_portfolio and hallucinated
 tool names (get_market_data/submit_verdict — prose distortions) while priming HAD

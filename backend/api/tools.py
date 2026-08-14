@@ -24,6 +24,7 @@ from analysis.briefing import PositionContext, build_briefing
 from analysis.confluence import assess_confluence
 from analysis.exit_plan import build_exit_plan
 from analysis.expected_move import expected_move
+from analysis.goal_math import goal_scenarios
 from analysis.intraday import build_session_read
 from analysis.levels import find_levels
 from analysis.macro import compose_macro_context
@@ -1048,6 +1049,32 @@ def _get_attribution(ctx: ToolContext, _: NoArgs) -> dict:
         "activity_by_regime": activity,
         "fills_analyzed": len(attributed),
         "asof": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+class GoalMathArgs(LenientArgs):
+    start: float = Field(gt=0, description="Starting capital, e.g. 1000")
+    target: float = Field(gt=0, description="Goal, e.g. 1000000")
+
+
+@registry.tool(
+    "goal_math",
+    "Deterministic goal arithmetic: the annualized return REQUIRED to reach the "
+    "target over 10/15/20/25/30 years, future-value tables for monthly "
+    "contributions of $0/50/100/250/500 at assumed returns of 5–20%, "
+    "years-to-target per combination (null = not within 100 years), and the "
+    "daily-compounding reality check (2%/day = a 147x year — broken arithmetic, "
+    "not ambition). Narrate: assumptions are the fragile part; contributions "
+    "usually dominate returns at small account sizes — let the tables show it.",
+    GoalMathArgs,
+)
+def _goal_math(ctx: ToolContext, p: GoalMathArgs) -> dict:
+    if p.target <= p.start:
+        raise ToolError("target must exceed start — nothing to compute otherwise")
+    return {
+        "scenarios": asdict(goal_scenarios(p.start, p.target)),
+        "asof": datetime.now(timezone.utc).isoformat(),
+        "source": "deterministic-math",
     }
 
 

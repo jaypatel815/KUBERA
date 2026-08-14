@@ -4,6 +4,17 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I012 [FIXED — verify on owner machine] — Owner's full IPS brief (a ~14-section
+  message: $1k→$1M goal, horizons, contribution scenarios, drawdown/options policy)
+  bounced with `POST /api/chat 422`. Cause: `ChatRequest.message max_length=6000`
+  (main.py) — and even if raised alone, `MAX_STORED_CHARS=6000` (chat.py) would have
+  silently truncated the stored copy the model replays from history. Fix: request cap
+  → 20k, storage cap → 24k (storage > request so user text is never truncated).
+  Bonus, same session: the questions inside that message (required CAGR, "2–5%/day",
+  contribution comparisons) were unanswerable-with-numbers, so `goal_math` shipped —
+  registry tool #25 + `GET /api/goal-math` (analysis/goal_math.py, hand-tested:
+  10y needs 99.5%/yr; 1.02^252 ≈ 147x; $500/mo @10% reaches $1M in 29.6y).
+  Owner: restart backend, resend the IPS message as-is. Logged 2026-08-14.
 - I005 [NEARLY CLOSED] — venv observed rebuilt on CPython 3.14.7 (python.org install
   manager, `AppData\Local\Python\pythoncore-3.14-64`) on 2026-08-11. 3.14 is supported
   (project floor is 3.10). Close this issue on the next local `python scripts\verify.py`
