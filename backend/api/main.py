@@ -359,6 +359,22 @@ def symbol_intraday(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/confluence/{symbol}")
+def symbol_confluence(
+    symbol: str,
+    market: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """Do the timeframes agree? Daily + hourly regimes + VWAP side, one read."""
+    try:
+        return registry.execute(
+            "get_confluence", {"symbol": symbol}, ToolContext(market=market)
+        )
+    except ToolError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/breakouts/{symbol}")
 def symbol_breakouts(
     symbol: str,

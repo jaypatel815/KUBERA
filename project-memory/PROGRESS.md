@@ -3,6 +3,22 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — T075 done: timeframe confluence — the regime pack's capstone
+analysis/confluence.py: assess_confluence takes plain values (decoupled from the
+reading dataclasses — the TOOL extracts) and adjusts the DAILY confidence only, never
+the regime call: intraday agreement +0.05 / conflict −0.10, VWAP side aligned +0.05 /
+against −0.05, churn (≥4 crossings) −0.05; clamped [0.05, 0.90]; every reading states
+the D006 absence of volume-delta confirmation. get_confluence (registry 20, guards ×3)
+classifies 1Day + 1Hour with the SAME T050 classifier (ISO timestamps serve as dates)
+and reads the 5Min session; each intraday view degrades independently with a `gaps`
+why. GET /api/confluence/{symbol}. Full-agreement fixture proves adjusted > daily and
+cap at 0.9; thin-intraday fixture proves neutral degradation.
+Verified: verify.py PASS — 378 passed, 3 skipped.
+Regime pack status: T050–T055 + T075 DONE; only T056 (structured exit plans) remains.
+Next: T056 to finish the pack, or T081 pairs / T064 rigor / T082 Orb (Gemini). Owner:
+/api/confluence/SPY or ask the Orb "do the timeframes agree on SPY?".
+Blockers: none.
+
 ## 2026-08-13 — T063 done: the decision journal — "why did I buy that?" now has an answer
 decision_journal table (migration 080e1c184167, UTCDateTime→sed as usual) captures every
 recommendation AT decision time: verdict/confidence/thesis/horizon/entry/target/stop/

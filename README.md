@@ -85,6 +85,10 @@ http://127.0.0.1:8000/api/journal                           the decision journal
                                                             made (with regime, entry, target, stop at decision
                                                             time), whether you followed or overrode it, and
                                                             direction-hit calibration once entries age
+http://127.0.0.1:8000/api/confluence/SPY                    do the timeframes agree? daily + hourly regimes +
+                                                            session VWAP side vote on the daily read — agreement
+                                                            strengthens confidence, conflict and churn weaken it,
+                                                            the call itself never flips
 http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
 http://127.0.0.1:8000/api/backtests                         the results ledger: every recorded backtest
 POST /api/backtests/run?strategy=momentum&symbol=SPY        run + record a backtest (use /docs to click it)

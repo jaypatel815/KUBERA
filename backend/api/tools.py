@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from analysis.benchmark import compare
 from analysis.breakout import detect_breakouts
 from analysis.briefing import PositionContext, build_briefing
+from analysis.confluence import assess_confluence
 from analysis.expected_move import expected_move
 from analysis.intraday import build_session_read
 from analysis.levels import find_levels
@@ -40,7 +41,7 @@ from data.journal import (
     record_decision,
     summarize_decisions,
 )
-from data.market_data import MarketDataClient
+from data.market_data import MarketDataClient, MarketDataError
 from data.models import SignalLog
 from risk.dqs import score_decisions
 from risk.engine import RiskEngine
@@ -674,6 +675,72 @@ def _get_journal(ctx: ToolContext, p: JournalArgs) -> dict:
         "decisions": [decision_as_dict(r) for r in rows],
         "summary": asdict(summary),
         "asof": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@registry.tool(
+    "get_confluence",
+    "Do the timeframes agree? Runs the regime classifier on DAILY and HOURLY bars "
+    "and reads the session VWAP side, then adjusts the daily confidence: agreement "
+    "and holding the right side of VWAP add a little; conflict, wrong side, or "
+    "VWAP churn subtract. The daily regime call itself never flips. Capped at 0.9. "
+    "Volume-delta confirmation is deliberately absent (IEX feed, D006) — say so "
+    "when narrating strong confluence.",
+    SymbolArgs,
+)
+def _get_confluence(ctx: ToolContext, p: SymbolArgs) -> dict:
+    market: MarketDataClient = ctx.require("market")
+    bars = market.get_daily_bars(p.symbol, days=250)
+    if len(bars.bars) < 21:
+        raise ToolError(
+            f"only {len(bars.bars)} daily bars for '{p.symbol}' — need at least 21"
+        )
+    daily = classify_regime(
+        [b.high for b in bars.bars], [b.low for b in bars.bars],
+        [b.close for b in bars.bars], [b.volume for b in bars.bars],
+        [b.date for b in bars.bars], volume_feed=bars.source,
+    )
+
+    intraday_reading = None
+    intraday_why = None
+    try:
+        hourly = market.get_intraday_bars(p.symbol, timeframe="1Hour", days=14)
+        if len(hourly.bars) >= 21:
+            intraday_reading = classify_regime(
+                [b.high for b in hourly.bars], [b.low for b in hourly.bars],
+                [b.close for b in hourly.bars], [b.volume for b in hourly.bars],
+                [b.ts.isoformat() for b in hourly.bars], volume_feed=hourly.source,
+            )
+        else:
+            intraday_why = f"only {len(hourly.bars)} hourly bars (need 21)"
+    except (MarketDataError, ValueError) as e:
+        intraday_why = str(e)
+
+    session = None
+    session_why = None
+    try:
+        five = market.get_intraday_bars(p.symbol, timeframe="5Min", days=9)
+        if five.bars:
+            session = build_session_read(five.bars, volume_feed=five.source)
+        else:
+            session_why = "no 5-minute bars returned"
+    except (MarketDataError, ValueError) as e:
+        session_why = str(e)
+
+    reading = assess_confluence(
+        daily.regime, daily.confidence,
+        intraday_regime=intraday_reading.regime if intraday_reading else None,
+        intraday_confidence=intraday_reading.confidence if intraday_reading else None,
+        above_vwap=session.above_vwap if session else None,
+        vwap_crossings=session.vwap_crossings if session else None,
+    )
+    return {
+        "symbol": bars.symbol,
+        "confluence": asdict(reading),
+        "gaps": {"intraday": intraday_why, "session": session_why},
+        "volume_feed": bars.source,
+        "asof": bars.asof.isoformat(),
+        "source": bars.source,
     }
 
 
