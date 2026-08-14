@@ -3,6 +3,8 @@
 Run locally:  uvicorn --app-dir backend api.main:app --reload
 """
 
+import logging
+from contextlib import asynccontextmanager
 from dataclasses import asdict
 from datetime import datetime, timezone
 
@@ -23,11 +25,33 @@ from data.fred import FredClient, FredError
 from data.history import equity_history
 from data.market_data import MarketDataClient, MarketDataError
 from data.models import ChatMessage
-from settings import ConfigError, KuberaSettings, get_settings
+from settings import ConfigError, KuberaSettings, env_file_llm_provider, get_settings
 
 VERSION = "0.1.0"
 
-app = FastAPI(title="KUBERA API", version=VERSION)
+log = logging.getLogger("kubera.api")
+
+
+@asynccontextmanager
+async def _lifespan(_: FastAPI):
+    """Every server boot announces its brain (I014 postmortem: the owner's .env
+    said claude-sdk while the running process used openai — OS env vars beat
+    .env, and nothing said so). The startup log now makes the mismatch loud."""
+    s = get_settings()
+    log.info("KUBERA brain: llm_provider=%s (%d tools registered)",
+             s.llm_provider, len(registry.names()))
+    intended = env_file_llm_provider()
+    if intended and intended != s.llm_provider:
+        log.warning(
+            "PROVIDER MISMATCH: .env says LLM_PROVIDER=%s but this server "
+            "resolved %r — an OS environment variable is overriding your .env "
+            "(real env vars win). Diagnose: python scripts/brain_check.py",
+            intended, s.llm_provider,
+        )
+    yield
+
+
+app = FastAPI(title="KUBERA API", version=VERSION, lifespan=_lifespan)
 
 _engine = None
 

@@ -3,6 +3,22 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — I015: the provider that wasn't — brain_check + startup announcement
+Owner corrected the record: .env says claude-sdk (verified — masked read), yet
+the timeout error came from the OpenAI provider aimed at local Ollama. Claude's
+"you were on openai" judgment was wrong as stated; the honest mechanism is that
+BOTH are true: real OS env vars silently beat .env (pydantic precedence, now
+pinned by a test that reproduces the exact scenario), or a stale server kept its
+boot-time provider. No silent fallback exists in the SDK provider — verified.
+Shipped: scripts/brain_check.py (three questions: what .env SAYS, what a NEW
+server would RESOLVE, what the RUNNING server USES — /health), and a lifespan
+startup log that announces the brain and WARNS "PROVIDER MISMATCH" whenever
+resolution differs from .env intent. Sandbox run: intent=resolution=claude-sdk,
+so the divergence lives on the owner's machine (shell var or stale process).
+Verified: verify.py PASS — 497 passed (+5), 3 skipped.
+Owner: python scripts/brain_check.py → restart from a clean shell → startup
+line must read "KUBERA brain: llm_provider=claude-sdk".
+
 ## 2026-08-14 — D022: the J.A.R.V.I.S. batch — receipts first, then two real adoptions
 Owner asked for a ReAct loop, universal registry, and anti-chatbot persona.
 Receipts written into D022: the loop (MAX_TOOL_ROUNDS=6, SDK max_turns=8) and

@@ -21,6 +21,23 @@ class ConfigError(RuntimeError):
     """Raised when required configuration is missing. Message says exactly what and how to fix."""
 
 
+def env_file_llm_provider(env_path: Path | None = None) -> str | None:
+    """What repo .env SAYS for LLM_PROVIDER — the owner's intent, which real
+    environment variables silently override (pydantic-settings precedence).
+    Used to detect and WARN about that mismatch (I014 postmortem)."""
+    import re  # local: keep module import surface unchanged
+
+    path = env_path if env_path is not None else REPO_ROOT / ".env"
+    if not path.exists():
+        return None
+    m = re.search(
+        r"^\s*(?:KUBERA_)?LLM_PROVIDER\s*=\s*([^\s#]+)",
+        path.read_text(encoding="utf-8", errors="replace"),
+        re.MULTILINE,
+    )
+    return m.group(1).strip().strip('"').strip("'") if m else None
+
+
 class KuberaSettings(BaseSettings):
     """Loaded from environment variables, then repo-root .env (env vars win)."""
 

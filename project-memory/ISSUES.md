@@ -15,6 +15,20 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   in chat.py — 3+ distinct underscore-bearing schema property names in a reply
   (when the user neither asked for fields nor used the jargon) → "⚠ Pacing check"
   footer + WARNING log. Owner transcript is a named test. Logged 2026-08-14.
+- I015 [DIAGNOSTIC SHIPPED — needs owner's machine] — CORRECTION to the I014/D022
+  narrative: the owner's .env says LLM_PROVIDER=claude-sdk (verified 2026-08-14),
+  yet the timeout error was produced by the OpenAI-compat provider pointed at
+  local Ollama (OPENAI_BASE_URL=localhost:11434, nemotron). Claude wrongly
+  asserted "you were on openai" from the error string — the .env said otherwise.
+  Both facts are true simultaneously via one of two mechanisms: (a) a real OS
+  environment variable LLM_PROVIDER=openai overriding .env (pydantic-settings
+  precedence: env vars WIN — now pinned by test_brain_check.py), or (b) a stale
+  server process still running with the provider it started with. Shipped:
+  scripts/brain_check.py (intent vs resolution vs live server, secrets never
+  printed) + startup lifespan log announcing the brain + a loud PROVIDER
+  MISMATCH warning when .env intent differs from resolution. Owner: run
+  `python scripts/brain_check.py`, then restart the server from a clean shell
+  and confirm the startup line says llm_provider=claude-sdk. Logged 2026-08-14.
 - I014 [FIXED — verify on owner machine] — the 19k-char IPS brief (I012 resend)
   died with raw "Network error calling openai: ReadTimeout('timed out')" shown to
   the owner (note: provider was openai/local at the time, not claude-sdk). Fixes:
