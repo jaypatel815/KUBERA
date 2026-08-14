@@ -50,6 +50,7 @@
 </div>
 <div id="err"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ------------------------------------------------------------------ state
 const S = { mode: "idle", conversationId: null, amp: 0, t: 0 };
@@ -59,149 +60,246 @@ const statusEl = document.getElementById("status");
 const errEl = document.getElementById("err");
 function setMode(m) { S.mode = m; statusEl.textContent = m; }
 
-// ------------------------------------------------------------------ face (T097)
-// A depth-mapped voxel face, generated procedurally (no assets, no libraries).
-// The head turns toward the cursor, the pupils track it with extra gain, the
-// mouth voxels move with KUBERA's real speech amplitude, and loose particles
-// dissolve off the left side into a drifting wireframe network. Same canvas,
-// same click contract, same state colors as the orb it replaces.
-const canvas = document.getElementById("orb"), ctx = canvas.getContext("2d");
-const CX = 260, CY = 250;
-
-// --- build the point cloud: head silhouette from two ellipses, depth dome,
-// features carved on top. c = columns from center (mirrored), r = rows.
-const ROWS = 46, VS = 7;                    // grid rows, voxel spacing (px)
-function halfWidth(r) {
-  let w = 0;
-  const a = (r - 14) / 15;                  // cranium: center row 14, ry 15, rx 16
-  if (Math.abs(a) <= 1) w = 16 * Math.sqrt(1 - a * a);
-  const b = (r - 30) / 15;                  // jaw: center row 30, ry 15, rx 12
-  if (Math.abs(b) <= 1) w = Math.max(w, 12 * Math.sqrt(1 - b * b) * (1 - (r - 30) / 55));
-  return w;
-}
-function cellDepth(r, c) {                  // -> {d, kind} | null
-  const w = halfWidth(r);
-  if (w < 1 || c > w) return null;
-  let d = 3 + 4 * Math.sqrt(Math.max(0, 1 - (c / w) * (c / w)));  // dome
-  let kind = "skin";
-  if (r >= 15 && r <= 16 && c >= 2 && c <= 9) d += 1.5;           // brow ridge
-  if (r >= 17 && r <= 20 && c >= 3 && c <= 9) {                   // eye sockets
-    if (r >= 18 && r <= 19 && c >= 5 && c <= 6) { d = 6; kind = "pupil"; }
-    else return { d: 0, kind: "socket" };                          // hollow
-  }
-  if (c <= 1 && r >= 17 && r <= 27) d += Math.min(4, (r - 17) * 0.45); // nose bridge
-  if (r >= 26 && r <= 27 && c <= 2) d = 9;                        // nose tip
-  if (r === 28 && c >= 2 && c <= 3) d = 4;                        // nostril shadow
-  if (r >= 31 && r <= 33 && c <= 7) { d = 7.5; kind = "mouth"; }  // lips
-  if (r >= 38 && r <= 42 && c <= 4) d += 1;                       // chin
-  return { d, kind };
-}
-const voxels = [];
-for (let r = 0; r < ROWS; r++) {
-  const w = halfWidth(r);
-  for (let c = 0; c <= 17; c++) {
-    const cell = cellDepth(r, c);
-    if (!cell || cell.kind === "socket") continue;
-    for (const sx of c === 0 ? [1] : [1, -1]) {
-      // left-edge voxels are "loose" — they wander, like the dissolving reference
-      const loose = sx < 0 && c > w - 3 ? 0.4 + Math.random() * 0.9 : 0;
-      voxels.push({
-        x: sx * c * VS, y: (r - ROWS / 2) * VS, z: cell.d * 6, d: cell.d,
-        kind: cell.kind, loose, seed: Math.random() * 7,
-        shade: 0.82 + Math.random() * 0.36,   // per-voxel brightness variance
-      });
-    }
-  }
-}
-
-// --- drifting wireframe halo (the dissolved network on the left)
-const halo = [];
-for (let i = 0; i < 70; i++) halo.push({
-  x: CX - 40 - Math.random() * 210, y: 60 + Math.random() * 400,
-  vx: -(0.15 + Math.random() * 0.45), vy: (Math.random() - 0.5) * 0.3,
-  s: 1.5 + Math.random() * 2.5,
-});
-
-// --- cursor -> gaze
-let mx = innerWidth / 2, my = innerHeight / 2, lastMove = 0, yaw = 0, pitch = 0;
+// ------------------------------------------------------------------ face v2 (T097)
+// A sculpted 3D particle head (~12k GPU points), tuned offline against the
+// owner's reference image before porting. Continuous depth field (skull dome +
+// gaussian features: brow, sockets, eyeballs, nose, lips, chin, cheekbones),
+// Lambertian shading baked at build, WebGL points with additive glow. The head
+// turns toward the cursor, pupils lead the turn, lips ride the TTS amplitude,
+// thinking shimmers, and the left edge dissolves into a wireframe network.
+// Falls back to a simple pulse if three.js can't load — voice always works.
+const canvas = document.getElementById("orb");
+let mx = innerWidth / 2, my = innerHeight / 2, lastMove = 0;
 addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; lastMove = S.t; });
 
-function drawFace() {
-  S.t += 0.016;
-  ctx.clearRect(0, 0, 520, 520);
-  const [r, g, b] = COLORS[S.mode] || COLORS.idle;
+// --- the sculpt (constants tuned via offline renders; y grows DOWN like the tuning rig)
+function G(x, y, x0, y0, sx, sy, amp) {
+  return amp * Math.exp(-(((x - x0) ** 2) / (2 * sx * sx) + ((y - y0) ** 2) / (2 * sy * sy)));
+}
+function faceWidth(y) {
+  let cr = 0;
+  const a = (y + 20) / 75;
+  if (Math.abs(a) <= 1) cr = 68 * (1 - a * a) ** 0.42;
+  let jaw = 0;
+  if (y >= -20 && y <= 80) {
+    const t = Math.max(0, (y - 20) / 60);
+    jaw = 62 - 42 * t ** 1.35;
+    if (y > 70) jaw *= Math.sqrt(Math.max(0, 1 - ((y - 70) / 18) ** 2));
+  }
+  if (y < 10) return cr;
+  if (y > 34) return jaw;
+  const tt = (y - 10) / 24;
+  return cr * (1 - tt) + jaw * tt;
+}
+function faceDepth(x, y) {
+  const w = faceWidth(y);
+  if (w <= 2 || Math.abs(x) > w) return null;
+  let z = 60 * Math.sqrt(Math.max(0, 1 - (x / 74) ** 2 - ((y + 6) / 102) ** 2));
+  const ax = Math.abs(x);
+  z += G(ax, y, 26, -32, 30, 8, 4);            // brow ridge
+  z += G(ax, y, 26, -18, 13, 8.5, -11);        // eye sockets
+  z += G(ax, y, 26, -17, 6.5, 4.0, 6);         // eyeballs
+  z += G(x, y, 0, -30, 22, 26, 3);             // forehead
+  const ramp = 1 / (1 + Math.exp(-(y + 24) / 6));
+  const fall = 1 / (1 + Math.exp((y - 26) / 3));
+  z += 15 * Math.exp(-(x * x) / 98) * ramp * fall;  // nose bridge
+  z += G(x, y, 0, 24, 8.5, 6.5, 9);            // nose tip
+  z += G(ax, y, 11, 29, 5, 4, 5);              // nostril wings
+  z += G(ax, y, 6.5, 31, 3.4, 2.6, -4);        // nostrils
+  z += G(x, y, 0, 44, 15, 4.2, 7);             // upper lip
+  z += G(x, y, 0, 53, 13, 4.6, 7.5);           // lower lip
+  z += G(x, y, 0, 48.5, 14, 1.7, -6);          // mouth line
+  z += G(x, y, 0, 70, 13, 10, 7);              // chin
+  z += G(ax, y, 40, 6, 14, 13, 5);             // cheekbones
+  z += G(ax, y, 30, 30, 12, 12, -3);           // cheek hollow
+  z += G(ax, y, 54, -38, 12, 15, -4);          // temples
+  const edge = Math.min(1, (w - ax) / 10);
+  return z * (0.35 + 0.65 * edge);
+}
 
-  // gaze target: cursor when fresh, slow wander when you walk away
-  const idleGaze = S.t - lastMove > 4;
-  const ty = idleGaze ? 0.25 * Math.sin(S.t * 0.35)
-                      : Math.max(-0.55, Math.min(0.55, (mx / innerWidth - 0.5) * 1.2));
-  const tp = idleGaze ? 0.10 * Math.sin(S.t * 0.23)
-                      : Math.max(-0.32, Math.min(0.32, (my / innerHeight - 0.5) * 0.75));
-  yaw += (ty - yaw) * 0.07; pitch += (tp - pitch) * 0.07;
+if (typeof THREE !== "undefined") initFace3D(); else initFaceFallback();
 
-  // ambient glow so the state color reads from across the room
-  const glow = ctx.createRadialGradient(CX, CY, 30, CX, CY, 260);
-  glow.addColorStop(0, `rgba(${r},${g},${b},${0.16 + S.amp * 0.22})`);
-  glow.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = glow; ctx.fillRect(0, 0, 520, 520);
+function initFace3D() {
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(520, 520, false);
+  renderer.setClearColor(0x000000, 0);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(40, 1, 10, 2000);
+  camera.position.z = 330;
+  const head = new THREE.Group();
+  scene.add(head);
 
-  // halo network first (behind the face)
-  ctx.lineWidth = 1;
-  for (const n of halo) {
-    n.x += n.vx; n.y += n.vy;
-    if (n.x < -20) { n.x = CX - 30 - Math.random() * 60; n.y = 60 + Math.random() * 400; }
-    for (const m of halo) {
-      const dx = n.x - m.x, dy = n.y - m.y, dd = dx * dx + dy * dy;
-      if (dd > 0 && dd < 3025) {
-        ctx.strokeStyle = `rgba(${r},${g},${b},${0.28 * (1 - dd / 3025)})`;
-        ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(m.x, m.y); ctx.stroke();
+  // build attributes: position, baked shade, kind (0 skin / 1 iris / 2 pupil / 3 mouth), seed, loose
+  const P = [], SH = [], K = [], SD = [], LO = [];
+  const STEP = 1.35, EPS = 1.2;
+  for (let y = -95; y <= 86; y += STEP) {
+    for (let x = -75; x <= 75; x += STEP) {
+      const z = faceDepth(x, y);
+      if (z === null) continue;
+      const zx1 = faceDepth(x + EPS, y), zx0 = faceDepth(x - EPS, y);
+      const zy1 = faceDepth(x, y + EPS), zy0 = faceDepth(x, y - EPS);
+      let s;
+      if (zx1 === null || zx0 === null || zy1 === null || zy0 === null) s = 0.75;
+      else {
+        const gx = (zx1 - zx0) / (2 * EPS), gy = (zy1 - zy0) / (2 * EPS);
+        const n = Math.sqrt(gx * gx + gy * gy + 1);
+        s = Math.max(0, (-gx / n) * -0.45 + (-gy / n) * -0.35 + (1 / n) * 0.82);
+      }
+      s = 0.22 + 0.78 * s;                       // ambient lift (kills ridge speckle)
+      const eye = Math.min(Math.hypot(x - 26, y + 17), Math.hypot(x + 26, y + 17));
+      let k = 0;
+      if (eye < 2.8) k = 2;
+      else if (eye < 8.5) k = 1;
+      else if (Math.abs(x) < 20 && y > 40 && y < 58) k = 3;
+      const w = faceWidth(y);
+      const lo = x < 0 ? Math.min(1, Math.max(0, (-x - (w - 14)) / 14)) * (0.3 + Math.random() * 0.7) : 0;
+      P.push(x, -y, z - 30);                     // three.js y is up
+      SH.push(s); K.push(k); SD.push(Math.random() * 10); LO.push(lo);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(P, 3));
+  geo.setAttribute("aShade", new THREE.Float32BufferAttribute(SH, 1));
+  geo.setAttribute("aKind", new THREE.Float32BufferAttribute(K, 1));
+  geo.setAttribute("aSeed", new THREE.Float32BufferAttribute(SD, 1));
+  geo.setAttribute("aLoose", new THREE.Float32BufferAttribute(LO, 1));
+
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: {
+      uTime: { value: 0 }, uAmp: { value: 0 }, uMode: { value: 0 },
+      uColor: { value: new THREE.Color() }, uGaze: { value: new THREE.Vector2() },
+      uPR: { value: renderer.getPixelRatio() },
+    },
+    vertexShader: `
+      attribute float aShade, aKind, aSeed, aLoose;
+      uniform float uTime, uAmp, uMode, uPR;
+      uniform vec2 uGaze;
+      varying float vShade, vKind, vSeed;
+      void main() {
+        vec3 p = position;
+        if (aLoose > 0.0) {                      // left edge dissolves
+          p.x -= aLoose * (26.0 + 18.0 * sin(uTime * 0.9 + aSeed));
+          p.y += aLoose * 12.0 * sin(uTime * 0.7 + aSeed * 2.0);
+          p.z += aLoose * 10.0 * cos(uTime * 0.6 + aSeed);
+        }
+        if (uMode > 1.5 && uMode < 2.5)          // thinking: surface shimmer
+          p.xy += 1.4 * vec2(sin(uTime * 4.0 + aSeed * 5.0), cos(uTime * 3.4 + aSeed * 4.0));
+        if (aKind > 1.5 && aKind < 2.5) p.xy += uGaze * 6.0;   // pupils lead
+        if (aKind > 2.5 && uMode > 2.5)          // lips ride the audio
+          p.y += sin(uTime * 26.0 + position.x * 0.35) * uAmp * 6.0;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_PointSize = uPR * (2.6 + aShade * 1.4) * (300.0 / -mv.z);
+        vShade = aShade; vKind = aKind; vSeed = aSeed;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor;
+      uniform float uAmp;
+      varying float vShade, vKind, vSeed;
+      void main() {
+        float jit = 0.85 + 0.30 * fract(sin(vSeed * 91.7) * 43758.5);
+        float s = vShade * jit * (1.0 + uAmp * 0.5);
+        vec3 col = mix(vec3(0.16, 0.30, 0.55), uColor, 0.45) * s * 1.35;
+        if (vKind > 0.5 && vKind < 1.5) col *= 0.30;                       // iris ring
+        if (vKind > 1.5 && vKind < 2.5) col = mix(uColor, vec3(1.0), 0.55) * 1.6;  // pupil
+        if (vKind > 2.5) col *= 1.0 + uAmp * 0.8;                          // lips
+        gl_FragColor = vec4(col, 0.85);
+      }`,
+  });
+  head.add(new THREE.Points(geo, mat));
+
+  // dissolved wireframe network drifting off to the left (scene space; doesn't turn)
+  const NODES = 90, MAXSEG = 500;
+  const nodes = Array.from({ length: NODES }, () => ({
+    x: -40 - Math.random() * 170, y: (Math.random() - 0.5) * 260,
+    z: (Math.random() - 0.5) * 60,
+    vx: -(0.10 + Math.random() * 0.30), vy: (Math.random() - 0.5) * 0.2,
+  }));
+  const nodeGeo = new THREE.BufferGeometry();
+  nodeGeo.setAttribute("position", new THREE.Float32BufferAttribute(new Float32Array(NODES * 3), 3));
+  const nodeMat = new THREE.PointsMaterial({ size: 2.6, transparent: true, opacity: 0.7,
+    blending: THREE.AdditiveBlending, depthWrite: false });
+  scene.add(new THREE.Points(nodeGeo, nodeMat));
+  const segGeo = new THREE.BufferGeometry();
+  segGeo.setAttribute("position", new THREE.Float32BufferAttribute(new Float32Array(MAXSEG * 6), 3));
+  const segMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.16,
+    blending: THREE.AdditiveBlending, depthWrite: false });
+  scene.add(new THREE.LineSegments(segGeo, segMat));
+
+  const MODE_N = { idle: 0, listening: 1, thinking: 2, speaking: 3 };
+  let yaw = 0.35, pitch = 0;
+  (function animate() {
+    S.t += 0.016;
+    const [r, g, b] = COLORS[S.mode] || COLORS.idle;
+    mat.uniforms.uColor.value.setRGB(r / 255, g / 255, b / 255);
+    nodeMat.color.setRGB(r / 255, g / 255, b / 255);
+    segMat.color.setRGB(r / 255, g / 255, b / 255);
+    mat.uniforms.uTime.value = S.t;
+    mat.uniforms.uAmp.value = S.amp;
+    mat.uniforms.uMode.value = MODE_N[S.mode] || 0;
+
+    // gaze: cursor when fresh; rest in the reference's 3/4 pose when you leave
+    const idleGaze = S.t - lastMove > 4;
+    const ty = idleGaze ? 0.35 + 0.16 * Math.sin(S.t * 0.3)
+                        : Math.max(-0.7, Math.min(0.7, (mx / innerWidth - 0.5) * 1.3));
+    const tp = idleGaze ? 0.06 * Math.sin(S.t * 0.23)
+                        : Math.max(-0.4, Math.min(0.4, (my / innerHeight - 0.5) * 0.8));
+    yaw += (ty - yaw) * 0.07; pitch += (tp - pitch) * 0.07;
+    head.rotation.y = yaw;
+    head.rotation.x = -pitch;
+    mat.uniforms.uGaze.value.set((ty - yaw) * 3 + yaw * 0.5, -(pitch * 0.6));
+    head.scale.setScalar(1 + 0.012 * Math.sin(S.t * (S.mode === "thinking" ? 3.6 : 1.4))
+                           + S.amp * 0.015);
+
+    // halo update
+    const np = nodeGeo.attributes.position.array;
+    const sp = segGeo.attributes.position.array;
+    let seg = 0;
+    for (let i = 0; i < NODES; i++) {
+      const n = nodes[i];
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < -260) { n.x = -50 - Math.random() * 40; n.y = (Math.random() - 0.5) * 260; }
+      np[i * 3] = n.x; np[i * 3 + 1] = n.y; np[i * 3 + 2] = n.z;
+      for (let j = i + 1; j < NODES && seg < MAXSEG; j++) {
+        const m = nodes[j];
+        const dx = n.x - m.x, dy = n.y - m.y;
+        if (dx * dx + dy * dy < 900) {
+          sp[seg * 6] = n.x; sp[seg * 6 + 1] = n.y; sp[seg * 6 + 2] = n.z;
+          sp[seg * 6 + 3] = m.x; sp[seg * 6 + 4] = m.y; sp[seg * 6 + 5] = m.z;
+          seg++;
+        }
       }
     }
-    ctx.fillStyle = `rgba(${r},${g},${b},0.55)`;
-    ctx.fillRect(n.x, n.y, n.s, n.s);
-  }
+    nodeGeo.attributes.position.needsUpdate = true;
+    segGeo.attributes.position.needsUpdate = true;
+    segGeo.setDrawRange(0, seg * 2);
 
-  // face voxels: rotate toward gaze, project, paint far-to-near
-  const cy_ = Math.cos(yaw), sy_ = Math.sin(yaw);
-  const cp = Math.cos(pitch), sp = Math.sin(pitch);
-  const breathe = 1 + 0.012 * Math.sin(S.t * (S.mode === "thinking" ? 3.6 : 1.4));
-  const think = S.mode === "thinking" ? 1 : 0;
-  const projected = [];
-  for (const v of voxels) {
-    let x = v.x, y = v.y, z = v.z - 27;      // recenters depth around 0
-    if (v.loose) {                            // dissolving left edge
-      x -= v.loose * (18 + 14 * Math.sin(S.t * 0.9 + v.seed));
-      y += v.loose * 10 * Math.sin(S.t * 0.7 + v.seed * 2);
-    }
-    if (think) {                              // thinking: the surface shimmers
-      x += 1.6 * Math.sin(S.t * 4 + v.seed * 5);
-      y += 1.6 * Math.cos(S.t * 3.4 + v.seed * 4);
-    }
-    let x1 = x * cy_ + z * sy_, z1 = -x * sy_ + z * cy_;
-    let y1 = y * cp - z1 * sp;  z1 = y * sp + z1 * cp;
-    let px = CX + x1 * breathe, py = CY + y1 * breathe;
-    if (v.kind === "pupil") { px += yaw * 26; py += pitch * 22; }  // eyes lead the turn
-    if (v.kind === "mouth" && S.mode === "speaking")
-      py += Math.sin(S.t * 26 + v.x * 0.3) * S.amp * 5;            // lips ride the audio
-    projected.push({ px, py, z1, v });
-  }
-  projected.sort((p, q) => p.z1 - q.z1);      // far first, nose paints last
-  for (const p of projected) {
-    const v = p.v;
-    const persp = 1 + p.z1 * 0.004;
-    const size = (2.6 + v.d * 0.42) * persp;
-    let lum = v.shade * (0.45 + v.d * 0.075) * (1 + S.amp * 0.5);
-    if (v.kind === "pupil") lum *= 1.9;
-    if (v.kind === "mouth") lum *= 1.15 + S.amp * 0.6;
-    ctx.fillStyle = `rgba(${Math.min(255, r * lum + 30)},${Math.min(255, g * lum + 30)},${
-      Math.min(255, b * lum + 34)},${Math.min(1, 0.35 + v.d * 0.09)})`;
-    ctx.fillRect(p.px - size / 2, p.py - size / 2, size, size);
-  }
-
-  S.amp *= 0.92; // decay toward calm
-  requestAnimationFrame(drawFace);
+    S.amp *= 0.92; // decay toward calm
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  })();
 }
-drawFace();
+
+function initFaceFallback() {
+  // three.js unreachable (offline?): a minimal pulse so state is still visible.
+  const ctx = canvas.getContext("2d");
+  errEl.textContent = "face needs internet once (three.js CDN) — voice still works";
+  (function pulse() {
+    S.t += 0.016;
+    ctx.clearRect(0, 0, 520, 520);
+    const [r, g, b] = COLORS[S.mode] || COLORS.idle;
+    const rad = 90 * (1 + 0.04 * Math.sin(S.t * 1.6)) * (1 + S.amp * 0.5);
+    const glow = ctx.createRadialGradient(260, 260, 10, 260, 260, rad * 2);
+    glow.addColorStop(0, `rgba(${r},${g},${b},0.8)`);
+    glow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(260, 260, rad * 2, 0, 7); ctx.fill();
+    S.amp *= 0.92;
+    requestAnimationFrame(pulse);
+  })();
+}
 
 // ------------------------------------------------------------------ log
 const logEl = document.getElementById("log");

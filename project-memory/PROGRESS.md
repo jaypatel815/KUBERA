@@ -3,6 +3,20 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T097 v2: the face grew up — sculpted 3D head on WebGL
+Owner: v1 too pixelated vs his reference. Rebuilt: continuous sculpted depth
+field (skull dome + ~18 gaussian features: brow/sockets/eyeballs/nose/lips/
+chin/cheekbones/temples), tuned across TWO offline render iterations (fixed
+nose-ridge shading discontinuity, deepened sockets, added iris ring + bright
+pupil) before porting constants to JS. Renderer: three.js r128 (CDN) Points —
+~12k GPU particles, baked Lambertian shading + ambient lift, additive glow,
+custom vertex shader does cursor-follow head rotation (rests in the reference's
+3/4 pose when idle), pupil lead, lip-sync from uAmp, thinking shimmer, and
+left-edge dissolve; drifting wireframe network in scene space. Fallback pulse
+if CDN unreachable — voice loop untouched either way. node --check on the
+inline script + verify gate PASS (497/3, frontend-only).
+Owner: hard-refresh (Ctrl+Shift+R) localhost:8000 — first load fetches three.js.
+
 ## 2026-08-14 — T097: KUBERA got a face — and it watches the cursor
 Owner sent a reference image (voxel head dissolving into a particle network) and
 asked for a face that follows the mouse. Shipped inside orb.html with ZERO
