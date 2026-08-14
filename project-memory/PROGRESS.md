@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — "Institutional precision" batch reviewed (D017): pillars validated, T080/T081 minted
+Owner's second batch (quant-fund framing). Verdict: the Three Pillars — E[X] over win
+rate, execution discipline, no-trade selectivity — are correct AND already our
+architecture (T077 / risk rails / T055); checklist section C was 100% already ticketed
+(T078/T079/T033/T035), which is convergent validation. NEW: T080 macro regime context
+(FRED: 10Y–2Y, VIXCLS, real rates — free + deterministic + dated) · T081 pairs/stat-arb
+template (cointegration screen, spread z-score MR, through the existing engine + T064
+gate). ENRICHED: T023 (earnings surprise/13F; news = context not alpha), T077 (seeded
+MC v2), T055 (confluence-score no-trade reason). REJECTED with reasons in the review
+doc: L2/DOM/dark-pool (D006 honesty), HMM now (unexplainable/untestable), sentiment-as-
+alpha, VIX term structure, all "bulletproof/99.9%" language. Binding record:
+docs/research/institutional-precision-review-2026-08-13.md.
+Verified: verify.py PASS — 234 passed, 3 skipped (memory/docs session).
+Next: build tickets unchanged — T051/T053 (regime pack) or T077/T078; T080 is a good
+quick win (pure httpx + FRED, no new architecture).
+Blockers: none.
+
 ## 2026-08-13 — Owner suggestion batch reconciled (D016): T075–T079 minted, four tickets sharpened
 Owner delivered a 5-part improvement review. Reconciled without duplication (dispositions
 binding in docs/research/owner-suggestions-2026-08-13.md): NEW T075 multi-timeframe

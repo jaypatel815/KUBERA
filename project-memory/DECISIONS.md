@@ -2,6 +2,22 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D017 — "Institutional precision" batch: adopt the pillars we already stand on, take the two free capabilities, reject the data-tier fantasies (2026-08-13)
+Owner's second batch of the day (Wall-Street-quant framing); binding dispositions in
+docs/research/institutional-precision-review-2026-08-13.md. The Three Pillars (E[X]
+over win rate · execution discipline · no-trade selectivity) VALIDATE the existing
+architecture (T077 / T033+T035+T043 / T055) — no new work. NEW: T080 macro regime
+context from FRED (10Y–2Y, VIXCLS, real rates — free, deterministic, dated) and T081
+pairs/stat-arb template (cointegration screen + spread z-score MR through the existing
+engine + T064 gate). ENRICHED: T023 (earnings surprise, 13F, news-as-context-not-alpha),
+T077 (seeded Monte Carlo v2), T055 (confluence-score no-trade reason; thresholds from
+backtests). REJECTED with reasons: L2/DOM/dark-pool feeds (D006 data honesty — can't
+fake microstructure from a ~3% volume sample), HMM regime models now (unexplainable,
+untestable by known answers; revisit only on T063 calibration evidence), sentiment-as-
+alpha framing, VIX term structure (needs futures data), and ALL "99.9% / bulletproof"
+language — 99.9% applies to discipline, never prediction; persona no-certainty rule
+is non-negotiable.
+
 ## D016 — Owner suggestion batch: sharper alpha, graduated risk, calibrated learning (2026-08-13)
 Owner delivered a 5-part improvement batch; per-item dispositions are binding in
 docs/research/owner-suggestions-2026-08-13.md. NEW tickets T075–T079 (multi-timeframe
