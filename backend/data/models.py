@@ -205,6 +205,10 @@ class SignalLog(Base):
     order_external_id: Mapped[str | None] = mapped_column(String(64), default=None)
     bars_asof: Mapped[datetime] = mapped_column(UTCDateTime)
     source: Mapped[str] = mapped_column(String(32))
+    # T091 attribution tags, captured AT decision time (nullable: older rows/sells)
+    regime_label: Mapped[str | None] = mapped_column(String(24), default=None)
+    sub_strategy: Mapped[str | None] = mapped_column(String(48), default=None)
+    entry_bucket: Mapped[str | None] = mapped_column(String(16), default=None)
 
 
 class Transaction(Base):
@@ -224,6 +228,9 @@ class Transaction(Base):
     price: Mapped[float] = mapped_column(Float)
     occurred_at: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
     source: Mapped[str] = mapped_column(String(32))
+    # T091: the broker ORDER id — the join key from a fill back to the logged
+    # decision (signal_log.order_external_id) that placed it
+    order_id: Mapped[str | None] = mapped_column(String(64), default=None, index=True)
 
 
 class DecisionJournal(Base):

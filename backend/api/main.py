@@ -322,6 +322,15 @@ def size_position(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/attribution")
+def attribution(session=Depends(get_db_session)) -> dict:
+    """Realized P&L by regime, router leg, and entry time — from real fills."""
+    try:
+        return registry.execute("get_attribution", {}, ToolContext(db=session))
+    except ToolError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
 @app.get("/api/risk")
 def risk_status(
     alpaca: AlpacaClient = Depends(get_alpaca_client),

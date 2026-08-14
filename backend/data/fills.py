@@ -46,6 +46,7 @@ def sync_fills(session: Session, client: AlpacaClient) -> FillSyncResult:
             price=f.price,
             occurred_at=f.occurred_at,
             source=f.source,
+            order_id=f.order_id or None,
         ))
         known.add(f.external_id)
         inserted += 1

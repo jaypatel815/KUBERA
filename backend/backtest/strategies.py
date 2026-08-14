@@ -152,8 +152,12 @@ def make_regime_router(lookback: int = 40, momentum_lookback: int = 60,
 
     def regime_router(closes: Sequence[float]) -> float:
         if _regime_lite(closes, lookback) in ("up", "down"):
+            regime_router.last_leg = "momentum"  # T091: which leg fired (introspection)
             return mom(closes)
+        regime_router.last_leg = "range"
         return rng(closes)
+
+    regime_router.last_leg = None
 
     regime_router.__name__ = f"regime_router_{lookback}_{momentum_lookback}"
     return regime_router

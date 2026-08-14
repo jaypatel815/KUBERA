@@ -101,6 +101,10 @@ http://127.0.0.1:8000/api/triage/SPY?entry_price=640        I'm IN the trade —
                                                             against the live exit plan; averaging down is never
                                                             called "lowering your average" — range adds only at
                                                             the edge, trend adds only on strength
+http://127.0.0.1:8000/api/attribution                       WHY is the money moving? realized P&L by regime,
+                                                            router leg, and time-of-entry — each round trip
+                                                            credited to the conditions that OPENED it; your
+                                                            manual trades show as "unattributed"
 http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
 http://127.0.0.1:8000/api/backtests                         the results ledger: every recorded backtest
 POST /api/backtests/run?strategy=momentum&symbol=SPY        run + record a backtest (use /docs to click it)

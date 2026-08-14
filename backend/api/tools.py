@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from analysis.attribution import AttributedFill, fifo_attribution
 from analysis.benchmark import compare
 from analysis.breakout import detect_breakouts
 from analysis.briefing import PositionContext, build_briefing
@@ -45,7 +46,7 @@ from data.journal import (
     summarize_decisions,
 )
 from data.market_data import MarketDataClient, MarketDataError
-from data.models import SignalLog
+from data.models import SignalLog, Transaction
 from risk.dqs import score_decisions
 from risk.engine import RiskEngine
 from risk.persistence import restore_risk_state
@@ -975,6 +976,58 @@ def _triage_position(ctx: ToolContext, p: TriageArgs) -> dict:
         "entry_price": p.entry_price,
         "asof": bars.asof.isoformat(),
         "source": bars.source,
+    }
+
+
+@registry.tool(
+    "get_attribution",
+    "WHY is the money moving? FIFO round-trip attribution from real fills: each "
+    "buy lot carries the tags of its entry decision (regime label, router leg, "
+    "session bucket — joined via order id); sells consume lots FIFO and credit "
+    "realized P&L to the ENTRY's tags. Answers 'is the regime classifier adding "
+    "value', 'which router leg earns', 'do mid-session entries beat the open'. "
+    "'unattributed' = manual trades. ALWAYS narrate counts with P&L — attribution "
+    "without sample size is a story, not evidence. Plus activity counts by tag.",
+    NoArgs,
+)
+def _get_attribution(ctx: ToolContext, _: NoArgs) -> dict:
+    db = ctx.require("db")
+
+    # entry-decision tags by order id (ordered rows only carry an order id)
+    tag_rows = db.execute(
+        select(SignalLog).where(SignalLog.order_external_id.is_not(None))
+    ).scalars().all()
+    tags_by_order = {
+        r.order_external_id: (r.regime_label, r.sub_strategy, r.entry_bucket)
+        for r in tag_rows
+    }
+
+    fills = db.execute(select(Transaction).order_by(Transaction.occurred_at)).scalars().all()
+    attributed = []
+    for f in fills:
+        # join key: the fill's ORDER id -> the logged decision that placed it
+        tag = tags_by_order.get(f.order_id or "")
+        regime, leg, bucket = tag if tag else (None, None, None)
+        attributed.append(AttributedFill(
+            symbol=f.symbol, side=f.side, qty=f.qty, price=f.price,
+            ts_iso=f.occurred_at.isoformat(),
+            regime=regime, sub_strategy=leg, entry_bucket=bucket,
+        ))
+    report = fifo_attribution(attributed)
+
+    # activity counts by tag (includes no_trade/rejected — the decisions themselves)
+    all_rows = db.execute(select(SignalLog)).scalars().all()
+    activity: dict = {}
+    for r in all_rows:
+        key = r.regime_label or "untagged"
+        slot = activity.setdefault(key, {})
+        slot[r.action] = slot.get(r.action, 0) + 1
+
+    return {
+        "attribution": asdict(report),
+        "activity_by_regime": activity,
+        "fills_analyzed": len(attributed),
+        "asof": datetime.now(timezone.utc).isoformat(),
     }
 
 

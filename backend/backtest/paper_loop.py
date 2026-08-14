@@ -17,7 +17,7 @@ path (§7.4 rail), and every order passes the fail-closed RiskEngine first.
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -37,6 +37,22 @@ log = logging.getLogger("kubera.paper_loop")
 
 MIN_TRADE_VALUE = 100.0  # ignore dust rebalances below this notional
 ATR_WINDOW = 14  # bars for the vol-parity sizer (T078); buys need ATR_WINDOW+1 bars
+
+
+def _entry_bucket(now_utc: datetime) -> str:
+    """ET session bucket for attribution (T091): where in the day did this happen?"""
+    from analysis.intraday import ET
+
+    t = now_utc.astimezone(ET).time()
+    if t < time(9, 30):
+        return "pre"
+    if t < time(10, 30):
+        return "first_hour"
+    if t < time(14, 30):
+        return "midday"
+    if t < time(16, 0):
+        return "last_90"
+    return "post"
 
 
 @dataclass(frozen=True)
@@ -133,6 +149,11 @@ def run_paper_cycle(
     persist_risk_state(db, risk)
 
     strategy_name = getattr(strategy, "__name__", "strategy")
+    # T091 attribution tags: which router leg fired, when in the session, and
+    # (filled in below for buys) what regime the classifier saw at decision time.
+    sub_strategy = getattr(strategy, "last_leg", None)
+    entry_bucket = _entry_bucket(datetime.now(timezone.utc))
+    regime_label: str | None = None
 
     def log_row(action: str, reasons: str | None, order_id: str | None) -> None:
         db.add(SignalLog(
@@ -140,6 +161,8 @@ def run_paper_cycle(
             equity=acct.equity, current_value=current_value, target_value=target_value,
             action=action, reasons=reasons, order_external_id=order_id,
             bars_asof=bars.asof, source=bars.source,
+            regime_label=regime_label, sub_strategy=sub_strategy,
+            entry_bucket=entry_bucket,
         ))
         db.commit()
 
@@ -227,6 +250,7 @@ def run_paper_cycle(
                 highs, lows, closes, [b.volume for b in bars.bars],
                 [b.date for b in bars.bars], volume_feed=bars.source,
             )
+            regime_label = reading.regime  # persisted on every row from here (T091)
             if (reading.rvol is not None and reading.rvol < eff_rvol_floor
                     and reading.range_width_percentile is not None
                     and reading.range_width_percentile <= 0.25):
