@@ -6,6 +6,7 @@ from test_alpaca import paper_settings
 
 from data.market_data import (
     DATA_BASE_URL,
+    MAX_DATA_AGE_SECONDS,
     MarketDataClient,
     MarketDataError,
     parse_rfc3339,
@@ -81,6 +82,43 @@ def test_latest_quote_parses_bid_ask():
     assert q.ask == pytest.approx(229.85)
     assert q.ask_size == 3
     assert q.exchange_ts.tzinfo is not None
+
+
+def test_old_exchange_event_is_flagged_stale():
+    # fixture timestamp is days old relative to "now" -> stale by definition (D018)
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=TRADE_JSON)
+
+    with make_client(handler) as c:
+        trade = c.get_latest_trade("AAPL")
+    assert trade.age_seconds > MAX_DATA_AGE_SECONDS
+    assert trade.stale is True
+
+
+def test_fresh_exchange_event_is_not_stale():
+    from datetime import datetime, timezone
+
+    fresh = {
+        "symbol": "AAPL",
+        "trade": {"t": datetime.now(timezone.utc).isoformat(), "p": 1.0, "s": 1},
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=fresh)
+
+    with make_client(handler) as c:
+        trade = c.get_latest_trade("AAPL")
+    assert 0 <= trade.age_seconds < MAX_DATA_AGE_SECONDS
+    assert trade.stale is False
+
+
+def test_quote_carries_staleness_too():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=QUOTE_JSON)
+
+    with make_client(handler) as c:
+        q = c.get_latest_quote("AAPL")
+    assert q.stale is True and q.age_seconds > 0
 
 
 def test_daily_bars_parses_and_dates():

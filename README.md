@@ -136,7 +136,18 @@ default, Aria for a female voice). `KUBERA_STT=openai` if local Whisper won't in
 Replies come back voice-shaped: no tables, numbers rounded for the ear. Typing `confirm`
 before a turn is the ONLY way to send a confirmed request — saying "yes" never is.
 
-Run the full test suite any time: `python scripts\verify.py` (190+ tests; a few live ones
+**Keep it safe on autopilot** (each docstring has the Task Scheduler one-liner):
+
+```
+python scripts\backup_db.py                # timestamped DB backup, keeps newest 14
+python scripts\health_check.py --notify    # server up? breaker tripped? sync fresh?
+                                           # exit 1 + Windows toast on problems
+```
+
+Every live quote now carries `age_seconds` and a `stale` flag (older than 15 min —
+normal outside market hours): KUBERA is told to never present stale data as live.
+
+Run the full test suite any time: `python scripts\verify.py` (280+ tests; a few live ones
 run only when keys + internet are available). If local Python ever breaks:
 `powershell -ExecutionPolicy Bypass -File scripts\repair_python.ps1`.
 

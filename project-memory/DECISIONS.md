@@ -2,6 +2,23 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D018 — Cross-agent review: build the small safety nets now, vote the backlog order, park Schwab (2026-08-13)
+Owner uploaded a repo-aware review (dispositions binding in docs/research/
+agent-review-2026-08-13.md). BUILT same-session: stale-data detection
+(age_seconds+stale on latest trade/quote, MAX_DATA_AGE_SECONDS=900, tool told to
+never present stale as live), scripts/backup_db.py (timestamped, --keep 14,
+backups/ git-ignored), scripts/health_check.py (server/breaker/sync-freshness,
+exit code + best-effort toast). ADOPTED as build order: T052 → T055 → T077 →
+T067/T062; "no new strategy templates before the no-trade condition" — T054 lands
+with/after T055. ENRICHED: T064 promotion_status enforced in the loop, T063
+follow/override tracking, T036 entry-delay + session-aware staleness, T079
+unblocked from T023, T060 priority-on-first-deposit. NEW: T082 Orb upgrade pack
+(conversations list endpoint + sidebar, portfolio panel, feed/stale badges) —
+flagged for Gemini. OWNER DIRECTIVE: Schwab approval pending → T016 PARKED,
+Alpaca continues. DEFERRED with reasons: Postgres migration (write volume is
+trivial; real trigger = T052 minute-bar storage or Phase 7 pgvector — decide on
+evidence then).
+
 ## D017 — "Institutional precision" batch: adopt the pillars we already stand on, take the two free capabilities, reject the data-tier fantasies (2026-08-13)
 Owner's second batch of the day (Wall-Street-quant framing); binding dispositions in
 docs/research/institutional-precision-review-2026-08-13.md. The Three Pillars (E[X]

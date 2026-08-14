@@ -21,6 +21,12 @@ DATA_BASE_URL = "https://data.alpaca.markets"
 FEED = "iex"  # free tier (D006); "sip" requires a paid subscription
 SOURCE = f"alpaca-data-{FEED}"
 
+# Stale-data detection (D018): if the exchange event behind a "latest" quote/trade is
+# older than this, the payload is flagged stale and KUBERA must not treat it as live.
+# Age is exchange_ts -> fetch time; weekends/after-hours will read stale BY DESIGN —
+# "this price is from Friday" is exactly what the user should be told.
+MAX_DATA_AGE_SECONDS = 900.0  # 15 minutes
+
 _FRACTION_RE = re.compile(r"\.(\d+)")
 
 
@@ -45,6 +51,8 @@ class LatestTrade:
     size: float
     exchange_ts: datetime
     asof: datetime
+    age_seconds: float  # asof - exchange_ts; how old the market event actually is
+    stale: bool         # age_seconds > MAX_DATA_AGE_SECONDS — never present as live
     source: str = SOURCE
 
 
@@ -57,7 +65,14 @@ class LatestQuote:
     ask_size: float
     exchange_ts: datetime
     asof: datetime
+    age_seconds: float
+    stale: bool
     source: str = SOURCE
+
+
+def _age_and_staleness(exchange_ts: datetime, asof: datetime) -> tuple[float, bool]:
+    age = (asof - exchange_ts).total_seconds()
+    return age, age > MAX_DATA_AGE_SECONDS
 
 
 @dataclass(frozen=True)
@@ -115,26 +130,36 @@ class MarketDataClient:
         symbol = symbol.upper()
         d = self._get(f"/v2/stocks/{symbol}/trades/latest", params={"feed": FEED})
         t = d["trade"]
+        exchange_ts = parse_rfc3339(t["t"])
+        asof = datetime.now(timezone.utc)
+        age, stale = _age_and_staleness(exchange_ts, asof)
         return LatestTrade(
             symbol=symbol,
             price=float(t["p"]),
             size=float(t["s"]),
-            exchange_ts=parse_rfc3339(t["t"]),
-            asof=datetime.now(timezone.utc),
+            exchange_ts=exchange_ts,
+            asof=asof,
+            age_seconds=age,
+            stale=stale,
         )
 
     def get_latest_quote(self, symbol: str) -> LatestQuote:
         symbol = symbol.upper()
         d = self._get(f"/v2/stocks/{symbol}/quotes/latest", params={"feed": FEED})
         q = d["quote"]
+        exchange_ts = parse_rfc3339(q["t"])
+        asof = datetime.now(timezone.utc)
+        age, stale = _age_and_staleness(exchange_ts, asof)
         return LatestQuote(
             symbol=symbol,
             bid=float(q["bp"]),
             bid_size=float(q["bs"]),
             ask=float(q["ap"]),
             ask_size=float(q["as"]),
-            exchange_ts=parse_rfc3339(q["t"]),
-            asof=datetime.now(timezone.utc),
+            exchange_ts=exchange_ts,
+            asof=asof,
+            age_seconds=age,
+            stale=stale,
         )
 
     def get_daily_bars(self, symbol: str, days: int = 30) -> DailyBars:

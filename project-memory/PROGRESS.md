@@ -3,6 +3,28 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-13 — D018: cross-agent review reconciled + three safety nets built
+Owner uploaded a repo-aware review (best one yet — it read our memory files). ~70% was
+priority votes on existing tickets (accepted: T052 → T055 → T077 → T067/T062; no new
+strategy templates before the no-trade condition). BUILT the genuinely-new small items
+same-session: (1) stale-data detection — latest trade/quote now carry age_seconds +
+stale (>15 min), get_latest tool instructed to never present stale as live (session-
+aware upgrade parked in T036); (2) scripts/backup_db.py — timestamped copies, --keep 14,
+backups/ git-ignored, Task Scheduler line in docstring; (3) scripts/health_check.py —
+server up / breaker tripped (reads risk_state directly, works with server down) / sync
+freshness, exit code + best-effort Windows toast via --notify. Enriched T016 (PARKED:
+Schwab approval pending — owner directive, Alpaca continues), T036, T060, T063, T064
+(promotion_status enforced in loop), T079 (unblocked from T023); minted T082 Orb
+upgrade pack (conversations sidebar + portfolio panel + feed badges — Gemini bait).
+Postgres deferred on evidence (see D018). Dispositions: docs/research/
+agent-review-2026-08-13.md.
+Verified: verify.py PASS (full suite green; +8 tests: stale flags, backup retention,
+health checks).
+Next: T054+T055 together (range strategy + router + no-trade), or T052 intraday first
+per the adopted order. Owner: schedule the two scripts (docstrings have the commands);
+T005 push remains the highest-value 5-minute action.
+Blockers: none.
+
 ## 2026-08-13 — T053 done: breakout detector — escape + volume + HOLD, as events
 analysis/breakout.py scans daily bars for fresh range escapes (a bar whose close exits
 the prior L-bar extremes while the previous bar hadn't — continuations extend, never

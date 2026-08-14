@@ -195,7 +195,10 @@ def _get_portfolio(ctx: ToolContext, _: NoArgs) -> dict:
 @registry.tool(
     "get_latest",
     "Latest trade price and level-1 bid/ask for one symbol, with exchange and fetch "
-    "timestamps (free IEX feed).",
+    "timestamps (free IEX feed). Each payload carries age_seconds and a stale flag "
+    "(exchange event older than 15 min — normal outside market hours). NEVER present "
+    "stale data as live, and never base a trade recommendation on it without saying "
+    "exactly how old it is.",
     SymbolArgs,
 )
 def _get_latest(ctx: ToolContext, p: SymbolArgs) -> dict:
