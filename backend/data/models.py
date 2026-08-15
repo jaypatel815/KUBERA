@@ -243,6 +243,10 @@ class SignalLog(Base):
     regime_label: Mapped[str | None] = mapped_column(String(24), default=None)
     sub_strategy: Mapped[str | None] = mapped_column(String(48), default=None)
     entry_bucket: Mapped[str | None] = mapped_column(String(16), default=None)
+    # T088 execution quality: the price the DECISION was made on. Compared to
+    # the eventual fill, this is implementation shortfall — the gap between the
+    # trade you designed and the trade you got.
+    decision_price: Mapped[float | None] = mapped_column(Float, default=None)
 
 
 class Transaction(Base):

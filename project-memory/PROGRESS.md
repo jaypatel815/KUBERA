@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T088: "never buy the open print" gets a scoreboard
+The doctrine has been a belief; this makes it falsifiable with the owner's own
+money. Every ordered signal now stores the price the DECISION was made on
+(new decision_price column, filled by the loop); analysis/execution.py
+measures the gap to the actual fill as implementation shortfall in bps, with
+a side-aware sign convention pinned by four hand tests: positive ALWAYS means
+the execution cost you, whether buying or selling. Grouped by time-of-day
+bucket (T091's entry buckets) and side, with thin buckets explicitly labeled
+"anecdotes, not evidence" below 5 fills — a rule that matters more here than
+anywhere, because the temptation is to conclude "mornings are expensive" from
+two trades. Tool #32 joins signal_log.order_external_id ↔ transactions.order_id,
+counts orders whose fills haven't synced yet, and treats an empty history as a
+calm answer rather than an error.
+Verified: verify.py PASS — 608 passed (+12), 3 skipped.
+Next: T089 live MAE/MFE (same fills dependency), T072 human-grade TTS, or
+T082 Orb pack. Owner unlocks still the real bottleneck.
+
 ## 2026-08-14 — T060: the deposit that must not look like skill
 Built ahead of the trigger (D018 said this jumps the queue on the first
 deposit — better to have it correct BEFORE money moves than to discover the

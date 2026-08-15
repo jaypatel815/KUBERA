@@ -447,6 +447,16 @@ def watchlist_remove(symbol: str, db=Depends(get_db_session)) -> dict:
         raise HTTPException(status_code=422, detail=str(e))
 
 
+@app.get("/api/execution-quality")
+def execution_quality(days: int = 90, session=Depends(get_db_session)) -> dict:
+    """T088: implementation shortfall by time-of-day, from real fills."""
+    try:
+        return registry.execute("get_execution_quality", {"days": days},
+                                ToolContext(db=session))
+    except (ToolError, ToolArgumentError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
 @app.get("/api/portfolio-risk")
 def portfolio_risk_endpoint(
     days: int = 130,

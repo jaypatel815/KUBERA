@@ -122,7 +122,18 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
   `KUBERA_TOOL_PROFILE=auto|full|core` overrides either way; unknown values
   degrade to auto rather than killing a session. Guard test asserts CORE ⊆
   registry so a rename can't silently shrink a small brain. 11 tests.
-- [ ] T088 — Execution quality (D020, dep T036): fills gain signal_price/submitted_price/fill_price + slippage_bps; implementation-shortfall + time-of-day fill-quality reports ("don't buy the open" becomes evidence, not heuristic).
+- [x] T088 — Execution quality — DONE 2026-08-14 (Claude/Cowork):
+  `signal_log.decision_price` (migration 00c4e1efd5c4) records the price each
+  decision was made on; the loop fills it on every row. `analysis/execution.py`
+  — slippage_bps with a SIDE-AWARE convention (positive ALWAYS = cost, both
+  sides; hand-tested 4 ways), implementation shortfall in dollars, grouping by
+  T091 entry bucket and side, MIN_BUCKET_SAMPLE=5 marking thin buckets as
+  "anecdotes, not evidence". Tool #32 get_execution_quality joins
+  signal_log.order_external_id ↔ transactions.order_id + GET
+  /api/execution-quality; unmatched orders are counted and named (fills arrive
+  after execution — run sync.py). Empty state is a calm answer, not an error.
+  ⇒ "never buy the open print" becomes measurable from the owner's own fills
+  once enough accumulate.
 - [ ] T089 — Live MAE/MFE (D020, dep T036): extend trade_excursions to live positions with intraday extremes; winners'-MAE stop-calibration line joins the T062 weekly review.
 - [x] T090 — Liquidity-aware costs — DONE 2026-08-14 (Claude/Cowork):
   `analysis/liquidity.py` (spread_bps, half-spread per-side cost with 0.5bps

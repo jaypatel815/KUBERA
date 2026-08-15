@@ -168,6 +168,9 @@ def run_paper_cycle(
             bars_asof=bars.asof, source=bars.source,
             regime_label=regime_label, sub_strategy=sub_strategy,
             entry_bucket=entry_bucket,
+            # T088: the price this decision was made on — the baseline the
+            # eventual fill is measured against (implementation shortfall).
+            decision_price=last_price,
         ))
         db.commit()
 

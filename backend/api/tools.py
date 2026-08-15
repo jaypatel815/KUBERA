@@ -10,7 +10,7 @@ LLM function-calling APIs consume (Anthropic/OpenAI/Gemini formats derive direct
 """
 
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
 import httpx
@@ -25,6 +25,7 @@ from analysis.briefing import PositionContext, build_briefing
 from analysis.confluence import assess_confluence
 from analysis.correlation import log_returns, overlap_report, pearson
 from analysis.events import upcoming_events
+from analysis.execution import ExecutionFill, execution_report
 from analysis.exit_plan import build_exit_plan
 from analysis.expected_move import expected_move
 from analysis.goal_math import goal_scenarios
@@ -1235,6 +1236,67 @@ def _get_watchlist(ctx: ToolContext, _: NoArgs) -> dict:
         "ranked": [{**asdict(r), **meta.get(r.symbol, {})} for r in ranked],
         "asof": datetime.now(timezone.utc).isoformat(),
         "source": "alpaca-data-iex",
+    }
+
+
+class ExecutionArgs(LenientArgs):
+    days: int = Field(default=90, ge=1, le=1825,
+                      description="Look-back window over recorded fills")
+
+
+@registry.tool(
+    "get_execution_quality",
+    "Did you get the trade you designed? (T088) Joins each ORDERED signal to "
+    "its actual fill and reports implementation shortfall in basis points — "
+    "positive ALWAYS means the execution cost you — with breakdowns by "
+    "time-of-day bucket and side. This is how 'never buy the open print' "
+    "becomes evidence from the owner's own fills instead of a slogan. Thin "
+    "buckets are labeled: say 'anecdote, not evidence' when the sample is "
+    "small. No fills yet is a normal answer, not an error.",
+    ExecutionArgs,
+)
+def _get_execution_quality(ctx: ToolContext, p: ExecutionArgs) -> dict:
+    db = ctx.require("db")
+    cutoff = datetime.now(timezone.utc) - timedelta(days=p.days)
+    signals = db.execute(
+        select(SignalLog).where(
+            SignalLog.action == "ordered",
+            SignalLog.ts >= cutoff,
+            SignalLog.order_external_id.is_not(None),
+            SignalLog.decision_price.is_not(None),
+        )
+    ).scalars().all()
+    by_order = {s.order_external_id: s for s in signals}
+    unmatched = 0
+    fills: list[ExecutionFill] = []
+    if by_order:
+        txs = db.execute(
+            select(Transaction).where(Transaction.order_id.in_(list(by_order)))
+        ).scalars().all()
+        matched_orders = {t.order_id for t in txs}
+        unmatched = len(set(by_order) - matched_orders)
+        for t in txs:
+            s = by_order.get(t.order_id)
+            if s is None:
+                continue
+            fills.append(ExecutionFill(
+                symbol=t.symbol, side=t.side, qty=t.qty,
+                decision_price=s.decision_price, fill_price=t.price,
+                bucket=s.entry_bucket,
+                occurred_at=t.occurred_at.isoformat(),
+            ))
+    report = execution_report(fills)
+    warnings = list(report.warnings)
+    if unmatched:
+        warnings.append(
+            f"{unmatched} ordered signal(s) have no synced fill yet — run "
+            "scripts/sync.py (fills arrive after execution)")
+    return {
+        **asdict(report),
+        "warnings": warnings,
+        "window_days": p.days,
+        "asof": datetime.now(timezone.utc).isoformat(),
+        "source": "signal_log + transactions",
     }
 
 
