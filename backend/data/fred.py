@@ -29,6 +29,14 @@ SERIES = {
     "fed_funds": "DFF",
 }
 
+# T076: release calendars for the event-risk guard. FRED release ids are stable
+# and documented; include_release_dates_with_no_data returns SCHEDULED future
+# dates. FOMC meetings are not a FRED release — that source decision is T076b.
+RELEASES = {
+    "CPI": 10,                      # Consumer Price Index
+    "Employment Situation": 50,     # the NFP report
+}
+
 
 class FredError(RuntimeError):
     """FRED API failure; message includes status and hint."""
@@ -92,3 +100,31 @@ class FredClient:
                     asof=datetime.now(timezone.utc),
                 )
         raise FredError(f"no usable observations returned for '{series_id}'")
+
+    def release_dates(self, release_id: int, limit: int = 40) -> list[str]:
+        """Release dates (newest first), INCLUDING scheduled future dates."""
+        r = self._http.get(
+            "/fred/release/dates",
+            params={
+                "release_id": release_id,
+                "api_key": self._api_key,
+                "file_type": "json",
+                "include_release_dates_with_no_data": "true",
+                "sort_order": "desc",
+                "limit": limit,
+            },
+        )
+        if r.status_code == 400:
+            raise FredError(
+                f"FRED rejected release_dates for id {release_id} (400) — check "
+                "the release id and that FRED_API_KEY is valid"
+            )
+        if r.status_code != 200:
+            raise FredError(
+                f"FRED error {r.status_code} for release {release_id}: {r.text[:200]}"
+            )
+        return [d["date"] for d in r.json().get("release_dates", []) if d.get("date")]
+
+    def release_calendar(self) -> dict[str, list[str]]:
+        """All guarded releases -> their dates. Feeds analysis/events.py."""
+        return {name: self.release_dates(rid) for name, rid in RELEASES.items()}

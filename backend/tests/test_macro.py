@@ -103,6 +103,9 @@ VALUES = {"T10Y2Y": "-0.10", "VIXCLS": "22.5", "DFII10": "1.9", "DFF": "4.33"}
 
 
 def routing_handler(request: httpx.Request) -> httpx.Response:
+    if "/fred/release/dates" in request.url.path:   # T076 calendar
+        return httpx.Response(200, json={"release_dates": [
+            {"date": "2099-01-15"}]})
     sid = request.url.params["series_id"]
     return httpx.Response(200, json=obs_json([("2026-08-12", VALUES[sid])]))
 
@@ -113,6 +116,8 @@ def test_get_macro_context_tool():
     m = out["macro"]
     assert {r["name"] for r in m["reads"]} == set(SERIES)
     assert m["caution_count"] == 2  # inverted curve + elevated VIX; real rate 1.9 ok
+    assert "upcoming_releases" in m  # T076: calendar surfaced (2099 is out of horizon)
+    assert m["upcoming_releases"] == []
     assert out["source"] == "fred" and out["asof"]
 
 

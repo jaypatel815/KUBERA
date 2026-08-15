@@ -13,6 +13,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable
 
+import httpx
 from pydantic import BaseModel, Field, ValidationError, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -23,6 +24,7 @@ from analysis.breakout import detect_breakouts
 from analysis.briefing import PositionContext, build_briefing
 from analysis.confluence import assess_confluence
 from analysis.correlation import log_returns, overlap_report, pearson
+from analysis.events import upcoming_events
 from analysis.exit_plan import build_exit_plan
 from analysis.expected_move import expected_move
 from analysis.goal_math import goal_scenarios
@@ -44,7 +46,7 @@ from analysis.triage import triage_position
 from backtest.ledger import run_and_record
 from backtest.strategies import TEMPLATES, build_strategy
 from data.alpaca import AlpacaClient
-from data.fred import SERIES, FredClient
+from data.fred import SERIES, FredClient, FredError
 from data.history import equity_history
 from data.ips import get_ips, ips_as_dict, upsert_ips
 from data.journal import (
@@ -608,8 +610,17 @@ def _get_macro_context(ctx: ToolContext, _: NoArgs) -> dict:
         real_rate=(obs["real_rate_10y"].date, obs["real_rate_10y"].value),
         fed_funds=(obs["fed_funds"].date, obs["fed_funds"].value),
     )
+    # T076: surface scheduled event risk with dates — CONTEXT, not prediction.
+    # Calendar failure degrades to a note; the core macro reads still deliver.
+    try:
+        events = [asdict(e) for e in upcoming_events(
+            fred.release_calendar(), datetime.now(timezone.utc).date())]
+        events_note = None
+    except (FredError, httpx.HTTPError) as e:
+        events, events_note = [], f"release calendar unavailable: {e}"
     return {
-        "macro": asdict(context),
+        "macro": {**asdict(context), "upcoming_releases": events,
+                  "upcoming_releases_note": events_note},
         "asof": obs["vix"].asof.isoformat(),
         "source": "fred",
     }

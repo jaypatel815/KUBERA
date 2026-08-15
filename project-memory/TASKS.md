@@ -21,7 +21,22 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 - [ ] (future, logged) Options awareness: theta/IV warnings in low-vol regimes live in the doctrine; full options analytics is a separate future phase — do not build ad hoc.
 
 ## Backlog — Owner suggestion batch 2026-08-13 (docs/research/owner-suggestions-2026-08-13.md — read dispositions first; D016)
-- [ ] T076 — Event-risk guard: economic calendar (FRED releases — owner has key per D009; earnings dates via T023's chosen source) → paper loop pauses new entries / scales size in a configurable window before FOMC/CPI/NFP/earnings-for-held-symbols; logged as a first-class no-trade reason (T055 taxonomy); briefings surface upcoming event risk with dates. Sell-the-news caution (D019): pre-event runup above threshold + rich expected-move pricing ⇒ "priced-for-perfection" flag in guard reasons and briefings.
+- [x] T076 — Event-risk guard (CPI/NFP half) — DONE 2026-08-14 (Claude/Cowork):
+  `analysis/events.py` (pure calendar-day math: upcoming_events horizon list +
+  entry_guard window reasons, fixed-date hand tests incl. window-0 semantics);
+  `data/fred.py` release_dates via /fred/release/dates with
+  include_release_dates_with_no_data (scheduled FUTURE dates; CPI=10,
+  Employment Situation=50; actionable 400 errors); paper loop gains
+  event_dates/event_window_days — a first-class T055 no-trade reason for BUYS
+  only ("event window: CPI release … — new entries paused"); paper_trade.py
+  arms the guard at startup when FRED_API_KEY exists (--event-window,
+  --no-event-guard); get_macro_context surfaces upcoming_releases with a
+  degrade-to-note on calendar failure.
+- [ ] T076b — Event guard follow-ups: FOMC meeting dates (NOT a FRED release —
+  needs a source decision: annual Fed schedule table vs scraping, owner input
+  welcome); earnings dates for held symbols (dep T023 tier answer);
+  sell-the-news "priced-for-perfection" flag (pre-event runup + rich
+  expected-move pricing, D019) in guard reasons and briefings.
 - [ ] T077b — Expected-move v2 (after T077 proves out): seeded block-bootstrap Monte Carlo paths (deterministic given seed, D017); swap the paper loop's ATR cost-floor proxy for the T077 expected-move estimate; wire bands into T056 exit plans and the briefing composer.
 - [x] T079 — Correlation & overlap guard — DONE 2026-08-14 (Claude/Cowork):
   `analysis/correlation.py` (pearson/beta/log_returns pure + hand-tested: y=2x→1.0,

@@ -22,6 +22,7 @@ from datetime import datetime, time, timezone
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from analysis.events import entry_guard
 from analysis.metrics import atr
 from analysis.regime import classify_regime
 from backtest.engine import Strategy
@@ -87,6 +88,10 @@ def run_paper_cycle(
     # T036 — market-hours guard + entry timing ("never the open print"):
     enforce_market_hours: bool = False,
     entry_delay_minutes: int = 0,
+    # T076 — event-risk guard: release calendar (name -> dates) pauses NEW
+    # entries within event_window_days before/on a release. Sells unaffected.
+    event_dates: dict | None = None,
+    event_window_days: int = 1,
 ) -> CycleResult:
     if not 0 < allocation_frac <= 1:
         raise ValueError(f"allocation_frac must be in (0, 1], got {allocation_frac}")
@@ -239,6 +244,11 @@ def run_paper_cycle(
                 f"overtrading guard: {ordered_today} orders already placed today "
                 f"(max {max_trades_per_day}) — the biggest enemy is overtrading"
             )
+        if event_dates:
+            for r in entry_guard(event_dates, datetime.now(timezone.utc).date(),
+                                 window_before=event_window_days):
+                no_trade.append(
+                    r + " — new entries paused into scheduled event risk (T076)")
         atr_frac = atr_value / last_price
         if atr_frac < eff_min_atr_frac:
             no_trade.append(

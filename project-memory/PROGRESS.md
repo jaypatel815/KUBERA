@@ -3,6 +3,22 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T076: don't open new risk into a known storm
+The event-risk guard, CPI/NFP half. FRED's release-dates API (with
+include_release_dates_with_no_data, which returns SCHEDULED future dates)
+feeds pure calendar math in analysis/events.py; the paper loop now pauses NEW
+entries within a configurable window before/on CPI and Employment Situation
+releases — a first-class T055 no-trade reason, buys only, sells structurally
+untouched (the whole block lives in the buy branch). paper_trade.py arms the
+guard automatically when FRED_API_KEY is present and says so at startup;
+get_macro_context surfaces the upcoming calendar with dates (degrades to a
+note if the calendar endpoint fails — core macro reads still deliver). Both
+loop paths tested end-to-end: release-today → no_trade with the reason;
+clear calendar → order placed. FOMC dates are NOT in FRED — that source
+decision + earnings dates + the sell-the-news flag are minted as T076b.
+Verified: verify.py PASS — 562 passed (+6), 3 skipped.
+Next: T060 TWR (jumps the queue on first deposit) or owner's T023 FMP answer.
+
 ## 2026-08-14 — T068: the watchlist ranks itself — a pipeline, not a pile
 Research candidates now arrive RANKED. watchlist table + CRUD (idempotent
 add carries the owner's thesis note); analysis/ranking.py scores the list

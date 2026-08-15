@@ -45,12 +45,31 @@ def main() -> int:
     parser.add_argument("--entry-delay", type=int, default=30, metavar="MIN",
                         help="no new buys in the first MIN minutes after the open "
                              "(doctrine: never the open print; 0 disables)")
+    parser.add_argument("--event-window", type=int, default=1, metavar="DAYS",
+                        help="pause new buys this many days before CPI/NFP "
+                             "releases (T076)")
+    parser.add_argument("--no-event-guard", action="store_true",
+                        help="skip the scheduled-event pause (not recommended)")
     args = parser.parse_args()
 
     strategy = build_strategy(args.strategy)
     engine = make_engine()
     factory = make_session_factory(engine)
     risk = RiskEngine()  # per-process; trip state persistence is future work (see T032 notes)
+
+    # T076: fetch the release calendar once at startup (dates don't move intraday).
+    event_dates = None
+    if not args.no_event_guard:
+        try:
+            from data.fred import FredClient  # noqa: PLC0415
+            with FredClient() as fred:
+                event_dates = fred.release_calendar()
+            n = sum(len(v) for v in event_dates.values())
+            print(f"event guard armed: {n} release dates loaded "
+                  f"(window {args.event_window}d before CPI/NFP)")
+        except Exception as e:  # noqa: BLE001 — guard is optional, never fatal
+            print(f"event guard OFF ({type(e).__name__}: add FRED_API_KEY to "
+                  ".env to enable) — continuing without it")
 
     while True:
         with AlpacaClient() as alpaca, MarketDataClient() as market, factory() as db:
@@ -59,7 +78,9 @@ def main() -> int:
                                 require_promotion=not args.skip_promotion_gate,
                                 template=args.strategy,
                                 enforce_market_hours=not args.after_hours,
-                                entry_delay_minutes=args.entry_delay)
+                                entry_delay_minutes=args.entry_delay,
+                                event_dates=event_dates,
+                                event_window_days=args.event_window)
             print(f"[{r.action.upper()}] {args.strategy} on {r.symbol}: "
                   f"weight={r.signal_weight:.2f} current={r.current_value:.2f} "
                   f"target={r.target_value:.2f} — {r.detail}")
