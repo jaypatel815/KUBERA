@@ -150,7 +150,18 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 - [ ] T016 — Schwab Trader API read-only sync (owner's real thinkorswim account): positions + balances alongside Alpaca paper, same timestamped model shapes. STATUS (owner, 2026-08-13 / D018): Schwab developer approval still pending — PARKED until the owner reports approval; Alpaca remains the working broker. Then: agent verifies current API capabilities (paper endpoint? scopes?) before building. Live orders out of scope pending §7.4. (D009)
 
 ## Backlog — Phase 3: Backtesting & strategy sandbox (agents)
-- [ ] T036b — Session-aware staleness (D018 remainder): upgrade the market-data stale flag from wall-clock to session-aware using the broker clock (a Friday-evening quote is "last session", not "stale").
+- [x] T036b — Session-aware staleness — DONE 2026-08-14 (Claude/Cowork):
+  `analysis/staleness.py` — four states replacing the binary flag: live /
+  stale (market OPEN but feed behind = the real hazard, untrustworthy) /
+  last_session (market closed, most recent real print — TRUSTWORTHY, the
+  Friday-quote-on-Saturday fix) / old (beyond a normal closure = check the
+  feed), each with a narration-ready phrase; hand-tested incl. the 96h
+  boundary and tz/future-timestamp validation. get_latest now consults the
+  BROKER clock (ctx.alpaca optional — absent falls back to the conservative
+  wall-clock rule labeled "market state unknown") and returns freshness +
+  session (next open/close + "the market opens in 14h" hint). Raw stale flag
+  and legacy payload preserved. /api/market/{symbol}/latest routes through
+  the tool so the API and chat agree.
 
 ## Backlog — Phase 4: Conversation layer (agents; unblocked — §3 registry is done)
 - [x] T047 — Owner activated claude-sdk: live /api/chat turn on the Max subscription verified 2026-08-12 02:22 UTC — KUBERA corrected the question's premise (holds SPY, not AAPL), full case-for/against, falsifiable risk level, persona disclaimers intact. Side-channel audit captured both tool calls. Quirk found+fixed: SDK usage is a dict (was parsed as object → 0/0).

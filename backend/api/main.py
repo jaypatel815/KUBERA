@@ -188,15 +188,19 @@ def get_market_client(s: KuberaSettings = Depends(get_settings)):
 
 
 @app.get("/api/market/{symbol}/latest")
-def market_latest(symbol: str, client: MarketDataClient = Depends(get_market_client)) -> dict:
-    """Latest trade + level-1 quote, each with exchange and fetch timestamps."""
+def market_latest(
+    symbol: str,
+    client: MarketDataClient = Depends(get_market_client),
+    alpaca: AlpacaClient = Depends(get_alpaca_client),
+) -> dict:
+    """Latest trade + quote with a session-aware freshness verdict (T036b)."""
     try:
-        return {
-            "trade": asdict(client.get_latest_trade(symbol)),
-            "quote": asdict(client.get_latest_quote(symbol)),
-        }
+        return registry.execute("get_latest", {"symbol": symbol},
+                                ToolContext(market=client, alpaca=alpaca))
     except MarketDataError as e:
         raise HTTPException(status_code=502, detail=str(e))
+    except (ToolError, ToolArgumentError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @app.get("/api/market/{symbol}/bars")

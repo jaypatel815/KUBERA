@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T036b: "stale" is the wrong word for Friday's close on a Saturday
+The binary stale flag told a half-truth in both directions: it cried stale on
+every weekend quote (correct data, wrong word) and said nothing special when a
+feed lags DURING a session (the actually dangerous case). analysis/staleness.py
+replaces it with four states — live / stale (open + behind = untrustworthy) /
+last_session (closed + recent = trustworthy, "the most recent real print") /
+old (beyond a normal closure) — each carrying a narration-ready phrase, all
+hand-tested including the 96-hour boundary. get_latest now asks the BROKER
+clock rather than guessing (I007's lesson: models garble raw ages, so the
+phrase does the talking); without an Alpaca client it falls back to the
+conservative rule and SAYS "market state unknown". Closed markets also get
+"the market opens in 14h 20m". /api/market/.../latest now routes through the
+tool so the endpoint and the chat layer can't drift apart.
+Verified: verify.py PASS — 576 passed (+10), 3 skipped.
+Next: T088 execution quality or T089 live MAE/MFE (both need accumulated
+fills — run scripts/sync.py daily), else owner unlocks.
+
 ## 2026-08-14 — T064b: badges expire — and backtests confess their trades
 Promotion is evidence, not tenure: is_promoted now takes max_age_days (default
 180) — a walk-forward pass older than that silently stops counting and the

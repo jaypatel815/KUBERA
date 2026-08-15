@@ -42,6 +42,11 @@ from analysis.portfolio import summarize, win_loss
 from analysis.portfolio_risk import portfolio_risk
 from analysis.ranking import rank_watchlist
 from analysis.regime import classify_regime
+from analysis.staleness import (
+    classify_freshness,
+    next_session_hint,
+    wallclock_fallback,
+)
 from analysis.triage import triage_position
 from backtest.ledger import (
     PROMOTION_MAX_AGE_DAYS,
@@ -51,7 +56,7 @@ from backtest.ledger import (
 )
 from backtest.stats import calmar, trade_stats
 from backtest.strategies import TEMPLATES, build_strategy
-from data.alpaca import AlpacaClient
+from data.alpaca import AlpacaClient, AlpacaError
 from data.fred import SERIES, FredClient, FredError
 from data.history import equity_history
 from data.ips import get_ips, ips_as_dict, upsert_ips
@@ -253,18 +258,45 @@ def _get_portfolio(ctx: ToolContext, _: NoArgs) -> dict:
 
 @registry.tool(
     "get_latest",
-    "Latest trade price and level-1 bid/ask for one symbol, with exchange and fetch "
-    "timestamps (free IEX feed). Each payload carries age_seconds and a stale flag "
-    "(exchange event older than 15 min — normal outside market hours). NEVER present "
-    "stale data as live, and never base a trade recommendation on it without saying "
-    "exactly how old it is.",
+    "Latest trade price and level-1 bid/ask for one symbol (free IEX feed) with a "
+    "SESSION-AWARE freshness verdict (T036b): 'live', 'last_session' (market "
+    "closed — this is the most recent real print, say when it's from), 'stale' "
+    "(market OPEN but the feed is behind — a real hazard, never quote it as "
+    "current), or 'old'. Narrate freshness.phrase verbatim-ish; never present a "
+    "non-live price as the current price, and never recommend a trade on "
+    "untrustworthy data without saying so.",
     SymbolArgs,
 )
 def _get_latest(ctx: ToolContext, p: SymbolArgs) -> dict:
     market: MarketDataClient = ctx.require("market")
+    trade = market.get_latest_trade(p.symbol)
+    quote = market.get_latest_quote(p.symbol)
+    # Broker clock when available (ctx.alpaca is optional here) — otherwise the
+    # conservative wall-clock rule, explicitly labeled as market-state-unknown.
+    clock = None
+    if ctx.alpaca is not None:
+        try:
+            clock = ctx.alpaca.get_clock()
+        except AlpacaError:
+            clock = None
+    if clock is not None:
+        fresh = classify_freshness(trade.exchange_ts, trade.asof, clock.is_open,
+                                   age_human=trade.age_human)
+        session = {"market_open": clock.is_open,
+                   "next_open": clock.next_open.isoformat(),
+                   "next_close": clock.next_close.isoformat(),
+                   "hint": (None if clock.is_open
+                            else next_session_hint(clock.next_open, trade.asof))}
+    else:
+        fresh = wallclock_fallback(trade.exchange_ts, trade.asof,
+                                   age_human=trade.age_human)
+        session = {"market_open": None, "next_open": None, "next_close": None,
+                   "hint": "no broker clock in this context"}
     return {
-        "trade": asdict(market.get_latest_trade(p.symbol)),
-        "quote": asdict(market.get_latest_quote(p.symbol)),
+        "trade": asdict(trade),
+        "quote": asdict(quote),
+        "freshness": asdict(fresh),
+        "session": session,
     }
 
 
