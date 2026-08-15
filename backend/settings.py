@@ -100,6 +100,14 @@ class KuberaSettings(BaseSettings):
         validation_alias=AliasChoices("KUBERA_CONTEXT_BUDGET_CHARS",),
     )
 
+    # T096: which slice of the registry a brain is offered. "auto" curates a
+    # core set for local/compat endpoints (I008: small models drown in 31
+    # tools) and offers everything to strong brains; "full"/"core" force it.
+    tool_profile: str = Field(
+        default="auto",
+        validation_alias=AliasChoices("KUBERA_TOOL_PROFILE", "TOOL_PROFILE"),
+    )
+
     # How long one LLM call may take. Local models (Ollama) chewing a long IPS
     # brief blew through the old hard-coded 120s (I014); default is generous and
     # env-tunable rather than guessed.

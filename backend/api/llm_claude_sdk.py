@@ -23,6 +23,7 @@ import logging
 import os
 from typing import Any
 
+from api.tool_policy import tool_names_for
 from api.tools import ConfirmationRequiredError, ToolContext, ToolError, registry
 from settings import ConfigError, KuberaSettings
 
@@ -126,7 +127,11 @@ class ClaudeSDKProvider:
         server = sdk.create_sdk_mcp_server(
             name=SDK_SERVER_NAME, version="1.0.0", tools=sdk_tools
         )
-        allowed = [f"mcp__{SDK_SERVER_NAME}__{n}" for n in registry.names()]
+        # T096: claude-sdk is a strong brain (gets everything under "auto"), but an
+        # explicit KUBERA_TOOL_PROFILE=core still narrows what it may CALL. The
+        # bridge always wraps the full registry; permission is the knob.
+        offered = tool_names_for(self._settings, registry.names())
+        allowed = [f"mcp__{SDK_SERVER_NAME}__{n}" for n in offered]
         # I011 diagnostic: if the bridge silently degrades (SDK version drift), the
         # model improvises tool names from prose — this line is the tell in the log.
         self.bridged_tool_count = len(sdk_tools)

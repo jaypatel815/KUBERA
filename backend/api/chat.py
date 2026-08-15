@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from api.context import assemble_context
 from api.llm import LLMError
 from api.persona import build_system_prompt
+from api.tool_policy import filter_schemas
 from api.tools import ConfirmationRequiredError, ToolContext, ToolError, registry
 from data.ips import format_ips_for_prompt, get_ips
 from data.models import ChatMessage, Conversation
@@ -318,11 +319,19 @@ def run_chat_turn(
     db.commit()
 
     ips_row = get_ips(db)
+    # T096: small local brains get the curated core set; strong brains get all.
+    # The PROMPT must advertise exactly what the model is offered — a persona
+    # listing tools it cannot call is how "I don't have that capability" and
+    # phantom tool names get born (I008/I011).
+    schemas = filter_schemas(get_settings(), registry.schemas())
+    if len(schemas) < len(registry.names()):
+        log.info("tool policy: offering %d of %d tools to this brain",
+                 len(schemas), len(registry.names()))
     system = build_system_prompt(
-        datetime.now(timezone.utc).isoformat(), registry.names(), voice=voice,
+        datetime.now(timezone.utc).isoformat(), [s["name"] for s in schemas],
+        voice=voice,
         ips_context=format_ips_for_prompt(ips_row) if ips_row else None,
     )
-    schemas = registry.schemas()
     trail: list[dict] = []
     tool_asofs: dict[str, str] = {}  # tool name -> asof from its actual result
     base_system = system

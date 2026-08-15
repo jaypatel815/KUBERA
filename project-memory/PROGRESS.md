@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T096: the right-sized toolbox — 31 tools is a menu, not a gift
+I008's two routing failures came from a small local model drowning in the
+registry; since then the registry grew from 24 to 31, so the problem got
+worse, not better. api/tool_policy.py now curates: local/compat endpoints
+(openai wire format against a non-openai base_url) get an 11-tool CORE set
+covering the whole daily conversation; claude-sdk/anthropic/real-openai get
+everything. Crucially the PERSONA's advertised tool list is now built from the
+same filtered set — advertising tools a model can't call is exactly how
+"I don't have that capability" and invented tool names happen (I008/I011).
+claude-sdk honors a forced profile too (bridge wraps all, permission narrows).
+KUBERA_TOOL_PROFILE=auto|full|core; unknown values degrade to auto instead of
+killing a session. The guard test asserts CORE ⊆ registry, so a future rename
+can't silently amputate a small brain's capability.
+Verified: verify.py PASS — 587 passed (+11), 3 skipped.
+Next: T088/T089 (need fills — run scripts/sync.py daily), T072 human TTS, or
+owner unlocks (IPS resend, brain_check, T005 push, T023 FMP tier).
+
 ## 2026-08-14 — T036b: "stale" is the wrong word for Friday's close on a Saturday
 The binary stale flag told a half-truth in both directions: it cried stale on
 every weekend quote (correct data, wrong word) and said nothing special when a

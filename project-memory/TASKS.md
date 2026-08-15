@@ -98,7 +98,17 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 
 ## Backlog — Phase 2: Analysis & insight engine (agents)
 - [ ] T023 — Fundamentals + news ingestion: evaluate the owner's existing FMP/FRED keys (D009) vs Alpaca news; verify key validity + tier limits first (incl. whether the FMP tier covers earnings calendar, consensus estimates, and TRANSCRIPTS — commonly paid-tier; D019), then pick and integrate one source. Evaluation weighs (D017): earnings-surprise momentum, FCF yield/debt ratios, 13F ownership-change availability per tier; news is CONTEXT + event risk (feeds T076), never claimed as sentiment alpha. Unblocks T083 (needs earnings dates).
-- [ ] T096 — Per-brain tool subsetting (I008): 24 tools overwhelm small local models (two routing failures observed). Offer the FULL registry to strong brains (claude-sdk/anthropic/openai) and a curated core set (~10: portfolio, briefing, regime, exit plan, triage, size, latest, brief, risk, journal) to local/OPENAI_BASE_URL brains; setting-overridable; guard test that the curated set stays a subset of the registry.
+- [x] T096 — Per-brain tool subsetting — DONE 2026-08-14 (Claude/Cowork):
+  `api/tool_policy.py` — CORE_TOOLS (11: portfolio, briefing, latest, regime,
+  exit plan, triage, size, brief, risk, record_decision, ips), is_small_brain
+  (openai wire format + non-openai base_url = local runtime), tool_names_for /
+  filter_schemas. Wired into run_chat_turn AND the persona's advertised list
+  (the prompt now names exactly what's offered — a persona listing uncallable
+  tools is how "capability missing" + phantom names are born, I008/I011) and
+  into claude-sdk allowed_tools (bridge stays full; permission is the knob).
+  `KUBERA_TOOL_PROFILE=auto|full|core` overrides either way; unknown values
+  degrade to auto rather than killing a session. Guard test asserts CORE ⊆
+  registry so a rename can't silently shrink a small brain. 11 tests.
 - [ ] T088 — Execution quality (D020, dep T036): fills gain signal_price/submitted_price/fill_price + slippage_bps; implementation-shortfall + time-of-day fill-quality reports ("don't buy the open" becomes evidence, not heuristic).
 - [ ] T089 — Live MAE/MFE (D020, dep T036): extend trade_excursions to live positions with intraday extremes; winners'-MAE stop-calibration line joins the T062 weekly review.
 - [x] T090 — Liquidity-aware costs — DONE 2026-08-14 (Claude/Cowork):
