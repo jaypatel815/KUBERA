@@ -3,6 +3,24 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T097 REVERTED: back to the Orb (owner call)
+Six iterations of a particle face — voxel grid, sculpted 3D, holographic
+columns, microscopic rods, skull anatomy, green dots — never produced a
+convincing likeness. Owner called it: "revert back to the orb". Done cleanly:
+apps/web/orb.html restored from 5f77557, which is the Orb WITH the patience
+fixes (2.8s silence window, continuous listening) and without the three.js CDN
+dependency the face introduced. Voice loop, click-to-talk, state colours, TTS
+amplitude all verified present; 250 lines removed.
+LESSON (recorded in TASKS so no agent re-attempts it blind): procedural facial
+likeness fits this repo badly — every pass needed a human eye to judge, which
+is exactly what the verify gate cannot automate, so the loop degenerated into
+guess-render-ask. If a face is wanted later, bring an ASSET (head mesh or
+point-cloud scan) and animate it; don't sculpt one from gaussians. All
+face-era code survives in git history (8fc9927..82b3a85) if anyone wants it.
+Verified: verify.py PASS — 608 passed, 3 skipped.
+Next: back to the backlog — T089 live MAE/MFE, T072 human-grade TTS, T082 Orb
+upgrade pack (conversations sidebar, portfolio panel, feed badges).
+
 ## 2026-08-14 — T097 v6: the green face — glowing dots on blue-green
 Owner supplied a new visual description: a headshot of glowing GREEN dots,
 dramatic light, deep blue-green gradient background, visible ears, slight left

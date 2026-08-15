@@ -6,40 +6,39 @@
 <title>KUBERA</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { height: 100%; color: #d8f0e4; overflow: hidden;
-    background: linear-gradient(160deg, #04120f 0%, #06201d 45%, #0a2b28 100%);
+  html, body { height: 100%; background: #07070c; color: #e8e4d8; overflow: hidden;
     font-family: "Segoe UI", -apple-system, system-ui, sans-serif; }
   #stage { position: fixed; inset: 0; display: flex; flex-direction: column;
     align-items: center; justify-content: center; }
   #orb { cursor: pointer; }
   #status { margin-top: 6px; font-size: 13px; letter-spacing: 3px; text-transform: uppercase;
-    color: #4fbf8e; user-select: none; }
+    color: #8a815f; user-select: none; }
   #hint { position: fixed; top: 18px; width: 100%; text-align: center; font-size: 12px;
-    color: #3d8a6b; letter-spacing: 1px; }
+    color: #55503e; letter-spacing: 1px; }
   #log { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%);
     width: min(680px, 92vw); max-height: 30vh; overflow-y: auto; font-size: 14px;
     line-height: 1.55; -webkit-mask-image: linear-gradient(transparent, black 18%);
     mask-image: linear-gradient(transparent, black 18%); }
   .turn { margin: 10px 0; }
-  .you { color: #7fd9b4; }
-  .kub { color: #b6f5cf; }
+  .you { color: #6f9f9b; }
+  .kub { color: #d9c98a; }
   .chips { margin-top: 4px; }
-  .chip { display: inline-block; font-size: 10.5px; letter-spacing: 1px; color: #5aa987;
-    border: 1px solid #17453a; border-radius: 999px; padding: 1px 9px; margin-right: 6px; }
+  .chip { display: inline-block; font-size: 10.5px; letter-spacing: 1px; color: #7d7457;
+    border: 1px solid #2e2b20; border-radius: 999px; padding: 1px 9px; margin-right: 6px; }
   #bar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
     width: min(680px, 92vw); display: flex; gap: 8px; align-items: center; }
-  #typed { flex: 1; background: #071c19; border: 1px solid #14453b; border-radius: 10px;
-    color: #d8f0e4; padding: 11px 14px; font-size: 14px; outline: none; }
-  #typed:focus { border-color: #2f8f6c; }
-  label.cf { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #4fbf8e;
+  #typed { flex: 1; background: #101018; border: 1px solid #23232e; border-radius: 10px;
+    color: #e8e4d8; padding: 11px 14px; font-size: 14px; outline: none; }
+  #typed:focus { border-color: #4a4433; }
+  label.cf { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #8a815f;
     user-select: none; white-space: nowrap; }
-  input[type=checkbox] { accent-color: #24d17e; }
+  input[type=checkbox] { accent-color: #c9a227; }
   #err { position: fixed; bottom: 4px; width: 100%; text-align: center; font-size: 11px;
-    color: #e0705f; }
+    color: #a05c5c; }
 </style>
 </head>
 <body>
-<div id="hint">click the face or hold SPACE to talk &nbsp;·&nbsp; type below if you must</div>
+<div id="hint">click the orb or hold SPACE to talk &nbsp;·&nbsp; type below if you must</div>
 <div id="stage">
   <canvas id="orb" width="520" height="520"></canvas>
   <div id="status">idle</div>
@@ -51,250 +50,44 @@
 </div>
 <div id="err"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ------------------------------------------------------------------ state
 const S = { mode: "idle", conversationId: null, amp: 0, t: 0 };
-// Green identity (owner spec): state is signalled by hue-shift and brightness
-// INSIDE the green family, never by swapping to an unrelated colour.
-const COLORS = { idle: [36, 209, 126], listening: [64, 240, 200],
-                 thinking: [120, 235, 130], speaking: [150, 255, 170] };
+const COLORS = { idle: [201,162,39], listening: [78,168,160], thinking: [148,108,214],
+                 speaking: [222,186,80] };
 const statusEl = document.getElementById("status");
 const errEl = document.getElementById("err");
 function setMode(m) { S.mode = m; statusEl.textContent = m; }
 
-// ------------------------------------------------------------------ face v6 (T097)
-// GREEN DIGITAL FACE (owner spec, 2026-08-14): a headshot built from thousands
-// of small ROUND glowing dots — points of light, not rods or voxels — on a deep
-// blue-green gradient. Features (brow, eye cavities, nose, lips, chin, ears)
-// emerge from a sculpted depth field lit dramatically from the upper left;
-// density thins with the light so dots visibly separate in shadow. The head is
-// angled slightly left at rest and turns to follow the cursor.
-// State is signalled by hue-shift and brightness WITHIN the green family
-// (idle → listening → thinking → speaking), never by swapping colour — the
-// palette is KUBERA's identity now.
-// Falls back to a simple pulse if three.js can't load — voice always works.
-const canvas = document.getElementById("orb");
-let mx = innerWidth / 2, my = innerHeight / 2, lastMove = 0;
-addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; lastMove = S.t; });
-
-// --- the sculpt (constants tuned via offline renders; y grows DOWN like the tuning rig)
-function G(x, y, x0, y0, sx, sy, amp) {
-  return amp * Math.exp(-(((x - x0) ** 2) / (2 * sx * sx) + ((y - y0) ** 2) / (2 * sy * sy)));
-}
-// --- ears: a SURFACE EXTENSION (widens the silhouette and lifts depth) so they
-// stay attached to the head rather than floating beside it.
-function earBulge(ax, y) {
-  const ex = (ax - 60) / 9, ey = (y - 12) / 18;
-  const r = Math.hypot(ex, ey);
-  if (r >= 1) return [0, 0];
-  const f = Math.pow(Math.cos(r * 1.57), 1.2);
-  return [11 * f, 14 * f];              // [extra width, extra depth]
-}
-function faceWidth(y, ax) {
-  let cr = 0;
-  const a = (y + 24) / 80;
-  if (Math.abs(a) <= 1) cr = 60 * (1 - a * a) ** 0.45;
-  let jaw = 0;
-  if (y >= -20 && y <= 88) {
-    const t = Math.max(0, Math.min(1.1, (y - 16) / 68));
-    jaw = 56 - 40 * t ** 1.25;
-    if (y > 74) jaw *= Math.sqrt(Math.max(0, 1 - ((y - 74) / 20) ** 2));
+// ------------------------------------------------------------------ orb
+const canvas = document.getElementById("orb"), ctx = canvas.getContext("2d");
+const CX = 260, CY = 260;
+function drawOrb() {
+  S.t += 0.016;
+  ctx.clearRect(0, 0, 520, 520);
+  const [r, g, b] = COLORS[S.mode] || COLORS.idle;
+  const breathe = 1 + 0.035 * Math.sin(S.t * (S.mode === "thinking" ? 4.2 : 1.6));
+  const radius = (S.mode === "idle" ? 92 : 100) * breathe * (1 + S.amp * 0.55);
+  // outer glow
+  const glow = ctx.createRadialGradient(CX, CY, radius * 0.2, CX, CY, radius * 2.4);
+  glow.addColorStop(0, `rgba(${r},${g},${b},0.55)`);
+  glow.addColorStop(0.5, `rgba(${r},${g},${b},0.10)`);
+  glow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(CX, CY, radius * 2.4, 0, 7); ctx.fill();
+  // wobbling core (soft blob: several offset circles)
+  for (let i = 0; i < 3; i++) {
+    const wob = Math.sin(S.t * 2.1 + i * 2.1) * 6 * (1 + S.amp * 2);
+    const core = ctx.createRadialGradient(CX + wob, CY - wob, 4, CX, CY, radius);
+    core.addColorStop(0, `rgba(${Math.min(r+55,255)},${Math.min(g+55,255)},${b+40},0.9)`);
+    core.addColorStop(1, `rgba(${r},${g},${b},0.12)`);
+    ctx.fillStyle = core;
+    ctx.beginPath(); ctx.arc(CX, CY, radius - i * 7, 0, 7); ctx.fill();
   }
-  const base = y < 8 ? cr : y > 32 ? jaw
-             : cr * (1 - (y - 8) / 24) + jaw * ((y - 8) / 24);
-  return base + earBulge(ax === undefined ? base : Math.abs(ax), y)[0];
+  S.amp *= 0.92; // decay toward calm
+  requestAnimationFrame(drawOrb);
 }
-function faceDepth(x, y) {
-  const ax = Math.abs(x);
-  const wob = 2.5 * Math.sin(y * 0.13 + (x > 0 ? 0.9 : 2.6))
-            + 1.5 * Math.sin(y * 0.31 + (x > 0 ? 2.1 : 0.4));
-  const w = faceWidth(y, ax) + wob;
-  if (w <= 2 || ax > w) return null;
-  let z = 60 * Math.sqrt(Math.max(0, 1 - (Math.min(ax, 64) / 66) ** 2
-                                    - ((y + 2) / 112) ** 2));
-  z += G(ax, y, 26, -28, 30, 8, 6);             // brow ridge / orbital bone
-  z += G(ax, y, 26, -18, 15, 9, -13);           // deep sockets — no eyeballs
-  z += G(x, y, 0, -34, 22, 26, 3);              // forehead plane
-  const ramp = 1 / (1 + Math.exp(-(y + 30) / 6));
-  const fall = 1 / (1 + Math.exp((y - 27) / 3));
-  z += 19 * Math.exp(-(x * x) / 128) * ramp * fall;   // nasal bridge
-  z += G(x, y, 0, 25, 9, 7, 11);                // nose tip
-  z += G(ax, y, 11, 30, 5, 4, 5);               // nostril wings
-  z += G(ax, y, 7, 32, 4, 3, -6);               // nostril darks
-  z += G(x, y, 0, 44, 14, 4.5, 4.5);            // upper lip
-  z += G(x, y, 0, 52, 12, 4.6, 5);              // lower lip
-  z += G(x, y, 0, 48, 13, 5, -3.5);             // mouth cavity
-  z += G(x, y, 0, 72, 13, 11, 7);               // chin
-  z += G(ax, y, 38, 6, 14, 13, 6.5);            // cheekbones
-  z += G(ax, y, 27, 32, 11, 11, -3.5);          // cheek hollow
-  z += G(ax, y, 30, 42, 8, 7, -2);              // nasolabial recess
-  z += G(ax, y, 50, -40, 12, 15, -4);           // temples
-  z += earBulge(ax, y)[1] * 0.55;               // ear body
-  z -= G(ax, y, 57, 12, 4, 9, 4);               // concha hollow
-  const edge = Math.min(1, (w - ax) / 9);
-  return z * (0.32 + 0.68 * edge);
-}
-// irregular, elongated, slightly asymmetric eye cavities (no pupils)
-const EYES = [[-26.5, -17.5, 13.5, 7.2, 0.7], [26.5, -16.4, 12.5, 6.8, 2.3]];
-function eyeFactor(x, y) {
-  let f = 1;
-  for (const [ex, ey, we, he, ph] of EYES) {
-    const dx = (x - ex) / we, dy = (y - ey) / he;
-    const r = Math.hypot(dx, dy);
-    if (r > 1.6) continue;
-    const ang = Math.atan2(dy, dx);
-    const rim = 1 + 0.16 * Math.sin(3 * ang + ph) + 0.10 * Math.sin(5 * ang - 1.2);
-    const rr = r / Math.max(0.5, rim);
-    if (rr < 1) {
-      const t = Math.max(0, (rr - 0.25) / 0.75);
-      f = Math.min(f, 0.08 + 0.92 * t * t);
-    }
-  }
-  return f;
-}
-
-if (typeof THREE !== "undefined") initFace3D(); else initFaceFallback();
-
-function initFace3D() {
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setSize(520, 520, false);
-  renderer.setClearColor(0x000000, 0);
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(46, 1, 10, 2000);
-  camera.position.set(0, 8, 330);
-  camera.lookAt(0, 8, 0);
-  const head = new THREE.Group();
-  scene.add(head);
-
-  // ---- glowing dots. Dramatic key light from the upper LEFT; shading is baked
-  // per point, density thins where the light falls off so dots separate in
-  // shadow (the reference reads as points, not a solid mass).
-  const P = [], SH = [], K = [], SD = [];
-  const STEP = 1.15, EPS = 1.2;
-  const LX = -0.45, LY = -0.36, LZ = 0.81;
-  for (let y = -100; y <= 92; y += STEP) {
-    for (let x = -82; x <= 82; x += STEP) {
-      const z = faceDepth(x, y);
-      if (z === null) continue;
-      const zx1 = faceDepth(x + EPS, y), zx0 = faceDepth(x - EPS, y);
-      const zy1 = faceDepth(x, y + EPS), zy0 = faceDepth(x, y - EPS);
-      let s;
-      if (zx1 === null || zx0 === null || zy1 === null || zy0 === null) s = 0.55;
-      else {
-        const gx = (zx1 - zx0) / (2 * EPS), gy = (zy1 - zy0) / (2 * EPS);
-        const n = Math.sqrt(gx * gx + gy * gy + 1);
-        s = Math.max(0, (-gx / n) * LX + (-gy / n) * LY + (1 / n) * LZ);
-      }
-      s = 0.07 + 0.93 * s;
-      s *= eyeFactor(x, y);
-      s *= 0.48 + (z / 60) * 0.66;         // forward planes catch the light
-      const v = Math.pow(s, 1.35);         // contrast: mid-tones fall away
-      if (Math.random() > 0.34 + 0.66 * Math.pow(v, 0.9)) continue;
-      const mouth = Math.abs(x) < 19 && y > 41 && y < 57;
-      P.push(x + (Math.random() - 0.5) * 0.6, -y + (Math.random() - 0.5) * 0.6,
-             z - 30);
-      SH.push(v); K.push(mouth ? 3 : 0); SD.push(Math.random() * 10);
-    }
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute("position", new THREE.Float32BufferAttribute(P, 3));
-  geo.setAttribute("aShade", new THREE.Float32BufferAttribute(SH, 1));
-  geo.setAttribute("aKind", new THREE.Float32BufferAttribute(K, 1));
-  geo.setAttribute("aSeed", new THREE.Float32BufferAttribute(SD, 1));
-
-  const mat = new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: {
-      uTime: { value: 0 }, uAmp: { value: 0 }, uMode: { value: 0 },
-      uColor: { value: new THREE.Color() },
-      uPR: { value: renderer.getPixelRatio() },
-    },
-    vertexShader: `
-      attribute float aShade, aKind, aSeed;
-      uniform float uTime, uAmp, uMode, uPR;
-      varying float vShade, vSeed, vKind;
-      void main() {
-        vec3 p = position;
-        p.z += 0.6 * sin(uTime * 6.0 + aSeed * 9.0);       // quiet holo drift
-        if (uMode > 1.5 && uMode < 2.5)                     // thinking shimmer
-          p.xy += 1.1 * vec2(sin(uTime * 4.0 + aSeed * 5.0),
-                             cos(uTime * 3.4 + aSeed * 4.0));
-        if (aKind > 2.5 && uMode > 2.5)                     // lips ride the audio
-          p.y += sin(uTime * 26.0 + position.x * 0.35) * uAmp * 4.0;
-        vec4 mv = modelViewMatrix * vec4(p, 1.0);
-        gl_PointSize = uPR * (2.0 + aShade * 3.0) * (300.0 / -mv.z);
-        vShade = aShade; vSeed = aSeed; vKind = aKind;
-        gl_Position = projectionMatrix * mv;
-      }`,
-    fragmentShader: `
-      uniform vec3 uColor;
-      uniform float uAmp, uTime;
-      varying float vShade, vSeed, vKind;
-      void main() {
-        // ROUND dot with a soft edge — a glowing point of light, not a square
-        vec2 d = gl_PointCoord - vec2(0.5);
-        float r = length(d);
-        if (r > 0.5) discard;
-        float falloff = smoothstep(0.5, 0.06, r);
-        float jit = 0.82 + 0.36 * fract(sin(vSeed * 91.7) * 43758.5);
-        float s = vShade * jit * (1.0 + uAmp * 0.45);
-        // deep teal-green in shadow -> near-white green at the highlights
-        vec3 col = mix(vec3(0.05, 0.30, 0.22), uColor, clamp(s * 1.25, 0.0, 1.0));
-        col += vec3(0.25, 0.45, 0.30) * pow(max(0.0, s - 0.72), 1.5) * 2.2;
-        col *= 0.96 + 0.04 * sin(uTime * 11.0 + vSeed);      // faint luminescence
-        if (vKind > 2.5) col *= 1.0 + uAmp * 0.7;
-        gl_FragColor = vec4(col * (0.35 + 0.65 * s) * falloff, falloff * 0.95);
-      }`,
-  });
-  head.add(new THREE.Points(geo, mat));
-
-  const MODE_N = { idle: 0, listening: 1, thinking: 2, speaking: 3 };
-  let yaw = 0.22, pitch = 0;               // slight left angle at rest, per spec
-  (function animate() {
-    S.t += 0.016;
-    const [r, g, b] = COLORS[S.mode] || COLORS.idle;
-    mat.uniforms.uColor.value.setRGB(r / 255, g / 255, b / 255);
-    mat.uniforms.uTime.value = S.t;
-    mat.uniforms.uAmp.value = S.amp;
-    mat.uniforms.uMode.value = MODE_N[S.mode] || 0;
-
-    const idleGaze = S.t - lastMove > 4;
-    const ty = idleGaze ? 0.22 + 0.05 * Math.sin(S.t * 0.3)
-                        : Math.max(-0.6, Math.min(0.6, (mx / innerWidth - 0.5) * 1.2));
-    const tp = idleGaze ? 0.03 * Math.sin(S.t * 0.23)
-                        : Math.max(-0.32, Math.min(0.32, (my / innerHeight - 0.5) * 0.7));
-    yaw += (ty - yaw) * 0.07; pitch += (tp - pitch) * 0.07;
-    head.rotation.y = yaw;
-    head.rotation.x = -pitch;
-    head.scale.setScalar(1 + 0.010 * Math.sin(S.t * (S.mode === "thinking" ? 3.6 : 1.4))
-                           + S.amp * 0.012);
-
-    S.amp *= 0.92;
-    renderer.render(scene, camera);
-    requestAnimationFrame(animate);
-  })();
-}
-
-function initFaceFallback() {
-  // three.js unreachable (offline?): a minimal pulse so state is still visible.
-  const ctx = canvas.getContext("2d");
-  errEl.textContent = "face needs internet once (three.js CDN) — voice still works";
-  (function pulse() {
-    S.t += 0.016;
-    ctx.clearRect(0, 0, 520, 520);
-    const [r, g, b] = COLORS[S.mode] || COLORS.idle;
-    const rad = 90 * (1 + 0.04 * Math.sin(S.t * 1.6)) * (1 + S.amp * 0.5);
-    const glow = ctx.createRadialGradient(260, 260, 10, 260, 260, rad * 2);
-    glow.addColorStop(0, `rgba(${r},${g},${b},0.8)`);
-    glow.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.arc(260, 260, rad * 2, 0, 7); ctx.fill();
-    S.amp *= 0.92;
-    requestAnimationFrame(pulse);
-  })();
-}
+drawOrb();
 
 // ------------------------------------------------------------------ log
 const logEl = document.getElementById("log");
