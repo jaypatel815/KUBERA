@@ -64,7 +64,16 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
   PWA push delivery (Phase 5), ET-aware "today" windows (T036b), scheduled
   auto-generation (Task Scheduler hitting /api/brief + TTS).
 - [ ] T063b — Journal calibration v2 (after entries accumulate): confidence-vs-outcome calibration curves (was "0.7 confidence" right 70% of the time?), payoff-weighted scoring vs the stated target/stop, override-rate × outcome analysis feeding T067b, weekly-review integration. Any strategy-weight change remains a PROPOSAL the owner ratifies (human-gated).
-- [ ] T064b — Rigor follow-ups: crisis-window stress runs (2020/2022 where IEX history reaches — 2008 impossible on this feed, say so), surface trade_stats/Calmar in run_backtest tool output + ledger rows, promotion expiry (a pass older than N months goes stale), chat tool for promote (currently CLI-only).
+- [~] T064b — Rigor follow-ups, core DONE 2026-08-14 (Claude/Cowork):
+  run_backtest tool output now carries `trades` (full TradeStats), `calmar`,
+  and a `promotion` block (is_promoted + latest T092 stability verdict via new
+  ledger.latest_stability + the expiry/sweep pointers in a note). PROMOTION
+  EXPIRY: is_promoted takes max_age_days (default 180, PROMOTION_MAX_AGE_DAYS)
+  — a stale pass silently stops counting, the loop's gate refuses until
+  re-promoted (backdated-row test proves it; naive-ts safe). REMAINING:
+  crisis-window stress runs (2020/2022 where IEX reaches; 2008 impossible on
+  this feed — say so), promote-via-chat (needs the deliberate-act confirmation
+  design; parked intentionally, CLI stays the promotion instrument).
 - [ ] T065 — Risk engine v2: sector-exposure caps (needs sector data from T023), cancel-all + disable-symbol controls, order-frequency limit (merge with T055 overtrading guard).
 
 ## Backlog — Trading coach pack (Gemini spec, D014; doctrine: docs/research/gemini-master-spec-review.md)

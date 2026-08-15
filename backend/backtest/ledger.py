@@ -136,8 +136,18 @@ def attach_stability(session: Session, template: str, symbol: str,
     )
 
 
-def is_promoted(session: Session, template: str, symbol: str) -> bool:
-    """Any recorded run for this (template, symbol) that passed the walk-forward?"""
+PROMOTION_MAX_AGE_DAYS = 180  # T064b: a pass is evidence, not a lifetime badge
+
+
+def is_promoted(session: Session, template: str, symbol: str,
+                max_age_days: int = PROMOTION_MAX_AGE_DAYS) -> bool:
+    """Any recorded run for this (template, symbol) that passed the walk-forward
+    AND is younger than `max_age_days`? Markets drift; a promotion earned on
+    year-old history no longer speaks for today (T064b expiry). Re-promote to
+    refresh the badge."""
+    from datetime import datetime, timedelta, timezone
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=max_age_days)
     rows = session.execute(
         select(BacktestRun).where(
             BacktestRun.symbol == symbol.upper(),
@@ -145,9 +155,29 @@ def is_promoted(session: Session, template: str, symbol: str) -> bool:
         )
     ).scalars().all()
     for r in rows:
+        ts = r.ts if r.ts.tzinfo else r.ts.replace(tzinfo=timezone.utc)
+        if ts < cutoff:
+            continue  # stale pass: does not count
         try:
             if json.loads(r.params_json).get("template") == template:
                 return True
         except (TypeError, ValueError):
             continue
     return False
+
+
+def latest_stability(session: Session, template: str, symbol: str) -> dict | None:
+    """Most recent StabilityReport recorded for this pair (T092), or None."""
+    rows = session.execute(
+        select(BacktestRun).where(BacktestRun.symbol == symbol.upper())
+        .order_by(BacktestRun.ts.desc())
+    ).scalars().all()
+    for r in rows:
+        if not r.stability_json:
+            continue
+        try:
+            if json.loads(r.params_json).get("template") == template:
+                return json.loads(r.stability_json)
+        except (TypeError, ValueError):
+            continue
+    return None

@@ -43,7 +43,13 @@ from analysis.portfolio_risk import portfolio_risk
 from analysis.ranking import rank_watchlist
 from analysis.regime import classify_regime
 from analysis.triage import triage_position
-from backtest.ledger import run_and_record
+from backtest.ledger import (
+    PROMOTION_MAX_AGE_DAYS,
+    is_promoted,
+    latest_stability,
+    run_and_record,
+)
+from backtest.stats import calmar, trade_stats
 from backtest.strategies import TEMPLATES, build_strategy
 from data.alpaca import AlpacaClient
 from data.fred import SERIES, FredClient, FredError
@@ -1434,6 +1440,17 @@ def _run_backtest(ctx: ToolContext, p: BacktestArgs) -> dict:
         "sharpe_ann": result.sharpe_ann,
         "max_drawdown_frac": result.max_drawdown_frac,
         "n_rebalances": result.n_rebalances,
+        # T064b: per-trade truth + drawdown-adjusted return, not just curve stats
+        "trades": asdict(trade_stats(result.weights, result.equity_curve)),
+        "calmar": calmar(result.equity_curve),
+        "promotion": {
+            "is_promoted": is_promoted(db, p.strategy, row.symbol),
+            "stability": latest_stability(db, p.strategy, row.symbol),
+            "note": ("promotion requires the walk-forward gate "
+                     "(scripts/promote.py) and EXPIRES after "
+                     f"{PROMOTION_MAX_AGE_DAYS} days; stability comes from "
+                     "scripts/sweep.py --record"),
+        },
         "recorded_at": row.ts.isoformat(),
         "source": row.source,
     }

@@ -3,6 +3,22 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T064b: badges expire — and backtests confess their trades
+Promotion is evidence, not tenure: is_promoted now takes max_age_days (default
+180) — a walk-forward pass older than that silently stops counting and the
+paper loop's existing gate refuses new buys until the pair is re-promoted
+(proven by backdating a passed row in test). run_backtest's tool output grew
+up: per-trade TradeStats (n/win-rate/profit-factor/best/worst), Calmar, and a
+promotion block showing is_promoted + the latest T092 stability verdict
+(new ledger.latest_stability) + a note pointing at promote.py/sweep.py and the
+expiry. The chat model can now see AND SAY "this backtest looks great but the
+pair is unpromoted and the sweep called it curve_fit". Parked deliberately:
+promote-via-chat (wants the same deliberate-act confirmation design as
+update_ips), crisis-window stress runs.
+Verified: verify.py PASS — 566 passed (+3), 3 skipped.
+Next: T036b session-aware staleness, or owner unlocks (IPS resend, brain_check,
+T005 push, T023 FMP tier).
+
 ## 2026-08-14 — T062b (partial): the morning brief becomes the composite
 Same-day integration of the day's shipments: the morning brief now carries a
 `watchlist` section (top-3 ranked setups from T068, the owner's thesis note on
