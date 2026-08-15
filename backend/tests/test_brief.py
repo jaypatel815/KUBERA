@@ -89,7 +89,38 @@ def test_morning_brief_hand(db):
     assert s["expected_move_5d"] is not None
     assert "nearest_support" in s and "nearest_resistance" in s
     assert b["risk"]["dqs"]["score"] == 100.0
-    assert any("T068" in n for n in b["notes"])
+    # T062b: sections present and honest in the degraded/empty state
+    assert b["watchlist"]["note"] == "watchlist is empty"
+    assert "FRED_API_KEY" in b["event_risk"]["note"]  # no fred client passed
+
+
+def test_morning_brief_watchlist_and_events(db):
+    from test_macro import fred_settings
+
+    from data.watchlist import add_symbol
+    _seed_day(db)
+    add_symbol(db, "SPY", "core index thesis")
+    # the composer judges "today" in UTC — the fixture must too (local date can lag)
+    utc_today = datetime.now(timezone.utc).date().isoformat()
+
+    def fred_handler(request: httpx.Request) -> httpx.Response:
+        assert "/fred/release/dates" in request.url.path
+        return httpx.Response(200, json={"release_dates": [{"date": utc_today}]})
+
+    from data.fred import FredClient
+    alpaca, market = clients(route(
+        positions=[position_json(qty=10.0, market_value=1790.0)]))
+    fred = FredClient(settings=fred_settings(),
+                      transport=httpx.MockTransport(fred_handler))
+    with alpaca, market, fred:
+        b = compose_morning_brief(db, alpaca, market, fred=fred)
+    wl = b["watchlist"]
+    assert wl["note"] is None
+    assert wl["setups"][0]["symbol"] == "SPY"
+    assert wl["setups"][0]["thesis"] == "core index thesis"  # owner's words survive
+    ev = b["event_risk"]
+    assert ev["note"] is None
+    assert ev["upcoming"][0]["days_away"] == 0  # release today, surfaced with date
 
 
 def test_eod_report_hand(db):

@@ -573,7 +573,8 @@ class BriefArgs(BaseModel):
     "get_brief",
     "Compose the owner's brief: 'morning' (account, risk tier + DQS, and for each "
     "holding + SPY: overnight gap with staleness, regime, expected 5-day move, "
-    "nearest support/resistance), 'eod' (today's ordered/rejected/no-trade "
+    "nearest support/resistance — plus top watchlist setups with the owner's "
+    "thesis notes and upcoming CPI/NFP event risk), 'eod' (today's ordered/rejected/no-trade "
     "decisions with reasons, day P&L, budget consumption), or 'weekly' (equity vs "
     "SPY, discipline counts, facts_for_lessons). All numbers are computed and "
     "timestamped — narrate them per the voice rules, draw lessons ONLY from "
@@ -586,7 +587,9 @@ def _get_brief(ctx: ToolContext, p: BriefArgs) -> dict:
     db = ctx.require("db")
     alpaca: AlpacaClient = ctx.require("alpaca")
     if p.type == "morning":
-        return compose_morning_brief(db, alpaca, ctx.require("market"))
+        # fred is OPTIONAL for the brief: no key -> event section degrades to a note
+        return compose_morning_brief(db, alpaca, ctx.require("market"),
+                                     fred=ctx.fred)
     if p.type == "eod":
         return compose_eod_report(db, alpaca)
     return compose_weekly_review(db, alpaca, ctx.require("market"))

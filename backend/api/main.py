@@ -299,17 +299,23 @@ def brief(
     session=Depends(get_db_session),
 ) -> dict:
     """Morning brief / EOD report / weekly review — via the chat layer's tool."""
+    fred = None
+    try:
+        fred = FredClient(settings=get_settings())  # optional: enriches morning brief
+    except ConfigError:
+        pass  # no FRED key: the event section degrades to a note (T062b)
     try:
         return registry.execute(
             "get_brief", {"type": type},
-            ToolContext(alpaca=alpaca, market=market, db=session),
+            ToolContext(alpaca=alpaca, market=market, db=session, fred=fred),
         )
-    except ToolArgumentError as e:
-        raise HTTPException(status_code=422, detail=str(e))
-    except ToolError as e:
+    except (ToolArgumentError, ToolError) as e:
         raise HTTPException(status_code=422, detail=str(e))
     except (AlpacaError, MarketDataError) as e:
         raise HTTPException(status_code=502, detail=str(e))
+    finally:
+        if fred is not None:
+            fred.close()
 
 
 @app.get("/api/journal")

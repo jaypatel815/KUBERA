@@ -54,7 +54,15 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 
 ## Backlog — Adopted from ChatGPT master-spec review (docs/research/chatgpt-master-spec-review.md)
 - [ ] T060 — Time-weighted returns: benchmark comparison currently distorts under deposits/withdrawals; compute TWR from account_snapshots + transactions (needs T036 fills), use it in /api/benchmark; hand-computed tests with a mid-period deposit. Priority note (D018): current curves are NOT yet distorted (no external flows on the paper account so far) — this ticket jumps the queue the day the owner deposits or withdraws.
-- [ ] T062b — Brief upgrades (as deps land): watchlist setups (T068), event risk (T076), PWA push delivery (Phase 5), ET-aware "today" windows (T036), scheduled auto-generation (Windows Task Scheduler hitting /api/brief + TTS).
+- [~] T062b — Brief upgrades: watchlist setups (T068) + event risk (T076) DONE
+  2026-08-14 (Claude/Cowork) — morning brief gains `watchlist` (top-3 ranked
+  setups with the owner's thesis notes; empty list said plainly) and
+  `event_risk` (upcoming CPI/NFP dates; no FRED key or calendar failure
+  degrades to a note, core brief still delivers; fred is an OPTIONAL ToolContext
+  member for get_brief, /api/brief constructs it best-effort). PENDING_NOTES
+  trimmed to the earnings-dates gap (T023/T076b). REMAINING in this ticket:
+  PWA push delivery (Phase 5), ET-aware "today" windows (T036b), scheduled
+  auto-generation (Task Scheduler hitting /api/brief + TTS).
 - [ ] T063b — Journal calibration v2 (after entries accumulate): confidence-vs-outcome calibration curves (was "0.7 confidence" right 70% of the time?), payoff-weighted scoring vs the stated target/stop, override-rate × outcome analysis feeding T067b, weekly-review integration. Any strategy-weight change remains a PROPOSAL the owner ratifies (human-gated).
 - [ ] T064b — Rigor follow-ups: crisis-window stress runs (2020/2022 where IEX history reaches — 2008 impossible on this feed, say so), surface trade_stats/Calmar in run_backtest tool output + ledger rows, promotion expiry (a pass older than N months goes stale), chat tool for promote (currently CLI-only).
 - [ ] T065 — Risk engine v2: sector-exposure caps (needs sector data from T023), cancel-all + disable-symbol controls, order-frequency limit (merge with T055 overtrading guard).

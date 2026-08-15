@@ -36,8 +36,7 @@ from risk.persistence import restore_risk_state
 from risk.tiers import current_tier
 
 PENDING_NOTES = [
-    "watchlist setups arrive with T068",
-    "economic-event risk arrives with T076",
+    "earnings dates for held symbols arrive with T023/T076b",
 ]
 
 
@@ -109,8 +108,64 @@ def _symbol_read(market: MarketDataClient, symbol: str) -> dict:
     return out
 
 
+def _watchlist_section(db: Session, market: MarketDataClient) -> dict:
+    """T062b: top-ranked watchlist setups in the morning read (T068 ranking).
+    Empty list is a normal state, said plainly."""
+    from analysis.ranking import rank_watchlist
+    from analysis.regime import classify_regime
+    from data.watchlist import list_symbols
+
+    entries = list_symbols(db)
+    if not entries:
+        return {"setups": [], "note": "watchlist is empty"}
+    closes: dict[str, list[float]] = {}
+    labels: dict[str, str] = {}
+    for e in entries:
+        bars = market.get_daily_bars(e.symbol, days=200)
+        closes[e.symbol] = [b.close for b in bars.bars]
+        if len(bars.bars) >= 21:
+            reading = classify_regime(
+                [b.high for b in bars.bars], [b.low for b in bars.bars],
+                [b.close for b in bars.bars], [b.volume for b in bars.bars],
+                [b.date for b in bars.bars], volume_feed=bars.source,
+            )
+            labels[e.symbol] = reading.regime
+        else:
+            labels[e.symbol] = "unknown"
+    notes = {e.symbol: e.note for e in entries}
+    top = [r for r in rank_watchlist(closes, labels) if r.score is not None][:3]
+    return {
+        "setups": [{
+            "symbol": r.symbol, "score": r.score,
+            "rs_percentile": r.rs_percentile, "regime": r.regime_label,
+            "flags": r.flags, "thesis": notes.get(r.symbol),
+        } for r in top],
+        "note": None,
+    }
+
+
+def _events_section(fred) -> dict:
+    """T062b/T076: upcoming scheduled releases. No FRED client or a calendar
+    failure degrades to a note — the rest of the brief still delivers."""
+    if fred is None:
+        return {"upcoming": [],
+                "note": "event calendar off (add FRED_API_KEY to .env)"}
+    from dataclasses import asdict as _asdict
+
+    import httpx
+
+    from analysis.events import upcoming_events
+    from data.fred import FredError
+    try:
+        events = upcoming_events(fred.release_calendar(),
+                                 datetime.now(timezone.utc).date())
+        return {"upcoming": [_asdict(e) for e in events], "note": None}
+    except (FredError, httpx.HTTPError) as e:
+        return {"upcoming": [], "note": f"event calendar unavailable: {e}"}
+
+
 def compose_morning_brief(db: Session, alpaca: AlpacaClient,
-                          market: MarketDataClient) -> dict:
+                          market: MarketDataClient, fred=None) -> dict:
     acct = alpaca.get_account()
     positions = alpaca.get_positions()
     symbols = sorted({p.symbol for p in positions} | {"SPY"})
@@ -120,6 +175,8 @@ def compose_morning_brief(db: Session, alpaca: AlpacaClient,
         "account": {"equity": acct.equity, "cash": acct.cash, "asof": acct.asof.isoformat()},
         "risk": _risk_section(db, acct.equity),
         "symbols": [_symbol_read(market, s) for s in symbols],
+        "watchlist": _watchlist_section(db, market),
+        "event_risk": _events_section(fred),
         "notes": PENDING_NOTES,
         "source": acct.source,
     }

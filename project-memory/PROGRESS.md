@@ -3,6 +3,21 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T062b (partial): the morning brief becomes the composite
+Same-day integration of the day's shipments: the morning brief now carries a
+`watchlist` section (top-3 ranked setups from T068, the owner's thesis note on
+each; an empty list says "watchlist is empty" instead of hiding) and an
+`event_risk` section (upcoming CPI/NFP dates from T076's calendar; a missing
+FRED key or a calendar failure degrades to a note — the rest of the brief
+still delivers). fred became an OPTIONAL member of the brief path: ctx.fred in
+get_brief, best-effort FredClient in /api/brief (ConfigError → None), and the
+composer takes fred=None gracefully. One endpoint syntax slip (finally before
+except) caught by the gate and fixed; one tz fencepost in tests (local date vs
+the composer's UTC date) fixed in the fixture. PENDING_NOTES now names only
+the earnings-dates gap. "Give me my morning brief" is the J.A.R.V.I.S. moment.
+Verified: verify.py PASS — 563 passed (+1 net), 3 skipped.
+Next: T064b rigor follow-ups, or owner unlocks (T023 FMP tier, T005 push).
+
 ## 2026-08-14 — T076: don't open new risk into a known storm
 The event-risk guard, CPI/NFP half. FRED's release-dates API (with
 include_release_dates_with_no_data, which returns SCHEDULED future dates)
