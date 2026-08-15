@@ -38,6 +38,7 @@ from analysis.macro import compose_macro_context
 from analysis.metrics import atr, volatility
 from analysis.portfolio import summarize, win_loss
 from analysis.portfolio_risk import portfolio_risk
+from analysis.ranking import rank_watchlist
 from analysis.regime import classify_regime
 from analysis.triage import triage_position
 from backtest.ledger import run_and_record
@@ -56,6 +57,7 @@ from data.journal import (
 )
 from data.market_data import MarketDataClient, MarketDataError
 from data.models import SignalLog, Transaction
+from data.watchlist import add_symbol, list_symbols, remove_symbol
 from risk.dqs import score_decisions
 from risk.engine import RiskEngine
 from risk.persistence import restore_risk_state
@@ -1101,6 +1103,85 @@ def _get_liquidity(ctx: ToolContext, p: SymbolArgs) -> dict:
         quote.age_human, quote.stale,
     )
     return {**asdict(prof), "asof": quote.asof.isoformat(), "source": quote.source}
+
+
+class WatchlistUpdateArgs(LenientArgs):
+    action: str = Field(description="add | remove")
+    symbol: str = Field(min_length=1, max_length=10)
+    note: str | None = Field(default=None, max_length=300,
+                             description="Why it's on the list (add only)")
+
+    @field_validator("action", mode="after")
+    @classmethod
+    def _lower_action(cls, v: str) -> str:
+        v = v.strip().lower()
+        if v not in ("add", "remove"):
+            raise ValueError(f"action must be 'add' or 'remove', got {v!r}")
+        return v
+
+
+@registry.tool(
+    "update_watchlist",
+    "Add or remove a symbol on the research watchlist. Adding is idempotent "
+    "(re-adding updates the note). Use when the owner says 'watch X', 'add X "
+    "to the list', or 'stop watching X'. Record WHY in the note — an idea "
+    "without a thesis is noise.",
+    WatchlistUpdateArgs,
+)
+def _update_watchlist(ctx: ToolContext, p: WatchlistUpdateArgs) -> dict:
+    db = ctx.require("db")
+    if p.action == "add":
+        row = add_symbol(db, p.symbol, p.note)
+        return {"updated": True, "action": "add", "symbol": row.symbol,
+                "note": row.note, "asof": datetime.now(timezone.utc).isoformat()}
+    removed = remove_symbol(db, p.symbol)
+    return {"updated": removed, "action": "remove", "symbol": p.symbol.upper(),
+            "detail": None if removed else "symbol was not on the watchlist",
+            "asof": datetime.now(timezone.utc).isoformat()}
+
+
+@registry.tool(
+    "get_watchlist",
+    "The research watchlist, RANKED cross-sectionally (T068/D020): relative "
+    "strength percentiles over 1/3/6 months within the list, regime fit, and "
+    "5-session payoff context, composed into one score with top/bottom flags. "
+    "Use for 'what looks best right now?' — then dig into the leader with "
+    "get_symbol_briefing before any recommendation. Ranks compare list members "
+    "to EACH OTHER; a top rank on a weak list is still a weak idea.",
+    NoArgs,
+)
+def _get_watchlist(ctx: ToolContext, _: NoArgs) -> dict:
+    db = ctx.require("db")
+    market: MarketDataClient = ctx.require("market")
+    entries = list_symbols(db)
+    if not entries:
+        return {"symbols": [], "ranked": [],
+                "note": "watchlist is empty — offer to add candidates with "
+                        "update_watchlist",
+                "asof": datetime.now(timezone.utc).isoformat()}
+    closes: dict[str, list[float]] = {}
+    labels: dict[str, str] = {}
+    for e in entries:
+        bars = market.get_daily_bars(e.symbol, days=200)
+        closes[e.symbol] = [b.close for b in bars.bars]
+        if len(bars.bars) >= 21:
+            reading = classify_regime(
+                [b.high for b in bars.bars], [b.low for b in bars.bars],
+                [b.close for b in bars.bars], [b.volume for b in bars.bars],
+                [b.date for b in bars.bars], volume_feed=bars.source,
+            )
+            labels[e.symbol] = reading.regime
+        else:
+            labels[e.symbol] = "unknown"
+    ranked = rank_watchlist(closes, labels)
+    meta = {e.symbol: {"note": e.note, "added": e.added_ts.isoformat()}
+            for e in entries}
+    return {
+        "symbols": [e.symbol for e in entries],
+        "ranked": [{**asdict(r), **meta.get(r.symbol, {})} for r in ranked],
+        "asof": datetime.now(timezone.utc).isoformat(),
+        "source": "alpaca-data-iex",
+    }
 
 
 class PortfolioRiskArgs(LenientArgs):

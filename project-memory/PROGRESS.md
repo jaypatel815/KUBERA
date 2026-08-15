@@ -3,6 +3,21 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T068: the watchlist ranks itself — a pipeline, not a pile
+Research candidates now arrive RANKED. watchlist table + CRUD (idempotent
+add carries the owner's thesis note); analysis/ranking.py scores the list
+cross-sectionally per D020: relative-strength percentiles at 21/63/126 bars
+(percentiles so a hot tape can't make everything a buy; tie-aware, hand-
+tested), T050 regime label mapped to a documented long-side fit heuristic,
+5-session payoff context, composite 0.5/0.3/0.2 with decile flags. Symbols
+with thin history are listed-not-scored. Tools update_watchlist +
+get_watchlist (#30/#31; empty list returns an offer, not an error) and
+GET/POST/DELETE /api/watchlist. One fix en route: classify_regime's reading
+exposes .regime, not .label. Say "watch NVDA — breakout setup" then "what
+looks best on my list?" — that's the flow this ships.
+Verified: verify.py PASS — 556 passed (+9), 3 skipped.
+Next: T076 event-risk guard (FRED calendar) or T023 key-tier check (owner).
+
 ## 2026-08-14 — T093b: reconciliation — the DB and the broker must agree
 Small ticket, closed same day it was minted. health_check now compares the
 latest account_snapshot equity against the live broker (/api/account) and

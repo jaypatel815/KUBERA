@@ -154,6 +154,18 @@ class BacktestRun(Base):
     stability_json: Mapped[str | None] = mapped_column(String(2048), default=None)
 
 
+class WatchlistEntry(Base):
+    """T068: symbols under research. The ranked view is computed live from
+    market data — this table stores only membership and the owner's note."""
+
+    __tablename__ = "watchlist"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    symbol: Mapped[str] = mapped_column(String(16), unique=True, index=True)
+    note: Mapped[str | None] = mapped_column(String(300), default=None)
+    added_ts: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
 class InvestmentPolicy(Base):
     """The owner's living Investment Policy Statement (T061, D014) — single row (id=1).
     Injected into every chat; recommendations are checked against it. Updates go through

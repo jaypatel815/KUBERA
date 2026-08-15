@@ -394,6 +394,49 @@ def symbol_expected_move(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+class WatchlistAddRequest(BaseModel):
+    symbol: str = Field(min_length=1, max_length=10)
+    note: str | None = Field(default=None, max_length=300)
+
+
+@app.get("/api/watchlist")
+def watchlist_ranked(
+    market: MarketDataClient = Depends(get_market_client),
+    db=Depends(get_db_session),
+) -> dict:
+    """T068: the research watchlist, ranked cross-sectionally."""
+    try:
+        return registry.execute("get_watchlist", {},
+                                ToolContext(market=market, db=db))
+    except (ToolError, ToolArgumentError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.post("/api/watchlist")
+def watchlist_add(req: WatchlistAddRequest, db=Depends(get_db_session)) -> dict:
+    try:
+        return registry.execute(
+            "update_watchlist",
+            {"action": "add", "symbol": req.symbol, "note": req.note},
+            ToolContext(db=db),
+        )
+    except (ToolError, ToolArgumentError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+@app.delete("/api/watchlist/{symbol}")
+def watchlist_remove(symbol: str, db=Depends(get_db_session)) -> dict:
+    try:
+        return registry.execute(
+            "update_watchlist", {"action": "remove", "symbol": symbol},
+            ToolContext(db=db),
+        )
+    except (ToolError, ToolArgumentError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
 @app.get("/api/portfolio-risk")
 def portfolio_risk_endpoint(
     days: int = 130,

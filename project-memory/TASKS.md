@@ -47,7 +47,18 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 ## Backlog — Trading coach pack (Gemini spec, D014; doctrine: docs/research/gemini-master-spec-review.md)
 - [ ] T066 — Trade coaching: pre-trade review (thesis, sizing, concentration, correlation, regime fit, IPS compliance) + post-trade review (expected vs actual, entry/exit quality, rule adherence, lesson) persisted per trade; PROCESS-not-outcome scoring. Depends on T016 for real fills; chat-level v0 works today via conversation.
 - [ ] T067b — DQS v2 (after T036/T016/T063 land): score the OWNER's actual fills, add FOMO-into-late-RVOL-spike and cutting-winners-early patterns (need fill timestamps + intraday context), wire follow/override rate from the T063 journal, derive the risk budget from the IPS instead of RiskLimits defaults.
-- [ ] T068 — Watchlist + opportunity ranking: watchlist table + ranked view scoring briefings (edge, risk, portfolio fit, confidence) — a ranked research pipeline instead of isolated ideas. Ranking criteria defined (D020): 1/3/6-month relative strength within the universe + regime fit + expected-move/payoff context. Universe-screener framing (D021): rank N symbols cross-sectionally, flag top/bottom deciles; a cross-sectional momentum TEMPLATE (long top decile) is a future strategy behind the T064 gate — its short half depends on the D021 shorting decision.
+- [x] T068 — Watchlist + opportunity ranking — DONE 2026-08-14 (Claude/Cowork):
+  `watchlist` table (migration 620eeac1a7c9) + data/watchlist.py (idempotent
+  add updates note); `analysis/ranking.py` — cross-sectional scoring per D020:
+  1/3/6-month (21/63/126-bar) relative-strength PERCENTILES within the list
+  (tie-aware ranks, hand-tested), regime-fit mapping (trending_up 1.0 …
+  trending_down 0.0, documented heuristic), 5-session payoff context, composite
+  0.5/0.3/0.2, top/bottom decile flags (N≥10) else top/bottom; short history =
+  listed-not-scored, never guessed. Tools #30/#31 update_watchlist (case-
+  normalized add/remove) + get_watchlist (empty list → friendly offer, not an
+  error; owner's thesis note rides along) + GET/POST/DELETE /api/watchlist.
+  Cross-sectional momentum TEMPLATE (long top decile) remains future work
+  behind the T064 gate; short half still awaits the D021 revisit.
 - [ ] T074 — Realtime conversation pipeline (the Zoey-latency upgrade): streaming STT + start-TTS-before-reply-completes + barge-in (interrupt while speaking), via LiveKit Agents / Pipecat or OpenAI Realtime API with our registry as functions; target sub-second first-audio; verify current framework landscape + costs at build time. The Orb (T073) is the UI shell this plugs into.
 - [ ] T072 — Human-grade TTS backends (owner: default SAPI sounds robotic; edge = big jump, this = the rest): add `openai` TTS backend (his key, ~pennies) and local `kokoro` backend (free, near-human) to talk.py's speaker factory behind KUBERA_TTS; keep latency tolerable (stream or chunk long replies); document voice ladder in README.
 - [ ] T071 — Owner: voice acceptance run — `pip install -r requirements-voice.txt`, server up, `python scripts\talk.py`, hold a conversation. If faster-whisper wheels fail on Python 3.14 → `set KUBERA_STT=openai`. Report quirks to ISSUES.
