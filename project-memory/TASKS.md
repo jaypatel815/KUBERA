@@ -53,7 +53,20 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 - [ ] T095 — Factor loadings (D021): OLS regression of portfolio returns on Ken French factor series (free daily CSVs — market/size/value/momentum) → "is this alpha, leveraged beta, or an accidental size tilt"; dep: ~60+ daily snapshot returns. Beta-only version arrives earlier with T093.
 
 ## Backlog — Adopted from ChatGPT master-spec review (docs/research/chatgpt-master-spec-review.md)
-- [ ] T060 — Time-weighted returns: benchmark comparison currently distorts under deposits/withdrawals; compute TWR from account_snapshots + transactions (needs T036 fills), use it in /api/benchmark; hand-computed tests with a mid-period deposit. Priority note (D018): current curves are NOT yet distorted (no external flows on the paper account so far) — this ticket jumps the queue the day the owner deposits or withdraws.
+- [x] T060 — Time-weighted returns — DONE 2026-08-14 (Claude/Cowork), built
+  BEFORE the first deposit so the number is right the day it matters:
+  `analysis/twr.py` — chain-linked sub-periods across external flows
+  (convention documented: a flow dated D applies at the START of D), hand-
+  tested on the headline case (1000→1100, +500 deposit, end 1760 → simple
+  +76% is a lie, TWR +21% is the truth) plus the withdrawal mirror, flows
+  outside the window, and a flow on the opening date (not double-counted).
+  `cash_flows` table (migration 69a772af165c) + AlpacaClient.get_cash_activities
+  (CSD/CSW, signs normalized) + data/flows.py sync (deduped like fills, wired
+  into scripts/sync.py, never fatal). compare_benchmark now returns a
+  time_weighted block with excess_vs_benchmark computed from TWR and a note
+  telling the model to quote TWR, not the simple figure, once flows exist.
+  Bug caught by the tz guard en route: date-only broker fields parse naive —
+  normalized to UTC in the client.
 - [~] T062b — Brief upgrades: watchlist setups (T068) + event risk (T076) DONE
   2026-08-14 (Claude/Cowork) — morning brief gains `watchlist` (top-3 ranked
   setups with the owner's thesis notes; empty list said plainly) and

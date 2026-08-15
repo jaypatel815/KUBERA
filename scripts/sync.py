@@ -15,9 +15,10 @@ from pathlib import Path
 BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend"
 sys.path.insert(0, str(BACKEND_DIR))
 
-from data.alpaca import AlpacaClient  # noqa: E402
+from data.alpaca import AlpacaClient, AlpacaError  # noqa: E402
 from data.db import make_engine, make_session_factory  # noqa: E402
 from data.fills import sync_fills  # noqa: E402
+from data.flows import sync_cash_flows  # noqa: E402
 from data.sync import sync_once  # noqa: E402
 
 
@@ -34,8 +35,14 @@ def main() -> int:
         with AlpacaClient() as client, factory() as session:
             r = sync_once(session, client)
             f = sync_fills(session, client)
+            try:
+                cf = sync_cash_flows(session, client)
+                flows_note = f"flows +{cf.inserted}/{cf.skipped} known"
+            except AlpacaError as e:  # activities endpoint unavailable: never fatal
+                flows_note = f"flows skipped ({type(e).__name__})"
             print(f"synced {r.positions} positions, equity {r.equity:.2f}, "
-                  f"fills +{f.inserted}/{f.skipped} known, asof {r.asof:%H:%M:%S}")
+                  f"fills +{f.inserted}/{f.skipped} known, {flows_note}, "
+                  f"asof {r.asof:%H:%M:%S}")
         if not args.loop:
             return 0
         time.sleep(args.loop)

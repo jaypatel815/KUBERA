@@ -48,6 +48,7 @@ from analysis.staleness import (
     wallclock_fallback,
 )
 from analysis.triage import triage_position
+from analysis.twr import time_weighted_return
 from backtest.ledger import (
     PROMOTION_MAX_AGE_DAYS,
     is_promoted,
@@ -57,6 +58,7 @@ from backtest.ledger import (
 from backtest.stats import calmar, trade_stats
 from backtest.strategies import TEMPLATES, build_strategy
 from data.alpaca import AlpacaClient, AlpacaError
+from data.flows import flow_history
 from data.fred import SERIES, FredClient, FredError
 from data.history import equity_history
 from data.ips import get_ips, ips_as_dict, upsert_ips
@@ -1491,7 +1493,11 @@ def _run_backtest(ctx: ToolContext, p: BacktestArgs) -> dict:
 @registry.tool(
     "compare_benchmark",
     "Portfolio equity history vs a benchmark symbol: date-aligned normalized curves, "
-    "cumulative/vol/Sharpe/drawdown per series, excess return.",
+    "cumulative/vol/Sharpe/drawdown per series, excess return — PLUS the "
+    "time-weighted return (T060), which strips out deposits and withdrawals. "
+    "When flows exist, compare TWR to the benchmark and say so; quoting the "
+    "simple return against SPY after a deposit flatters the owner with money "
+    "he moved, not performance he earned.",
     BenchmarkArgs,
 )
 def _compare_benchmark(ctx: ToolContext, p: BenchmarkArgs) -> dict:
@@ -1500,6 +1506,18 @@ def _compare_benchmark(ctx: ToolContext, p: BenchmarkArgs) -> dict:
     portfolio_points = equity_history(db, days=p.days)
     bars = market.get_daily_bars(p.symbol, days=p.days)
     c = compare(portfolio_points, [(b.date, b.close) for b in bars.bars])
+    twr = None
+    if len(portfolio_points) >= 2:
+        result = time_weighted_return(portfolio_points, flow_history(db, days=p.days))
+        twr = {
+            "twr_frac": result.twr_frac,
+            "simple_return_frac": result.simple_return_frac,
+            "net_flows": result.net_flows,
+            "n_flows": result.n_flows,
+            "excess_vs_benchmark": round(
+                result.twr_frac - c.benchmark.cumulative_return, 6),
+            "note": result.note,
+        }
     return {
         "symbol": bars.symbol,
         "dates": c.dates,
@@ -1508,6 +1526,7 @@ def _compare_benchmark(ctx: ToolContext, p: BenchmarkArgs) -> dict:
         "portfolio": asdict(c.portfolio),
         "benchmark": asdict(c.benchmark),
         "excess_return": c.excess_return,
+        "time_weighted": twr,
         "asof": bars.asof.isoformat(),
         "source": f"snapshots + {bars.source}",
     }

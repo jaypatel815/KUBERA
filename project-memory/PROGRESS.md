@@ -3,6 +3,24 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T060: the deposit that must not look like skill
+Built ahead of the trigger (D018 said this jumps the queue on the first
+deposit — better to have it correct BEFORE money moves than to discover the
+lie afterward). analysis/twr.py chain-links sub-periods across external
+flows; the headline hand test says it all: deposit $500 into a $1,000 account
+that grew to $1,100 and ends at $1,760 — the simple return prints +76% (of
+which $500 was a transfer), TWR reports +21%, which is what the strategy
+actually did. The lie flatters the owner, which is the worst direction, so
+compare_benchmark now carries a time_weighted block with excess computed
+against TWR and an instruction to quote it once flows exist. Plumbing:
+cash_flows table + CSD/CSW activities (signs normalized: withdrawals always
+negative) + deduped sync wired into scripts/sync.py, never fatal. The
+tz-aware type guard earned its keep — Alpaca's date-only fields parse naive
+and were caught at the DB boundary, fixed in the client.
+Verified: verify.py PASS — 596 passed (+9), 3 skipped.
+Next: T088 execution quality / T089 live MAE/MFE (both want accumulated
+fills — daily scripts/sync.py), or T072 human-grade TTS.
+
 ## 2026-08-14 — T096: the right-sized toolbox — 31 tools is a menu, not a gift
 I008's two routing failures came from a small local model drowning in the
 registry; since then the registry grew from 24 to 31, so the problem got

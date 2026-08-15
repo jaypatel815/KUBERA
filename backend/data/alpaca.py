@@ -81,6 +81,23 @@ class Fill:
     source: str = SOURCE
 
 
+def _as_utc(dt: datetime) -> datetime:
+    """Date-only broker fields parse naive; every KUBERA timestamp is tz-aware."""
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+
+
+@dataclass(frozen=True)
+class CashActivity:
+    """A deposit or withdrawal (T060). `amount` is signed: + in, − out."""
+
+    external_id: str
+    kind: str          # deposit | withdrawal
+    amount: float
+    occurred_at: datetime
+    asof: datetime
+    source: str = SOURCE
+
+
 @dataclass(frozen=True)
 class Clock:
     """The broker's own market clock — no local timezone guessing."""
@@ -167,6 +184,33 @@ class AlpacaClient:
                 asof=datetime.now(timezone.utc),
             ))
         return out
+
+    def get_cash_activities(self, after: datetime | None = None) -> list[CashActivity]:
+        """External cash movements (T060): CSD deposits, CSW withdrawals. These
+        are what make a naive return figure lie — a deposit is not performance."""
+        out: list[CashActivity] = []
+        for kind, activity_type in (("deposit", "CSD"), ("withdrawal", "CSW")):
+            params: dict = {"direction": "asc", "page_size": 100}
+            if after is not None:
+                params["after"] = after.isoformat()
+            rows = self._get(f"/v2/account/activities/{activity_type}",
+                             params=params).json()
+            for r in rows:
+                amount = float(r["net_amount"])
+                out.append(CashActivity(
+                    external_id=str(r["id"]),
+                    kind=kind,
+                    # Alpaca reports withdrawals negative already; normalize
+                    # defensively so the sign always means direction.
+                    amount=amount if kind == "deposit" else -abs(amount),
+                    # CSD/CSW rows carry a DATE-ONLY "date" (naive when parsed);
+                    # KUBERA timestamps are always tz-aware, so anchor to UTC
+                    # midnight rather than letting a naive value reach the DB.
+                    occurred_at=_as_utc(
+                        parse_rfc3339(r.get("date") or r["transaction_time"])),
+                    asof=datetime.now(timezone.utc),
+                ))
+        return sorted(out, key=lambda a: a.occurred_at)
 
     def get_clock(self) -> Clock:
         """Market open/closed per the BROKER — the loop's market-hours guard (T036)."""

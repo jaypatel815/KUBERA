@@ -154,6 +154,25 @@ class BacktestRun(Base):
     stability_json: Mapped[str | None] = mapped_column(String(2048), default=None)
 
 
+class CashFlow(Base):
+    """External money in/out (T060) — deposits and withdrawals, NOT trades.
+    Without these, a benchmark comparison silently credits a deposit as
+    performance. Deduped per (account, external_id) like fills."""
+
+    __tablename__ = "cash_flows"
+    __table_args__ = (
+        UniqueConstraint("account_id", "external_id", name="uq_cashflow_external"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("broker_accounts.id"), index=True)
+    external_id: Mapped[str] = mapped_column(String(64))
+    kind: Mapped[str] = mapped_column(String(16))   # deposit | withdrawal
+    amount: Mapped[float] = mapped_column(Float)    # signed: + in, − out
+    occurred_at: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
+    source: Mapped[str] = mapped_column(String(32))
+
+
 class WatchlistEntry(Base):
     """T068: symbols under research. The ranked view is computed live from
     market data — this table stores only membership and the owner's note."""
