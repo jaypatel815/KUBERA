@@ -3,6 +3,27 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T097 v6: the green face — glowing dots on blue-green
+Owner supplied a new visual description: a headshot of glowing GREEN dots,
+dramatic light, deep blue-green gradient background, visible ears, slight left
+angle. Refactor (three offline tuning passes — first attempt floated the ears
+as detached blobs, second overexposed into a solid mass, third collapsed
+density; the fourth balanced contrast gamma 1.35 with density 0.34+0.66v):
+elements are now ROUND soft-edged points (gl_PointCoord radial falloff, not
+rod masks); ears are a surface EXTENSION that widens the silhouette and lifts
+depth so they stay attached; key light from the upper left with density
+thinning in shadow so dots separate visibly; background is a CSS blue-green
+gradient with the whole UI chrome re-palette (teal/gold → green). The neural
+cascade is REMOVED — the new spec is a headshot, not a dissolve.
+JUDGMENT CALL recorded: state used to signal by colour (teal/violet/gold),
+which a green-only palette would erase — so state now shifts hue and
+brightness WITHIN the green family (idle 36,209,126 → listening 64,240,200 →
+thinking 120,235,130 → speaking 150,255,170). Function preserved, identity
+honored. Cursor-follow, lip amp, shimmer, CDN fallback intact.
+Verified: node --check + guards (no cascade, round dots, ears) + verify.py
+PASS — 608 passed, 3 skipped (frontend-only).
+Owner: hard-refresh localhost:8000.
+
 ## 2026-08-14 — T088: "never buy the open print" gets a scoreboard
 The doctrine has been a belief; this makes it falsifiable with the owner's own
 money. Every ordered signal now stores the price the DECISION was made on

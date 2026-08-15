@@ -6,35 +6,36 @@
 <title>KUBERA</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { height: 100%; background: #07070c; color: #e8e4d8; overflow: hidden;
+  html, body { height: 100%; color: #d8f0e4; overflow: hidden;
+    background: linear-gradient(160deg, #04120f 0%, #06201d 45%, #0a2b28 100%);
     font-family: "Segoe UI", -apple-system, system-ui, sans-serif; }
   #stage { position: fixed; inset: 0; display: flex; flex-direction: column;
     align-items: center; justify-content: center; }
   #orb { cursor: pointer; }
   #status { margin-top: 6px; font-size: 13px; letter-spacing: 3px; text-transform: uppercase;
-    color: #8a815f; user-select: none; }
+    color: #4fbf8e; user-select: none; }
   #hint { position: fixed; top: 18px; width: 100%; text-align: center; font-size: 12px;
-    color: #55503e; letter-spacing: 1px; }
+    color: #3d8a6b; letter-spacing: 1px; }
   #log { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%);
     width: min(680px, 92vw); max-height: 30vh; overflow-y: auto; font-size: 14px;
     line-height: 1.55; -webkit-mask-image: linear-gradient(transparent, black 18%);
     mask-image: linear-gradient(transparent, black 18%); }
   .turn { margin: 10px 0; }
-  .you { color: #6f9f9b; }
-  .kub { color: #d9c98a; }
+  .you { color: #7fd9b4; }
+  .kub { color: #b6f5cf; }
   .chips { margin-top: 4px; }
-  .chip { display: inline-block; font-size: 10.5px; letter-spacing: 1px; color: #7d7457;
-    border: 1px solid #2e2b20; border-radius: 999px; padding: 1px 9px; margin-right: 6px; }
+  .chip { display: inline-block; font-size: 10.5px; letter-spacing: 1px; color: #5aa987;
+    border: 1px solid #17453a; border-radius: 999px; padding: 1px 9px; margin-right: 6px; }
   #bar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
     width: min(680px, 92vw); display: flex; gap: 8px; align-items: center; }
-  #typed { flex: 1; background: #101018; border: 1px solid #23232e; border-radius: 10px;
-    color: #e8e4d8; padding: 11px 14px; font-size: 14px; outline: none; }
-  #typed:focus { border-color: #4a4433; }
-  label.cf { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #8a815f;
+  #typed { flex: 1; background: #071c19; border: 1px solid #14453b; border-radius: 10px;
+    color: #d8f0e4; padding: 11px 14px; font-size: 14px; outline: none; }
+  #typed:focus { border-color: #2f8f6c; }
+  label.cf { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #4fbf8e;
     user-select: none; white-space: nowrap; }
-  input[type=checkbox] { accent-color: #c9a227; }
+  input[type=checkbox] { accent-color: #24d17e; }
   #err { position: fixed; bottom: 4px; width: 100%; text-align: center; font-size: 11px;
-    color: #a05c5c; }
+    color: #e0705f; }
 </style>
 </head>
 <body>
@@ -54,22 +55,24 @@
 <script>
 // ------------------------------------------------------------------ state
 const S = { mode: "idle", conversationId: null, amp: 0, t: 0 };
-const COLORS = { idle: [201,162,39], listening: [78,168,160], thinking: [148,108,214],
-                 speaking: [222,186,80] };
+// Green identity (owner spec): state is signalled by hue-shift and brightness
+// INSIDE the green family, never by swapping to an unrelated colour.
+const COLORS = { idle: [36, 209, 126], listening: [64, 240, 200],
+                 thinking: [120, 235, 130], speaking: [150, 255, 170] };
 const statusEl = document.getElementById("status");
 const errEl = document.getElementById("err");
 function setMode(m) { S.mode = m; statusEl.textContent = m; }
 
-// ------------------------------------------------------------------ face v4 (T097)
-// STRICT reference spec (owner, 2026-08-14): the face is built from an enormous
-// number of MICROSCOPIC VERTICAL LUMINOUS RODS — not squares, not voxels, not a
-// mesh. ~40k GPU sprites masked to thin bars in the fragment shader; features
-// emerge from particle DENSITY (dropout tracks shading), brightness, and deep
-// feathered recesses (eyes/nostrils/mouth). Below the lower lip the rods
-// fragment — scatter, drift, thin out — and hand off to a 500+ node chaotic
-// neural cascade (thin lines, fading with depth, floaters outside the
-// silhouette). Frontal composition, restrained glow, ice/cobalt/navy palette.
-// Cursor-follow, pupil lead, lip amp, thinking shimmer, scan + flicker kept.
+// ------------------------------------------------------------------ face v6 (T097)
+// GREEN DIGITAL FACE (owner spec, 2026-08-14): a headshot built from thousands
+// of small ROUND glowing dots — points of light, not rods or voxels — on a deep
+// blue-green gradient. Features (brow, eye cavities, nose, lips, chin, ears)
+// emerge from a sculpted depth field lit dramatically from the upper left;
+// density thins with the light so dots visibly separate in shadow. The head is
+// angled slightly left at rest and turns to follow the cursor.
+// State is signalled by hue-shift and brightness WITHIN the green family
+// (idle → listening → thinking → speaking), never by swapping colour — the
+// palette is KUBERA's identity now.
 // Falls back to a simple pulse if three.js can't load — voice always works.
 const canvas = document.getElementById("orb");
 let mx = innerWidth / 2, my = innerHeight / 2, lastMove = 0;
@@ -79,7 +82,16 @@ addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; lastMove 
 function G(x, y, x0, y0, sx, sy, amp) {
   return amp * Math.exp(-(((x - x0) ** 2) / (2 * sx * sx) + ((y - y0) ** 2) / (2 * sy * sy)));
 }
-function faceWidth(y) {          // y: -100 crown .. ~92 chin tip (elongated skull)
+// --- ears: a SURFACE EXTENSION (widens the silhouette and lifts depth) so they
+// stay attached to the head rather than floating beside it.
+function earBulge(ax, y) {
+  const ex = (ax - 60) / 9, ey = (y - 12) / 18;
+  const r = Math.hypot(ex, ey);
+  if (r >= 1) return [0, 0];
+  const f = Math.pow(Math.cos(r * 1.57), 1.2);
+  return [11 * f, 14 * f];              // [extra width, extra depth]
+}
+function faceWidth(y, ax) {
   let cr = 0;
   const a = (y + 24) / 80;
   if (Math.abs(a) <= 1) cr = 60 * (1 - a * a) ** 0.45;
@@ -89,41 +101,41 @@ function faceWidth(y) {          // y: -100 crown .. ~92 chin tip (elongated sku
     jaw = 56 - 40 * t ** 1.25;
     if (y > 74) jaw *= Math.sqrt(Math.max(0, 1 - ((y - 74) / 20) ** 2));
   }
-  if (y < 8) return cr;
-  if (y > 32) return jaw;
-  const tt = (y - 8) / 24;
-  return cr * (1 - tt) + jaw * tt;
+  const base = y < 8 ? cr : y > 32 ? jaw
+             : cr * (1 - (y - 8) / 24) + jaw * ((y - 8) / 24);
+  return base + earBulge(ax === undefined ? base : Math.abs(ax), y)[0];
 }
 function faceDepth(x, y) {
-  // per-side wobble: the silhouette is organic and slightly asymmetric, per spec
+  const ax = Math.abs(x);
   const wob = 2.5 * Math.sin(y * 0.13 + (x > 0 ? 0.9 : 2.6))
             + 1.5 * Math.sin(y * 0.31 + (x > 0 ? 2.1 : 0.4));
-  const w = faceWidth(y) + wob;
-  if (w <= 2 || Math.abs(x) > w) return null;
-  let z = 60 * Math.sqrt(Math.max(0, 1 - (x / 66) ** 2 - ((y + 2) / 112) ** 2));
-  const ax = Math.abs(x);
-  z += G(ax, y, 26, -28, 30, 8, 6);            // brow ridge / orbital bone
-  z += G(ax, y, 26, -18, 15, 9, -13);          // deep sockets — no eyeballs
-  z += G(x, y, 0, -34, 22, 26, 3);             // forehead plane
+  const w = faceWidth(y, ax) + wob;
+  if (w <= 2 || ax > w) return null;
+  let z = 60 * Math.sqrt(Math.max(0, 1 - (Math.min(ax, 64) / 66) ** 2
+                                    - ((y + 2) / 112) ** 2));
+  z += G(ax, y, 26, -28, 30, 8, 6);             // brow ridge / orbital bone
+  z += G(ax, y, 26, -18, 15, 9, -13);           // deep sockets — no eyeballs
+  z += G(x, y, 0, -34, 22, 26, 3);              // forehead plane
   const ramp = 1 / (1 + Math.exp(-(y + 30) / 6));
   const fall = 1 / (1 + Math.exp((y - 27) / 3));
-  z += 19 * Math.exp(-(x * x) / 128) * ramp * fall;  // strong nasal bridge
-  z += G(x, y, 0, 25, 9, 7, 11);               // nose tip projection
-  z += G(ax, y, 11, 30, 5, 4, 5);              // nostril wings
-  z += G(ax, y, 7, 32, 4, 3, -6);              // nostril darks
-  z += G(x, y, 0, 44, 14, 4.5, 4.5);           // upper lip (subtle)
-  z += G(x, y, 0, 52, 12, 4.6, 5);             // lower lip (subtle)
-  z += G(x, y, 0, 48, 13, 5, -3.5);            // broad shallow mouth cavity
-  z += G(x, y, 0, 72, 13, 11, 7);              // chin
-  z += G(ax, y, 38, 6, 14, 13, 6.5);           // cheekbones
-  z += G(ax, y, 27, 32, 11, 11, -3.5);         // cheek hollow
-  z += G(ax, y, 30, 42, 8, 7, -2);             // nasolabial recess
-  z += G(ax, y, 50, -40, 12, 15, -4);          // temples
+  z += 19 * Math.exp(-(x * x) / 128) * ramp * fall;   // nasal bridge
+  z += G(x, y, 0, 25, 9, 7, 11);                // nose tip
+  z += G(ax, y, 11, 30, 5, 4, 5);               // nostril wings
+  z += G(ax, y, 7, 32, 4, 3, -6);               // nostril darks
+  z += G(x, y, 0, 44, 14, 4.5, 4.5);            // upper lip
+  z += G(x, y, 0, 52, 12, 4.6, 5);              // lower lip
+  z += G(x, y, 0, 48, 13, 5, -3.5);             // mouth cavity
+  z += G(x, y, 0, 72, 13, 11, 7);               // chin
+  z += G(ax, y, 38, 6, 14, 13, 6.5);            // cheekbones
+  z += G(ax, y, 27, 32, 11, 11, -3.5);          // cheek hollow
+  z += G(ax, y, 30, 42, 8, 7, -2);              // nasolabial recess
+  z += G(ax, y, 50, -40, 12, 15, -4);           // temples
+  z += earBulge(ax, y)[1] * 0.55;               // ear body
+  z -= G(ax, y, 57, 12, 4, 9, 4);               // concha hollow
   const edge = Math.min(1, (w - ax) / 9);
   return z * (0.32 + 0.68 * edge);
 }
-// irregular, elongated, slightly asymmetric eye cavities (spec: NOT circles,
-// no pupils, darker toward center, partially veiled by particles)
+// irregular, elongated, slightly asymmetric eye cavities (no pupils)
 const EYES = [[-26.5, -17.5, 13.5, 7.2, 0.7], [26.5, -16.4, 12.5, 6.8, 2.3]];
 function eyeFactor(x, y) {
   let f = 1;
@@ -136,7 +148,7 @@ function eyeFactor(x, y) {
     const rr = r / Math.max(0.5, rim);
     if (rr < 1) {
       const t = Math.max(0, (rr - 0.25) / 0.75);
-      f = Math.min(f, 0.10 + 0.90 * t * t);
+      f = Math.min(f, 0.08 + 0.92 * t * t);
     }
   }
   return f;
@@ -150,61 +162,40 @@ function initFace3D() {
   renderer.setSize(520, 520, false);
   renderer.setClearColor(0x000000, 0);
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(58, 1, 10, 2000);
-  camera.position.set(0, -60, 340);
-  camera.lookAt(0, -60, 0);
+  const camera = new THREE.PerspectiveCamera(46, 1, 10, 2000);
+  camera.position.set(0, 8, 330);
+  camera.lookAt(0, 8, 0);
   const head = new THREE.Group();
   scene.add(head);
 
-  // ---- microscopic vertical rods; anatomy from density + brightness + recesses
-  const P = [], SH = [], K = [], SD = [], PAL = [], FR = [];
-  const XSTEP = 1.0, YSTEP = 0.75, EPS = 1.2;
-  const gaussRand = () => (Math.random() + Math.random() + Math.random() - 1.5) * 1.4;
-  for (let y = -100; y <= 92; y += YSTEP) {
-    for (let x = -70; x <= 70; x += XSTEP) {
+  // ---- glowing dots. Dramatic key light from the upper LEFT; shading is baked
+  // per point, density thins where the light falls off so dots separate in
+  // shadow (the reference reads as points, not a solid mass).
+  const P = [], SH = [], K = [], SD = [];
+  const STEP = 1.15, EPS = 1.2;
+  const LX = -0.45, LY = -0.36, LZ = 0.81;
+  for (let y = -100; y <= 92; y += STEP) {
+    for (let x = -82; x <= 82; x += STEP) {
       const z = faceDepth(x, y);
       if (z === null) continue;
       const zx1 = faceDepth(x + EPS, y), zx0 = faceDepth(x - EPS, y);
       const zy1 = faceDepth(x, y + EPS), zy0 = faceDepth(x, y - EPS);
       let s;
-      if (zx1 === null || zx0 === null || zy1 === null || zy0 === null) s = 0.70;
+      if (zx1 === null || zx0 === null || zy1 === null || zy0 === null) s = 0.55;
       else {
         const gx = (zx1 - zx0) / (2 * EPS), gy = (zy1 - zy0) / (2 * EPS);
         const n = Math.sqrt(gx * gx + gy * gy + 1);
-        s = Math.max(0, (-gx / n) * -0.3 + (-gy / n) * -0.45 + (1 / n) * 0.85);
+        s = Math.max(0, (-gx / n) * LX + (-gy / n) * LY + (1 / n) * LZ);
       }
-      s = 0.18 + 0.82 * s;
-      s *= eyeFactor(x, y);                      // recessed cavities, feathered
-      s *= 0.72 + (z / 60) * 0.5;                // forward planes brightest
-      const chin = Math.max(0, Math.min(1, (y - 58) / 20));
-      s *= 1 - 0.45 * chin;                      // dark dense chin mass
-      const v = Math.pow(s, 1.4);
+      s = 0.07 + 0.93 * s;
+      s *= eyeFactor(x, y);
+      s *= 0.48 + (z / 60) * 0.66;         // forward planes catch the light
+      const v = Math.pow(s, 1.35);         // contrast: mid-tones fall away
+      if (Math.random() > 0.34 + 0.66 * Math.pow(v, 0.9)) continue;
       const mouth = Math.abs(x) < 19 && y > 41 && y < 57;
-      const frag = Math.max(0, (y - 74) / 22);   // dissolve starts BELOW the chin mass
-      let prob = 0.30 + 0.70 * Math.min(1, v + 0.15);
-      if (chin > 0) prob = Math.max(prob, 0.62); // chin: dense even though dark
-      prob *= 1 - 0.5 * frag;
-      if (mouth) prob *= 0.85;                   // mouth partially lost in the field
-      if (Math.random() > prob) continue;
-      let bx = x + (Math.random() - 0.5) * 0.9;  // organic irregularity
-      let by = y + (Math.random() - 0.5) * 0.7;
-      let vv = v;
-      if (mouth) { bx += (Math.random() - 0.5) * 3; vv *= 0.8; }
-      if (frag > 0) {
-        bx += gaussRand() * 12 * frag;
-        by += gaussRand() * 7 * frag + frag * frag * 24;
-      }
-      if (Math.random() < 0.015) {               // escaped floaters
-        bx += gaussRand() * 9; by += gaussRand() * 7; vv *= 0.7;
-      }
-      const rr = Math.random();
-      const pal = rr < 0.10 + 0.34 * Math.max(0, vv - 0.48) ? 2
-                : (rr > 0.80 || vv < 0.26) ? 0 : 1;
-      for (let L = 0; L < 2; L++) {
-        P.push(bx, -by, z - 30 - L * 2.5);
-        SH.push(vv * (L === 0 ? 1.0 : 0.45)); K.push(mouth ? 3 : 0);
-        SD.push(Math.random() * 10); PAL.push(pal); FR.push(frag);
-      }
+      P.push(x + (Math.random() - 0.5) * 0.6, -y + (Math.random() - 0.5) * 0.6,
+             z - 30);
+      SH.push(v); K.push(mouth ? 3 : 0); SD.push(Math.random() * 10);
     }
   }
   const geo = new THREE.BufferGeometry();
@@ -212,8 +203,6 @@ function initFace3D() {
   geo.setAttribute("aShade", new THREE.Float32BufferAttribute(SH, 1));
   geo.setAttribute("aKind", new THREE.Float32BufferAttribute(K, 1));
   geo.setAttribute("aSeed", new THREE.Float32BufferAttribute(SD, 1));
-  geo.setAttribute("aPal", new THREE.Float32BufferAttribute(PAL, 1));
-  geo.setAttribute("aFrag", new THREE.Float32BufferAttribute(FR, 1));
 
   const mat = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -221,158 +210,66 @@ function initFace3D() {
       uTime: { value: 0 }, uAmp: { value: 0 }, uMode: { value: 0 },
       uColor: { value: new THREE.Color() },
       uPR: { value: renderer.getPixelRatio() },
-      uScanY: { value: 200 }, uGlitch: { value: 0 },
     },
     vertexShader: `
-      attribute float aShade, aKind, aSeed, aPal, aFrag;
-      uniform float uTime, uAmp, uMode, uPR, uGlitch;
-      varying float vShade, vKind, vSeed, vPal, vY;
+      attribute float aShade, aKind, aSeed;
+      uniform float uTime, uAmp, uMode, uPR;
+      varying float vShade, vSeed, vKind;
       void main() {
         vec3 p = position;
-        p.z += 0.7 * sin(uTime * 7.0 + aSeed * 9.0);
-        if (aFrag > 0.0) {
-          p.x += aFrag * 6.0 * sin(uTime * 0.8 + aSeed * 4.0);
-          p.y -= aFrag * 5.0 * (1.0 + sin(uTime * 0.6 + aSeed * 3.0));
-        }
-        p.x += uGlitch * (fract(sin(floor(position.y / 3.0) * 7.13) * 371.7) - 0.5) * 12.0;
-        if (uMode > 1.5 && uMode < 2.5)
-          p.xy += 1.2 * vec2(sin(uTime * 4.0 + aSeed * 5.0), cos(uTime * 3.4 + aSeed * 4.0));
-        if (aKind > 2.5 && uMode > 2.5)
+        p.z += 0.6 * sin(uTime * 6.0 + aSeed * 9.0);       // quiet holo drift
+        if (uMode > 1.5 && uMode < 2.5)                     // thinking shimmer
+          p.xy += 1.1 * vec2(sin(uTime * 4.0 + aSeed * 5.0),
+                             cos(uTime * 3.4 + aSeed * 4.0));
+        if (aKind > 2.5 && uMode > 2.5)                     // lips ride the audio
           p.y += sin(uTime * 26.0 + position.x * 0.35) * uAmp * 4.0;
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
-        gl_PointSize = uPR * (5.2 + aShade * 2.6) * (300.0 / -mv.z);
-        vShade = aShade; vKind = aKind; vSeed = aSeed; vPal = aPal; vY = position.y;
+        gl_PointSize = uPR * (2.0 + aShade * 3.0) * (300.0 / -mv.z);
+        vShade = aShade; vSeed = aSeed; vKind = aKind;
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `
       uniform vec3 uColor;
-      uniform float uAmp, uTime, uScanY;
-      varying float vShade, vKind, vSeed, vPal, vY;
+      uniform float uAmp, uTime;
+      varying float vShade, vSeed, vKind;
       void main() {
-        if (abs(gl_PointCoord.x - 0.5) > 0.16) discard;
-        float half_h = 0.22 + 0.30 * fract(vSeed * 3.7);
-        if (abs(gl_PointCoord.y - 0.5) > half_h) discard;
-        float jit = 0.80 + 0.40 * fract(sin(vSeed * 91.7) * 43758.5);
-        float s = vShade * jit * (1.0 + uAmp * 0.5);
-        vec3 base = vec3(0.28, 0.44, 0.72);
-        if (vPal < 0.5) base = vec3(0.09, 0.14, 0.34);
-        else if (vPal > 1.5) base = vec3(0.82, 0.89, 1.00);
-        vec3 col = mix(base * s, uColor * s, 0.30);
-        col += exp(-pow(vY - uScanY, 2.0) / 200.0) * 0.18 * uColor;
-        col *= 0.95 + 0.05 * sin(uTime * 13.7 + vSeed);
-        if (vKind > 2.5) col *= 1.0 + uAmp * 0.8;
-        gl_FragColor = vec4(col, 0.95);
+        // ROUND dot with a soft edge — a glowing point of light, not a square
+        vec2 d = gl_PointCoord - vec2(0.5);
+        float r = length(d);
+        if (r > 0.5) discard;
+        float falloff = smoothstep(0.5, 0.06, r);
+        float jit = 0.82 + 0.36 * fract(sin(vSeed * 91.7) * 43758.5);
+        float s = vShade * jit * (1.0 + uAmp * 0.45);
+        // deep teal-green in shadow -> near-white green at the highlights
+        vec3 col = mix(vec3(0.05, 0.30, 0.22), uColor, clamp(s * 1.25, 0.0, 1.0));
+        col += vec3(0.25, 0.45, 0.30) * pow(max(0.0, s - 0.72), 1.5) * 2.2;
+        col *= 0.96 + 0.04 * sin(uTime * 11.0 + vSeed);      // faint luminescence
+        if (vKind > 2.5) col *= 1.0 + uAmp * 0.7;
+        gl_FragColor = vec4(col * (0.35 + 0.65 * s) * falloff, falloff * 0.95);
       }`,
   });
   head.add(new THREE.Points(geo, mat));
 
-  // ---- the dissolve: a NARROW chaotic continuation of the chin (no shoulders,
-  // no torso). Top-biased density, central concentration, escaping fragments.
-  const NODES = 420, FLOATERS = 28, TOTAL = NODES + FLOATERS;
-  const MAXSEG = 1600, LINK2 = 24 * 24;
-  const nodes = [];
-  for (let i = 0; i < NODES; i++) {
-    const t = Math.pow(Math.random(), 1.6);
-    const spread = 34 + 30 * Math.pow(t, 0.7);
-    nodes.push({
-      bx: gaussRand() * spread * 0.5,
-      by: -(80 + t * 190) + (Math.random() * 20 - 10),
-      bz: (Math.random() * 2 - 1) * 40,
-      ph: Math.random() * 6.28, t,
-      x: 0, y: 0, z: 0,
-    });
-  }
-  for (let i = 0; i < FLOATERS; i++) {
-    nodes.push({
-      bx: (Math.random() < 0.5 ? -1 : 1) * (50 + Math.random() * 35),
-      by: -(30 + Math.random() * 60),
-      bz: (Math.random() * 2 - 1) * 35,
-      ph: Math.random() * 6.28, t: 0.45,
-      x: 0, y: 0, z: 0,
-    });
-  }
-  const beard = new THREE.Group();
-  scene.add(beard);
-  const nodeGeo = new THREE.BufferGeometry();
-  nodeGeo.setAttribute("position", new THREE.Float32BufferAttribute(new Float32Array(TOTAL * 3), 3));
-  const nodeCol = new Float32Array(TOTAL * 3);
-  for (let i = 0; i < TOTAL; i++) {
-    const fade = (1 - 0.6 * nodes[i].t) * (0.4 + 0.6 * Math.random());
-    const pick = Math.random();
-    const c = pick < 0.18 ? [0.85, 0.90, 1.0] : pick < 0.75 ? [0.43, 0.55, 0.80] : [0.24, 0.31, 0.59];
-    nodeCol[i * 3] = c[0] * fade; nodeCol[i * 3 + 1] = c[1] * fade; nodeCol[i * 3 + 2] = c[2] * fade;
-  }
-  nodeGeo.setAttribute("color", new THREE.BufferAttribute(nodeCol, 3));
-  const nodeMat = new THREE.PointsMaterial({ size: 2.0, transparent: true, opacity: 0.9,
-    vertexColors: true, blending: THREE.AdditiveBlending, depthWrite: false });
-  beard.add(new THREE.Points(nodeGeo, nodeMat));
-  const segGeo = new THREE.BufferGeometry();
-  segGeo.setAttribute("position", new THREE.Float32BufferAttribute(new Float32Array(MAXSEG * 6), 3));
-  const segCol = new Float32Array(MAXSEG * 6);
-  segGeo.setAttribute("color", new THREE.BufferAttribute(segCol, 3));
-  const segMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.55,
-    vertexColors: true, blending: THREE.AdditiveBlending, depthWrite: false });
-  beard.add(new THREE.LineSegments(segGeo, segMat));
-
   const MODE_N = { idle: 0, listening: 1, thinking: 2, speaking: 3 };
-  let yaw = 0, pitch = 0, glitch = 0;
+  let yaw = 0.22, pitch = 0;               // slight left angle at rest, per spec
   (function animate() {
     S.t += 0.016;
     const [r, g, b] = COLORS[S.mode] || COLORS.idle;
     mat.uniforms.uColor.value.setRGB(r / 255, g / 255, b / 255);
-    nodeMat.color.setRGB(0.5 + r / 510, 0.5 + g / 510, 0.5 + b / 510);
-    segMat.color.setRGB(0.5 + r / 510, 0.5 + g / 510, 0.5 + b / 510);
     mat.uniforms.uTime.value = S.t;
     mat.uniforms.uAmp.value = S.amp;
     mat.uniforms.uMode.value = MODE_N[S.mode] || 0;
-    mat.uniforms.uScanY.value = 105 - ((S.t * 45) % 360);
-    if (Math.random() < 0.004) glitch = 1;
-    glitch *= 0.86;
-    mat.uniforms.uGlitch.value = glitch;
 
     const idleGaze = S.t - lastMove > 4;
-    const ty = idleGaze ? 0.08 * Math.sin(S.t * 0.3)
+    const ty = idleGaze ? 0.22 + 0.05 * Math.sin(S.t * 0.3)
                         : Math.max(-0.6, Math.min(0.6, (mx / innerWidth - 0.5) * 1.2));
-    const tp = idleGaze ? 0.04 * Math.sin(S.t * 0.23)
-                        : Math.max(-0.35, Math.min(0.35, (my / innerHeight - 0.5) * 0.75));
+    const tp = idleGaze ? 0.03 * Math.sin(S.t * 0.23)
+                        : Math.max(-0.32, Math.min(0.32, (my / innerHeight - 0.5) * 0.7));
     yaw += (ty - yaw) * 0.07; pitch += (tp - pitch) * 0.07;
     head.rotation.y = yaw;
     head.rotation.x = -pitch;
-    beard.rotation.y = yaw * 0.35;
-    head.scale.setScalar(1 + 0.012 * Math.sin(S.t * (S.mode === "thinking" ? 3.6 : 1.4))
-                           + S.amp * 0.015);
-
-    const np = nodeGeo.attributes.position.array;
-    const sp = segGeo.attributes.position.array;
-    let seg = 0;
-    for (let i = 0; i < TOTAL; i++) {
-      const n = nodes[i];
-      n.x = n.bx + 6 * Math.sin(S.t * 0.50 + n.ph);
-      n.y = n.by + 4 * Math.sin(S.t * 0.40 + n.ph * 2);
-      n.z = n.bz + 6 * Math.cos(S.t * 0.45 + n.ph);
-      np[i * 3] = n.x; np[i * 3 + 1] = n.y; np[i * 3 + 2] = n.z;
-    }
-    for (let i = 0; i < TOTAL && seg < MAXSEG; i++) {
-      const n = nodes[i];
-      for (let j = i + 1; j < TOTAL && seg < MAXSEG; j++) {
-        const m = nodes[j];
-        const dx = n.x - m.x, dy = n.y - m.y, dz = n.z - m.z;
-        const dd = dx * dx + dy * dy + dz * dz;
-        if (dd < LINK2) {
-          const o = seg * 6;
-          sp[o] = n.x; sp[o + 1] = n.y; sp[o + 2] = n.z;
-          sp[o + 3] = m.x; sp[o + 4] = m.y; sp[o + 5] = m.z;
-          const f = (1 - dd / LINK2) * (1 - 0.7 * Math.max(n.t, m.t)) * 0.85 + 0.05;
-          segCol[o] = 0.30 * f; segCol[o + 1] = 0.38 * f; segCol[o + 2] = 0.62 * f;
-          segCol[o + 3] = 0.30 * f; segCol[o + 4] = 0.38 * f; segCol[o + 5] = 0.62 * f;
-          seg++;
-        }
-      }
-    }
-    nodeGeo.attributes.position.needsUpdate = true;
-    segGeo.attributes.position.needsUpdate = true;
-    segGeo.attributes.color.needsUpdate = true;
-    segGeo.setDrawRange(0, seg * 2);
+    head.scale.setScalar(1 + 0.010 * Math.sin(S.t * (S.mode === "thinking" ? 3.6 : 1.4))
+                           + S.amp * 0.012);
 
     S.amp *= 0.92;
     renderer.render(scene, camera);
