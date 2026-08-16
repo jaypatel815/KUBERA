@@ -3,6 +3,33 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — scripts/schwab_auth.py (a gap I had left)
+The owner asked how to get SCHWAB_REFRESH_TOKEN. My error messages and docs
+already told him to "run python scripts/schwab_auth.py" — a file I had never
+written. Referencing a tool that does not exist is worse than omitting it, so
+this closes it.
+The flow has one genuinely confusing step and the script leads with it rather
+than burying it: Schwab requires an HTTPS callback even for localhost, so after
+approving, the browser lands on an ERROR PAGE. That is the expected outcome —
+the code is in the address bar and you paste the whole URL back. Catching the
+redirect automatically would mean running an HTTPS listener with a self-signed
+certificate, which is several more things that fail differently on Windows. One
+copy-paste is uglier and works.
+Details that would otherwise cost an evening, all encoded: the code expires in
+about 30 seconds (its own error hint); the code is URL-encoded and ends with an
+"@", so splitting on "=" mangles it — parse_qs, and a test proves it survives;
+the callback must match the registered one byte for byte; and the script makes
+one real read-only call to VERIFY the token before the owner walks away, rather
+than letting him discover it tomorrow. --write updates .env in place, preserving
+every other line (tested both replace and append).
+Added SCHWAB_CALLBACK_URL to settings and .env.example, since it must match the
+app registration exactly.
+Verified: gate PASS, 725 passed. 5 new tests covering URL encoding, code
+extraction, the three paste-failure messages, and .env rewriting.
+Next: owner runs it. Then reconcile_schwab.py against one statement month —
+that reconciliation is still what gates T103.
+
+
 ## 2026-08-16 — Claude/Cowork — T016a: the Schwab client, built to be doubted
 First half of the Schwab work (D026): the read-only client and the transaction
 mapper. Three things about Schwab are genuinely unlike Alpaca and each is now

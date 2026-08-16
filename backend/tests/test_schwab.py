@@ -304,3 +304,63 @@ def test_empty_input_is_an_empty_report_not_an_error():
 
 def test_base_url_is_the_documented_host():
     assert BASE_URL == "https://api.schwabapi.com"
+
+
+# ------------------------------------------------- the auth helper (scripts/schwab_auth.py)
+
+def _auth_module():
+    """Import the script by path — scripts/ is not a package."""
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[2] / "scripts" / "schwab_auth.py"
+    spec = importlib.util.spec_from_file_location("schwab_auth", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_auth_url_encodes_the_callback():
+    """An unencoded redirect_uri silently produces a mismatch Schwab rejects."""
+    url = _auth_module().build_auth_url("KEY 1", "https://127.0.0.1")
+    assert "client_id=KEY%201" in url
+    assert "redirect_uri=https%3A%2F%2F127.0.0.1" in url
+
+
+def test_code_survives_schwab_url_encoding():
+    """Schwab's code is URL-encoded and ends with '@'. Splitting on '=' mangles it."""
+    m = _auth_module()
+    pasted = "https://127.0.0.1/?code=C0.abc%2Bdef%3D%3D%40&session=xyz"
+    assert m.extract_code(pasted) == "C0.abc+def==@"
+
+
+def test_paste_errors_say_what_was_wrong():
+    m = _auth_module()
+    with pytest.raises(ValueError, match="Nothing pasted"):
+        m.extract_code("   ")
+    with pytest.raises(ValueError, match="ENTIRE address"):
+        m.extract_code("https://127.0.0.1/")
+    with pytest.raises(ValueError, match="Parameters found: error, session"):
+        m.extract_code("https://127.0.0.1/?error=access_denied&session=z")
+
+
+def test_write_env_replaces_the_line_and_keeps_the_rest(tmp_path, monkeypatch):
+    m = _auth_module()
+    env = tmp_path / ".env"
+    env.write_text("ALPACA_API_KEY_ID=keep-me\nSCHWAB_REFRESH_TOKEN=old\nFRED_API_KEY=also\n",
+                   encoding="utf-8")
+    monkeypatch.setattr(m, "ROOT", tmp_path)
+    m.write_env("brand-new")
+    text = env.read_text(encoding="utf-8")
+    assert "SCHWAB_REFRESH_TOKEN=brand-new" in text
+    assert "ALPACA_API_KEY_ID=keep-me" in text and "FRED_API_KEY=also" in text
+    assert "old" not in text
+
+
+def test_write_env_appends_when_the_key_is_absent(tmp_path, monkeypatch):
+    m = _auth_module()
+    env = tmp_path / ".env"
+    env.write_text("ALPACA_API_KEY_ID=keep-me\n", encoding="utf-8")
+    monkeypatch.setattr(m, "ROOT", tmp_path)
+    m.write_env("fresh")
+    assert "SCHWAB_REFRESH_TOKEN=fresh" in env.read_text(encoding="utf-8")

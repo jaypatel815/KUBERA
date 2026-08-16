@@ -145,6 +145,12 @@ class KuberaSettings(BaseSettings):
         default=None,
         validation_alias=AliasChoices("SCHWAB_REFRESH_TOKEN", "KUBERA_SCHWAB_REFRESH_TOKEN"),
     )
+    # Must EXACTLY match the callback registered on the app at developer.schwab.com —
+    # Schwab compares it byte for byte, and it must be https even for localhost.
+    schwab_callback_url: str = Field(
+        default="https://127.0.0.1",
+        validation_alias=AliasChoices("SCHWAB_CALLBACK_URL", "KUBERA_SCHWAB_CALLBACK_URL"),
+    )
     schwab_account_number: str | None = Field(
         default=None,
         validation_alias=AliasChoices("SCHWAB_ACCOUNT_NUMBER", "KUBERA_SCHWAB_ACCOUNT_NUMBER"),
