@@ -307,7 +307,10 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   dates. A subtly wrong import does not crash, it just quietly changes every behavioral
   conclusion downstream. Sandbox cannot reach schwabapi.com, so live tests SKIP here and
   run on the owner's machine (same pattern as Alpaca, I002).
-- [ ] T102 — Statement PDF ingest (D026, after T016 measures API depth): parse Schwab
+- [ ] T102 — Statement PDF ingest — **NOW THE UNBLOCKED PATH (I019)**: Schwab has the
+  app in "Modification Pending" so no API call can succeed for a few days. This ticket
+  needs only a statement PDF and no credentials, so it is the useful work in the
+  meantime — and its parser has to exist anyway. Original scope: parse Schwab
   statements for history the API cannot reach. Layouts change across years, so the parser
   reports what it could NOT parse rather than silently dropping rows. Its test is the
   overlap window — parsed rows must reconcile against API rows where both exist.
