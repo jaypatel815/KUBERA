@@ -40,7 +40,7 @@ import httpx
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
-from settings import ConfigError, get_settings  # noqa: E402
+from settings import ConfigError, KuberaSettings, get_settings  # noqa: E402
 
 AUTH_URL = "https://api.schwabapi.com/v1/oauth/authorize"
 TOKEN_URL = "https://api.schwabapi.com/v1/oauth/token"
@@ -123,8 +123,19 @@ def main() -> int:
 
     s = get_settings()
     if not s.schwab_app_key or not s.schwab_app_secret:
-        print("SCHWAB_APP_KEY and SCHWAB_APP_SECRET must be in .env first.\n"
-              "Both come from your app at https://developer.schwab.com.")
+        # A bare "must be in .env first" is useless when they ARE in .env and
+        # something else is wrong. Say which file was read and what was found in
+        # it, so the next question is answerable instead of a guessing game.
+        env_path = Path(KuberaSettings.model_config.get("env_file", ROOT / ".env"))
+        print("SCHWAB_APP_KEY and SCHWAB_APP_SECRET are not reaching the code.\n")
+        print(f"  reading   {env_path}")
+        print(f"  exists    {env_path.exists()}")
+        print(f"  app key   {'set' if s.schwab_app_key else 'MISSING'}")
+        print(f"  app secret{' set' if s.schwab_app_secret else ' MISSING'}")
+        print("\nBoth come from your app at https://developer.schwab.com.")
+        print("If they ARE in that file, run this to find out why they are not")
+        print("being read (prints names and lengths, never values):\n")
+        print("  python scripts/env_check.py SCHWAB")
         return 2
     app_key = s.schwab_app_key
     app_secret = s.schwab_app_secret.get_secret_value()

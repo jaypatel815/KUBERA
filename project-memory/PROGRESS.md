@@ -3,6 +3,30 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — scripts/env_check.py, after a useless error message
+Owner reported "SCHWAB_APP_KEY and SCHWAB_APP_SECRET must be in .env first"
+while both WERE in .env. Checking his file directly (names and lengths only,
+never values) showed both resolving correctly — 48 and 64 chars — so the failing
+run simply predated the save. But the report was fair criticism of the message:
+a flat assertion that something must be in a file the user is looking at, with
+no way to find out why the code disagrees, is a dead end.
+Two fixes. The script's failure now states WHICH file it read, whether it
+exists, and which of the two values is missing, then points at a diagnostic.
+And scripts/env_check.py answers the four questions that account for nearly
+every "but it IS in my .env" on Windows: which absolute path is read; whether
+the file is really named .env (Notepad silently appends .txt); whether an editor
+saved UTF-16 or added a BOM (a BOM corrupts the FIRST key only, which is why the
+symptom is usually one missing variable); and whether a key is present-but-empty
+or shadowed by a real OS environment variable, which WINS over .env (I015).
+Found a real mismatch while there: his .env has SCHWAB_ACCOUNT_ID, the setting
+is SCHWAB_ACCOUNT_NUMBER. Harmless — that field is optional and only selects
+among multiple accounts — but it is exactly the silent-typo class env_check
+exists to surface, and it resolved as "unset" without complaint.
+Verified: gate PASS 725. env_check run against the owner's real .env produced
+the table above without printing a single secret.
+Next: owner re-runs schwab_auth.py, then the reconciliation.
+
+
 ## 2026-08-16 — Claude/Cowork — scripts/schwab_auth.py (a gap I had left)
 The owner asked how to get SCHWAB_REFRESH_TOKEN. My error messages and docs
 already told him to "run python scripts/schwab_auth.py" — a file I had never
