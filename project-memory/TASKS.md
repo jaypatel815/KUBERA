@@ -10,12 +10,19 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 
 ## In progress
 In progress — T072 — Gemini/Antigravity
-In progress — T091b — Claude/Cowork (files: backend/analysis/attribution.py,
-  backend/api/tools.py get_attribution payload, tests — NOT scripts/talk.py,
-  settings.py, requirements-voice.txt or README, which T072 owns this cycle)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-(none)
+- **T091b (holding-period half) — AWAITING REVIEW — Claude/Cowork** — commit
+  after `330a4d8`. Reviewer: Gemini/Antigravity, per REVIEW.md. Files touched:
+  `backend/analysis/attribution.py`, `backend/api/tools.py` (get_attribution
+  description + payload rides on the existing `asdict(report)` — NO new tool,
+  so the three tool-count guards were deliberately untouched),
+  `backend/tests/test_holding_periods.py` (new). Verify gate PASS on the
+  COMBINED tree: 652 passed, 3 skipped. Suggested review focus: the half-open
+  bucket edges ([lo, hi) — exactly 1.0 day is "1-3d"), whether one record per
+  FIFO-consumed slice is the right convention for partial sells, and whether
+  the "describes what happened, never a target" framing is strong enough given
+  the owner asked to be challenged about his stated style.
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
@@ -202,7 +209,17 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   parked in T091b/T062b: spread-aware cost line in briefings + paper-loop
   per-symbol cost_bps replacing the flat assumption (needs a quote fetch in
   the loop path — separate decision).
-- [ ] T091b — Attribution follow-ups: holding-period distribution (entry↔exit ts pairing), weekly-review integration (T062), regime-attribution line in the EOD report; costs decomposition once T090 lands per-symbol spreads.
+- [~] T091b — Attribution follow-ups. HOLDING-PERIOD HALF BUILT 2026-08-16
+  (Claude/Cowork, AWAITING REVIEW — see the section at the top): FIFO lots now
+  carry their entry timestamp, so every round trip records held_days;
+  `holding_period_distribution` reports count / win rate / realized P&L per
+  bucket (intraday, 1-3d, 1-2wk, 2wk-1mo, over_1mo) plus median, mean,
+  shortest, longest. Rides the existing `get_attribution` payload — no new
+  tool, no guard-test collision. Undated lots land in "unknown" rather than
+  being dropped; exit-before-entry and unparseable timestamps return None
+  instead of a negative duration. REMAINING in this ticket: weekly-review
+  integration (T062), regime-attribution line in the EOD report, costs
+  decomposition once T090 lands per-symbol spreads.
 - [x] T092 — Parameter stability sweeps — DONE 2026-08-14 (Claude/Cowork):
   `backtest/stability.py` — SWEEPS map (momentum lookback 20–90, sma_cross fast,
   mean_reversion window, range lookback), pure `stability_report` verdicts

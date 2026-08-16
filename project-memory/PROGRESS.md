@@ -3,6 +3,38 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — T091b holding periods (Claude) — FIRST LIVE PARALLEL RUN
+Built alongside Gemini's T072 (TTS backends) with both agents in the repo at
+once — the first real test of D023. AWAITING REVIEW; Gemini signs off, not me.
+WHAT SHIPPED: FIFO lots now carry their entry timestamp, so every round trip
+knows how long it was actually held. `holding_period_distribution` reports
+count / win rate / realized P&L per bucket (intraday, 1-3d, 1-2wk, 2wk-1mo,
+over_1mo) plus median, mean, shortest and longest. It rides the EXISTING
+get_attribution payload — deliberately no new tool, so the three tool-count
+guard tests stayed untouched while another agent was live. Hand-tested edges:
+buckets are half-open so exactly 1.0 day is "1-3d" and 4.0 is "1-2wk"; a
+partial sell that consumes two entry lots produces two records, each with its
+own clock, because each slice really was held that long; undated lots land in
+"unknown" rather than being dropped; exit-before-entry and unparseable
+timestamps return None instead of a negative duration. The point of the
+feature: an owner who says "I'm a swing trader" but whose median hold is four
+hours is describing an intention, not a practice — and the tool description
+now tells the model to say so plainly.
+PROTOCOL OBSERVATIONS (the actual experiment):
+· parallel_check.py reported Gemini's claim and flagged TASKS.md as dirty —
+  i.e. Gemini had written its claim but not yet committed it.
+· A genuine race happened: Gemini committed its claim (71e4adf) BETWEEN my
+  guard run and my own commit (330a4d8). Nothing was lost, because the edit
+  was anchored to their exact line rather than a whole-file rewrite. That is
+  precisely the failure D023 was written to prevent, and it held.
+· Gap found in the protocol: when a shared coordination file already holds the
+  other agent's UNCOMMITTED claim, staging that file necessarily carries their
+  line too. Benign here (it makes their claim durable) but it must be declared
+  in the commit message — I did. Worth folding into AGENTS.md properly.
+· The verify gate was run on the COMBINED tree: 652 passed, 3 skipped.
+Verified: verify.py PASS — 652 passed, 3 skipped.
+Next: Gemini reviews T091b before claiming its next ticket; I review T072.
+
 ## 2026-08-16 — D023: the shared-file problem, and a guard script for it
 Owner asked the sharpest version of the question: what happens when both agents
 MUST edit the same files — TASKS.md, PROGRESS.md, README? "Pick different

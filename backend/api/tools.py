@@ -1086,7 +1086,12 @@ def _triage_position(ctx: ToolContext, p: TriageArgs) -> dict:
     "realized P&L to the ENTRY's tags. Answers 'is the regime classifier adding "
     "value', 'which router leg earns', 'do mid-session entries beat the open'. "
     "'unattributed' = manual trades. ALWAYS narrate counts with P&L — attribution "
-    "without sample size is a story, not evidence. Plus activity counts by tag.",
+    "without sample size is a story, not evidence. Plus activity counts by tag. "
+    "Also returns holding_periods (T091b): how long positions were ACTUALLY "
+    "held — median/mean days and win rate per bucket (intraday / 1-3d / 1-2wk / "
+    "2wk-1mo / over_1mo). Use it when the owner describes his style ('I'm a "
+    "swing trader'): if the median hold contradicts the stated plan, say so "
+    "plainly. It describes what happened and is never a target.",
     NoArgs,
 )
 def _get_attribution(ctx: ToolContext, _: NoArgs) -> dict:
