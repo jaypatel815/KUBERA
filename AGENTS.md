@@ -70,6 +70,32 @@ here: there is a single set of files on disk.
 - If `.git/index.lock` blocks you, the other agent is mid-commit. Wait and retry;
   do not delete the lock unless it is stale (see I001).
 
+**WHO COMMITS: the builder commits their own work. Always.**
+A reviewer never commits someone else's code, and work never waits for review
+before being committed. The reasoning matters, so it is written down:
+- Uncommitted work in a shared directory is the MOST fragile state there is.
+  The commit is the fence that stops the other agent from clobbering you — so
+  commit as soon as your ticket is coherent, not when it is blessed.
+- If the reviewer committed the builder's files, they would have to guess which
+  paths belong to whom — which is exactly the `git add -A` hazard, made
+  mandatory.
+- Authorship is memory. `git log` answers "who built this and why" only if the
+  builder's name is on it.
+
+So each ticket produces TWO commits by TWO agents:
+1. `<TICKET>: <what shipped>` — the builder, staged by path, gate green,
+   TASKS marked AWAITING REVIEW.
+2. `review <TICKET>: PASS|BLOCK` — the reviewer, touching ONLY
+   `project-memory/TASKS.md` (and `ISSUES.md` if the review found a bug).
+   A review commit that touches source code is not a review; it is a second
+   ticket, and it needs its own review.
+
+**NO BRANCHES while agents run in parallel.** Branching looks like the fix and
+is the opposite: `git checkout` swaps files on disk underneath the other agent
+mid-edit. One shared directory means one branch (`main`), small frequent
+commits, and staging by path. Branches become useful again the day each agent
+gets its own clone.
+
 **Shared files that WILL collide — check before editing:**
 - `backend/tests/test_tools.py`, `test_chat.py`, `test_claude_sdk.py` hold tool
   COUNT guards. Two new tools = both agents bump the same numbers. Second to

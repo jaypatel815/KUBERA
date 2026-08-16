@@ -3,6 +3,27 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — D023 amended: who commits (builder), and no branches
+Owner asked a sharp question: should the REVIEWER commit, so commits aren't
+mishandled? Answer is no, and the reasoning is now in D023 because the instinct
+is reasonable and will come back. Committing is not the risk — it is the
+PROTECTION. Work sitting uncommitted in a folder that another agent is actively
+editing is the most fragile state available; the commit is the fence. Having the
+reviewer commit would also force them to guess which paths belong to whom (the
+`git add -A` hazard, made mandatory) and would put the wrong name in git log,
+which is the project's memory of who built what.
+So: builder commits code immediately; reviewer commits a separate
+`review <TICKET>: PASS|BLOCK` touching only TASKS.md. A review commit that edits
+source is not a review — it is a new ticket needing its own review. Reviewers
+may fix trivial mechanical things as their own named mini-ticket, reviewed back.
+Second rule added while here: NO BRANCHES during parallel work. Branching looks
+like the obvious fix and is actively dangerous with one shared directory —
+`git checkout` swaps files under the other agent mid-edit. One branch, small
+frequent commits, staged by path. Branches return when each agent has its own
+clone (worth doing once T005's push lands).
+Verified: verify.py PASS — 624 passed, 3 skipped (docs only).
+Next: run it live — two agents, two tickets, two commits each.
+
 ## 2026-08-16 — D023 CORRECTED: concurrent tickets, reciprocal review
 Owner clarified the shape I got wrong an hour earlier: he does NOT want one
 builder and one dedicated reviewer. He wants both agents BUILDING DIFFERENT

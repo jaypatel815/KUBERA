@@ -84,6 +84,20 @@ REVIEWED <date> by <agent> — <PASS | BLOCK>
 A PASS with unlisted concerns is worthless. If something bothers you and you
 cannot justify blocking, write it as a concern anyway — the owner reads these.
 
+### 5. Commit the REVIEW, never the code
+Your review is its own commit: `review <TICKET>: PASS` or `... : BLOCK`,
+staging ONLY `project-memory/TASKS.md` (plus `ISSUES.md` if you found a bug
+worth logging). You do NOT commit the builder's source files — they already
+did, which is what protected their work from you while you were both editing
+the same folder.
+
+If you find something that needs a code change, you have two honest options:
+- **BLOCK** — write the reason; the builder fixes and re-submits. Default.
+- **Fix it yourself ONLY if trivial and mechanical** (a typo, a wrong count in
+  a guard test). Then it is your own mini-ticket: separate commit, your name,
+  and say so in the verdict — because now that change is unreviewed, and the
+  builder reviews it back.
+
 ---
 
 ## What a BLOCK looks like (be specific and kind)

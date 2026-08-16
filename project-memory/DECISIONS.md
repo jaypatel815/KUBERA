@@ -27,9 +27,28 @@ checklist exists to catch violations after the fact (git show --stat for foreign
 files, single alembic head, tool-count guards correct AFTER both commits, and
 the verify gate run on the COMBINED tree — each half can pass alone and fail
 together).
+COMMIT OWNERSHIP (owner asked whether the REVIEWER should commit, to avoid
+mishandling — answered no, with reasoning recorded because the instinct is
+reasonable and will recur): the BUILDER commits their own work, immediately,
+without waiting for review. Uncommitted work in a shared directory is the most
+fragile state available — the commit is the fence that protects it from the
+other agent, so committing early IS the safety mechanism. A reviewer committing
+someone else's files would have to guess which paths belong to whom, which is
+the `git add -A` hazard made mandatory; and authorship is memory (git log must
+answer "who built this"). Each ticket therefore produces TWO commits by TWO
+agents: the builder's code commit, then a `review <TICKET>: PASS|BLOCK` commit
+touching only TASKS.md (+ISSUES.md). A review commit that edits source is not a
+review — it is a new ticket needing its own review. Reviewers may fix trivial
+mechanical things (a typo, a wrong guard count) as their own mini-ticket, named
+in the verdict, reviewed back by the builder.
+ALSO BANNED WHILE PARALLEL: git branches. Branching looks like the fix and is
+the opposite — `git checkout` swaps files on disk beneath the other agent
+mid-edit. One shared directory = one branch (main), small frequent commits,
+staging by path. Branches return the day each agent gets its own clone.
 FILES: AGENTS.md "Parallel work"; project-memory/REVIEW.md (checklist, ordered
-intent-before-diff, owner-alignment questions first); docs/agent-briefs.md (one
-paste-ready brief for any agent + a table of safe concurrent ticket pairs).
+intent-before-diff, owner-alignment questions first, + "commit the review,
+never the code"); docs/agent-briefs.md (one paste-ready brief for any agent + a
+table of safe concurrent ticket pairs).
 
 ## D022 — "Agentic loop" batch: two-thirds already built; adopt news + fan-out rule (2026-08-14)
 Owner (via external AI) proposed: (1) a ReAct multi-tool loop, (2) a universal

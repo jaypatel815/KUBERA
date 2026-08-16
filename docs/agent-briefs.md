@@ -38,11 +38,21 @@ sweep up the other agent's half-written files. Run `git status`, then stage BY
 PATH, only files you touched. If .git/index.lock exists, the other agent is
 mid-commit: wait, don't delete it.
 
+STEP 4b — COMMIT YOUR OWN WORK, DON'T WAIT FOR REVIEW.
+Uncommitted work in a shared folder is the easiest thing to lose — the commit
+is what protects it from the other agent. Commit as soon as your ticket is
+coherent. Never commit files you didn't write; never use branches while another
+agent is live (checkout swaps files under them mid-edit).
+
 STEP 5 — HAND OFF, DON'T SELF-CERTIFY.
 Run the verify gate (must PASS), mark your ticket "AWAITING REVIEW — <your agent
 name>" in TASKS.md, append ONE PROGRESS.md entry (append — never rewrite the
 other agent's lines), and commit. Do NOT mark your own work DONE. The other
 agent reviews it next session.
+
+Each ticket ends up with TWO commits by TWO agents: the builder's code commit,
+then the reviewer's verdict commit touching only TASKS.md. A "review" that
+edits source code is not a review — it's a new ticket needing its own review.
 
 If you and the other agent disagree twice on a review, stop and escalate to
 Chotu with both positions in three lines each.
