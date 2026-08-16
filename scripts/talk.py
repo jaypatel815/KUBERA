@@ -203,7 +203,7 @@ def make_speaker():
             from kokoro_onnx import Kokoro  # noqa: PLC0415
         except ImportError:
             raise SystemExit(
-                "KUBERA_TTS=kokoro needs: pip install kokoro-onnx soundfile\n"
+                "KUBERA_TTS=kokoro needs: pip install kokoro-onnx\n"
                 "sounddevice should already be installed from requirements-voice.txt."
             )
 
