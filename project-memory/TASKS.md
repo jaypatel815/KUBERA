@@ -12,19 +12,6 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 (none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T098 (local voice for the Orb) — AWAITING REVIEW — Claude/Cowork** —
-  Reviewer: Gemini/Antigravity, per REVIEW.md. Implements the owner's D024
-  choice on the Orb side. Files touched: `backend/api/tts_engine.py` (new),
-  `backend/api/main.py` (POST /api/tts + local-first routing), `apps/web/orb.html`
-  (POST instead of a query string), `backend/tests/test_tts_engine.py` (new, 19
-  tests), `README.md` (Orb section ONLY — the voice-ladder section is yours).
-  Verify gate PASS: 679 passed, 3 skipped.
-  Suggested review focus: (a) is `auto` the right default, or should a missing
-  model be louder than a log line; (b) the 503-instead-of-fallback rule when
-  kokoro is explicitly forced; (c) whether keeping GET /api/tts for compatibility
-  reopens the leak in practice, given the Orb no longer calls it; (d) the WAV
-  encoder is hand-rolled stdlib on purpose — check the clamping math
-  (test_wav_sample_values_are_exact has the hand-computed numbers).
 - **T072 (human-grade TTS backends) — AWAITING REVIEW — Gemini/Antigravity** —
   commits `d55eb6b` and `31150e3`. Reviewer: Claude/Cowork, per REVIEW.md.
   Files touched: `scripts/talk.py` (openai and kokoro TTS backends in make_speaker),
@@ -367,6 +354,12 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 (none)
 
 ## Done
+- [x] T098 — Local voice for the Orb + reply text out of URL (D024) — DONE 2026-08-16 (Claude/Cowork):
+  `backend/api/tts_engine.py` (local-first speech engine: `auto` default uses kokoro when models exist, falls back to edge; `kokoro` forced returns 503 on missing model; stdlib `wave` + `struct` mono 16-bit WAV encoder without collection-time audio imports; `synthesize_local` cached single-load); `POST /api/tts` on FastAPI (`GET /api/tts` retained for compatibility); `apps/web/orb.html` updated to POST JSON body instead of sending query string (preventing sensitive tickers/P&L from leaking to access logs/browser history) with graceful audio error handling; 19 tests in `test_tts_engine.py`.
+  REVIEWED 2026-08-16 by Gemini/Antigravity — PASS
+    aligned: Directly executes D024: keeps sensitive portfolio holdings and P&L local, eliminates URL query string leak.
+    checked: WAV encoder clamping math [0, 16384, -32767, 32767], auto vs forced 503 error handling, orb.html POST transition & regression guard, verify.py pass (682 passed).
+    concerns: none
 - [x] T091 — Attribution pack: signal_log gains regime_label + sub_strategy + entry_bucket at decision time (migration `f71b527814ef`); the loop persists the classified regime on EVERY row (incl. no_trades — restraint gets attributed too); regime_router annotates its leg (`last_leg` introspection); Transaction gains order_id (migration `89e88db0d156`) — the join key from fill → logged decision. `analysis/attribution.py`: FIFO round-trip P&L credited to the ENTRY's tags (hand-walked: partial-lot consumption across regimes), unattributed bucket = manual trades (visible, never dropped), oversold shown; win rates per tag; "narrate counts with P&L" note. `get_attribution` (registry 24) + `GET /api/attribution` + activity counts by regime. 8 tests — 2026-08-14. Answers D020 #2 as data accumulates.
 - [x] T036 — Fills sync + market-hours guard + entry delay: `AlpacaClient.get_fills` (activities API, RFC3339-safe) + `get_clock` (broker's own market clock — no local tz guessing); `data/fills.py` sync into `transactions` deduped per (account, external_id) — re-running always safe, proven; loop: `enforce_market_hours` (closed → no_action "an order now would queue for the open print", source=alpaca-clock) + `entry_delay_minutes` as a T055 no-trade reason for BUYS only (sells exempt, tested at 9:35 ET); scripts/sync.py now syncs fills each run; paper_trade.py guards ON by default (--after-hours / --entry-delay 30 default). 7 tests — 2026-08-13. UNLOCKS: T088 slippage, T089 live MAE/MFE, T091 attribution, T060 TWR. Session-aware staleness → T036b.
 - [x] T086 — Position triage advisor (`analysis/triage.py`): entry + current price judged against the LIVE exit plan — EXIT (invalidation closed through: "the thesis is dead; adding is increasing exposure, not lowering an average" — the honesty note is ASSERTED in tests, not assumed) / EXIT_AT_TARGET (edge-to-edge complete; "wanting more is a NEW thesis") / HOLD with add-assessment: range adds ONLY in the lower quarter of the span ("at the edge"), trend adds ONLY on strength ("a dip toward invalidation is the market arguing with the thesis"); review-clock expiry flagged ("a stale thesis is not a thesis"); risk_remaining_atr + distances returned. `triage_position` tool (registry 23) + `GET /api/triage/{symbol}?entry_price=`. 10 tests — 2026-08-13. Owner Q&A item #4 → SHIPPED.
