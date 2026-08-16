@@ -10,6 +10,9 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 
 ## In progress
 In progress — T072 — Gemini/Antigravity
+In progress — T091b — Claude/Cowork (files: backend/analysis/attribution.py,
+  backend/api/tools.py get_attribution payload, tests — NOT scripts/talk.py,
+  settings.py, requirements-voice.txt or README, which T072 owns this cycle)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 (none)
