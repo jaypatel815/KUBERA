@@ -2,26 +2,34 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
-## D023 — Parallel agents: builder + BLOCKING reviewer (2026-08-16)
-Owner asked whether two agents can work at once and how to keep them aligned
-with his goals. Answer: yes — it already happened once safely (Gemini shipped
-the T082 Orb frontend while Claude built T082a's backend, no collision). But
-"safe" was luck plus disjoint files, so the protocol is now written down.
-OWNER CHOSE (2026-08-16): pairing = **builder + reviewer** (not two builders),
-review gate = **BLOCKING** (nothing is DONE until a different agent signs off).
-Rationale for his choice, recorded so nobody softens it later: at this stage
-drift matters more than throughput — KUBERA manages his money and his
-discipline, and a wrong-but-shipped feature costs more than a slow one.
-Mechanics: AGENTS.md gains a "Parallel work" section (role claim in TASKS.md,
-builder marks AWAITING REVIEW never DONE, reviewer must be a different agent,
-self-review is not review); project-memory/REVIEW.md is the checklist, ordered
-intent-before-diff and led by owner-alignment questions (does this serve a goal
-HE stated? does it make breaking his own rules easier? does it relitigate a
-settled D017/D019/D021 rejection?) before any code-quality question.
-Collision surface documented explicitly: the three tool-count guard tests,
-PROGRESS/TASKS append-only-your-own-lines, the SINGLE alembic head (rebase, do
-not merge), and orb.html as a one-agent-at-a-time file.
-Escalation: two rounds of disagreement goes to the owner, three lines per side.
+## D023 — Parallel agents: concurrent tickets + RECIPROCAL blocking review (2026-08-16)
+Owner asked whether two agents can work at once and how to keep them aligned.
+It had already happened safely once (Gemini shipped the T082 Orb frontend while
+Claude built T082a's backend) — but that was disjoint files plus luck.
+CORRECTION IN THIS SAME SESSION: Claude first wrote this as "one builder + one
+dedicated reviewer" after a poorly-framed clarifying question. The owner's
+actual intent: BOTH agents build DIFFERENT tickets simultaneously and review
+each other's completed work. Rewritten to match — the mistake is recorded so
+nobody re-derives the wrong shape from a stale doc.
+SHAPE: reciprocal. Everyone builds, everyone reviews, nobody signs off on their
+own commit. Review happens at the START of a session, before claiming the next
+ticket ("the price of admission") — that is what stops a review backlog while
+both agents chase new work.
+GATE: blocking. AWAITING REVIEW ≠ DONE; only the other agent writes DONE, with
+a signed verdict block. Owner's reasoning: at this stage drift costs more than
+throughput, because KUBERA manages his money and his discipline.
+THE HAZARD THAT MATTERS MOST — ONE WORKING DIRECTORY: both agents edit
+C:\Users\jaybe\Projects\KUBERA simultaneously, so git branches do not protect
+anything. `git add -A` by one agent commits the other's half-finished files
+under the wrong message. RULE: stage by path only, `git status` before staging,
+wait on .git/index.lock rather than deleting it. The reviewer's parallel-conflict
+checklist exists to catch violations after the fact (git show --stat for foreign
+files, single alembic head, tool-count guards correct AFTER both commits, and
+the verify gate run on the COMBINED tree — each half can pass alone and fail
+together).
+FILES: AGENTS.md "Parallel work"; project-memory/REVIEW.md (checklist, ordered
+intent-before-diff, owner-alignment questions first); docs/agent-briefs.md (one
+paste-ready brief for any agent + a table of safe concurrent ticket pairs).
 
 ## D022 — "Agentic loop" batch: two-thirds already built; adopt news + fan-out rule (2026-08-14)
 Owner (via external AI) proposed: (1) a ReAct multi-tool loop, (2) a universal

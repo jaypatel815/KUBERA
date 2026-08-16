@@ -3,6 +3,30 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — D023 CORRECTED: concurrent tickets, reciprocal review
+Owner clarified the shape I got wrong an hour earlier: he does NOT want one
+builder and one dedicated reviewer. He wants both agents BUILDING DIFFERENT
+tickets at the same time (say Claude takes T072 while Gemini takes T091b) and
+then reviewing each other's finished work. My clarifying question offered the
+wrong menu and steered him; the protocol is rewritten to his actual intent and
+D023 records the correction so no agent re-derives the wrong shape later.
+The rewrite adds the hazard the first version missed entirely: both agents edit
+ONE working directory. Git branches protect nothing there — and `git add -A`
+by either agent commits the OTHER's half-written files under the wrong message.
+New hard rule in AGENTS.md: stage by path, `git status` first, never -A while
+another agent is live, wait on index.lock rather than deleting it. REVIEW.md
+gains a parallel-conflict section: `git show --stat` for foreign files, single
+alembic head, tool-count guards correct AFTER both commits, and the verify gate
+run on the COMBINED tree — because each half can pass alone and fail together.
+Sequencing rule that keeps this from silting up: REVIEW FIRST, BUILD SECOND —
+clearing the other agent's awaiting-review ticket is the price of admission to
+your own next one. docs/agent-briefs.md is now ONE brief (every agent is both
+builder and reviewer) plus a table of ticket pairs that are safe to run
+concurrently and the three that are never safe (both adding registry tools,
+both adding migrations, both editing orb.html).
+Verified: verify.py PASS — 624 passed, 3 skipped (docs/protocol only).
+Next: run it live — two agents, two tickets, mutual sign-off.
+
 ## 2026-08-16 — D023: two agents, one truth — the parallel protocol
 Owner asked whether agents can run in parallel and how to keep them honest to
 HIS goals. It had already happened once safely (Gemini shipped the T082 Orb

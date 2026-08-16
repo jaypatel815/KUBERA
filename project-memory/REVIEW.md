@@ -1,13 +1,18 @@
 # REVIEW.md — the blocking cross-check (D023)
 
-Every ticket built while more than one agent is live gets reviewed by a
-DIFFERENT agent before it counts as done. The reviewer's job is not to admire
-the code. It is to answer one question on the owner's behalf:
+Agents work on DIFFERENT tickets at the same time and review each other's
+finished work. Everyone builds; everyone reviews; nobody signs off on their own
+commit. The reviewer's job is not to admire the code. It is to answer one
+question on the owner's behalf:
 
 > **Does this actually serve what Chotu is trying to do — and does it tell him
 > the truth even when the truth is unflattering?**
 
-The builder marks `AWAITING REVIEW`. Only the reviewer writes `DONE`.
+The builder marks `AWAITING REVIEW`. The OTHER agent writes `DONE`.
+
+**When to review:** at the START of your next session, before you claim a new
+ticket. Reviewing is the price of admission to your next build — that is what
+keeps the queue from silting up while both agents chase new work.
 
 ---
 
@@ -94,6 +99,20 @@ Not:
 ## Reviewing your own agent's earlier work
 Allowed and encouraged — the ban is on reviewing the commit you just wrote.
 A fresh session reviewing last week's ticket is a real review.
+
+## Conflict check — the part that only matters in parallel
+Because both agents edit ONE working directory, add these to every review:
+- [ ] `git show --stat <their commit>` — does it contain files that belong to
+      YOUR ticket? If yes, they ran `git add -A` and swept up your work. Say so;
+      that is a BLOCK and the fix is a follow-up commit, not a revert.
+- [ ] `alembic heads` — exactly one head? Two means concurrent migrations
+      branched; the newer one must be rebased onto the older.
+- [ ] Tool-count guards: if both of you added tools this cycle, do the three
+      counts match the registry NOW, after both commits?
+- [ ] Did they overwrite your PROGRESS/TASKS lines instead of appending?
+- [ ] Run the verify gate on the CURRENT tree (both agents' work combined) —
+      each half can pass alone and fail together. This is the check that a
+      single-agent workflow never needs and a parallel one lives or dies by.
 
 ## When the reviewer and builder disagree twice
 Stop and escalate to the owner with both positions in three lines each. Do not

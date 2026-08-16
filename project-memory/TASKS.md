@@ -14,12 +14,19 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 (none)
 
-**Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work"):
-claim your ticket + agent name on the In-progress line before coding; builders
-mark AWAITING REVIEW, never DONE; only a different agent writes DONE with a
-signed `REVIEWED <date> by <agent> — PASS/BLOCK` block. Shared-file hazards:
-the three tool-count guard tests, PROGRESS/TASKS (append your own lines only),
-the single alembic head, and apps/web/orb.html (one agent at a time).
+**Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
+brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
+same time and review each other:
+1. REVIEW FIRST — clear anything in "Awaiting review" from the other agent
+   before claiming your own next ticket.
+2. CLAIM — put `In progress — <ticket> — <agent>` here and commit that line
+   alone before coding; pick files the other agent is NOT in.
+3. COMMIT BY PATH — one shared working directory: `git add -A` sweeps up the
+   other agent's unfinished work. Never use it while another agent is active.
+4. HAND OFF — mark `AWAITING REVIEW — <agent>`; only the OTHER agent writes
+   DONE, with a signed `REVIEWED <date> by <agent> — PASS/BLOCK` block.
+Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
+(append your own lines only), the single alembic head, apps/web/orb.html.
 
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [ ] T005 — GitHub repo created + remote added ✔ (2026-08-11). Remaining: push `main` from your machine (sandbox has no GitHub auth) and confirm the Actions CI run is green.
