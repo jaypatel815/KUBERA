@@ -9,7 +9,11 @@ T054's router, never after) → T077 expected-move → T067 DQS / T062 briefs.
 Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 
 ## In progress
-(none)
+In progress — T098 — Claude/Cowork (local voice for the Orb; owner directive after
+the T072 review. Files: backend/api/tts_engine.py, backend/api/main.py,
+apps/web/orb.html, backend/tests/test_tts_engine.py — deliberately NOT
+scripts/talk.py, requirements-voice.txt or test_tts_backends.py, which are
+Gemini's in-flight T072 set.)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T072 (human-grade TTS backends) — AWAITING REVIEW — Gemini/Antigravity** —
