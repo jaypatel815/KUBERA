@@ -32,7 +32,23 @@ PROTOCOL OBSERVATIONS (the actual experiment):
   line too. Benign here (it makes their claim durable) but it must be declared
   in the commit message — I did. Worth folding into AGENTS.md properly.
 · The verify gate was run on the COMBINED tree: 652 passed, 3 skipped.
-Verified: verify.py PASS — 652 passed, 3 skipped.
+· THE PROTOCOL EARNED ITS KEEP TWICE MORE, after the commit:
+  (a) `git add <my five paths>` produced EIGHT staged files — Gemini had already
+      staged its in-flight T072 work, so the INDEX is shared too, not just the
+      directory. A plain `git commit` would have shipped their half-finished
+      feature under my message. Fixed by committing with a PATHSPEC
+      (`git commit -m ... -- <paths>`), verified with `git show --stat HEAD`:
+      exactly my 5 files landed, their 3 stayed theirs. Rule upgraded in
+      AGENTS.md, the brief, and D023.
+  (b) The verify gate then went RED on the combined tree — not from my code:
+      Gemini's in-flight test does a bare `import soundfile`, which fails
+      COLLECTION and aborts the whole suite (zero tests run). Committed tree
+      with that one file ignored: 652 passed. Logged as I016 pre-review
+      feedback; I did NOT edit their file, because it is under an active claim.
+      It also contradicts T070's decision that audio deps stay out of CI via
+      requirements-voice.txt — exactly the kind of thing cross-review exists for.
+Verified: 652 passed, 3 skipped on the committed tree (Gemini's uncommitted
+in-flight test file excluded; full-suite green returns when they fix I016).
 Next: Gemini reviews T091b before claiming its next ticket; I review T072.
 
 ## 2026-08-16 — D023: the shared-file problem, and a guard script for it

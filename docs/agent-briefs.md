@@ -42,10 +42,14 @@ only your own block and commit it right away. Never "tidy" or re-sort a shared
 file while another agent is live.
 
 STEP 4 — COMMIT SAFELY. THIS IS THE ONE THAT BITES.
-We share ONE working directory. NEVER `git add -A` or `git commit -a` — you will
-sweep up the other agent's half-written files. Run `git status`, then stage BY
-PATH, only files you touched. If .git/index.lock exists, the other agent is
-mid-commit: wait, don't delete it.
+We share ONE working directory AND one git index. Never `git add -A`. But note:
+staging by path is NOT enough — the other agent may have already staged its own
+in-flight files, and a plain `git commit` would sweep them into your commit.
+Run `git status --short` first, then COMMIT BY PATHSPEC, which ignores the index
+for everything else:
+    git commit -m "TICKET: ..." -- path/one.py path/two.py
+Verify with `git show --stat HEAD` that only your files landed. If
+.git/index.lock exists, the other agent is mid-commit: wait, don't delete it.
 
 STEP 4b — COMMIT YOUR OWN WORK, DON'T WAIT FOR REVIEW.
 Uncommitted work in a shared folder is the easiest thing to lose — the commit

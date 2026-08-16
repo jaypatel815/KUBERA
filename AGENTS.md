@@ -62,8 +62,17 @@ builds, everyone reviews, nobody signs off on their own commit.
 `C:\Users\jaybe\Projects\KUBERA` at the same time. Git branches do not save you
 here: there is a single set of files on disk.
 - **NEVER `git add -A` or `git commit -a` while another agent is active.** You
-  will commit their half-finished files under your message. Stage BY PATH:
-  `git add backend/analysis/foo.py backend/tests/test_foo.py project-memory/...`
+  will commit their half-finished files under your message.
+- **STAGING BY PATH IS NOT ENOUGH — the INDEX is shared too.** Learned the hard
+  way on the first live parallel run (2026-08-16): `git add <my five paths>`
+  produced EIGHT staged files, because the other agent had already `git add`-ed
+  its own in-flight work. A plain `git commit` would have shipped their
+  half-finished feature under my message.
+  **Commit by PATHSPEC instead — it ignores the index for everything else:**
+  `git commit -m "..." -- backend/analysis/foo.py backend/tests/test_foo.py ...`
+  Always run `git status --short` first and compare it to your intended paths;
+  if you see files you did not write, that is normal in parallel and it is
+  exactly why the pathspec form is mandatory.
 - Before staging, run `git status` and confirm every path you are about to add is
   YOURS. If you see files you did not touch, leave them alone and say so in your
   PROGRESS entry.

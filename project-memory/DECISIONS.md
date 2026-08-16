@@ -59,6 +59,19 @@ scripts/parallel_check.py reports active claims, dirty shared files, the clobber
 signature (deletions in append-only memory files), and alembic head count; 7
 tests cover the pure parts. On its first run it flagged a genuine case — the
 D023 rewrite itself had removed 20 lines from DECISIONS.md.
+FIRST LIVE RUN (2026-08-16, Claude T091b || Gemini T072) — two findings folded
+back in: (1) THE INDEX IS SHARED, NOT JUST THE DIRECTORY. `git add <my paths>`
+yielded eight staged files because Gemini had already staged its in-flight T072
+work; a plain `git commit` would have shipped their half-finished feature under
+Claude's message. RULE UPGRADED: commit by PATHSPEC
+(`git commit -m "..." -- <paths>`), which ignores the index for everything else,
+then confirm with `git show --stat HEAD`. (2) When a shared coordination file
+already holds the other agent's UNCOMMITTED claim line, staging that file
+carries their line too — benign (it makes their claim durable) but it must be
+declared in the commit message. Also observed working as designed: a genuine
+race (Gemini committed its claim BETWEEN Claude's guard run and Claude's commit)
+lost nothing, because the edit was anchored to their exact line instead of being
+a whole-file rewrite.
 FILES: AGENTS.md "Parallel work"; project-memory/REVIEW.md (checklist, ordered
 intent-before-diff, owner-alignment questions first, + "commit the review,
 never the code"); docs/agent-briefs.md (one paste-ready brief for any agent + a

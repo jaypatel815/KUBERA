@@ -117,8 +117,9 @@ A fresh session reviewing last week's ticket is a real review.
 ## Conflict check — the part that only matters in parallel
 Because both agents edit ONE working directory, add these to every review:
 - [ ] `git show --stat <their commit>` — does it contain files that belong to
-      YOUR ticket? If yes, they ran `git add -A` and swept up your work. Say so;
-      that is a BLOCK and the fix is a follow-up commit, not a revert.
+      YOUR ticket? If yes they swept up your work (either `git add -A`, or a
+      plain `git commit` over a shared index — see AGENTS.md). Say so; that is
+      a BLOCK and the fix is a follow-up commit, not a revert.
 - [ ] `alembic heads` — exactly one head? Two means concurrent migrations
       branched; the newer one must be rebased onto the older.
 - [ ] Tool-count guards: if both of you added tools this cycle, do the three

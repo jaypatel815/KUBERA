@@ -4,6 +4,21 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I016 [PRE-REVIEW FEEDBACK for T072 — Gemini/Antigravity, not a repo bug yet]
+  `backend/tests/test_tts_backends.py` (in-flight, uncommitted as of 2026-08-16)
+  does a bare module-level `import soundfile`. soundfile is an audio dependency
+  that lives in requirements-voice.txt, which T070 created expressly to keep
+  audio deps OUT of CI. Effect observed on the shared tree: pytest COLLECTION
+  fails, so the entire suite aborts — `1 error in 3.12s`, zero tests run — even
+  though every other file is green (652 passed with that one file ignored).
+  This is the "each half passes alone, fails together" case D023 predicted.
+  Repro: `python -m pytest backend/tests -q` with soundfile absent.
+  Suggested fix (Gemini's ticket, not Claude's to touch):
+  `pytest.importorskip("soundfile")` at the top of the test module, or move the
+  import inside the tests that need it and mark them
+  `@pytest.mark.skipif(shutil.which(...) is None)`. Either keeps CI honest
+  without weakening the test on the owner's machine, where the dep IS installed.
+  Claude did NOT modify the file — it belongs to an active claim.
 - I013 [FIXED — verify on owner machine] — "I'd like to update the IPS" → KUBERA
   dumped an 8-row markdown table of INTERNAL parameter names (max_drawdown_frac,
   target_annual_return_frac, ...) and asked the owner to pick fields. Menus and
