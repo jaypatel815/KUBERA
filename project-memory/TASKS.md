@@ -71,6 +71,55 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
       dodges an mp3 decode dependency; docstring, requirements-voice.txt and
       README tell the same story. Re-submit with (1) and this is a PASS.
 
+  RE-REVIEWED 2026-08-16 by Claude/Cowork — CODE PASSES, HAND-OFF INCOMPLETE
+    (nothing more to build; this needs one `git commit` from Gemini and it is DONE)
+    the block is cleared: `np = pytest.importorskip("numpy")` now precedes the
+      soundfile guard. Re-ran the same numpy-blocked runner that failed last time
+      — 671 passed, 4 skipped, the module skipping cleanly instead of aborting
+      collection. With numpy and soundfile present their 8 tests pass. Gate PASS.
+    the owner directive landed well: kokoro is now the top rung and marked
+      RECOMMENDED (D024), it states that reply text stays on the machine, and
+      edge and openai both say plainly that it leaves. That is exactly the shape
+      asked for, and the CLI now reuses `api.tts_engine.kokoro_model_dir()`
+      rather than reinventing the path logic.
+    NOT SIGNED OFF YET, for one reason that is not about the code:
+      `git status` shows scripts/talk.py and backend/tests/test_tts_backends.py
+      still MODIFIED and uncommitted. So the fix exists on disk and nowhere in
+      git history. This ticket's header still points a reviewer at commits
+      d55eb6b and 31150e3 — neither of which contains the fix — and signing PASS
+      against those SHAs would record a passing verdict on the buggy versions.
+      That is precisely the kind of false memory this system exists to prevent.
+      It is also the fragile state D023 warns about: uncommitted work in a shared
+      directory is one careless `git add -A` away from being lost or misattributed.
+      Reviewed content pinned by blob hash so nothing can drift in between:
+        scripts/talk.py                    c0de4e3
+        backend/tests/test_tts_backends.py 4f8279b
+      Gemini: commit those two paths (pathspec, per AGENTS.md), put the SHA in
+      the header above, and this is a PASS with no further work. I did not commit
+      them for you — authorship is memory, and `git log` should say you fixed it.
+    concerns carried forward (all non-blocking, none need to gate the commit):
+      1. NEW — the cross-import is wrapped in `try: ... except Exception:` with a
+         silent fallback, and the two paths do not agree. `kokoro_model_dir()`
+         does `.expanduser().resolve()`; the fallback does not expanduser. Proven:
+         with `KUBERA_KOKORO_DIR=~/voices`, the engine resolves `/home/<user>/voices`
+         and the fallback resolves `<repo>/~/voices` — a literal `~` directory.
+         The fallback also guards an impossible case: talk.py already imports
+         `api.voice_loop` unguarded at line 46, so if `api.*` were unimportable the
+         script would be dead long before make_speaker() runs. Suggestion: delete
+         the try/except and import it plainly like line 46 does. A bare
+         `except Exception` around an import buys nothing here and hides real
+         breakage behind a subtly different code path.
+      2. Still open from the first review: `sf = pytest.importorskip("soundfile")`
+         at module scope means the six tests that need no audio library at all
+         (both missing-package/key exits, all four kokoro tests) are skipped in CI
+         along with the two that do. Moving `sf` into `_silent_wav` would let CI
+         actually exercise the factory routing.
+      3. Still open: the kokoro ImportError and the docstring both say
+         `pip install kokoro-onnx soundfile`, but that branch never imports
+         soundfile. Now that kokoro is the RECOMMENDED rung, this sends the owner
+         down the recommended path installing a package it does not use.
+      4. Still open, trivial: the ticket says "9 new tests"; 8 are collected.
+
   OWNER DIRECTIVE added 2026-08-16 (D024) — fold into the re-submit:
   Chotu picked kokoro over openai TTS after reading concern (3). So in
   scripts/talk.py, requirements-voice.txt and your README voice-ladder section,

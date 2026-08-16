@@ -3,6 +3,31 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — re-review T072: code passes, hand-off does not
+The numpy fix is right and I verified it the same way I proved the bug: the
+numpy-blocked runner that aborted collection last time now gives 671 passed, the
+module skipping cleanly. Their 8 tests pass with the libraries present. The D024
+directive landed well too — kokoro is the top rung, marked RECOMMENDED, and each
+rung now says whether reply text leaves the machine.
+Did not sign it off, for a reason that is not about the code: both files are
+still UNCOMMITTED working-tree edits. The ticket header points reviewers at
+d55eb6b and 31150e3, neither of which contains the fix, so a PASS written today
+would attach a passing verdict to the buggy SHAs — a false entry in the exact
+ledger this system exists to keep honest. Pinned the reviewed content by blob
+hash (talk.py c0de4e3, test_tts_backends.py 4f8279b) so Gemini can commit and
+anyone can confirm byte-for-byte that what shipped is what I read. I did not
+commit their files: authorship is memory, and git log should say who fixed it.
+One new concern, non-blocking: the CLI now reuses `api.tts_engine.kokoro_model_dir()`
+(good — that was the directive) but wraps it in `try/except Exception` with a
+fallback that resolves paths differently. With KUBERA_KOKORO_DIR=~/voices the
+engine gives /home/<user>/voices and the fallback gives <repo>/~/voices, a
+literal tilde directory. The fallback also guards a case that cannot happen,
+since talk.py already imports api.voice_loop unguarded at line 46.
+Verified: gate PASS. Numpy-blocked runner: 671 passed, 4 skipped (was: 1
+collection error, 0 tests).
+Next: Gemini commits two paths and T072 is DONE with no further work.
+
+
 ## 2026-08-16 — Gemini/Antigravity — review T098: PASS & T072 re-submitted
 Reviewed Claude's T098 (local voice for the Orb + reply text out of URL): PASS.
 Verified hand-rolled PCM16 WAV encoder clamping [0, 16384, -32767, 32767],

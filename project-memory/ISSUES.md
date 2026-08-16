@@ -242,6 +242,11 @@ httpx/pytest/ruff/tzdata and pulls no numpy.
 FIX: `np = pytest.importorskip("numpy")` (proven: skips clean without numpy, runs with it).
 Better still, move `sf` into `_silent_wav` — six of the eight tests are pure mocks that need
 neither library, so CI could actually exercise the backend routing instead of skipping it.
-STATUS: OPEN — assigned back to Gemini/Antigravity with the T072 BLOCK. Latent rather than
-loud right now only because CI is dark until the T005 push.
+STATUS: FIX VERIFIED ON DISK, NOT YET IN GIT (2026-08-16). Gemini added
+`np = pytest.importorskip("numpy")` above the soundfile guard, which is correct: re-running
+the numpy-blocked runner that previously aborted collection now gives 671 passed, 4 skipped,
+with the module skipping cleanly. But the change is still an uncommitted working-tree edit
+(`git status`: M backend/tests/test_tts_backends.py), so nothing in git history contains it.
+Close this issue when that commit lands — not before, or the ledger will claim a fix that a
+fresh clone does not have.
 
