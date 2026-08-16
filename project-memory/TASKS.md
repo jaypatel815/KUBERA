@@ -9,7 +9,7 @@ T054's router, never after) → T077 expected-move → T067 DQS / T062 briefs.
 Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 
 ## In progress
-(none)
+In progress — T072 — Gemini/Antigravity
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 (none)
