@@ -9,10 +9,16 @@ T054's router, never after) → T077 expected-move → T067 DQS / T062 briefs.
 Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 
 ## In progress
-In progress — T072 — Gemini/Antigravity
+(none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-(none)
+- **T072 (human-grade TTS backends) — AWAITING REVIEW — Gemini/Antigravity** —
+  commits `d55eb6b` and `31150e3`. Reviewer: Claude/Cowork, per REVIEW.md.
+  Files touched: `scripts/talk.py` (openai and kokoro TTS backends in make_speaker),
+  `requirements-voice.txt` (documented optional deps), `backend/tests/test_tts_backends.py`
+  (9 mock tests for API params, missing keys/models, error handling, with importorskip for CI),
+  `README.md` (voice ladder section), `project-memory/ISSUES.md` (I016 resolved).
+  Verify gate PASS on combined tree: 663 passed, 1 warning.
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
@@ -146,7 +152,15 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   Cross-sectional momentum TEMPLATE (long top decile) remains future work
   behind the T064 gate; short half still awaits the D021 revisit.
 - [ ] T074 — Realtime conversation pipeline (the Zoey-latency upgrade): streaming STT + start-TTS-before-reply-completes + barge-in (interrupt while speaking), via LiveKit Agents / Pipecat or OpenAI Realtime API with our registry as functions; target sub-second first-audio; verify current framework landscape + costs at build time. The Orb (T073) is the UI shell this plugs into.
-- [ ] T072 — Human-grade TTS backends (owner: default SAPI sounds robotic; edge = big jump, this = the rest): add `openai` TTS backend (his key, ~pennies) and local `kokoro` backend (free, near-human) to talk.py's speaker factory behind KUBERA_TTS; keep latency tolerable (stream or chunk long replies); document voice ladder in README.
+- [~] T072 — Human-grade TTS backends — BUILT 2026-08-16 (Gemini/Antigravity, AWAITING REVIEW):
+  `scripts/talk.py` `make_speaker()` now supports `KUBERA_TTS=openai` (OpenAI TTS API
+  `tts-1` / `tts-1-hd` with voice choice via `KUBERA_VOICE`, default `alloy`, `OPENAI_API_KEY`
+  required) and `KUBERA_TTS=kokoro` (local near-human via `kokoro-onnx` using `models/kokoro/`
+  or `KUBERA_KOKORO_DIR`, default voice `af_heart`). Both fail fast with actionable install / download
+  instructions if packages or model weights are missing; playback errors are caught and printed so
+  the voice loop never crashes. Voice ladder documented in module docstring, `requirements-voice.txt`,
+  and `README.md`. 9 new tests in `backend/tests/test_tts_backends.py` (mocked, no hardware or network
+  required, CI-safe with `pytest.importorskip`).
 - [ ] T071 — Owner: voice acceptance run — `pip install -r requirements-voice.txt`, server up, `python scripts\talk.py`, hold a conversation. If faster-whisper wheels fail on Python 3.14 → `set KUBERA_STT=openai`. Report quirks to ISSUES.
 - [ ] T069 — Adaptive risk-tolerance estimation (owner request 2026-08-12): derive a recommended risk budget from account composition (invested vs cash), drawdown history, and demonstrated behavior (sizing drift, post-loss trade frequency); KUBERA proposes, owner ratifies into the IPS (T061); feeds the DQS budget (T067). The owner explicitly wants KUBERA's estimate to override his in-the-moment self-assessment.
 

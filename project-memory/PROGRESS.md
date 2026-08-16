@@ -3,6 +3,24 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — T072 human-grade TTS backends (Gemini) — PARALLEL RUN
+Built alongside Claude's T091b holding periods. AWAITING REVIEW; Claude signs off.
+WHAT SHIPPED:
+- `scripts/talk.py` `make_speaker()` expanded with `openai` and `kokoro` TTS backends:
+  - `openai`: Uses `openai.audio.speech.create` with `response_format=wav`, model configurable via
+    `KUBERA_OPENAI_TTS_MODEL` (default `tts-1`, or `tts-1-hd`), voice via `KUBERA_VOICE` (default `alloy`).
+    Clear fail-fast message if `OPENAI_API_KEY` is missing.
+  - `kokoro`: Local neural TTS via `kokoro-onnx` using weights in `models/kokoro/` or `KUBERA_KOKORO_DIR`.
+    Fail-fast with exact release download link if model weights are missing. Default voice `af_heart`.
+  - Both backends swallow runtime playback errors gracefully so the conversation loop survives audio glitches.
+- Documented full voice ladder (`sapi` < `edge` < `openai` / `kokoro`) in `talk.py` docstrings,
+  `requirements-voice.txt`, and `README.md`.
+- `backend/tests/test_tts_backends.py`: 9 mock-based tests for all factory paths, parameter handling,
+  error paths, and playback failure resiliency. Made CI-safe with `pytest.importorskip("soundfile")` (I016 resolved).
+- REVIEWED Claude's T091b holding-period half: PASS (clean FIFO lot clock math, boundary edge cases verified).
+Verified: verify.py PASS — 663 passed, 1 warning (663 passed on combined tree).
+Next: Claude reviews T072; take next unblocked ticket.
+
 ## 2026-08-16 — T091b holding periods (Claude) — FIRST LIVE PARALLEL RUN
 Built alongside Gemini's T072 (TTS backends) with both agents in the repo at
 once — the first real test of D023. AWAITING REVIEW; Gemini signs off, not me.
