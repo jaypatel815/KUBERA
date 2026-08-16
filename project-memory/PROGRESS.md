@@ -3,6 +3,36 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — CI was red for ~80 tickets; fixed (I018)
+The owner corrected me: T005's push was done long ago and he had been pushing
+throughout. He was right, I had been repeating a stale TASKS line without
+checking, and my follow-on claim that CI would have caught the T069 captured_at
+bug was also wrong — CI runs the same green suite; only the type checker could
+have found it. Both corrections are recorded in I018 rather than quietly fixed.
+Checking properly then found something worse than the thing I got wrong: the
+verify job had been FAILING. Root cause: T036b gave /api/market/{symbol}/latest
+a second dependency (get_alpaca_client, for the session clock) and its test only
+overrode the first. The real client needs credentials — so the test passed on
+every machine with a .env and returned 503 on a fresh checkout. It survived ~80
+tickets because the previous pushes were on 08-11.
+Found by reproduction after theorising failed twice. Clean venv with only
+backend/requirements.txt: PASS, so not a dependency. Owner ran 3.11 locally:
+PASS, so not the Python version. What remained was a FRESH CHECKOUT — tracked
+files only, no .env, no models/ — which failed immediately and named the test.
+Fixed the test to override both dependencies with a credential-free stand-in;
+fresh checkout now 693 passed, 4 skipped, lint clean.
+Added the guard that matters more than the fix: verify.py now prints an
+environment banner first — python version, .env present or not, which optional
+modules are installed, whether the kokoro model is there — and warns after a
+PASS when a .env was in play. I016 and I018 are the same shape (green where the
+dependency exists, red where it does not) and both landed today. Two agents
+reporting different results can now compare banners instead of an afternoon of
+bisecting.
+Verified: dev-shape run PASS with the banner showing .env + numpy + soundfile +
+model present; CI-shape run PASS with the banner showing all four absent.
+Next: owner pushes and confirms run #8 is green — the first honest green.
+
+
 ## 2026-08-16 — Claude/Cowork — pyrefly config, and the bug it caught immediately
 The owner hit a checker error in test_claude_sdk.py; fixing it properly meant
 deleting a `sys.modules` round-trip rather than suppressing the warning. Then

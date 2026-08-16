@@ -5,10 +5,39 @@ from fastapi.testclient import TestClient
 from test_alpaca import paper_settings
 from test_market_data import BARS_JSON, QUOTE_JSON, TRADE_JSON
 
-from api.main import app, get_market_client
+from api.main import app, get_alpaca_client, get_market_client
+from data.alpaca import AlpacaClient
 from data.market_data import MarketDataClient
 
 client = TestClient(app)
+
+# T036b gave /api/market/{symbol}/latest a SECOND dependency — an Alpaca client,
+# used for the session-aware freshness verdict. Overriding only the market client
+# left the real one in place, which needs credentials: fine on any machine with a
+# .env, a 503 on a fresh checkout. That is exactly what turned CI red, and it went
+# unseen for ~80 tickets because nobody pushed and every dev box has a .env.
+# The rule this encodes: a test claiming "no network" must override EVERY
+# dependency of the endpoint it calls, not just the one it cares about.
+CLOCK_JSON = {"timestamp": "2026-03-02T14:30:00-05:00", "is_open": True,
+              "next_open": "2026-03-03T09:30:00-05:00",
+              "next_close": "2026-03-02T16:00:00-05:00"}
+
+
+def alpaca_override():
+    """A credential-free Alpaca stand-in, so this file needs no .env."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "/clock" in request.url.path:
+            return httpx.Response(200, json=CLOCK_JSON)
+        if "/positions" in request.url.path:
+            return httpx.Response(200, json=[])
+        return httpx.Response(200, json={})
+
+    a = AlpacaClient(settings=paper_settings(), transport=httpx.MockTransport(handler))
+    try:
+        yield a
+    finally:
+        a.close()
 
 
 def override_with(routes: dict):
@@ -34,6 +63,7 @@ def test_market_latest_combines_trade_and_quote():
     app.dependency_overrides[get_market_client] = override_with(
         {"/trades/latest": TRADE_JSON, "/quotes/latest": QUOTE_JSON}
     )
+    app.dependency_overrides[get_alpaca_client] = alpaca_override
     try:
         r = client.get("/api/market/AAPL/latest")
         assert r.status_code == 200
