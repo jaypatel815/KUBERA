@@ -4,6 +4,33 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I019 [SCHWAB-SIDE, NOT A KUBERA BUG — owner blocked] (2026-08-16)
+  SYMPTOM: `python scripts/schwab_auth.py` opens the browser fine, the owner logs
+  in and accepts the terms, and Schwab then LOGS HIM OUT with "We are unable to
+  complete your request. Please contact customer support for further assistance."
+  — while an email arrives saying his access preferences were updated.
+  READING OF IT: the two halves disagree, and that is the tell. The ACCOUNT side
+  of the link succeeded (hence the email); the APP side could not complete (hence
+  the error and the logout). Nothing in this repo participates in that step, so
+  no code change here can fix it.
+  MOST LIKELY CAUSE, per schwab-py's troubleshooting: the app is in status
+  `Approved - Pending` rather than `Ready For Use`. The name is genuinely
+  misleading — it contains the word "Approved" while NOT being usable — and
+  Schwab resets an app to Pending on ANY edit, including changing the callback
+  URL. If the owner edited the callback after approval, that alone would explain
+  this. Approval is manual and takes a few days; nobody can speed it up.
+  SECOND CANDIDATE: callback mismatch. Schwab compares byte for byte — scheme,
+  case, port, trailing slash. Our .env holds `https://127.0.0.1` (17 chars,
+  verified via env_check). The app must hold exactly that string.
+  RULED OUT: the authorize URL format. Ours is
+  `/v1/oauth/authorize?client_id={key}&redirect_uri={callback}`, which matches
+  the documented form; both parameters are URL-encoded and a test asserts it.
+  DONE HERE: schwab_auth.py now prints both causes BEFORE opening the browser,
+  and names this exact symptom pair (error + preferences email) so it is
+  recognised rather than debugged from scratch.
+  OWNER ACTION: check the app's status field at developer.schwab.com. If it says
+  Approved - Pending, wait. If it says Ready For Use, compare the callback string
+  character by character against .env.
 - I018 [FIXED 2026-08-16 — CI was red for ~80 tickets]
   CORRECTIONS FIRST, both mine: Claude repeatedly said "CI is dark" and that
   T005's push was outstanding. Wrong — the owner had been pushing all along

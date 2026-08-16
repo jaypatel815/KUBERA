@@ -142,8 +142,19 @@ def main() -> int:
     callback = s.schwab_callback_url
 
     url = build_auth_url(app_key, callback)
+    print("BEFORE YOU START — two things that cause 99% of failures here:")
+    print("  1. Your app's status at developer.schwab.com must read exactly")
+    print("     'Ready For Use'. 'Approved - Pending' is NOT ready, despite the")
+    print("     word Approved — and ANY edit to the app (including changing the")
+    print("     callback URL) resets it to Pending for another few days.")
+    print("  2. The callback below must match the app's registered one BYTE FOR")
+    print("     BYTE — scheme, case, port, trailing slash all count.\n")
+    print("If you log in, accept the terms, and then get 'We are unable to")
+    print("complete your request' while receiving an 'access preferences")
+    print("updated' email, that is symptom #1: the account linked, the app")
+    print("could not. Nothing on this side will fix it; wait for Ready For Use.\n")
     print("STEP 1 — approve KUBERA in the browser")
-    print(f"  callback registered as: {callback}")
+    print(f"  callback being sent: {callback}   <-- must match the app EXACTLY")
     print(f"  {url}\n")
     if not args.no_browser:
         webbrowser.open(url)
