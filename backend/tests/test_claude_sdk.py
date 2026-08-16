@@ -75,7 +75,7 @@ class FakeAssistant:
 @dataclass
 class FakeResult:
     content: list = field(default_factory=list)
-    usage: FakeUsage = field(default_factory=FakeUsage)
+    usage: FakeUsage | dict = field(default_factory=FakeUsage)
 
 
 def install_fake_sdk(monkeypatch, captured: dict, call_tool: str | None = None):
