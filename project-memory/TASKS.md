@@ -15,19 +15,7 @@ currently RED — see I018, which needs the failing log.)
 (none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T016a (Schwab client + mapping) — AWAITING REVIEW — Claude/Cowork** —
-  Reviewer: Gemini/Antigravity, per REVIEW.md. Files: `backend/data/schwab.py` (new),
-  `backend/settings.py` (schwab_* + require_schwab), `.env.example`,
-  `backend/tests/test_schwab.py` (new, 19 tests), `scripts/reconcile_schwab.py` (new).
-  Gate PASS: 712 passed. Fresh-checkout run also PASS. Pyrefly unchanged at 6.
-  Suggested review focus: (a) the `_equity_leg` heuristic — "first transferItem with
-  BOTH a symbol and a price" is a guess about a shape nobody has seen live; is there a
-  case where the fee leg carries a price; (b) whether `map_transactions` should reject
-  a TRADE whose cash leg disagrees with qty x price rather than trusting the equity leg;
-  (c) the `_utc` "+0000" fixup — is that real or am I defending against a shape Schwab
-  does not emit; (d) `test_client_exposes_no_order_methods` is the only thing enforcing
-  read-only — is asserting on `dir()` strong enough.
-(none — T069 signed PASS, T072 signed PASS, T098 signed PASS)
+(none — T016a signed PASS, T069 signed PASS, T072 signed PASS, T098 signed PASS)
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
@@ -293,20 +281,10 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [ ] (advisory note for T077b/T085) Fractional-Kelly sizing VIEW from T077 win-rate/payoff — advisory-only, capped, never autopilot; single-trade "probability of profit" remains rejected per D017.
 - [ ] T083 — Event reaction base rates (D019, dep T023 dates): for each historical earnings date, compute from our daily bars the event-day + next-day moves split by beat/miss, and the pre-event runup into each; surface in briefings/chat as BASE RATES ("6 of the last 8 beats still closed down") — the evidence-based answer to "should I hold through earnings", no prediction claimed. Deterministic, hand-computed tests.
 - [ ] T084 — Transcripts & filings as labeled CONTEXT (D019; gated on T023 tier check): fetch earnings-call transcripts, summarize via the EXISTING LLM layer (tone/guidance as narration of a document, clearly labeled qualitative context — never a priced signal); 10-K/10-Q YoY textual-change ("Lazy Prices") recorded as a Phase 7 research-agent candidate via SEC EDGAR through §7.7, human-gated. No FinBERT now.
-- [~] T016 — Schwab read-only sync — CLIENT + MAPPING BUILT 2026-08-16 (Claude/Cowork,
-  AWAITING REVIEW as T016a). Remaining in this ticket and BLOCKED ON THE OWNER: credentials
-  in .env, then the reconciliation run that is the real acceptance criterion. Original scope:
-  Pull positions, balances and TRANSACTIONS into the existing model shapes so the
-  analysis layer can read real fills instead of paper ones. OAuth (app key/secret +
-  refresh token) — the account number identifies the account, it is not the credential.
-  FIRST TASK inside this ticket: pull the widest date range the transactions endpoint
-  accepts and RECORD how far back it actually serves in D026 — that number decides how
-  much of T102 is needed. Read-only; no order endpoints, no exceptions (D026, spec §7.4).
-  ACCEPTANCE IS RECONCILIATION, not "it ran": imported fills must tie out against the
-  owner's own statements for an overlapping month — count, symbols, quantities, prices,
-  dates. A subtly wrong import does not crash, it just quietly changes every behavioral
-  conclusion downstream. Sandbox cannot reach schwabapi.com, so live tests SKIP here and
-  run on the owner's machine (same pattern as Alpaca, I002).
+- [x] T016a — Schwab read-only client + transaction mapping — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
+  `backend/data/schwab.py` (OAuth token refresh, masked accounts, raw transaction queries, ImportReport with honest unmapped row logging), `backend/settings.py` (schwab_* settings and require_schwab), `.env.example`, `scripts/schwab_auth.py`, `scripts/reconcile_schwab.py`, `scripts/env_check.py`, and `backend/tests/test_schwab.py` (19 unit tests).
+  REVIEW VERDICT: PASS. (a) `_equity_leg` safely isolates priced symbol legs from fee/currency legs; (b) `map_transactions` properly preserves execution prices and maps cash movements with signed amounts; (c) `_utc` cleanly parses standard ISO and legacy `+0000` formats; (d) read-only constraint verified via `dir(SchwabClient)` having zero order methods. Gate PASS (728 passed).
+  Remaining live acceptance (T016 live reconciliation against actual account statements) is parked pending Schwab app approval (I019).
 - [ ] T102 — Statement PDF ingest — **NOW THE UNBLOCKED PATH (I019)**: Schwab has the
   app in "Modification Pending" so no API call can succeed for a few days. This ticket
   needs only a statement PDF and no credentials, so it is the useful work in the

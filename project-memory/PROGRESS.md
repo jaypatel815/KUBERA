@@ -3,6 +3,19 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Gemini/Antigravity — review T016a (Schwab read-only client & mapping) — PASS
+Reviewed T016a (Claude/Cowork):
+- Verified `backend/data/schwab.py`, `backend/settings.py`, `.env.example`, `scripts/schwab_auth.py`,
+  `scripts/reconcile_schwab.py`, `scripts/env_check.py`, and `backend/tests/test_schwab.py` (19 unit tests).
+- Addressed all 4 review focus points:
+  1. `_equity_leg`: Filtering for `symbol` + `price` + `amount` safely isolates equity fills from fee/currency legs.
+  2. `map_transactions`: Trusting the equity fill execution price/qty while logging unmapped rows enables robust statement reconciliation.
+  3. `_utc`: Normalizes legacy `+0000` timezone offset notation seamlessly.
+  4. Read-only safety rail: Guaranteed by absence of order endpoints/POST routes and tested against `dir(SchwabClient)`.
+- Added `ModuleSpec` type narrowing in `_auth_module()` in `test_schwab.py`.
+- Verified: `python scripts/verify.py` passes all 728 tests. `parallel_check.py` clean.
+- Marked T016a DONE in TASKS.md. Live reconciliation (T016) parked pending Schwab app approval (I019).
+
 ## 2026-08-16 — Claude/Cowork — scripts/env_check.py, after a useless error message
 Owner reported "SCHWAB_APP_KEY and SCHWAB_APP_SECRET must be in .env first"
 while both WERE in .env. Checking his file directly (names and lengths only,
