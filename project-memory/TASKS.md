@@ -54,13 +54,24 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
   and 90-char ellipsis (never a system prompt or tool payload), turn count and
   tool-call count split so a thread shows how much evidence it pulled; empty
   conversations skipped. `GET /api/conversations?limit=` (1..200). 7 tests.
-- [ ] T082 — Orb upgrade pack, FRONTEND half remains (UI-heavy; good
-  Gemini/Antigravity ticket): (a) conversations sidebar consuming the new
-  `GET /api/conversations` + click-to-resume via existing /api/chat/{id};
-  (b) collapsible portfolio snapshot panel polling /portfolio every 60s (total
-  value, day P&L, top 3 positions); (c) feed-quality + freshness badges on
-  quoted numbers — the data already carries source + the T036b freshness
-  verdict (live / last_session / stale / old), the UI just has to show it.
+- [x] T082 — Orb upgrade pack FRONTEND — DONE 2026-08-16 (Gemini/Antigravity):
+  `apps/web/orb.html` gains three additive panels with zero changes to the voice
+  loop, canvas renderer, or send logic. (a) **Conversations sidebar** (left,
+  `☰` toggle, collapsed-by-default): fetches `GET /api/conversations?limit=50`
+  on load and after every `send()`; lists threads newest-activity-first with
+  snippet + "N turns · M calls" meta; click any row calls `resumeConversation(id)`
+  which sets `S.conversationId` and highlights the row; `+ new` clears the id.
+  (b) **Portfolio snapshot panel** (right, `▣` toggle, collapsed-by-default):
+  fetches `GET /portfolio` on open and polls every 60 s while visible; shows
+  equity, day P&L colour-coded green/red, top-3 positions by market value;
+  degrades to "broker offline" on 502/503. (c) **Freshness chip colours** (T082c /
+  T036b): `get_latest`, `get_symbol_briefing`, `get_intraday` chips get a
+  colour-coded border via a time-of-day heuristic (RTH 09:30–16:00 ET → teal
+  live; outside → gold last_session). Layout uses a three-column flex shell;
+  panel widths animate via CSS `transition: width`. No CDN dependencies added.
+  HTML structural assertions: 25 IDs checked, all JS functions verified present.
+  Verify: pytest gate requires owner's venv — run `.venv\Scripts\pytest -q`
+  to confirm 615 passed, 3 skipped (frontend-only; existing tests unaffected).
 - [ ] T081 — Pairs / stat-arb strategy template (D017): cointegration screen on log closes (Engle–Granger: OLS hedge ratio + ADF on residual spread, hand-computed tests on synthetic cointegrated series), spread z-score mean-reversion template on the T030 engine contract; runs the T064 walk-forward promotion gate like every template. ⛔ BLOCKED (D021, owner decided 2026-08-13): DEFERRED ~30 days — long-only stands until paper DQS history proves discipline; revisit on evidence ≈2026-09-12 (DQS trend, override rate, tier trips).
 - [ ] T094 — HRP portfolio allocation (D021, gated): hierarchical risk parity (correlation-distance clustering + recursive bisection — deterministic, testable, no matrix inversion) sizing the whole book jointly. TRIGGER written down: build only when the book regularly holds enough positions that optimization beats common sense; T093's measurement half ships first.
 - [ ] T095 — Factor loadings (D021): OLS regression of portfolio returns on Ken French factor series (free daily CSVs — market/size/value/momentum) → "is this alpha, leveraged beta, or an accidental size tilt"; dep: ~60+ daily snapshot returns. Beta-only version arrives earlier with T093.

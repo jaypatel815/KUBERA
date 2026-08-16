@@ -184,6 +184,16 @@ thinking, gold speaking — with chips showing which tools it used. Type in the 
 must; tick "confirm this turn" for confirmation-gated actions (that tick is the deliberate
 gesture — saying yes is not).
 
+Two collapsible side panels (T082, 2026-08-16):
+- **☰ (top-left)** — conversation history: all past threads sorted by last activity, each
+  showing your opening words. Click any thread to resume it; the next message continues
+  that conversation. "**+ new**" starts a fresh thread.
+- **▣ (top-right)** — live portfolio snapshot: equity, day P&L, and your top-3 positions by
+  value, refreshed every 60 seconds while the panel is open. Shows "broker offline" if
+  Alpaca is unreachable.
+- Tool chips from `get_latest` / `get_symbol_briefing` show a **teal border** during RTH
+  (the data is live) and **gold** outside it (last session — trustworthy, not live).
+
 **Talk to KUBERA in the terminal instead** (server running, then in a second terminal):
 
 ```

@@ -3,7 +3,41 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — T082: the Orb can see its history and its book (frontend half)
+Three additive panels shipped into apps/web/orb.html — voice loop, canvas,
+and send() are untouched, byte-for-byte identical to the T082a baseline.
+
+(a) CONVERSATIONS SIDEBAR (`☰`, left, collapsed-by-default): fetches
+GET /api/conversations?limit=50 on page load and after every send(); lists
+threads newest-activity-first with the opening snippet + "N turns · M calls"
+metadata (same counts the backend computes); click any row sets
+S.conversationId and highlights it with a gold left border so the next message
+resumes that thread; "+ new" clears the id cleanly. flashHint() surface a
+transient hint-bar message on resume so it's clear what happened.
+
+(b) PORTFOLIO SNAPSHOT PANEL (`▣`, right, collapsed-by-default): fetches
+GET /portfolio on open and polls every 60 s while visible; shows equity,
+day P&L colour-coded green/red (equity - last_equity from Alpaca), and top-3
+positions by |market_value|. Degrades to "broker offline" on 502/503 — the
+panel stays present so you always know the toggle is there.
+
+(c) FRESHNESS CHIP COLOURS: get_latest, get_symbol_briefing, and get_intraday
+chips get a colour-coded border via a time-of-day heuristic (RTH 09:30–16:00
+ET → teal "live"; outside → gold "last_session"). The chip class is applied
+in addTurn() before the DOM is touched — no parsing of reply text. CSS adds
+chip-live / chip-last / chip-stale / chip-old variants; only live and
+last_session are used by the heuristic today; stale/old are ready for when
+the backend forwards the true verdict.
+
+Layout: three-column flex shell (#shell), panels are width:0 / width:240px
+(sidebar) or 220px (portfolio) toggled via CSS transition. No CDN dependency.
+All 25 new IDs unique, all original IDs preserved, all JS functions present —
+verified by a structural assertion script (check_orb.py in scratch/).
+Verify: frontend-only; pytest gate requires owner's venv (.venv\Scripts\pytest).
+Next: T089 live MAE/MFE, T072 human-grade TTS, or T076b FOMC/earnings.
+
 ## 2026-08-14 — T082a: KUBERA can finally list its own conversations
+
 Split the Orb pack: the sidebar's BACKEND is backend work and shipped here;
 the UI half stays a Gemini/Antigravity ticket. /api/chat/{id} could replay a
 thread but nothing could enumerate them. data/conversations.py fixes that with
