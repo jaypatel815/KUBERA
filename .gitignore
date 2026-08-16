@@ -24,3 +24,14 @@ backups/
 models/
 *.onnx
 *.bin
+
+# ---------------------------------------------------------------------------
+# PRIVATE FINANCIAL DOCUMENTS — never commit (D026, T102)
+# This repo is PUBLIC. A brokerage statement carries the account number, every
+# holding, and the balance. Belt AND braces: the whole directory is ignored, and
+# so is every PDF/CSV anywhere in the tree, because the one that gets committed
+# is always the one dropped somewhere nobody thought to ignore.
+private/
+*.pdf
+*.csv
+!backend/tests/fixtures/**/*.csv     # redacted test fixtures stay tracked
