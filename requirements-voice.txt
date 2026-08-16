@@ -8,14 +8,14 @@ pyttsx3>=2.90
 # skip it and set KUBERA_STT=openai (uses OPENAI_API_KEY) instead:
 faster-whisper>=1.0
 # Optional nicer voices — pick ONE, set KUBERA_TTS accordingly:
-#   KUBERA_TTS=edge   (free, Microsoft neural, online)
-#   pip install edge-tts soundfile
-#
-#   KUBERA_TTS=openai (near-human, ~$0.015/1k chars, needs OPENAI_API_KEY)
-#   pip install openai soundfile
-#
-#   KUBERA_TTS=kokoro (near-human, free, offline, ~350 MB model download required)
+#   KUBERA_TTS=kokoro (RECOMMENDED, D024: near-human, free, offline — text stays local)
 #   pip install kokoro-onnx soundfile
 #   Download kokoro-v1.0.onnx + voices-v1.0.bin from:
 #     https://github.com/thewh1teagle/kokoro-onnx/releases
 #   Place in models/kokoro/ or set KUBERA_KOKORO_DIR to their folder.
+#
+#   KUBERA_TTS=edge   (free, Microsoft neural, online — reply text leaves machine)
+#   pip install edge-tts soundfile
+#
+#   KUBERA_TTS=openai (near-human, ~$0.015/1k chars, OPENAI_API_KEY required — reply text leaves machine)
+#   pip install openai soundfile

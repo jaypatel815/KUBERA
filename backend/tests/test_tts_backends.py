@@ -10,9 +10,9 @@ import types
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pytest
 
+np = pytest.importorskip("numpy")
 sf = pytest.importorskip("soundfile")
 
 # talk.py lives in scripts/ and is not a package — import it by path.

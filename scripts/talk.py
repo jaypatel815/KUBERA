@@ -12,20 +12,21 @@ At the prompt:
 Dependencies (see requirements-voice.txt):  pip install -r requirements-voice.txt
 STT backends (env KUBERA_STT):  whisper (local, default)  |  openai (needs OPENAI_API_KEY)
 
-Voice quality ladder (env KUBERA_TTS) — set KUBERA_VOICE to override the default voice:
-  sapi      Windows built-in (default, robotic — works with zero deps)
-  edge      Microsoft neural voices via edge-tts (big quality jump, free, online)
+Voice quality ladder (env KUBERA_TTS) — set KUBERA_VOICE to override default voice:
+  sapi      Windows built-in (default, robotic — works with zero extra deps)
+  kokoro    (RECOMMENDED, D024) Local near-human via kokoro-onnx (free, offline, 50+ voices)
+              Reply text (holdings, dollar P&L) stays on this machine.
+              pip install kokoro-onnx soundfile
+              Needs kokoro-v1.0.onnx + voices-v1.0.bin in models/kokoro/ or KUBERA_KOKORO_DIR
+              (download from https://github.com/thewh1teagle/kokoro-onnx/releases)
+              KUBERA_VOICE=af_heart  (also: af_sarah, am_adam, bf_emma, bm_george, …)
+  edge      Microsoft neural voices via edge-tts (free, online — reply text leaves machine)
               pip install edge-tts soundfile
               KUBERA_VOICE=en-US-AndrewNeural  (most natural; GuyNeural is default)
-  openai    OpenAI TTS API (near-human, ~$0.015/1k chars, OPENAI_API_KEY required)
+  openai    OpenAI TTS API (near-human, ~$0.015/1k chars — reply text leaves machine)
               pip install openai soundfile
               KUBERA_VOICE=alloy  (also: echo, fable, onyx, nova, shimmer)
               KUBERA_OPENAI_TTS_MODEL=tts-1  (or tts-1-hd for highest quality)
-  kokoro    Local near-human via kokoro-onnx (free, offline, 50+ voices, ~350 MB)
-              pip install kokoro-onnx soundfile
-              Needs kokoro-v1.0.onnx + voices-v1.0.bin in KUBERA_KOKORO_DIR
-              (download from https://github.com/thewh1teagle/kokoro-onnx/releases)
-              KUBERA_VOICE=af_heart  (also: af_sarah, am_adam, bf_emma, bm_george, …)
 
 Safety (D015): speech never confirms an order. Only typing `confirm` sets the flag.
 """
@@ -206,11 +207,16 @@ def make_speaker():
                 "sounddevice should already be installed from requirements-voice.txt."
             )
 
-        kokoro_dir = Path(
-            os.environ.get("KUBERA_KOKORO_DIR", Path(__file__).parent.parent / "models" / "kokoro")
-        )
-        model_path  = kokoro_dir / "kokoro-v1.0.onnx"
-        voices_path = kokoro_dir / "voices-v1.0.bin"
+        try:
+            from api.tts_engine import MODEL_FILE, VOICES_FILE, kokoro_model_dir  # noqa: PLC0415
+            kokoro_dir = kokoro_model_dir()
+            model_path = kokoro_dir / MODEL_FILE
+            voices_path = kokoro_dir / VOICES_FILE
+        except Exception:
+            default_dir = Path(__file__).resolve().parents[1] / "models" / "kokoro"
+            kokoro_dir = Path(os.environ.get("KUBERA_KOKORO_DIR", default_dir)).resolve()
+            model_path = kokoro_dir / "kokoro-v1.0.onnx"
+            voices_path = kokoro_dir / "voices-v1.0.bin"
         if not model_path.exists() or not voices_path.exists():
             raise SystemExit(
                 f"KUBERA_TTS=kokoro: model files not found in {kokoro_dir}\n"
