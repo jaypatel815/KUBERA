@@ -29,12 +29,7 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 (append your own lines only), the single alembic head, apps/web/orb.html.
 
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
-- [ ] T099 — **Give KUBERA its private voice (one install + one download, ~350 MB).**
-  In the SERVER venv: `pip install kokoro-onnx`. Then download `kokoro-v1.0.onnx`
-  and `voices-v1.0.bin` from https://github.com/thewh1teagle/kokoro-onnx/releases
-  into `models\kokoro\`. Restart the server — it switches itself over, no config.
-  Until then the Orb speaks through Microsoft's edge-tts and the server log says
-  so on every reply. Your choice, recorded in D024.
+- [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [ ] T005 — GitHub repo created + remote added ✔ (2026-08-11). Remaining: push `main` from your machine (sandbox has no GitHub auth) and confirm the Actions CI run is green.
 - [x] T006 — Alpaca paper keys in `.env` — done 2026-08-11 (owner). Note: owner's `.env` uses `ALPACA_API_KEY` naming + extra vars from another template; settings loader accepts both spellings, extras ignored.
 - [ ] T007 — **Phase 1 sign-off, nearly done:** verify.py passed on Windows 68/68 incl. the 3 live paper tests (per Gemini's 2026-08-11 session ✔). Remaining: `alembic -c backend\alembic.ini upgrade head` + `python scripts\sync.py` + open `http://127.0.0.1:8000/portfolio` once.
