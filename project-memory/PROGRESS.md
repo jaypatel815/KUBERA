@@ -3,6 +3,27 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — D025: one Python version, declared once
+Follow-on from I018. Chasing the CI failure surfaced that the repo declared
+SEVEN Python versions — .python-version 3.14.7, pyproject >=3.14.7, CI 3.11,
+ruff py310, pyright 3.10, pyrefly 3.10.0, AGENTS "3.11+" — with nothing keeping
+them in step. That did not cause the red CI (the .env dependency did), but it is
+the same category of hazard: a claim about the environment that no one checks.
+Owner chose to pin everything to 3.14.7, the version he runs.
+The useful part is not the number, it is that CI stopped repeating it:
+setup-python now uses `python-version-file: .python-version`, so the runner
+reads the same file uv does and that drift cannot recur. The four config files
+that still restate it now each carry a comment naming the source.
+Verified rather than assumed: ruff at py314 adds no new lint; pyrefly at 3.14.7
+reports the SAME 6 triaged errors as at 3.10 — so the bump neither hid a problem
+nor invented one; gate passes on this machine and on a fresh checkout.
+Flagged honestly in D025: I cannot verify from here that GitHub's runner can
+install exactly 3.14.7. If run #8 fails at the setup-python step, relax
+.python-version to "3.14" — every other file points at it, so that one edit
+fixes all seven.
+Next: owner pushes; run #8 is the first green, and the first test of the pin.
+
+
 ## 2026-08-16 — Claude/Cowork — CI was red for ~80 tickets; fixed (I018)
 The owner corrected me: T005's push was done long ago and he had been pushing
 throughout. He was right, I had been repeating a stale TASKS line without

@@ -34,7 +34,10 @@ project-excludes = [
 # Mirrors backend/tests/conftest.py + pytest's rootdir insertion.
 search-path = ["backend", "backend/tests"]
 
-python-version = "3.10.0"
+# Matches .python-version (3.14.7) — D025. A checker set to an older version
+# silently permits syntax the runtime accepts and misses nothing useful in
+# return; one that is NEWER than the runtime flags valid code. Keep it equal.
+python-version = "3.14.7"
 
 # Optional runtime dependencies, every one of them imported lazily inside a
 # try/except ImportError with an actionable install message. They are ABSENT on

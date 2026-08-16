@@ -349,3 +349,43 @@ ALTERNATIVE CONSIDERED — browser `speechSynthesis` (zero install, fully local)
 Rejected: voice quality is inconsistent across machines and it cannot be tested
 server-side, so KUBERA could not prove what it sounds like. Kokoro is
 deterministic and testable.
+
+## D025 — one Python version, declared once, followed everywhere (2026-08-16)
+DECIDED BY THE OWNER: pin everything to 3.14.7, the version he actually runs.
+
+THE STATE BEFORE, which is the argument for the decision: the repo declared
+SEVEN Python versions and no two of them had to agree.
+  .python-version        3.14.7      (uv's pin, what the owner runs)
+  pyproject.toml         >=3.14.7
+  .github/workflows/ci   3.11
+  ruff.toml              py310
+  pyrightconfig.json     3.10
+  pyrefly.toml           3.10.0
+  AGENTS.md              "3.11+"
+Nothing enforced consistency, so drift was the default state rather than an
+accident. The practical cost is not theoretical: a linter targeting 3.10 permits
+nothing useful and silently declines to flag what a 3.14 runtime would accept,
+while a checker set ABOVE the runtime flags valid code. Both directions waste
+the reader's attention, which is the scarce resource.
+
+WHY 3.14.7 RATHER THAN A FLOOR: this is one person's tool on one machine. "CI
+tests exactly what I ship on" is worth more here than portability to machines
+that will never exist. A floor buys compatibility nobody will spend.
+
+THE PART THAT MATTERS MORE THAN THE NUMBER: CI no longer repeats the version at
+all. `actions/setup-python` now reads `python-version-file: .python-version`, so
+the runner follows the same file uv does. One declaration, one place to change,
+and this particular drift cannot recur by construction. The remaining four
+(ruff, pyright, pyrefly, AGENTS.md) still restate it because their formats have
+no include mechanism — each now carries a comment naming .python-version as the
+source, so the next agent updates them together.
+
+VERIFIED, not assumed: ruff at py314 introduces no new lint (`All checks
+passed!`); pyrefly at 3.14.7 reports the same 6 known-and-triaged errors it did
+at 3.10, so the version change hid nothing and invented nothing; the gate passes
+on a dev machine AND on a fresh checkout with no .env.
+
+THE ONE THING NOT VERIFIABLE FROM HERE: that GitHub's runner image can install
+exactly 3.14.7. If a future run fails at the setup-python step with "version not
+found", the fix is to relax `.python-version` to `3.14` — which keeps every
+other file correct, because they all point at that one file.

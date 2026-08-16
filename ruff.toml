@@ -1,5 +1,7 @@
 line-length = 100
-target-version = "py310"
+# Matches .python-version (3.14.7), the single source of truth. Ruff needs the
+# major.minor form. Keep this in step with .python-version — D025.
+target-version = "py314"
 
 [lint]
 select = ["E", "F", "I", "W"]

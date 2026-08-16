@@ -26,7 +26,7 @@ Anything involving money (returns, position sizing, order quantities, risk limit
 
 ## Stack
 Keep this current — this section should never go stale. Rationale in `/project-memory/DECISIONS.md`.
-- Backend: Python 3.11+ / FastAPI · Frontend: PWA (D004) · Database: SQLite → Postgres+pgvector at Phase 3 (D007) · Broker: Alpaca paper (D006) · Market data: Alpaca Data API free tier (D006)
+- Backend: Python 3.14.7 (pinned in `.python-version`; every tool follows it — D025) / FastAPI · Frontend: PWA (D004) · Database: SQLite → Postgres+pgvector at Phase 3 (D007) · Broker: Alpaca paper (D006) · Market data: Alpaca Data API free tier (D006)
 - Markets: US equities first (D002) · Execution: paper-only until spec §7.4 gate passes (D003)
 - Setup: `pip install -r backend/requirements.txt` · Verify (lint+tests): `python scripts/verify.py` · Run: `uvicorn --app-dir backend api.main:app --reload`
 

@@ -7,9 +7,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Reads .python-version rather than repeating it. That file is the single
+      # source of truth (D025); CI following it means this line cannot drift out
+      # of step with what the owner actually runs.
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version-file: .python-version
       - run: pip install -r backend/requirements.txt
       - run: python scripts/verify.py
 
