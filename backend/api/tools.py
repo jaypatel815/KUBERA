@@ -25,6 +25,7 @@ from analysis.briefing import PositionContext, build_briefing
 from analysis.confluence import assess_confluence
 from analysis.correlation import log_returns, overlap_report, pearson
 from analysis.events import upcoming_events
+from analysis.excursions_live import excursion_book, position_excursion
 from analysis.execution import ExecutionFill, execution_report
 from analysis.exit_plan import build_exit_plan
 from analysis.expected_move import expected_move
@@ -1236,6 +1237,58 @@ def _get_watchlist(ctx: ToolContext, _: NoArgs) -> dict:
         "ranked": [{**asdict(r), **meta.get(r.symbol, {})} for r in ranked],
         "asof": datetime.now(timezone.utc).isoformat(),
         "source": "alpaca-data-iex",
+    }
+
+
+class ExcursionArgs(LenientArgs):
+    days: int = Field(default=60, ge=2, le=400,
+                      description="Bars of history to search for the extremes")
+
+
+@registry.tool(
+    "get_open_excursions",
+    "What have my OPEN positions already put me through? (T089) For each "
+    "holding: MAE (worst move against you since entry), MFE (best it ever "
+    "showed you), how much of that run-up you've given back, and how much of "
+    "the pain a 2xATR stop allows has already been used. Use for 'am I still "
+    "OK holding this?' and when the owner mentions watching a gain evaporate. "
+    "ALWAYS narrate the limit: daily high/low, so intraday spikes are invisible, "
+    "and the basis is the AVERAGE entry price. Excursions describe what "
+    "happened — they are not a forecast.",
+    ExcursionArgs,
+)
+def _get_open_excursions(ctx: ToolContext, p: ExcursionArgs) -> dict:
+    alpaca: AlpacaClient = ctx.require("alpaca")
+    market: MarketDataClient = ctx.require("market")
+    positions = alpaca.get_positions()
+    if not positions:
+        return {**asdict(excursion_book([], ["no open positions"])),
+                "asof": datetime.now(timezone.utc).isoformat(),
+                "source": "alpaca-paper"}
+    rows, warnings = [], []
+    for pos in positions:
+        bars = market.get_daily_bars(pos.symbol, days=p.days)
+        series = bars.bars
+        if len(series) < 2:
+            warnings.append(f"{pos.symbol}: not enough history to measure "
+                            "excursions")
+            continue
+        stop = None
+        if len(series) >= 15:
+            atr_value = atr([b.high for b in series], [b.low for b in series],
+                            [b.close for b in series])
+            candidate = pos.avg_entry_price - 2 * atr_value
+            stop = candidate if candidate > 0 else None
+        rows.append(position_excursion(
+            pos.symbol, pos.avg_entry_price,
+            [b.high for b in series], [b.low for b in series],
+            [b.close for b in series], stop_price=stop,
+        ))
+    return {
+        **asdict(excursion_book(rows, warnings)),
+        "window_days": p.days,
+        "asof": datetime.now(timezone.utc).isoformat(),
+        "source": "alpaca-paper + alpaca-data-iex",
     }
 
 

@@ -158,7 +158,19 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
   after execution — run sync.py). Empty state is a calm answer, not an error.
   ⇒ "never buy the open print" becomes measurable from the owner's own fills
   once enough accumulate.
-- [ ] T089 — Live MAE/MFE (D020, dep T036): extend trade_excursions to live positions with intraday extremes; winners'-MAE stop-calibration line joins the T062 weekly review.
+- [x] T089 — Live MAE/MFE — DONE 2026-08-16 (Claude/Cowork):
+  `analysis/excursions_live.py` — per OPEN position: MAE (worst move against
+  since entry, from daily LOWS), MFE (best, from HIGHS), current, GIVE-BACK
+  (share of the run-up surrendered — the number behind "it was up 8% and I
+  watched it round-trip"), and heat-used vs a 2xATR stop (capped at 1.0 =
+  "another move against you triggers the exit"). Hand-tested headline case
+  (entry 100, low 94, high 112, close 103 → −6% / +12% / 75% given back) plus
+  corrupt-data and stop-above-entry rejection. Tool #33 get_open_excursions +
+  GET /api/excursions; book-level worst_mae and biggest_give_back. Honest
+  limits in EVERY payload: daily H/L (intraday spikes invisible) and the
+  broker's AVERAGE entry as basis. Remaining from the original ticket: the
+  winners'-MAE stop-calibration line in the T062 weekly review — needs closed
+  trades to accumulate first (T063b/T091b territory).
 - [x] T090 — Liquidity-aware costs — DONE 2026-08-14 (Claude/Cowork):
   `analysis/liquidity.py` (spread_bps, half-spread per-side cost with 0.5bps
   floor, ADV over trailing 20 sessions, 1%-participation cap — all hand-tested:

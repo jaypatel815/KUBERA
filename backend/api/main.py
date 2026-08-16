@@ -448,6 +448,22 @@ def watchlist_remove(symbol: str, db=Depends(get_db_session)) -> dict:
         raise HTTPException(status_code=422, detail=str(e))
 
 
+@app.get("/api/excursions")
+def open_excursions(
+    days: int = 60,
+    alpaca: AlpacaClient = Depends(get_alpaca_client),
+    market: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """T089: MAE/MFE on currently held positions."""
+    try:
+        return registry.execute("get_open_excursions", {"days": days},
+                                ToolContext(alpaca=alpaca, market=market))
+    except (ToolError, ToolArgumentError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except (AlpacaError, MarketDataError) as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/execution-quality")
 def execution_quality(days: int = 90, session=Depends(get_db_session)) -> dict:
     """T088: implementation shortfall by time-of-day, from real fills."""

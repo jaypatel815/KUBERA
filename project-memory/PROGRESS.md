@@ -3,6 +3,24 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — T089: what a position has already put you through
+Live MAE/MFE on OPEN positions — the backtest version only ever measured
+closed trades on closes. analysis/excursions_live.py reads daily highs and
+lows since entry and reports: the worst it went against you, the best it ever
+showed you, and GIVE-BACK — the share of a run-up already surrendered, which
+is the arithmetic behind "it was up 8% and I watched it round-trip". Heat-used
+compares MAE to the pain a 2xATR stop allows, so "you've taken nearly all the
+damage this trade is permitted" stops being a feeling. Hand-tested on entry
+100 / low 94 / high 112 / close 103 → −6%, +12%, 75% given back; corrupt bars
+(high below low) and a stop above entry are refused rather than computed.
+Tool #33 + GET /api/excursions, with the limits in every payload: daily H/L
+misses intraday spikes, and the basis is the broker's AVERAGE entry.
+Fixture lesson worth keeping: my first "biggest give-back" case was wrong —
+a symbol with a 1% pop fully surrendered scores 100%, beating a 12% run-up
+that gave back 75%. The code was right; the test was sloppy. Fixed the test.
+Verified: verify.py PASS — 624 passed (+9), 3 skipped.
+Next: T072 human-grade TTS, T091b holding-period distribution, or T023 (owner).
+
 ## 2026-08-16 — T082: the Orb can see its history and its book (frontend half)
 Three additive panels shipped into apps/web/orb.html — voice loop, canvas,
 and send() are untouched, byte-for-byte identical to the T082a baseline.
