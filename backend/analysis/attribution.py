@@ -17,7 +17,7 @@ mid-session entries beat the open?" (by bucket). Pure function; the tool joins
 DB rows and feeds it. Fail closed on bad input.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Sequence
 
 
@@ -136,6 +136,11 @@ class AttributionReport:
     note: str
     # T091b (default keeps older constructions valid)
     holding_periods: dict | None = None
+    # T069: the raw round trips behind the aggregates. Needed by the risk-tolerance
+    # estimator, which asks per-trip questions the summary tables cannot answer
+    # ("what did he buy in the 24h AFTER this specific loss?"). Deliberately
+    # stripped from the get_attribution payload — it is working data, not a report.
+    trips: list[dict] = field(default_factory=list)
 
 
 def fifo_attribution(fills: Sequence[AttributedFill]) -> AttributionReport:
@@ -203,6 +208,7 @@ def fifo_attribution(fills: Sequence[AttributedFill]) -> AttributionReport:
         open_lots=open_lots,
         oversold=oversold,
         holding_periods=holding_period_distribution(trips),
+        trips=trips,
         note=(
             "Realized P&L only, FIFO, credited to the ENTRY's tags. Costs are in "
             "fill prices; 'unattributed' = fills whose order matched no logged "

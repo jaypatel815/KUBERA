@@ -44,6 +44,7 @@ from analysis.portfolio import summarize, win_loss
 from analysis.portfolio_risk import portfolio_risk
 from analysis.ranking import rank_watchlist
 from analysis.regime import classify_regime
+from analysis.risk_tolerance import estimate_risk_tolerance
 from analysis.staleness import (
     classify_freshness,
     next_session_hint,
@@ -73,10 +74,10 @@ from data.journal import (
     summarize_decisions,
 )
 from data.market_data import MarketDataClient, MarketDataError
-from data.models import SignalLog, Transaction
+from data.models import AccountSnapshot, SignalLog, Transaction
 from data.watchlist import add_symbol, list_symbols, remove_symbol
 from risk.dqs import score_decisions
-from risk.engine import RiskEngine
+from risk.engine import RiskEngine, RiskLimits
 from risk.persistence import restore_risk_state
 from risk.sizing import volatility_parity_notional
 from risk.tiers import current_tier
@@ -1127,8 +1128,12 @@ def _get_attribution(ctx: ToolContext, _: NoArgs) -> dict:
         slot = activity.setdefault(key, {})
         slot[r.action] = slot.get(r.action, 0) + 1
 
+    payload = asdict(report)
+    # Working data for T069, not part of this report — the model gets the
+    # aggregates, which is what it can actually narrate.
+    payload.pop("trips", None)
     return {
-        "attribution": asdict(report),
+        "attribution": payload,
         "activity_by_regime": activity,
         "fills_analyzed": len(attributed),
         "asof": datetime.now(timezone.utc).isoformat(),
@@ -1649,4 +1654,77 @@ def _compare_benchmark(ctx: ToolContext, p: BenchmarkArgs) -> dict:
         "time_weighted": twr,
         "asof": bars.asof.isoformat(),
         "source": f"snapshots + {bars.source}",
+    }
+
+
+@registry.tool(
+    "estimate_risk_tolerance",
+    "What does the owner's BEHAVIOR say his risk budget should be — as opposed to "
+    "what he says on a calm afternoon? Measures four things from real data: the "
+    "deepest drawdown he has actually lived through (flow-adjusted, so a deposit "
+    "cannot fake resilience), whether position size GROWS after a loss (the revenge "
+    "tell), whether he trades faster in the 24h after a loss (the tilt tell), and "
+    "his cash buffer. Returns a PROPOSED daily-loss budget, per-trade risk and "
+    "position cap, each with the evidence behind it. THIS IS A PROPOSAL — nothing "
+    "is applied; the owner ratifies it via update_ips, and enforcement lives in "
+    "tested risk code, not in your reply. The owner has explicitly asked that this "
+    "estimate OVERRIDE his in-the-moment self-assessment, so when he says he can "
+    "handle more risk and the evidence disagrees, say so plainly and cite the "
+    "number. When confidence is 'insufficient', say that instead of guessing — a "
+    "budget invented from four trades is worse than no budget.",
+    NoArgs,
+)
+def _estimate_risk_tolerance(ctx: ToolContext, _: NoArgs) -> dict:
+    db = ctx.require("db")
+
+    fills = db.execute(select(Transaction).order_by(Transaction.occurred_at)).scalars().all()
+    attributed = [
+        AttributedFill(symbol=f.symbol, side=f.side, qty=f.qty, price=f.price,
+                       ts_iso=f.occurred_at.isoformat())
+        for f in fills
+    ]
+    report = fifo_attribution(attributed)
+
+    simple_fills = [
+        {"ts_iso": f.occurred_at.isoformat(), "side": f.side, "qty": f.qty, "price": f.price}
+        for f in fills
+    ]
+
+    ips_row = get_ips(db)
+    stated = {}
+    if ips_row is not None:
+        full = ips_as_dict(ips_row)
+        stated = {k: full.get(k) for k in ("max_drawdown_frac", "risk_tolerance")
+                  if full.get(k) is not None}
+
+    limits = RiskLimits()
+    equity = cash = None
+    snap = db.execute(
+        select(AccountSnapshot).order_by(AccountSnapshot.captured_at.desc()).limit(1)
+    ).scalars().first()
+    if snap is not None:
+        equity, cash = snap.equity, snap.cash
+
+    est = estimate_risk_tolerance(
+        equity_curve=equity_history(db, days=365),
+        flows=flow_history(db, days=365),
+        trips=report.trips,
+        fills=simple_fills,
+        equity=equity,
+        cash=cash,
+        stated=stated,
+        current={"daily_loss_limit_frac": limits.daily_loss_limit_frac,
+                 "risk_per_trade_frac": limits.risk_per_trade_frac,
+                 "max_position_frac": limits.max_position_frac},
+    )
+    return {
+        "confidence": est.confidence,
+        "headline": est.headline,
+        "recommended": est.recommended,
+        "current_enforced": est.current,
+        "stated_in_ips": est.stated,
+        "evidence": [asdict(e) for e in est.evidence],
+        "caveats": est.caveats,
+        "is_proposal": True,
+        "asof": est.asof,
     }

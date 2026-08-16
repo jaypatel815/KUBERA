@@ -12,7 +12,19 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 (none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-(none — T072 signed PASS, T098 signed PASS)
+- **T069 (adaptive risk tolerance) — AWAITING REVIEW — Claude/Cowork** —
+  Reviewer: Gemini/Antigravity, per REVIEW.md. Files: `backend/analysis/risk_tolerance.py`
+  (new), `backend/analysis/attribution.py` (exposes `trips`), `backend/api/tools.py`
+  (registry tool #34 + strips `trips` from the get_attribution payload),
+  `backend/tests/test_risk_tolerance.py` (new, 21 tests), the three tool-count
+  guards 33 -> 34. Verify gate PASS: 692 passed, 4 skipped.
+  Suggested review focus: (a) the multiplier chain in estimate_risk_tolerance —
+  is compounding 0.75 x 0.80 x 0.85 defensible, or should the worst single signal
+  govern; (b) whether capping the daily budget at experienced_drawdown/3 is the
+  right rule for an untested stated tolerance; (c) the +15% "earned" nudge is the
+  only path that WIDENS risk — check its guard conditions hard, since a
+  self-widening risk budget is the most dangerous object in this repo;
+  (d) MIN_* thresholds: is 3 paired observations too few to call a habit.
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
@@ -162,7 +174,7 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   engine, module-level soundfile skip hides six audio-free tests from CI, and the docstring
   still says `pip install kokoro-onnx soundfile`.
 - [ ] T071 — Owner: voice acceptance run — `pip install -r requirements-voice.txt`, server up, `python scripts\talk.py`, hold a conversation. If faster-whisper wheels fail on Python 3.14 → `set KUBERA_STT=openai`. Report quirks to ISSUES.
-- [ ] T069 — Adaptive risk-tolerance estimation (owner request 2026-08-12): derive a recommended risk budget from account composition (invested vs cash), drawdown history, and demonstrated behavior (sizing drift, post-loss trade frequency); KUBERA proposes, owner ratifies into the IPS (T061); feeds the DQS budget (T067). The owner explicitly wants KUBERA's estimate to override his in-the-moment self-assessment.
+- [~] T069 — Adaptive risk-tolerance estimation — BUILT 2026-08-16 (Claude/Cowork, AWAITING REVIEW): `analysis/risk_tolerance.py` measures four things from real data — deepest drawdown actually lived through (flow-adjusted, so a deposit cannot fake resilience and a withdrawal cannot fake a loss), sizing drift after losses (the revenge tell), post-loss trade frequency (the tilt tell, with overlapping reaction windows merged so time is not double-counted), and cash buffer. Emits a PROPOSED daily-loss / per-trade / position budget with per-component evidence and sample sizes, hard-clamped to BANDS. Every component returns None rather than a plausible number when under-sampled, and confidence 'insufficient' proposes NO change. Registry tool #34 `estimate_risk_tolerance`. Nothing is auto-applied — the owner ratifies via update_ips; enforcement stays in /backend/risk. ORIGINAL SPEC:  derive a recommended risk budget from account composition (invested vs cash), drawdown history, and demonstrated behavior (sizing drift, post-loss trade frequency); KUBERA proposes, owner ratifies into the IPS (T061); feeds the DQS budget (T067). The owner explicitly wants KUBERA's estimate to override his in-the-moment self-assessment.
 
 ## Backlog — Phase 2: Analysis & insight engine (agents)
 - [ ] T023 — Fundamentals + news ingestion: evaluate the owner's existing FMP/FRED keys (D009) vs Alpaca news; verify key validity + tier limits first (incl. whether the FMP tier covers earnings calendar, consensus estimates, and TRANSCRIPTS — commonly paid-tier; D019), then pick and integrate one source. Evaluation weighs (D017): earnings-surprise momentum, FCF yield/debt ratios, 13F ownership-change availability per tier; news is CONTEXT + event risk (feeds T076), never claimed as sentiment alpha. Unblocks T083 (needs earnings dates).

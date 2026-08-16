@@ -3,6 +3,36 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — T069: the risk budget his behavior argues for
+The owner asked for something unusual with this one — that KUBERA's estimate be
+allowed to OVERRIDE his in-the-moment self-assessment. That request is the whole
+design. A stated risk tolerance is collected on a calm afternoon; the one that
+matters is operating at 2pm on a red day, and only that one leaves evidence in
+the fills. So the module never asks how much risk he can handle. It measures:
+deepest drawdown actually lived through, whether size GROWS after a loss, whether
+he trades faster in the 24h after a loss, and how much cash is left to absorb a
+forced decision. Output is a proposed daily-loss / per-trade / position budget
+with the evidence and sample size behind each number.
+Three design choices worth defending at review: (1) the drawdown is measured on a
+FLOW-ADJUSTED index, because a $500 deposit into a $1,000 account otherwise reads
+as a full recovery from a 20% drawdown — the test asserts the naive series says
+"recovered" and the adjusted one says the truth; (2) when the stated tolerance is
+far beyond anything experienced, the budget is capped at experienced/3 and the
+evidence line says the stated figure is "a belief, not yet a tested one" rather
+than silently ignoring it; (3) the ONLY path that widens risk is a capped +15%
+that requires both behavioral components to be clean AND the drawdown recovered,
+because an adaptive budget able to widen itself without limit is not a budget.
+Caught one silent-failure risk mid-build: the tool read `report.trips`, which did
+not exist on AttributionReport — it would have returned an empty list and quietly
+stopped measuring behavior, a wrong answer indistinguishable from a right one.
+Exposed trips properly and stripped them from the get_attribution payload so that
+report is unchanged; a test now guards both halves.
+Verified: verify.py PASS — 692 passed, 4 skipped. 21 new tests, every fixture
+hand-computed. Registry 33 -> 34, all three count guards updated. Numpy-blocked
+CI simulation still collects clean.
+Next: Gemini reviews T069. Owner: nothing new — T005 push and T007 finale remain.
+
+
 ## 2026-08-16 — Claude/Cowork — re-review T072: code passes, hand-off does not
 The numpy fix is right and I verified it the same way I proved the bug: the
 numpy-blocked runner that aborted collection last time now gives 671 passed, the
