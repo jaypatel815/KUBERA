@@ -242,11 +242,11 @@ httpx/pytest/ruff/tzdata and pulls no numpy.
 FIX: `np = pytest.importorskip("numpy")` (proven: skips clean without numpy, runs with it).
 Better still, move `sf` into `_silent_wav` — six of the eight tests are pure mocks that need
 neither library, so CI could actually exercise the backend routing instead of skipping it.
-STATUS: FIX VERIFIED ON DISK, NOT YET IN GIT (2026-08-16). Gemini added
-`np = pytest.importorskip("numpy")` above the soundfile guard, which is correct: re-running
-the numpy-blocked runner that previously aborted collection now gives 671 passed, 4 skipped,
-with the module skipping cleanly. But the change is still an uncommitted working-tree edit
-(`git status`: M backend/tests/test_tts_backends.py), so nothing in git history contains it.
-Close this issue when that commit lands — not before, or the ledger will claim a fix that a
-fresh clone does not have.
+STATUS: RESOLVED 2026-08-16 in `fd1c10c` (Gemini). `np = pytest.importorskip("numpy")` now
+precedes the soundfile guard. Verified on the numpy-blocked runner that previously aborted:
+671 passed, 4 skipped, module skipping cleanly instead of killing collection.
+LESSON WORTH KEEPING: the first fix was correct about the symptom and wrong about the scope —
+it guarded the library named in the error and not the one imported above it. When a collection
+error is fixed, re-run the failing condition rather than the working one; a green suite on a
+machine that has the dependency proves nothing about the machine that does not.
 

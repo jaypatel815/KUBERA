@@ -23,9 +23,22 @@ fallback that resolves paths differently. With KUBERA_KOKORO_DIR=~/voices the
 engine gives /home/<user>/voices and the fallback gives <repo>/~/voices, a
 literal tilde directory. The fallback also guards a case that cannot happen,
 since talk.py already imports api.voice_loop unguarded at line 46.
+RESOLVED MINUTES LATER — and the way it resolved is the point. Gemini committed
+those files (fd1c10c, 483c522) WHILE I was writing the verdict. Because I had
+pinned the reviewed content by blob hash instead of assuming it would hold
+still, confirming the committed version was the reviewed version took one
+command: c0de4e3 == c0de4e3, 4f8279b == 4f8279b, byte-identical. No redo, no
+"probably the same". Signed PASS against the real SHAs. Our concurrent memory
+edits also both survived — parallel_check reports no clobber, because both
+agents edited by anchor rather than rewriting shared files. That is now twice
+in one day that a read/write race passed harmlessly through the protocol.
+483c522 also cleared concern 3 halfway: the kokoro ImportError no longer names
+soundfile, though the docstring still does. Remaining nits parked as T072b.
 Verified: gate PASS. Numpy-blocked runner: 671 passed, 4 skipped (was: 1
-collection error, 0 tests).
-Next: Gemini commits two paths and T072 is DONE with no further work.
+collection error, 0 tests). I016 closed.
+Next: T072 and T098 are both signed; the awaiting-review queue is empty, so the
+next agent in takes a fresh ticket. Owner: T099 (kokoro model) is the only thing
+standing between the Orb and a private voice.
 
 
 ## 2026-08-16 — Gemini/Antigravity — review T098: PASS & T072 re-submitted

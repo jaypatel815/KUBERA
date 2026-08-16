@@ -12,125 +12,7 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 (none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T072 (human-grade TTS backends) — AWAITING REVIEW (re-submitted) — Gemini/Antigravity** —
-  commits `d55eb6b`, `31150e3`, `fd1c10c`, `483c522`. Reviewer: Claude/Cowork, per REVIEW.md.
-  Files touched: `scripts/talk.py` (openai and kokoro TTS backends in make_speaker, kokoro recommended per D024, model resolution aligned with tts_engine),
-  `requirements-voice.txt` (documented optional deps + D024 kokoro recommendation), `backend/tests/test_tts_backends.py`
-  (8 mock tests, both numpy and soundfile protected with `pytest.importorskip` for lean CI),
-  `README.md` (voice ladder section with D024 recommendation and cloud privacy note), `project-memory/ISSUES.md` (I016 resolved).
-  Verify gate PASS on combined tree: 682 passed in 6.34s.
-
-  REVIEWED 2026-08-16 by Claude/Cowork — BLOCK (one line to fix; everything else is good)
-    aligned: yes — the owner is voice-first (D015) and said the default voice is
-      robotic. Two ladder rungs (paid-but-near-human, free-and-offline) behind one
-      unchanged `speak(text)` interface is the right shape, and kokoro means the
-      good voice does not require sending his portfolio anywhere.
-    checked: read the full diff 71e4adf..e380b27; installed soundfile in the
-      sandbox and RAN the tests for real (8 passed, not the 9 the ticket claims);
-      simulated a clean CI runner with a numpy-blocking meta_path hook; confirmed
-      backend/requirements.txt resolves without numpy (pip --dry-run report);
-      re-ran the gate with soundfile present (PASS).
-    concerns:
-      1. BLOCKING — I016 is not fixed for CI, only relocated one line up.
-         `import numpy as np` sits ABOVE `sf = pytest.importorskip("soundfile")`,
-         and numpy is in requirements-voice.txt, NOT backend/requirements.txt —
-         which is exactly and only what .github/workflows installs. Simulated
-         clean runner: `ERROR backend/tests/test_tts_backends.py /
-         ModuleNotFoundError: No module named 'numpy' / Interrupted: 1 error
-         during collection` — the whole suite aborts, zero tests run, same
-         failure mode as I016. With that one file ignored: 652 passed. It has
-         not bitten Actions yet only because CI is still dark (T005 unpushed);
-         it bites any agent whose environment lacks numpy, today.
-         Fix: `np = pytest.importorskip("numpy")`. Proven: skips cleanly when
-         numpy is absent, still executes when it is present.
-      2. Over-skipping (non-blocking): only the two tests that build a WAV via
-         `_silent_wav` need soundfile. The other six — both missing-package/key
-         exits and all four kokoro tests — are pure mocks and could run in a lean
-         environment. Moving `sf` into `_silent_wav` would let CI actually
-         exercise the factory routing instead of skipping the module wholesale.
-      3. Privacy, worth one doc line (non-blocking): `KUBERA_TTS=openai` sends
-         KUBERA's spoken replies — position names and dollar P&L — to a vendor
-         that may not be the configured brain. The docstring prices it
-         (~$0.015/1k chars) but does not say his holdings leave the machine.
-         Say so, and point at kokoro as the offline rung; the owner should pick
-         that knowingly rather than discover it.
-      4. The kokoro ImportError message says `pip install kokoro-onnx soundfile`,
-         but that branch never imports soundfile — kokoro returns numpy samples
-         straight to sounddevice. Sends the owner after a package he does not
-         need on that path.
-      5. `Path(__file__).parent.parent` for the KUBERA_KOKORO_DIR default,
-         where the same file uses `Path(__file__).resolve().parents[1]` at
-         line 40. Without `.resolve()` a symlinked or relative launch computes
-         the wrong model directory and reports "model files not found".
-      6. Ticket and PROGRESS both say "9 tests"; 8 are collected. Small, but the
-         memory files are the thing other agents trust without re-checking.
-    good, and worth keeping: playback errors are caught in BOTH backends so a
-      dead audio device can never kill the loop (that is the I006 lesson applied
-      before it recurred); every failure path exits with an actionable install or
-      download instruction; no API key is ever printed; `response_format="wav"`
-      dodges an mp3 decode dependency; docstring, requirements-voice.txt and
-      README tell the same story. Re-submit with (1) and this is a PASS.
-
-  RE-REVIEWED 2026-08-16 by Claude/Cowork — CODE PASSES, HAND-OFF INCOMPLETE
-    (nothing more to build; this needs one `git commit` from Gemini and it is DONE)
-    the block is cleared: `np = pytest.importorskip("numpy")` now precedes the
-      soundfile guard. Re-ran the same numpy-blocked runner that failed last time
-      — 671 passed, 4 skipped, the module skipping cleanly instead of aborting
-      collection. With numpy and soundfile present their 8 tests pass. Gate PASS.
-    the owner directive landed well: kokoro is now the top rung and marked
-      RECOMMENDED (D024), it states that reply text stays on the machine, and
-      edge and openai both say plainly that it leaves. That is exactly the shape
-      asked for, and the CLI now reuses `api.tts_engine.kokoro_model_dir()`
-      rather than reinventing the path logic.
-    NOT SIGNED OFF YET, for one reason that is not about the code:
-      `git status` shows scripts/talk.py and backend/tests/test_tts_backends.py
-      still MODIFIED and uncommitted. So the fix exists on disk and nowhere in
-      git history. This ticket's header still points a reviewer at commits
-      d55eb6b and 31150e3 — neither of which contains the fix — and signing PASS
-      against those SHAs would record a passing verdict on the buggy versions.
-      That is precisely the kind of false memory this system exists to prevent.
-      It is also the fragile state D023 warns about: uncommitted work in a shared
-      directory is one careless `git add -A` away from being lost or misattributed.
-      Reviewed content pinned by blob hash so nothing can drift in between:
-        scripts/talk.py                    c0de4e3
-        backend/tests/test_tts_backends.py 4f8279b
-      Gemini: commit those two paths (pathspec, per AGENTS.md), put the SHA in
-      the header above, and this is a PASS with no further work. I did not commit
-      them for you — authorship is memory, and `git log` should say you fixed it.
-    concerns carried forward (all non-blocking, none need to gate the commit):
-      1. NEW — the cross-import is wrapped in `try: ... except Exception:` with a
-         silent fallback, and the two paths do not agree. `kokoro_model_dir()`
-         does `.expanduser().resolve()`; the fallback does not expanduser. Proven:
-         with `KUBERA_KOKORO_DIR=~/voices`, the engine resolves `/home/<user>/voices`
-         and the fallback resolves `<repo>/~/voices` — a literal `~` directory.
-         The fallback also guards an impossible case: talk.py already imports
-         `api.voice_loop` unguarded at line 46, so if `api.*` were unimportable the
-         script would be dead long before make_speaker() runs. Suggestion: delete
-         the try/except and import it plainly like line 46 does. A bare
-         `except Exception` around an import buys nothing here and hides real
-         breakage behind a subtly different code path.
-      2. Still open from the first review: `sf = pytest.importorskip("soundfile")`
-         at module scope means the six tests that need no audio library at all
-         (both missing-package/key exits, all four kokoro tests) are skipped in CI
-         along with the two that do. Moving `sf` into `_silent_wav` would let CI
-         actually exercise the factory routing.
-      3. Still open: the kokoro ImportError and the docstring both say
-         `pip install kokoro-onnx soundfile`, but that branch never imports
-         soundfile. Now that kokoro is the RECOMMENDED rung, this sends the owner
-         down the recommended path installing a package it does not use.
-      4. Still open, trivial: the ticket says "9 new tests"; 8 are collected.
-
-  OWNER DIRECTIVE added 2026-08-16 (D024) — fold into the re-submit:
-  Chotu picked kokoro over openai TTS after reading concern (3). So in
-  scripts/talk.py, requirements-voice.txt and your README voice-ladder section,
-  make kokoro the RECOMMENDED rung rather than one of four equals, and say
-  plainly on the openai rung that reply text — positions and dollar P&L —
-  leaves the machine. Default stays `sapi` (his call: a fresh clone must run
-  with zero deps). Do NOT change the factory's default backend.
-  The Orb half of the same decision is T098, already built — read
-  `backend/api/tts_engine.py` before you touch talk.py, because the kokoro
-  loading and the model-path resolution are solved there and should not be
-  reinvented differently on the CLI side.
+(none — T072 signed PASS, T098 signed PASS)
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
@@ -270,15 +152,20 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   Cross-sectional momentum TEMPLATE (long top decile) remains future work
   behind the T064 gate; short half still awaits the D021 revisit.
 - [ ] T074 — Realtime conversation pipeline (the Zoey-latency upgrade): streaming STT + start-TTS-before-reply-completes + barge-in (interrupt while speaking), via LiveKit Agents / Pipecat or OpenAI Realtime API with our registry as functions; target sub-second first-audio; verify current framework landscape + costs at build time. The Orb (T073) is the UI shell this plugs into.
-- [~] T072 — Human-grade TTS backends — BUILT 2026-08-16 (Gemini/Antigravity, AWAITING REVIEW):
+- [x] T072 — Human-grade TTS backends — DONE 2026-08-16 (Gemini/Antigravity; reviewed PASS by Claude/Cowork after one BLOCK round, fd1c10c + 483c522):
   `scripts/talk.py` `make_speaker()` now supports `KUBERA_TTS=openai` (OpenAI TTS API
   `tts-1` / `tts-1-hd` with voice choice via `KUBERA_VOICE`, default `alloy`, `OPENAI_API_KEY`
   required) and `KUBERA_TTS=kokoro` (local near-human via `kokoro-onnx` using `models/kokoro/`
   or `KUBERA_KOKORO_DIR`, default voice `af_heart`). Both fail fast with actionable install / download
   instructions if packages or model weights are missing; playback errors are caught and printed so
   the voice loop never crashes. Voice ladder documented in module docstring, `requirements-voice.txt`,
-  and `README.md`. 9 new tests in `backend/tests/test_tts_backends.py` (mocked, no hardware or network
-  required, CI-safe with `pytest.importorskip`).
+  and `README.md`. 8 tests in `backend/tests/test_tts_backends.py` (mocked, no hardware or network
+  required; CI-safe via `pytest.importorskip` on BOTH numpy and soundfile — the numpy half was
+  the BLOCK, see I016). Per D024 kokoro is the RECOMMENDED rung and every rung now states
+  whether reply text leaves the machine. Carried forward as small follow-ups (T072b): the
+  silent `except Exception` around the api.tts_engine import resolves `~` differently from the
+  engine, module-level soundfile skip hides six audio-free tests from CI, and the docstring
+  still says `pip install kokoro-onnx soundfile`.
 - [ ] T071 — Owner: voice acceptance run — `pip install -r requirements-voice.txt`, server up, `python scripts\talk.py`, hold a conversation. If faster-whisper wheels fail on Python 3.14 → `set KUBERA_STT=openai`. Report quirks to ISSUES.
 - [ ] T069 — Adaptive risk-tolerance estimation (owner request 2026-08-12): derive a recommended risk budget from account composition (invested vs cash), drawdown history, and demonstrated behavior (sizing drift, post-loss trade frequency); KUBERA proposes, owner ratifies into the IPS (T061); feeds the DQS budget (T067). The owner explicitly wants KUBERA's estimate to override his in-the-moment self-assessment.
 
