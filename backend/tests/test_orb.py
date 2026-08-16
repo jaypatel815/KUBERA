@@ -32,31 +32,33 @@ def test_tts_503_without_edge_tts(monkeypatch):
 
 def test_tts_streams_audio_with_fake_edge(monkeypatch):
     monkeypatch.setenv("KUBERA_TTS_SERVER", "edge")
-    mod = types.ModuleType("edge_tts")
+    captured: dict = {}
 
     class Communicate:
         def __init__(self, text, voice):
-            mod.captured = {"text": text, "voice": voice}
+            captured["text"] = text
+            captured["voice"] = voice
 
         async def stream(self):
             yield {"type": "audio", "data": b"MP3A"}
             yield {"type": "WordBoundary"}  # non-audio chunks are skipped
             yield {"type": "audio", "data": b"MP3B"}
 
-    mod.Communicate = Communicate
+    mod = types.ModuleType("edge_tts")
+    setattr(mod, "Communicate", Communicate)
     monkeypatch.setitem(sys.modules, "edge_tts", mod)
 
     r = client.get("/api/tts", params={"text": "hello there", "voice": "en-US-AriaNeural"})
     assert r.status_code == 200
     assert r.headers["content-type"].startswith("audio/mpeg")
     assert r.content == b"MP3AMP3B"
-    assert mod.captured == {"text": "hello there", "voice": "en-US-AriaNeural"}
+    assert captured == {"text": "hello there", "voice": "en-US-AriaNeural"}
 
 
 def test_tts_rejects_empty_text(monkeypatch):
     monkeypatch.setenv("KUBERA_TTS_SERVER", "edge")
     mod = types.ModuleType("edge_tts")
-    mod.Communicate = object
+    setattr(mod, "Communicate", object)
     monkeypatch.setitem(sys.modules, "edge_tts", mod)
     r = client.get("/api/tts", params={"text": "   "})
     assert r.status_code == 422

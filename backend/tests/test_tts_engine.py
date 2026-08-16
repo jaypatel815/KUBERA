@@ -46,7 +46,7 @@ def _fake_kokoro(samples, rate=24_000):
     instance = MagicMock()
     instance.create.return_value = (samples, rate)
     mod = types.ModuleType("kokoro_onnx")
-    mod.Kokoro = MagicMock(return_value=instance)
+    setattr(mod, "Kokoro", MagicMock(return_value=instance))
     return mod, instance
 
 

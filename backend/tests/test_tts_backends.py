@@ -46,7 +46,7 @@ def _fake_openai_module(wav_bytes: bytes) -> types.ModuleType:
     client_instance = MagicMock()
     client_instance.audio.speech.create.return_value = speech_resp
     mod = types.ModuleType("openai")
-    mod.OpenAI = MagicMock(return_value=client_instance)
+    setattr(mod, "OpenAI", MagicMock(return_value=client_instance))
     return mod
 
 
@@ -132,7 +132,7 @@ def _fake_kokoro_module() -> tuple[types.ModuleType, MagicMock]:
     instance.create.return_value = (samples, 24_000)
     klass = MagicMock(return_value=instance)
     mod = types.ModuleType("kokoro_onnx")
-    mod.Kokoro = klass
+    setattr(mod, "Kokoro", klass)
     return mod, instance
 
 

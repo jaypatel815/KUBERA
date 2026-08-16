@@ -105,10 +105,10 @@ def install_fake_sdk(monkeypatch, captured: dict, call_tool: str | None = None):
         yield FakeAssistant(content=[FakeBlock(text="Grounded answer.")])
         yield FakeResult()
 
-    mod.tool = tool
-    mod.create_sdk_mcp_server = create_sdk_mcp_server
-    mod.ClaudeAgentOptions = ClaudeAgentOptions
-    mod.query = query
+    setattr(mod, "tool", tool)
+    setattr(mod, "create_sdk_mcp_server", create_sdk_mcp_server)
+    setattr(mod, "ClaudeAgentOptions", ClaudeAgentOptions)
+    setattr(mod, "query", query)
     monkeypatch.setitem(sys.modules, "claude_agent_sdk", mod)
 
 
