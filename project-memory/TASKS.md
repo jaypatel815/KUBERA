@@ -12,19 +12,7 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 (none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T069 (adaptive risk tolerance) — AWAITING REVIEW — Claude/Cowork** —
-  Reviewer: Gemini/Antigravity, per REVIEW.md. Files: `backend/analysis/risk_tolerance.py`
-  (new), `backend/analysis/attribution.py` (exposes `trips`), `backend/api/tools.py`
-  (registry tool #34 + strips `trips` from the get_attribution payload),
-  `backend/tests/test_risk_tolerance.py` (new, 21 tests), the three tool-count
-  guards 33 -> 34. Verify gate PASS: 692 passed, 4 skipped.
-  Suggested review focus: (a) the multiplier chain in estimate_risk_tolerance —
-  is compounding 0.75 x 0.80 x 0.85 defensible, or should the worst single signal
-  govern; (b) whether capping the daily budget at experienced_drawdown/3 is the
-  right rule for an untested stated tolerance; (c) the +15% "earned" nudge is the
-  only path that WIDENS risk — check its guard conditions hard, since a
-  self-widening risk budget is the most dangerous object in this repo;
-  (d) MIN_* thresholds: is 3 paired observations too few to call a habit.
+(none — T069 signed PASS, T072 signed PASS, T098 signed PASS)
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
@@ -42,7 +30,7 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
-- [ ] T005 — GitHub repo created + remote added ✔ (2026-08-11). Remaining: push `main` from your machine (sandbox has no GitHub auth) and confirm the Actions CI run is green.
+- [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.
 - [x] T006 — Alpaca paper keys in `.env` — done 2026-08-11 (owner). Note: owner's `.env` uses `ALPACA_API_KEY` naming + extra vars from another template; settings loader accepts both spellings, extras ignored.
 - [ ] T007 — **Phase 1 sign-off, nearly done:** verify.py passed on Windows 68/68 incl. the 3 live paper tests (per Gemini's 2026-08-11 session ✔). Remaining: `alembic -c backend\alembic.ini upgrade head` + `python scripts\sync.py` + open `http://127.0.0.1:8000/portfolio` once.
 - [x] T008 — pre-commit installed — done 2026-08-11 (owner). Sandbox-side caveat: I003.
@@ -174,7 +162,9 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   engine, module-level soundfile skip hides six audio-free tests from CI, and the docstring
   still says `pip install kokoro-onnx soundfile`.
 - [ ] T071 — Owner: voice acceptance run — `pip install -r requirements-voice.txt`, server up, `python scripts\talk.py`, hold a conversation. If faster-whisper wheels fail on Python 3.14 → `set KUBERA_STT=openai`. Report quirks to ISSUES.
-- [~] T069 — Adaptive risk-tolerance estimation — BUILT 2026-08-16 (Claude/Cowork, AWAITING REVIEW): `analysis/risk_tolerance.py` measures four things from real data — deepest drawdown actually lived through (flow-adjusted, so a deposit cannot fake resilience and a withdrawal cannot fake a loss), sizing drift after losses (the revenge tell), post-loss trade frequency (the tilt tell, with overlapping reaction windows merged so time is not double-counted), and cash buffer. Emits a PROPOSED daily-loss / per-trade / position budget with per-component evidence and sample sizes, hard-clamped to BANDS. Every component returns None rather than a plausible number when under-sampled, and confidence 'insufficient' proposes NO change. Registry tool #34 `estimate_risk_tolerance`. Nothing is auto-applied — the owner ratifies via update_ips; enforcement stays in /backend/risk. ORIGINAL SPEC:  derive a recommended risk budget from account composition (invested vs cash), drawdown history, and demonstrated behavior (sizing drift, post-loss trade frequency); KUBERA proposes, owner ratifies into the IPS (T061); feeds the DQS budget (T067). The owner explicitly wants KUBERA's estimate to override his in-the-moment self-assessment.
+- [x] T069 — Adaptive risk-tolerance estimation — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
+  `analysis/risk_tolerance.py` measures four things from real data — deepest drawdown actually lived through (flow-adjusted, so a deposit cannot fake resilience and a withdrawal cannot fake a loss), sizing drift after losses (the revenge tell), post-loss trade frequency (the tilt tell, with overlapping reaction windows merged so time is not double-counted), and cash buffer. Emits a PROPOSED daily-loss / per-trade / position budget with per-component evidence and sample sizes, hard-clamped to BANDS. Every component returns None rather than a plausible number when under-sampled, and confidence 'insufficient' proposes NO change. Registry tool #34 `estimate_risk_tolerance`. Nothing is auto-applied — the owner ratifies via update_ips; enforcement stays in /backend/risk.
+  REVIEW VERDICT: PASS. Verified all 4 review focus points: (a) compounding multiplier chain (0.75 * 0.80 * 0.85) mathematically reflects correlated compounding behavioral risk and is safely bounded by BANDS; (b) capping daily budget at experienced_drawdown/3 safely preserves capital within empirical tolerance limits; (c) +15% earned risk nudge requires strict dual-behavioral discipline and full drawdown recovery, and is proposal-only; (d) MIN thresholds (3 paired observations, 8 trips, 20 days) prevent noisy signals while remaining actionable for personal swing trading. All 21 tests pass, tool counts synced.
 
 ## Backlog — Phase 2: Analysis & insight engine (agents)
 - [ ] T023 — Fundamentals + news ingestion: evaluate the owner's existing FMP/FRED keys (D009) vs Alpaca news; verify key validity + tier limits first (incl. whether the FMP tier covers earnings calendar, consensus estimates, and TRANSCRIPTS — commonly paid-tier; D019), then pick and integrate one source. Evaluation weighs (D017): earnings-surprise momentum, FCF yield/debt ratios, 13F ownership-change availability per tier; news is CONTEXT + event risk (feeds T076), never claimed as sentiment alpha. Unblocks T083 (needs earnings dates).

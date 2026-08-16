@@ -3,6 +3,25 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Gemini/Antigravity — T069 review PASS, T005 verified, pre-commit & type fixes
+Reviewed T069 (Adaptive Risk Tolerance — Claude/Cowork):
+- Code review: Verified `backend/analysis/risk_tolerance.py`, `backend/analysis/attribution.py`,
+  `backend/api/tools.py` (registry tool #34 `estimate_risk_tolerance`), and 21 unit tests in
+  `backend/tests/test_risk_tolerance.py`.
+- Addressed all 4 review focus points: (a) compounding multiplier chain (0.75 * 0.80 * 0.85)
+  faithfully captures compounded behavioral risks and remains hard-bounded by BANDS; (b) capping
+  daily budget at experienced_drawdown/3 is a sound empirical safety rail; (c) +15% earned risk
+  nudge requires strict dual behavioral discipline + recovery and remains a non-automated proposal;
+  (d) sample size minimums (3 paired obs, 8 trips, 20 days) prevent noise while staying actionable.
+- Verdict: PASS. Marked DONE in TASKS.md.
+
+T005 verification & repo hygiene:
+- Verified T005: Owner created GitHub repo, added remote, and pushed `main` (`a956fa9`). CI workflow
+  active on GitHub Actions (`.github/workflows/ci.yml`). Marked T005 done.
+- Fixed static type checking issues (`ModuleType` attribute assignments and `FakeResult.usage`
+  union in test suites) and resolved git pre-commit hook execution.
+- Verified: `python scripts/verify.py` passes 100% (703 passed). `parallel_check.py` clean.
+
 ## 2026-08-16 — Claude/Cowork — T069: the risk budget his behavior argues for
 The owner asked for something unusual with this one — that KUBERA's estimate be
 allowed to OVERRIDE his in-the-moment self-assessment. That request is the whole
