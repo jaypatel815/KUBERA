@@ -177,9 +177,8 @@ python scripts\risk_reset.py --note "reviewed the drawdown"   # reset (asks you 
 via `RiskLimits.cooldown_hours`). There is no override flag — that's the feature: the
 person who set the limit shouldn't be able to remove it in the moment it starts hurting.
 
-**The KUBERA Orb** — the voice-first web interface. Install the server-side voice once
-(`pip install edge-tts` in the venv), start the server, then open **http://127.0.0.1:8000/**
-in Chrome or Edge. Click the orb (or hold Space) and talk; it turns teal listening, violet
+**The KUBERA Orb** — the voice-first web interface. Start the server, then open
+**http://127.0.0.1:8000/** in Chrome or Edge. Click the orb (or hold Space) and talk; it turns teal listening, violet
 thinking, gold speaking — with chips showing which tools it used. Type in the box if you
 must; tick "confirm this turn" for confirmation-gated actions (that tick is the deliberate
 gesture — saying yes is not).
@@ -193,6 +192,27 @@ Two collapsible side panels (T082, 2026-08-16):
   Alpaca is unreachable.
 - Tool chips from `get_latest` / `get_symbol_briefing` show a **teal border** during RTH
   (the data is live) and **gold** outside it (last session — trustworthy, not live).
+
+**The Orb's voice runs locally by default (T098, D024).** KUBERA reads your positions and
+dollar P&L out loud, so that text should not be shipped to a voice vendor on every reply.
+Install the local engine once in the SERVER venv:
+
+```
+pip install kokoro-onnx
+# then download kokoro-v1.0.onnx + voices-v1.0.bin from
+#   https://github.com/thewh1teagle/kokoro-onnx/releases
+# into models/kokoro/  (or set KUBERA_KOKORO_DIR to wherever you keep them)
+```
+
+The server picks it up automatically — no config needed. Until the model files are there
+it falls back to `edge-tts` (Microsoft, online) and logs, every single time, that your reply
+text left the machine. Override with `KUBERA_TTS_SERVER=kokoro|edge|auto`; forcing `kokoro`
+without the model returns 503 rather than quietly using the cloud, which is the point.
+`KUBERA_VOICE=af_heart` (also `af_sarah`, `am_adam`, `bf_emma`, `bm_george`, …).
+
+The Orb POSTs the reply text to `/api/tts` rather than passing it in the URL — a query
+string is written into access logs, proxies and browser history, and "up $4,312 on NVDA"
+does not belong in any of them.
 
 **Talk to KUBERA in the terminal instead** (server running, then in a second terminal):
 

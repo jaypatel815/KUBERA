@@ -309,3 +309,43 @@ Owner decision. NYSE/Nasdaq via Alpaca. Other markets only after Phase 2 is soli
 
 ## D001 — Governing docs ratified (2026-08-10, ratified 2026-08-11)
 AGENTS.md + PROJECT_SPEC.md are the contract for all agents. project-memory/ paths are frozen.
+
+## D024 — KUBERA's voice runs locally; spoken portfolio data does not leave the machine (2026-08-16)
+DECIDED BY THE OWNER, after reviewing T072. He was offered the openai TTS rung
+(near-human, ~$0.015/1k chars) and the kokoro rung (near-human, free, offline)
+and chose kokoro: "I think your choice of using kokoro would be better."
+
+WHY IT MATTERS MORE THAN "which voice sounds nicer": every KUBERA reply that gets
+spoken contains position names, dollar P&L, account equity, and sometimes the
+reasoning behind a pending decision. A cloud TTS call ships that sentence to a
+third party on every turn. The chat text already goes to whichever LLM brain is
+configured — that is a knowing trade for reasoning. Voice is not: it buys
+pronunciation, and pays for it with the same data, to a SECOND vendor the owner
+never chose.
+
+SCOPE — the owner asked for both halves, because fixing only one is theatre:
+- CLI (`scripts/talk.py`): kokoro is the recommended rung. Assigned to Gemini as
+  part of the T072 re-submit.
+- Orb (`/api/tts`, the interface he actually uses daily): T098, built here. The
+  server prefers the local engine whenever the model files exist and falls back
+  to edge-tts only when they do not — logging, every time, that text left the
+  machine.
+
+SECOND FINDING, arguably worse than the vendor question: the Orb was sending the
+reply as a GET query string (`/api/tts?text=...`). A URL is the one part of a
+request guaranteed to be written down — uvicorn access logs, any proxy, browser
+history. His holdings were being persisted to disk in three places before they
+ever reached Microsoft. T098 moves it to POST.
+
+DEFAULT — deliberately NOT "kokoro or nothing": `KUBERA_TTS` (CLI) keeps `sapi`
+as its zero-dependency default and `KUBERA_TTS_SERVER` (Orb) defaults to `auto`.
+A fresh clone must speak without a 350 MB download, and an agent starting the
+loop must not hit a hard exit. The privacy win comes from `auto` upgrading
+itself the instant the model appears — not from breaking the first run.
+But when local is explicitly REQUESTED and unavailable, the server returns 503
+instead of downgrading: a silent fallback to the cloud would defeat the request.
+
+ALTERNATIVE CONSIDERED — browser `speechSynthesis` (zero install, fully local).
+Rejected: voice quality is inconsistent across machines and it cannot be tested
+server-side, so KUBERA could not prove what it sounds like. Kokoro is
+deterministic and testable.

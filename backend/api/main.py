@@ -15,6 +15,7 @@ from sqlalchemy.exc import OperationalError
 
 from analysis.benchmark import compare
 from analysis.portfolio import summarize, win_loss
+from api import tts_engine
 from api.chat import run_chat_turn
 from api.llm import LLMError, build_provider
 from api.tools import ToolArgumentError, ToolContext, ToolError, registry
@@ -90,29 +91,83 @@ def orb():
     return FileResponse(page, media_type="text/html")
 
 
-@app.get("/api/tts")
-async def tts(text: str, voice: str = "en-US-AndrewNeural"):
-    """Stream neural speech (MP3) for the Orb. Needs `pip install edge-tts` in the
-    server venv — 503 with instructions otherwise."""
-    from fastapi.responses import StreamingResponse
+class TTSRequest(BaseModel):
+    """POST body for speech (T098).
+
+    The Orb sends reply text here instead of putting it in a query string. That
+    text is the owner's positions and dollar P&L read aloud; a URL is the one
+    place a payload is guaranteed to be written down — access logs, proxies,
+    browser history — so it does not belong in one.
+    """
+
+    text: str = Field(min_length=1, max_length=4000)
+    voice: str | None = None
+
+
+def _speak(text: str, voice: str | None):
+    """Shared core for both /api/tts verbs. Local engine first (D024).
+
+    Falls back to the cloud voice only when the local model is absent, and says
+    so in the log every time, because "my holdings just went to Microsoft" is not
+    something the owner should have to infer from silence.
+    """
+    from fastapi.responses import Response, StreamingResponse
+
+    text = text.strip()[:2000]
+    if not text:
+        raise HTTPException(status_code=422, detail="empty text")
+
+    backend = tts_engine.resolve_backend()
+
+    if backend == "kokoro":
+        try:
+            wav = tts_engine.synthesize_local(text, voice)
+        except tts_engine.LocalVoiceUnavailable as exc:
+            # Explicitly forced local and it cannot run: that is a real 503, not a
+            # silent downgrade to the cloud the owner asked us not to use.
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        return Response(content=wav, media_type="audio/wav")
+
     try:
         import edge_tts  # noqa: PLC0415 - optional dependency, lazy on purpose
     except ImportError:
         raise HTTPException(
             status_code=503,
-            detail="TTS needs edge-tts in the SERVER venv: pip install edge-tts",
+            detail=(
+                "No voice available. Preferred: install the local engine — "
+                "pip install kokoro-onnx, then " + tts_engine.download_hint() +
+                " Or for the online voice: pip install edge-tts in the SERVER venv."
+            ),
         )
-    text = text.strip()[:2000]
-    if not text:
-        raise HTTPException(status_code=422, detail="empty text")
+
+    log.info(
+        "TTS via edge (online): reply text leaves this machine. %s",
+        tts_engine.download_hint(),
+    )
 
     async def stream():
-        communicate = edge_tts.Communicate(text, voice)
+        communicate = edge_tts.Communicate(text, voice or tts_engine.DEFAULT_CLOUD_VOICE)
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
                 yield chunk["data"]
 
     return StreamingResponse(stream(), media_type="audio/mpeg")
+
+
+@app.post("/api/tts")
+async def tts_post(req: TTSRequest):
+    """Speak text for the Orb. Local engine when available, else edge-tts."""
+    return _speak(req.text, req.voice)
+
+
+@app.get("/api/tts")
+async def tts(text: str, voice: str | None = None):
+    """Kept so `curl`, older clients and the T073 tests still work.
+
+    Prefer POST: this verb puts the spoken sentence in the URL, where it is
+    logged. The Orb no longer calls it.
+    """
+    return _speak(text, voice)
 
 
 @app.get("/health")

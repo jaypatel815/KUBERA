@@ -9,13 +9,22 @@ T054's router, never after) → T077 expected-move → T067 DQS / T062 briefs.
 Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 
 ## In progress
-In progress — T098 — Claude/Cowork (local voice for the Orb; owner directive after
-the T072 review. Files: backend/api/tts_engine.py, backend/api/main.py,
-apps/web/orb.html, backend/tests/test_tts_engine.py — deliberately NOT
-scripts/talk.py, requirements-voice.txt or test_tts_backends.py, which are
-Gemini's in-flight T072 set.)
+(none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T098 (local voice for the Orb) — AWAITING REVIEW — Claude/Cowork** —
+  Reviewer: Gemini/Antigravity, per REVIEW.md. Implements the owner's D024
+  choice on the Orb side. Files touched: `backend/api/tts_engine.py` (new),
+  `backend/api/main.py` (POST /api/tts + local-first routing), `apps/web/orb.html`
+  (POST instead of a query string), `backend/tests/test_tts_engine.py` (new, 19
+  tests), `README.md` (Orb section ONLY — the voice-ladder section is yours).
+  Verify gate PASS: 679 passed, 3 skipped.
+  Suggested review focus: (a) is `auto` the right default, or should a missing
+  model be louder than a log line; (b) the 503-instead-of-fallback rule when
+  kokoro is explicitly forced; (c) whether keeping GET /api/tts for compatibility
+  reopens the leak in practice, given the Orb no longer calls it; (d) the WAV
+  encoder is hand-rolled stdlib on purpose — check the clamping math
+  (test_wav_sample_values_are_exact has the hand-computed numbers).
 - **T072 (human-grade TTS backends) — AWAITING REVIEW — Gemini/Antigravity** —
   commits `d55eb6b` and `31150e3`. Reviewer: Claude/Cowork, per REVIEW.md.
   Files touched: `scripts/talk.py` (openai and kokoro TTS backends in make_speaker),
@@ -75,6 +84,18 @@ Gemini's in-flight T072 set.)
       dodges an mp3 decode dependency; docstring, requirements-voice.txt and
       README tell the same story. Re-submit with (1) and this is a PASS.
 
+  OWNER DIRECTIVE added 2026-08-16 (D024) — fold into the re-submit:
+  Chotu picked kokoro over openai TTS after reading concern (3). So in
+  scripts/talk.py, requirements-voice.txt and your README voice-ladder section,
+  make kokoro the RECOMMENDED rung rather than one of four equals, and say
+  plainly on the openai rung that reply text — positions and dollar P&L —
+  leaves the machine. Default stays `sapi` (his call: a fresh clone must run
+  with zero deps). Do NOT change the factory's default backend.
+  The Orb half of the same decision is T098, already built — read
+  `backend/api/tts_engine.py` before you touch talk.py, because the kokoro
+  loading and the model-path resolution are solved there and should not be
+  reinvented differently on the CLI side.
+
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
 same time and review each other:
@@ -90,6 +111,12 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 (append your own lines only), the single alembic head, apps/web/orb.html.
 
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
+- [ ] T099 — **Give KUBERA its private voice (one install + one download, ~350 MB).**
+  In the SERVER venv: `pip install kokoro-onnx`. Then download `kokoro-v1.0.onnx`
+  and `voices-v1.0.bin` from https://github.com/thewh1teagle/kokoro-onnx/releases
+  into `models\kokoro\`. Restart the server — it switches itself over, no config.
+  Until then the Orb speaks through Microsoft's edge-tts and the server log says
+  so on every reply. Your choice, recorded in D024.
 - [ ] T005 — GitHub repo created + remote added ✔ (2026-08-11). Remaining: push `main` from your machine (sandbox has no GitHub auth) and confirm the Actions CI run is green.
 - [x] T006 — Alpaca paper keys in `.env` — done 2026-08-11 (owner). Note: owner's `.env` uses `ALPACA_API_KEY` naming + extra vars from another template; settings loader accepts both spellings, extras ignored.
 - [ ] T007 — **Phase 1 sign-off, nearly done:** verify.py passed on Windows 68/68 incl. the 3 live paper tests (per Gemini's 2026-08-11 session ✔). Remaining: `alembic -c backend\alembic.ini upgrade head` + `python scripts\sync.py` + open `http://127.0.0.1:8000/portfolio` once.

@@ -3,6 +3,35 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — T098: the Orb speaks locally now (D024)
+The owner read the T072 review and picked kokoro over OpenAI TTS. Checking what
+that actually implied found the choice was half-made: `scripts/talk.py` is the
+CLI he rarely opens, while the Orb — his daily interface — was calling edge-tts
+unconditionally through `/api/tts`. And it was passing the reply as a GET QUERY
+STRING, so "up $4,312 on NVDA" was being written into uvicorn's access log, any
+proxy, and browser history before it ever reached Microsoft. He chose to fix
+both halves.
+Built: `api/tts_engine.py` — local-first speech. `auto` (the default) uses kokoro
+the moment its model files exist and falls back to edge otherwise, logging every
+time that text left the machine; forcing `kokoro` without the model returns 503
+rather than silently using the cloud, because a quiet downgrade would defeat the
+whole request. WAV encoding is hand-rolled on `wave` + `struct` — no soundfile,
+no numpy, nothing imported at module scope — and the encoder duck-types
+`.tolist()` so it accepts kokoro's numpy output without ever importing numpy.
+That is deliberate: it is the I016 lesson applied to my own code the same day I
+blocked someone else for it. Proof rather than assertion — the suite still
+collects and passes with numpy blocked by a meta_path hook (671 passed), and one
+test asserts the module head contains no audio imports.
+`main.py` gained POST /api/tts (GET kept for curl and T073's tests); orb.html
+POSTs and plays a blob, and a voice failure now leaves the reply on screen
+instead of losing the turn. A regression test greps orb.html for
+`/api/tts?text=` so the leak cannot come back by habit.
+Verified: verify.py PASS — 679 passed, 3 skipped. 19 new tests.
+Next: Gemini re-submits T072 with the numpy one-liner plus the D024 directive
+(kokoro as the recommended CLI rung), and reviews T098. Owner: T099 — one pip
+install and a 350 MB download and the Orb goes private on its own.
+
+
 ## 2026-08-16 — Claude/Cowork — review T072: BLOCK (I016 reopened)
 Reviewed Gemini's T072 (openai + kokoro TTS backends) per D023. The feature is
 right and the tests are honest — mocked, no hardware, and both backends prove

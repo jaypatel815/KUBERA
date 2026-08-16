@@ -332,11 +332,29 @@ async function send(text) {
     S.conversationId = body.conversation_id;
     addTurn("kubera", body.reply, (body.tool_calls || []).map(t => t.name));
     setMode("speaking");
-    const audio = new Audio("/api/tts?text=" + encodeURIComponent(body.reply.slice(0, 2000)));
-    audio.crossOrigin = "anonymous";
-    audio.onended = () => setMode("idle");
+    // T098: POST, not a query string. The reply names positions and dollar
+    // amounts; a URL gets written into access logs and browser history.
+    let audio = null;
+    try {
+      const speech = await fetch("/api/tts", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: body.reply.slice(0, 2000) })
+      });
+      if (!speech.ok) {
+        const why = await speech.json().catch(() => ({}));
+        throw new Error(why.detail || speech.statusText);
+      }
+      audio = new Audio(URL.createObjectURL(await speech.blob()));
+      audio.onended = () => { URL.revokeObjectURL(audio.src); setMode("idle"); };
+    } catch (voiceErr) {
+      // Voice is a convenience; the reply is already on screen. Never lose the turn.
+      errEl.textContent = "voice unavailable — reply shown above (" + (voiceErr.message || voiceErr) + ")";
+      setMode("idle");
+      loadConversations();
+      return;
+    }
     audio.onerror = () => {
-      errEl.textContent = "voice unavailable (is edge-tts installed in the server venv?) — reply shown above";
+      errEl.textContent = "voice playback failed — reply shown above";
       setMode("idle");
     };
     trackAmplitude(audio);
