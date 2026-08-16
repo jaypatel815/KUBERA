@@ -70,30 +70,27 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
     rm -rf /tmp/cico && mkdir -p /tmp/cico
     git ls-files -z | tar --null -T - -cf - | tar -x -C /tmp/cico
     cd /tmp/cico && python scripts/verify.py
-- I017 [FOUND 2026-08-16 by a type-checker sweep, NOT yet fixed — owner should decide]
-  `LLM_TIMEOUT_SECONDS` does not reach the owner's actual brain. I014 wired the
-  knob "through both httpx providers" (anthropic, openai) — accurate as written,
-  but the owner's .env says `LLM_PROVIDER=claude-sdk` (I015), and
-  `backend/api/llm_claude_sdk.py` contains ZERO occurrences of "timeout". The
-  options built at llm_claude_sdk.py:144 pass system_prompt, mcp_servers,
-  allowed_tools, disallowed_tools, permission_mode and max_turns — no time limit
-  of any kind. So the remediation offered for I014 ("if timeouts repeat, add
-  LLM_TIMEOUT_SECONDS=600") is inert on his configuration: a knob he can turn
-  that does nothing, which is worse than no knob.
-  HOW IT SURFACED: pyrefly flagged `build_provider(s).timeout` in
-  test_pacing_timeout.py:76 as "ClaudeSDKProvider has no attribute timeout".
-  That specific flag is a FALSE POSITIVE for the test — build_provider returns
-  OpenAIProvider/AnthropicProvider for those settings and both carry .timeout
-  (verified by running it). But the union member it complained about turned out
-  to be a genuine hole in the provider it named.
-  NOT FIXED HERE because the right fix is a question, not a line: does the
-  installed claude-agent-sdk expose a per-query timeout/cancellation option, or
-  must we wrap the async run in `asyncio.wait_for`? The latter works regardless
-  of SDK version but needs care so a cancelled query cannot leave a half-written
-  assistant row (the I014 recovery path assumes a clean LLMError).
-  Suggested ticket: T100 — honor LLM_TIMEOUT_SECONDS in the SDK provider, with
-  the same actionable error text as the httpx providers, plus a test that a
-  hung query raises LLMError rather than hanging the request.
+- I017 [FIXED 2026-08-16 in T100] `LLM_TIMEOUT_SECONDS` reached both httpx providers
+  and NOTHING in llm_claude_sdk.py — the owner's configured brain (I015). So the
+  remediation offered for I014 ("if timeouts repeat, add LLM_TIMEOUT_SECONDS=600")
+  was inert on his setup: a knob he could turn that did nothing, which is worse
+  than no knob, because it looks like the fix was tried.
+  FIX: the provider now carries `self.timeout = settings.llm_timeout_seconds` and
+  wraps the SDK stream in `asyncio.wait_for`. Chose wait_for over an SDK option
+  because the installed claude-agent-sdk exposes no per-query timeout and this
+  works regardless of version; on expiry the generator is CANCELLED, so a
+  half-streamed reply is never returned as though it were complete.
+  The message is worded identically to the httpx providers on purpose — the owner
+  should not have to work out which brain answered to know what to change.
+  Tested: a query that never finishes raises LLMError rather than hanging, which
+  matters because a hang means the I014 recovery path never runs and the turn is
+  lost instead of resumable. A test also asserts the wording matches across both
+  modules, so a future edit cannot let them drift apart.
+  HOW IT WAS FOUND, worth keeping: a pyrefly sweep flagged
+  `build_provider(s).timeout` as "ClaudeSDKProvider has no attribute timeout".
+  That flag was a FALSE POSITIVE for the test — build_provider returns
+  OpenAIProvider there — but the union member it named turned out to be a real
+  hole in the provider it named. Worth remembering when triaging checker noise.
 - I013 [FIXED — verify on owner machine] — "I'd like to update the IPS" → KUBERA
   dumped an 8-row markdown table of INTERNAL parameter names (max_drawdown_frac,
   target_annual_return_frac, ...) and asked the owner to pick fields. Menus and

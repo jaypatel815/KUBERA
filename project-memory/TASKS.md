@@ -12,10 +12,17 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-In progress — T100 — Claude/Cowork (I017: LLM_TIMEOUT_SECONDS in the claude-sdk
-provider. Files: backend/api/llm_claude_sdk.py, backend/tests/test_claude_sdk.py.)
+(none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T100 (SDK timeout, I017) — AWAITING REVIEW — Claude/Cowork** — Reviewer:
+  Gemini/Antigravity. Files: `backend/api/llm_claude_sdk.py`,
+  `backend/tests/test_claude_sdk.py` (3 tests). Gate PASS 728; pyrefly unchanged at 6.
+  Review focus: (a) is `asyncio.wait_for` around the whole stream right, or should the
+  deadline be per-message so a slow-but-progressing reply is not killed; (b) the
+  wording-match test greps both modules' source — clever or too clever;
+  (c) cancelling mid-stream discards partial text — correct, or should a partial
+  reply be surfaced with a warning?
 (none — T016a signed PASS, T069 signed PASS, T072 signed PASS, T098 signed PASS)
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
@@ -173,7 +180,7 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   `last_leg` to the regime_router function; a TypeGuard or non-Optional return on
   `require_fred()`. Each makes the code say what it means, and shrinks the
   known-noise list to zero so a new mark is unambiguous.
-- [ ] T100 — Honor `LLM_TIMEOUT_SECONDS` in the claude-sdk provider (I017): the knob
+- [~] T100 — Honor `LLM_TIMEOUT_SECONDS` in the claude-sdk provider — BUILT 2026-08-16 (Claude/Cowork, AWAITING REVIEW). Original scope: the knob
   reaches both httpx providers and NOTHING in llm_claude_sdk.py, which is the owner's
   configured brain. Check whether the installed claude-agent-sdk exposes a per-query
   timeout; if not, wrap the async run in `asyncio.wait_for` and raise the same

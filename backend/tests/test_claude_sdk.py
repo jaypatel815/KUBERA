@@ -207,3 +207,57 @@ def test_chat_loop_persists_side_channel_events():
         assert r.tool_trail == [{"name": "get_portfolio", "arguments": {}}]
         assert "2026-08-11" in r.reply or "Data recency" in r.reply  # recency enforced
     engine.dispose()
+
+
+# --- T100 / I017: the timeout knob must reach THIS provider too ---------------
+
+def test_timeout_setting_reaches_the_sdk_provider():
+    """I017: LLM_TIMEOUT_SECONDS wired both httpx providers and not this one —
+    the owner's actual brain. The knob existed and did nothing."""
+    p = ClaudeSDKProvider(sdk_settings(llm_timeout_seconds=42.0))
+    assert p.timeout == 42.0
+
+
+def test_a_hung_query_raises_LLMError_instead_of_hanging(monkeypatch):
+    """A query that never finishes must fail with an actionable message.
+
+    Without this the request hangs until something upstream gives up, and the
+    I014 recovery path (which commits the user's message, then apologises) never
+    runs — so the turn is lost rather than resumable.
+    """
+    import asyncio as _asyncio
+
+    from api.llm import LLMError
+
+    captured: dict = {}
+    install_fake_sdk(monkeypatch, captured)
+    mod = sys.modules["claude_agent_sdk"]
+
+    async def never_finishes(prompt, options):
+        await _asyncio.sleep(3600)
+        yield FakeAssistant(content=[])          # pragma: no cover — never reached
+
+    setattr(mod, "query", never_finishes)
+
+    # settings enforce llm_timeout_seconds >= 10 (a 1s timeout would make KUBERA
+    # useless on any real prompt), so set the attribute rather than fight the
+    # validator — the enforcement path is what is under test, not the floor.
+    p = ClaudeSDKProvider(sdk_settings())
+    p.timeout = 0.05
+    with pytest.raises(LLMError, match="claude-sdk did not answer within"):
+        p.complete("S", [{"role": "user", "content": "hi"}], [])
+
+
+def test_timeout_message_names_the_env_knob_like_the_other_providers():
+    """Same wording as the httpx providers: the owner should not have to learn
+    which brain produced the error to know what to change."""
+    import asyncio as _asyncio
+    import inspect
+
+    from api import llm, llm_claude_sdk
+
+    source = inspect.getsource(llm_claude_sdk)
+    assert "LLM_TIMEOUT_SECONDS in .env" in source
+    assert "LLM_TIMEOUT_SECONDS in .env" in inspect.getsource(llm)
+    assert "asyncio.wait_for" in source or "wait_for" in source
+    assert _asyncio is not None

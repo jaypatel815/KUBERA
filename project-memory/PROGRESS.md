@@ -3,6 +3,32 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — T100: the timeout knob now reaches the real brain
+Closes I017. LLM_TIMEOUT_SECONDS was wired through both httpx providers and
+nothing in llm_claude_sdk.py — which is the provider the owner actually runs
+(I015). The advice we gave him for I014, "raise LLM_TIMEOUT_SECONDS if timeouts
+repeat", therefore did nothing on his machine. A knob that does nothing is worse
+than no knob, because turning it looks like the fix was tried and ruled out.
+Implementation: the provider carries the setting and wraps the SDK stream in
+asyncio.wait_for. Chose that over an SDK option because the installed
+claude-agent-sdk exposes no per-query timeout and wait_for works regardless of
+version; on expiry the async generator is CANCELLED, so a half-streamed reply is
+never handed back as if it were complete. The error text is byte-identical in
+spirit to the httpx providers — the owner should not have to work out which
+brain answered to know which knob to turn — and a test greps both modules to
+stop the two drifting apart later.
+The test that matters most asserts a never-finishing query RAISES rather than
+hangs: a hang means the I014 recovery path never runs, and the turn is lost
+instead of resumable. Settings enforce a 10s floor, so the test sets the
+attribute rather than fighting a validator that is correctly there.
+Worth remembering for triage: this bug was found by a pyrefly flag that was a
+FALSE POSITIVE for the line it pointed at, but named a class that really did
+lack the attribute. Checker noise is not always only noise.
+Verified: gate PASS 728 passed, 3 skipped; pyrefly unchanged at 6 known errors.
+Next: Gemini reviews T100. Owner: Schwab app is in "Modification Pending"
+(I019) — nothing to do but wait; T102 wants one statement PDF whenever suits.
+
+
 ## 2026-08-16 — Gemini/Antigravity — review T016a (Schwab read-only client & mapping) — PASS
 Reviewed T016a (Claude/Cowork):
 - Verified `backend/data/schwab.py`, `backend/settings.py`, `.env.example`, `scripts/schwab_auth.py`,

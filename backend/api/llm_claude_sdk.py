@@ -23,6 +23,9 @@ import logging
 import os
 from typing import Any
 
+# Safe despite the apparent cycle: llm.py imports THIS module lazily, inside
+# build_provider, so api.llm is always fully loaded before we are.
+from api.llm import LLMError
 from api.tool_policy import tool_names_for
 from api.tools import ConfirmationRequiredError, ToolContext, ToolError, registry
 from settings import ConfigError, KuberaSettings
@@ -70,6 +73,11 @@ class ClaudeSDKProvider:
 
     def __init__(self, settings: KuberaSettings):
         self._settings = settings
+        # I017: LLM_TIMEOUT_SECONDS reached both httpx providers and NOTHING here,
+        # which is the owner's configured brain (I015). So the remediation offered
+        # for I014 — "raise LLM_TIMEOUT_SECONDS" — was inert on his setup: a knob
+        # he could turn that did nothing, which is worse than no knob at all.
+        self.timeout = settings.llm_timeout_seconds
         self.tool_context: ToolContext | None = None  # set by the chat loop per turn
         self.last_tool_events: list[dict] = []  # read + cleared by the chat loop
 
@@ -171,7 +179,23 @@ class ClaudeSDKProvider:
                         usage_out = getattr(usage, "output_tokens", 0) or 0
             return "\n".join(t for t in text_parts if t), usage_in, usage_out
 
-        text, usage_in, usage_out = asyncio.run(run())
+        async def run_with_deadline() -> tuple[str, int, int]:
+            # asyncio.wait_for rather than an SDK option: the installed
+            # claude-agent-sdk exposes no per-query timeout, and this works
+            # regardless of SDK version. On expiry the generator is cancelled,
+            # so no half-streamed text is returned as if it were complete.
+            return await asyncio.wait_for(run(), timeout=self.timeout)
+
+        try:
+            text, usage_in, usage_out = asyncio.run(run_with_deadline())
+        except (TimeoutError, asyncio.TimeoutError) as e:
+            # Same wording as the httpx providers on purpose — the owner should
+            # not have to learn which brain produced the message to know the fix.
+            raise LLMError(
+                f"timeout: claude-sdk did not answer within {self.timeout:.0f}s "
+                f"(long prompts on slow models can exceed this — raise "
+                f"LLM_TIMEOUT_SECONDS in .env)"
+            ) from e
         # SDK already executed tools internally; we never ask our loop to run more.
         return LLMReply(text=text or None, tool_calls=[], stop_reason="end",
                         input_tokens=usage_in, output_tokens=usage_out)
