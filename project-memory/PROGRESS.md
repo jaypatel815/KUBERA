@@ -3,6 +3,40 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — T016a: the Schwab client, built to be doubted
+First half of the Schwab work (D026): the read-only client and the transaction
+mapper. Three things about Schwab are genuinely unlike Alpaca and each is now
+handled explicitly — OAuth with a weekly-expiring refresh token rather than a key
+pair; accounts addressed by an encrypted hash rather than the account number
+(which is why "just type your account number" was never the whole story); and
+transactions that are CONTAINERS, where one TRADE carries an equity leg, a cash
+leg and sometimes fees, and only one of those is the fill.
+The design choice worth defending at review: the mapper REPORTS what it cannot
+interpret instead of dropping it. Every skipped row lands in `unmapped` with a
+reason. That exists because a wrong import does not crash — it quietly changes
+the median hold, the win rate, the answer to "do you size up after losses". If
+the statement says 41 trades and the importer says 38 mapped + 3 unmapped, that
+reconciles; 38 alone does not.
+Also shipped `scripts/reconcile_schwab.py`, which prints imports in statement
+shape for the owner to tick off line by line. It deliberately does NOT parse the
+statement and declare itself correct — a machine agreeing with itself is not
+verification.
+Writing the tests found a real gap: a second 401 after a fresh token fell through
+to a bare "HTTP 401", the message most likely to send someone re-authorising for
+an hour when the real cause is app scopes. Now it says so, and says re-authorising
+will not help.
+Stated plainly in both the module and the test docstrings: these shapes come from
+Schwab's published docs and have NOT been checked against a live pull. The tests
+prove the mapper does what we BELIEVE the API returns. Only reconciliation proves
+what it actually returns — which is why D026 made that the acceptance criterion
+rather than "it ran".
+Verified: gate PASS 712 passed; fresh-checkout (no .env) PASS; pyrefly unchanged
+at 6 known errors.
+Next: Gemini reviews T016a. Owner: SCHWAB_APP_KEY / SCHWAB_APP_SECRET /
+SCHWAB_REFRESH_TOKEN into .env, then run reconcile_schwab.py for one month you
+have a statement for. T103 (the autopsy) stays blocked until that ties out.
+
+
 ## 2026-08-16 — Claude/Cowork — D025: one Python version, declared once
 Follow-on from I018. Chasing the CI failure surfaced that the repo declared
 SEVEN Python versions — .python-version 3.14.7, pyproject >=3.14.7, CI 3.11,

@@ -12,12 +12,21 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-In progress — T016 — Claude/Cowork (Schwab read-only client + transaction mapping,
-D026. Files: backend/data/schwab.py, backend/tests/test_schwab.py,
-backend/settings.py, .env.example, scripts/reconcile_schwab.py — no overlap with
-any Orb/voice work.)
+(none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T016a (Schwab client + mapping) — AWAITING REVIEW — Claude/Cowork** —
+  Reviewer: Gemini/Antigravity, per REVIEW.md. Files: `backend/data/schwab.py` (new),
+  `backend/settings.py` (schwab_* + require_schwab), `.env.example`,
+  `backend/tests/test_schwab.py` (new, 19 tests), `scripts/reconcile_schwab.py` (new).
+  Gate PASS: 712 passed. Fresh-checkout run also PASS. Pyrefly unchanged at 6.
+  Suggested review focus: (a) the `_equity_leg` heuristic — "first transferItem with
+  BOTH a symbol and a price" is a guess about a shape nobody has seen live; is there a
+  case where the fee leg carries a price; (b) whether `map_transactions` should reject
+  a TRADE whose cash leg disagrees with qty x price rather than trusting the equity leg;
+  (c) the `_utc` "+0000" fixup — is that real or am I defending against a shape Schwab
+  does not emit; (d) `test_client_exposes_no_order_methods` is the only thing enforcing
+  read-only — is asserting on `dir()` strong enough.
 (none — T069 signed PASS, T072 signed PASS, T098 signed PASS)
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
@@ -284,7 +293,9 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [ ] (advisory note for T077b/T085) Fractional-Kelly sizing VIEW from T077 win-rate/payoff — advisory-only, capped, never autopilot; single-trade "probability of profit" remains rejected per D017.
 - [ ] T083 — Event reaction base rates (D019, dep T023 dates): for each historical earnings date, compute from our daily bars the event-day + next-day moves split by beat/miss, and the pre-event runup into each; surface in briefings/chat as BASE RATES ("6 of the last 8 beats still closed down") — the evidence-based answer to "should I hold through earnings", no prediction claimed. Deterministic, hand-computed tests.
 - [ ] T084 — Transcripts & filings as labeled CONTEXT (D019; gated on T023 tier check): fetch earnings-call transcripts, summarize via the EXISTING LLM layer (tone/guidance as narration of a document, clearly labeled qualitative context — never a priced signal); 10-K/10-Q YoY textual-change ("Lazy Prices") recorded as a Phase 7 research-agent candidate via SEC EDGAR through §7.7, human-gated. No FinBERT now.
-- [ ] T016 — Schwab Trader API read-only sync — **UNPARKED 2026-08-16, approval granted (D026)**.
+- [~] T016 — Schwab read-only sync — CLIENT + MAPPING BUILT 2026-08-16 (Claude/Cowork,
+  AWAITING REVIEW as T016a). Remaining in this ticket and BLOCKED ON THE OWNER: credentials
+  in .env, then the reconciliation run that is the real acceptance criterion. Original scope:
   Pull positions, balances and TRANSACTIONS into the existing model shapes so the
   analysis layer can read real fills instead of paper ones. OAuth (app key/secret +
   refresh token) — the account number identifies the account, it is not the credential.

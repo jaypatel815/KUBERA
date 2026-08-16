@@ -129,6 +129,53 @@ class KuberaSettings(BaseSettings):
         validation_alias=AliasChoices("FRED_API_KEY", "KUBERA_FRED_API_KEY"),
     )
 
+    # Schwab Trader API (T016, D026) — READ-ONLY. OAuth, not a key pair: the app
+    # key/secret identify the APPLICATION, the refresh token identifies the LOGIN,
+    # and the account number is neither — it only picks which account, and Schwab
+    # addresses accounts by an encrypted hash anyway.
+    schwab_app_key: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("SCHWAB_APP_KEY", "KUBERA_SCHWAB_APP_KEY"),
+    )
+    schwab_app_secret: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("SCHWAB_APP_SECRET", "KUBERA_SCHWAB_APP_SECRET"),
+    )
+    schwab_refresh_token: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("SCHWAB_REFRESH_TOKEN", "KUBERA_SCHWAB_REFRESH_TOKEN"),
+    )
+    schwab_account_number: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("SCHWAB_ACCOUNT_NUMBER", "KUBERA_SCHWAB_ACCOUNT_NUMBER"),
+    )
+
+    def require_schwab(self) -> "KuberaSettings":
+        """Return self if Schwab OAuth config is present; raise ConfigError otherwise."""
+        missing = []
+        if not self.schwab_app_key:
+            missing.append("SCHWAB_APP_KEY")
+        if not self.schwab_app_secret or not self.schwab_app_secret.get_secret_value():
+            missing.append("SCHWAB_APP_SECRET")
+        if not self.schwab_refresh_token or not self.schwab_refresh_token.get_secret_value():
+            missing.append("SCHWAB_REFRESH_TOKEN")
+        if missing:
+            raise ConfigError(
+                f"Missing required config: {', '.join(missing)}. The app key and secret come "
+                "from your approved app at developer.schwab.com; the refresh token comes from "
+                "a one-time browser authorisation (python scripts/schwab_auth.py) and expires "
+                "roughly weekly. Schwab access is READ-ONLY (D026). Never commit .env."
+            )
+        return self
+
+    @property
+    def schwab_configured(self) -> bool:
+        try:
+            self.require_schwab()
+            return True
+        except ConfigError:
+            return False
+
     def require_fred(self) -> "KuberaSettings":
         """Return self if the FRED key is present; raise ConfigError otherwise."""
         if not self.fred_api_key or not self.fred_api_key.get_secret_value():
