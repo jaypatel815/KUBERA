@@ -315,6 +315,7 @@ def _auth_module():
 
     path = Path(__file__).resolve().parents[2] / "scripts" / "schwab_auth.py"
     spec = importlib.util.spec_from_file_location("schwab_auth", path)
+    assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
