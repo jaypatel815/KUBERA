@@ -11,6 +11,16 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 ## In progress
 (none)
 
+## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+(none)
+
+**Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work"):
+claim your ticket + agent name on the In-progress line before coding; builders
+mark AWAITING REVIEW, never DONE; only a different agent writes DONE with a
+signed `REVIEWED <date> by <agent> — PASS/BLOCK` block. Shared-file hazards:
+the three tool-count guard tests, PROGRESS/TASKS (append your own lines only),
+the single alembic head, and apps/web/orb.html (one agent at a time).
+
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [ ] T005 — GitHub repo created + remote added ✔ (2026-08-11). Remaining: push `main` from your machine (sandbox has no GitHub auth) and confirm the Actions CI run is green.
 - [x] T006 — Alpaca paper keys in `.env` — done 2026-08-11 (owner). Note: owner's `.env` uses `ALPACA_API_KEY` naming + extra vars from another template; settings loader accepts both spellings, extras ignored.

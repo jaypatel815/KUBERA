@@ -3,6 +3,30 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — D023: two agents, one truth — the parallel protocol
+Owner asked whether agents can run in parallel and how to keep them honest to
+HIS goals. It had already happened once safely (Gemini shipped the T082 Orb
+frontend while Claude built T082a's backend) — but that was disjoint files and
+luck, so the rules are now written down instead of hoped for.
+Owner chose: builder + reviewer (not two builders), and a BLOCKING gate —
+nothing is DONE until a DIFFERENT agent signs off. His reasoning, recorded in
+D023: at this stage drift costs more than throughput.
+Shipped: AGENTS.md "Parallel work" section (claim your role in TASKS.md first;
+builders mark AWAITING REVIEW, never DONE; self-review is not review) with the
+collision surface named explicitly — the three tool-count guard tests,
+append-only-your-own-lines in PROGRESS/TASKS, the SINGLE alembic head (rebase,
+never merge), and orb.html as one-agent-at-a-time. New
+project-memory/REVIEW.md: a checklist ordered intent-BEFORE-diff and led by
+owner-alignment questions ("does this serve a goal HE stated?", "does it make
+breaking his own risk rules easier?", "does it relitigate a settled D017/D019/
+D021 rejection?") ahead of any code-quality question, plus a required verdict
+block and a worked example of a good BLOCK vs a useless one. New
+docs/agent-briefs.md: copy-paste BUILDER and REVIEWER prompts, ending with the
+owner's context — 26, $1k against $60–70k debt, asked to be CHALLENGED — so a
+reviewer protects the features that tell him what he'd rather not hear.
+Verified: verify.py PASS — 624 passed, 3 skipped (docs/protocol only).
+Next: run it — builder takes T072 (human-grade TTS), reviewer signs off.
+
 ## 2026-08-16 — T089: what a position has already put you through
 Live MAE/MFE on OPEN positions — the backtest version only ever measured
 closed trades on closes. analysis/excursions_live.py reads daily highs and
