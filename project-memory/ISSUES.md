@@ -4,6 +4,34 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I018 [OPEN — CI IS RED, cause not yet identified] (2026-08-16)
+  CORRECTION FIRST, because it was mine: Claude repeatedly told the owner "CI has
+  been dark" and that T005's push was outstanding. Wrong. `git reflog
+  refs/remotes/origin/main` shows real pushes, origin/main == local main (0/0
+  divergence), and GitHub Actions has 7 runs. The owner had been pushing all
+  along and said so. Claude also claimed CI would have caught the T069
+  `captured_at` bug — also wrong, and worse: CI runs the same green pytest suite,
+  so it could never have caught it. Only the type checker did.
+  THE ACTUAL PROBLEM, found by checking instead of asserting: the `verify` job
+  FAILS (exit code 1) on runs #4 (2eff35f, T069) and #7 (b323691, pyrefly) — the
+  two checked. `secret-scan` passes. So the gate every agent trusts has been red
+  and nobody looked, because the last pushes before today were on 2026-08-11.
+  WHAT IS RULED OUT (reproduced, not guessed): a clean venv containing ONLY
+  backend/requirements.txt, with the sandbox SOCKS proxy env unset, runs
+  `scripts/verify.py` to a PASS — ruff clean, 693 passed, 4 skipped. So it is not
+  a missing dependency, not numpy/soundfile (both correctly importorskip'd), not
+  the stray root pyproject.toml, and not lint.
+  REMAINING SUSPECT: the Python version. CI pins 3.11 (.github/workflows/ci.yml);
+  the reproduction above is 3.10, which is all this sandbox has, and `uv python
+  install 3.11` cannot reach the network here.
+  NOTE the version story is inconsistent across the repo and may itself be the
+  bug: AGENTS.md says "Python 3.11+", pyrightconfig.json says 3.10, CI pins 3.11,
+  the owner runs 3.14.7, and the stray pyproject.toml declares >=3.14.7.
+  NEXT STEP NEEDS THE OWNER (or any agent that can read the log): open
+  https://github.com/jaypatel815/KUBERA/actions/runs/31965373918 → the `verify`
+  job → the failing step, and paste the traceback. Anonymous access cannot read
+  Actions logs, and guessing at a failure whose text is one click away is exactly
+  the habit that produced the two corrections at the top of this entry.
 - I017 [FOUND 2026-08-16 by a type-checker sweep, NOT yet fixed — owner should decide]
   `LLM_TIMEOUT_SECONDS` does not reach the owner's actual brain. I014 wired the
   knob "through both httpx providers" (anthropic, openai) — accurate as written,
