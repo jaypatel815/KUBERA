@@ -32,6 +32,7 @@ import struct
 import wave
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 log = logging.getLogger("kubera.tts")
 
@@ -44,7 +45,10 @@ DEFAULT_CLOUD_VOICE = "en-US-AndrewNeural"
 MODEL_FILE = "kokoro-v1.0.onnx"
 VOICES_FILE = "voices-v1.0.bin"
 
-_MODEL_CACHE: object | None = None
+# Any, not object: kokoro's class cannot be imported for a real annotation (the
+# package is optional by design), and `object` makes every attribute access on
+# the cached model a type error.
+_MODEL_CACHE: Any = None
 
 
 class LocalVoiceUnavailable(RuntimeError):

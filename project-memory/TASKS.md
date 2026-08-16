@@ -161,6 +161,12 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   silent `except Exception` around the api.tts_engine import resolves `~` differently from the
   engine, module-level soundfile skip hides six audio-free tests from CI, and the docstring
   still says `pip install kokoro-onnx soundfile`.
+- [ ] T101 — Make the last 6 pyrefly errors expressible rather than tolerated (low
+  priority, all currently false positives — see the triage in pyrefly.toml): TypedDict
+  for the correlation `{"with", "corr"}` dict; a small class instead of attaching
+  `last_leg` to the regime_router function; a TypeGuard or non-Optional return on
+  `require_fred()`. Each makes the code say what it means, and shrinks the
+  known-noise list to zero so a new mark is unambiguous.
 - [ ] T100 — Honor `LLM_TIMEOUT_SECONDS` in the claude-sdk provider (I017): the knob
   reaches both httpx providers and NOTHING in llm_claude_sdk.py, which is the owner's
   configured brain. Check whether the installed claude-agent-sdk exposes a per-query

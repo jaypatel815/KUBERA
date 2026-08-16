@@ -279,3 +279,38 @@ def test_tool_is_registered_and_returns_a_proposal():
     assert "PROPOSAL" in schema["description"]
     assert "override" in schema["description"].lower()
     assert "insufficient" in schema["description"].lower()
+
+
+def test_tool_actually_runs_against_a_real_database():
+    """The gap that let a live AttributeError ship.
+
+    The earlier wiring test asserted the tool was REGISTERED, which is not the
+    same as working — `estimate_risk_tolerance` referenced
+    `AccountSnapshot.captured_at`, a column that does not exist (it is `asof`),
+    and every test passed because nothing ever executed the handler. A type
+    checker found it in seconds. This test is the cheaper guard: run the thing.
+    """
+    from api.tools import ToolContext, registry
+    from data.db import make_engine, make_session_factory
+    from data.models import AccountSnapshot, Base, BrokerAccount
+
+    engine = make_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    db = make_session_factory(engine)()
+
+    acct = BrokerAccount(broker="alpaca-paper", external_id="test")
+    db.add(acct)
+    db.flush()
+    db.add(AccountSnapshot(account_id=acct.id, equity=10_000.0, cash=2_000.0,
+                           buying_power=4_000.0, asof=T0, source="test"))
+    db.commit()
+
+    out = registry.execute("estimate_risk_tolerance", {}, ToolContext(db=db))
+
+    assert out["is_proposal"] is True
+    assert out["confidence"] in {"insufficient", "low", "moderate", "good"}
+    assert set(out["recommended"]) == {
+        "daily_loss_limit_frac", "risk_per_trade_frac", "max_position_frac"}
+    # The snapshot above is 20% cash, so the dry-powder component must have spoken.
+    assert any(e["name"] == "dry_powder" and e["signal"] is not None
+               for e in out["evidence"])

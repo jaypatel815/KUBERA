@@ -1700,7 +1700,7 @@ def _estimate_risk_tolerance(ctx: ToolContext, _: NoArgs) -> dict:
     limits = RiskLimits()
     equity = cash = None
     snap = db.execute(
-        select(AccountSnapshot).order_by(AccountSnapshot.captured_at.desc()).limit(1)
+        select(AccountSnapshot).order_by(AccountSnapshot.asof.desc()).limit(1)
     ).scalars().first()
     if snap is not None:
         equity, cash = snap.equity, snap.cash

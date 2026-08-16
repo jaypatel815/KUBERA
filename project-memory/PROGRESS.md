@@ -3,6 +3,36 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — pyrefly config, and the bug it caught immediately
+The owner hit a checker error in test_claude_sdk.py; fixing it properly meant
+deleting a `sys.modules` round-trip rather than suppressing the warning. Then
+configured pyrefly repo-wide, because an editor reporting ~140 errors on a green
+suite teaches everyone to ignore the squiggles — and the one real finding gets
+filed away with the noise.
+138 -> 6, in four honest steps: added `backend/tests` to search-path (the suite
+imports fixtures between test modules, which pytest makes work and static
+analysis cannot know); declared the seven OPTIONAL runtime deps as Any, since
+they are absent BY DESIGN (T070/I016) and reporting the intended state of the
+world as a defect is noise; relaxed three error kinds in backend/tests ONLY,
+where asserting on Optional fields after a fixture sets them is legitimate,
+while keeping them errors in api/analysis/risk/data/backtest where an unguarded
+None costs money; and left the final 6 VISIBLE with a written triage.
+One process note worth keeping: a mid-way config put the key inside the
+`[errors]` table and the count fell to 1. That looked like a triumph and was a
+muzzled checker. Caught it by injecting a deliberate type error as a canary —
+57 became 58 and named it exactly. Any config change that makes errors vanish
+should be tested with a canary before it is believed.
+THE PAYOFF WAS IMMEDIATE AND EMBARRASSING: pyrefly found that T069's
+estimate_risk_tolerance reads `AccountSnapshot.captured_at`, a column that does
+not exist — the field is `asof`. The tool raised AttributeError on its first
+real call, and the whole suite was green because the tests asserted the tool was
+REGISTERED, never that it RAN. Fixed, and added a test that executes it against
+an in-memory database. Registration is not function.
+Verified: gate PASS. Runtime call now returns a proposal instead of raising.
+Next: T101 (make the last 6 expressible), T100 (I017 SDK timeout). Owner: T005
+push — CI has been dark this whole time, which is how a bug like this survives.
+
+
 ## 2026-08-16 — Gemini/Antigravity — T069 review PASS, T005 verified, pre-commit & type fixes
 Reviewed T069 (Adaptive Risk Tolerance — Claude/Cowork):
 - Code review: Verified `backend/analysis/risk_tolerance.py`, `backend/analysis/attribution.py`,
