@@ -281,9 +281,30 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [ ] (advisory note for T077b/T085) Fractional-Kelly sizing VIEW from T077 win-rate/payoff — advisory-only, capped, never autopilot; single-trade "probability of profit" remains rejected per D017.
 - [ ] T083 — Event reaction base rates (D019, dep T023 dates): for each historical earnings date, compute from our daily bars the event-day + next-day moves split by beat/miss, and the pre-event runup into each; surface in briefings/chat as BASE RATES ("6 of the last 8 beats still closed down") — the evidence-based answer to "should I hold through earnings", no prediction claimed. Deterministic, hand-computed tests.
 - [ ] T084 — Transcripts & filings as labeled CONTEXT (D019; gated on T023 tier check): fetch earnings-call transcripts, summarize via the EXISTING LLM layer (tone/guidance as narration of a document, clearly labeled qualitative context — never a priced signal); 10-K/10-Q YoY textual-change ("Lazy Prices") recorded as a Phase 7 research-agent candidate via SEC EDGAR through §7.7, human-gated. No FinBERT now.
-- [ ] T016 — Schwab Trader API read-only sync (owner's real thinkorswim account): positions + balances alongside Alpaca paper, same timestamped model shapes. STATUS (owner, 2026-08-13 / D018): Schwab developer approval still pending — PARKED until the owner reports approval; Alpaca remains the working broker. Then: agent verifies current API capabilities (paper endpoint? scopes?) before building. Live orders out of scope pending §7.4. (D009)
-
-## Backlog — Phase 3: Backtesting & strategy sandbox (agents)
+- [ ] T016 — Schwab Trader API read-only sync — **UNPARKED 2026-08-16, approval granted (D026)**.
+  Pull positions, balances and TRANSACTIONS into the existing model shapes so the
+  analysis layer can read real fills instead of paper ones. OAuth (app key/secret +
+  refresh token) — the account number identifies the account, it is not the credential.
+  FIRST TASK inside this ticket: pull the widest date range the transactions endpoint
+  accepts and RECORD how far back it actually serves in D026 — that number decides how
+  much of T102 is needed. Read-only; no order endpoints, no exceptions (D026, spec §7.4).
+  ACCEPTANCE IS RECONCILIATION, not "it ran": imported fills must tie out against the
+  owner's own statements for an overlapping month — count, symbols, quantities, prices,
+  dates. A subtly wrong import does not crash, it just quietly changes every behavioral
+  conclusion downstream. Sandbox cannot reach schwabapi.com, so live tests SKIP here and
+  run on the owner's machine (same pattern as Alpaca, I002).
+- [ ] T102 — Statement PDF ingest (D026, after T016 measures API depth): parse Schwab
+  statements for history the API cannot reach. Layouts change across years, so the parser
+  reports what it could NOT parse rather than silently dropping rows. Its test is the
+  overlap window — parsed rows must reconcile against API rows where both exist.
+- [ ] T103 — The trading autopsy (D026, blocked on T016 + T102 reconciling): run the
+  existing battery over REAL fills — T091b holding periods vs stated style, T069 sizing
+  drift and post-loss tempo, T088 slippage by hour, T089 give-back, T060 TWR — and compose
+  one report. Little new analysis; the analysis was built first and has been waiting for
+  data worth reading. Every figure carries its sample count.
+- [ ] T104 — Pre-trade pattern warnings (D026, last): before an action, flag when it
+  resembles a setup that historically cost him, with n attached. Refuses to speak when the
+  sample is too small — the T069 "insufficient" precedent. Never predictive.
 - [x] T036b — Session-aware staleness — DONE 2026-08-14 (Claude/Cowork):
   `analysis/staleness.py` — four states replacing the binary flag: live /
   stale (market OPEN but feed behind = the real hazard, untrustworthy) /

@@ -389,3 +389,47 @@ THE ONE THING NOT VERIFIABLE FROM HERE: that GitHub's runner image can install
 exactly 3.14.7. If a future run fails at the setup-python step with "version not
 found", the fix is to relax `.python-version` to `3.14` — which keeps every
 other file correct, because they all point at that one file.
+
+## D026 — Schwab as the behavioral record: read-only, verified before trusted (2026-08-16)
+Schwab developer approval came through (T016 unparked). The owner's question was
+whether KUBERA could study his REAL trading history and judge future trades
+better for it. Scope agreed with him, in his order:
+
+1. **T016 — read-only sync FIRST, and only that.** Positions, balances,
+   transactions into the existing tables. Deliberately boring, for a reason
+   today made vivid: every behavioral finding downstream is worthless if the
+   import is subtly wrong, and mismatched fills are the hardest bug class to
+   notice — they do not crash, they just quietly change the answer. Acceptance
+   is reconciliation against his own statements, not "it ran".
+2. **T102 — statement PDF ingest.** He wants the full record, not just whatever
+   the API serves. Depth of the transactions endpoint is UNKNOWN — searched, not
+   clearly documented, and deliberately not guessed at (see I018 for what
+   guessing costs). Measure it first; the parser exists to cover what the API
+   cannot reach. Parsed rows must reconcile against API rows in the overlap
+   window — that overlap is the parser's own test.
+3. **T103 — the trading autopsy**, only after 1 and 2 are trustworthy. Runs the
+   battery that already exists (T091b holding periods, T069 sizing drift and
+   post-loss tempo, T088 slippage by hour, T089 give-back, T060 TWR) over real
+   fills instead of paper ones. Almost no new analysis code — the analysis was
+   built first and has been waiting for data worth reading.
+4. **T104 — pre-trade pattern warnings**, last. "This resembles a setup that has
+   cost you," with the sample count attached.
+
+WHAT KUBERA WILL AND WILL NOT CLAIM. It will DESCRIBE the record and CHALLENGE a
+stated belief the record contradicts. It will NOT predict which future trades
+work. A personal history is small-n; mining it for patterns is exactly the
+curve-fitting T092 exists to catch, and a "pattern" over nine trades is noise
+with a narrative. Every finding carries its sample count, and some questions his
+history will simply be too small to answer — saying so is the feature, not a
+failure of it (the T069 "insufficient" path is the precedent).
+
+ACCESS: read-only now, revisitable later — his call, recorded rather than left
+ambiguous. Alpaca paper remains the ONLY execution path. Conditions for
+revisiting real execution: the PROJECT_SPEC §7.4 promotion gate passes AND the
+paper record shows sustained discipline (DQS trend, override rate, tier trips),
+same evidence bar D021 set for T081. Until then a bug in fresh import code
+cannot reach an order, which is the point.
+
+OPEN UNKNOWN, to be measured not assumed: how far back the Schwab transactions
+endpoint actually serves. First task of T016 is to pull the widest range it
+allows and record the real answer here.
