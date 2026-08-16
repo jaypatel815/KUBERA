@@ -78,10 +78,24 @@ class FakeResult:
     usage: FakeUsage | dict = field(default_factory=FakeUsage)
 
 
-def install_fake_sdk(monkeypatch, captured: dict, call_tool: str | None = None):
+def install_fake_sdk(
+    monkeypatch,
+    captured: dict,
+    call_tool: str | None = None,
+    usage: FakeUsage | dict | None = None,
+):
     """A claude_agent_sdk stand-in: records options, optionally invokes one KUBERA
     tool handler mid-stream (simulating the SDK's internal agent loop), then yields
-    a final text + usage."""
+    a final text + usage.
+
+    `usage` selects the SHAPE of the final usage payload, because the real SDK has
+    shipped both: an object with attributes, and a plain dict (the owner's live run
+    reported 0/0 tokens until we handled the dict form). Pass a dict to exercise
+    that path. It is a parameter rather than something a test patches in afterwards
+    — reaching back into `sys.modules` to mutate the fake is both harder to read
+    and untypeable, since `sys.modules` is declared `dict[str, ModuleType]` and a
+    checker therefore refuses attribute assignment on whatever comes out of it.
+    """
     mod = types.ModuleType("claude_agent_sdk")
 
     def tool(name, description, schema):
@@ -103,7 +117,7 @@ def install_fake_sdk(monkeypatch, captured: dict, call_tool: str | None = None):
             handler = captured["server_tools"][call_tool]
             await handler({})  # SDK executes the bridged tool internally
         yield FakeAssistant(content=[FakeBlock(text="Grounded answer.")])
-        yield FakeResult()
+        yield FakeResult(usage=FakeUsage() if usage is None else usage)
 
     setattr(mod, "tool", tool)
     setattr(mod, "create_sdk_mcp_server", create_sdk_mcp_server)
@@ -135,18 +149,8 @@ def test_complete_locks_down_and_parses(monkeypatch):
 def test_usage_parsed_from_dict_shape(monkeypatch):
     """Owner's live run showed 0/0 usage: the real SDK returns usage as a dict."""
     captured: dict = {}
-    install_fake_sdk(monkeypatch, captured)
-    # swap the FakeResult's usage for a dict, as the real SDK emits
-    original_query = sys.modules["claude_agent_sdk"].query
-
-    async def query_dict_usage(prompt, options):
-        async for m in original_query(prompt, options):
-            if hasattr(m, "usage"):
-                m = FakeResult()
-                m.usage = {"input_tokens": 5415, "output_tokens": 1347}
-            yield m
-
-    sys.modules["claude_agent_sdk"].query = query_dict_usage
+    install_fake_sdk(monkeypatch, captured,
+                     usage={"input_tokens": 5415, "output_tokens": 1347})
     p = ClaudeSDKProvider(sdk_settings())
     reply = p.complete("S", [{"role": "user", "content": "hi"}], [])
     assert reply.input_tokens == 5415

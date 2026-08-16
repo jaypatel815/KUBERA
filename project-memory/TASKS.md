@@ -161,6 +161,13 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   silent `except Exception` around the api.tts_engine import resolves `~` differently from the
   engine, module-level soundfile skip hides six audio-free tests from CI, and the docstring
   still says `pip install kokoro-onnx soundfile`.
+- [ ] T100 — Honor `LLM_TIMEOUT_SECONDS` in the claude-sdk provider (I017): the knob
+  reaches both httpx providers and NOTHING in llm_claude_sdk.py, which is the owner's
+  configured brain. Check whether the installed claude-agent-sdk exposes a per-query
+  timeout; if not, wrap the async run in `asyncio.wait_for` and raise the same
+  actionable LLMError text ("timeout: claude-sdk did not answer within Ns — raise
+  LLM_TIMEOUT_SECONDS"). Test that a hung query raises rather than hangs, and that the
+  I014 recovery path still commits a clean assistant row.
 - [ ] T071 — Owner: voice acceptance run — `pip install -r requirements-voice.txt`, server up, `python scripts\talk.py`, hold a conversation. If faster-whisper wheels fail on Python 3.14 → `set KUBERA_STT=openai`. Report quirks to ISSUES.
 - [x] T069 — Adaptive risk-tolerance estimation — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `analysis/risk_tolerance.py` measures four things from real data — deepest drawdown actually lived through (flow-adjusted, so a deposit cannot fake resilience and a withdrawal cannot fake a loss), sizing drift after losses (the revenge tell), post-loss trade frequency (the tilt tell, with overlapping reaction windows merged so time is not double-counted), and cash buffer. Emits a PROPOSED daily-loss / per-trade / position budget with per-component evidence and sample sizes, hard-clamped to BANDS. Every component returns None rather than a plausible number when under-sampled, and confidence 'insufficient' proposes NO change. Registry tool #34 `estimate_risk_tolerance`. Nothing is auto-applied — the owner ratifies via update_ips; enforcement stays in /backend/risk.
