@@ -3,6 +3,31 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — D023: the shared-file problem, and a guard script for it
+Owner asked the sharpest version of the question: what happens when both agents
+MUST edit the same files — TASKS.md, PROGRESS.md, README? "Pick different
+files" is impossible advice for those; every ticket touches them.
+The honest mechanism, now written down: with one branch in one directory you
+will NEVER get a git merge conflict — sequential commits have nothing to merge.
+That is the trap, not the comfort. The real failure is a SILENT LOST UPDATE:
+read the file, other agent saves, you write back stale, their lines vanish with
+no warning anywhere.
+Four rules in AGENTS.md: run the new guard first; edit by ANCHOR (a targeted
+find-and-replace FAILS loudly if the region moved — a whole-file write succeeds
+silently and eats their work); re-read immediately before writing; write only
+your own block and commit it at once. Plus per-file conventions (own your
+ticket block in TASKS, one dated entry at the top of PROGRESS, only your
+section of README, only your numbers in the guard tests) and a recovery recipe
+(`git show <sha>:path` and re-add — never revert).
+NEW: `scripts/parallel_check.py` — active claims, which shared files are dirty
+right now, the clobber signature (deletions in append-only memory files across
+recent commits), and whether alembic branched. 7 tests on the pure parts.
+It immediately flagged a REAL case on first run: my own D023 rewrite an hour
+earlier removed 20 lines from DECISIONS.md. Intentional, but exactly the shape
+of an accident — which is the point: you are forced to notice and judge.
+Verified: verify.py PASS — 631 passed (+7), 3 skipped.
+Next: run it live — two agents, two tickets, guard script before shared edits.
+
 ## 2026-08-16 — D023 amended: who commits (builder), and no branches
 Owner asked a sharp question: should the REVIEWER commit, so commits aren't
 mishandled? Answer is no, and the reasoning is now in D023 because the instinct

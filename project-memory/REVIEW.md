@@ -124,6 +124,8 @@ Because both agents edit ONE working directory, add these to every review:
 - [ ] Tool-count guards: if both of you added tools this cycle, do the three
       counts match the registry NOW, after both commits?
 - [ ] Did they overwrite your PROGRESS/TASKS lines instead of appending?
+      `python scripts/parallel_check.py` reports the clobber signature
+      automatically — run it as part of every review.
 - [ ] Run the verify gate on the CURRENT tree (both agents' work combined) —
       each half can pass alone and fail together. This is the check that a
       single-agent workflow never needs and a parallel one lives or dies by.

@@ -45,6 +45,20 @@ ALSO BANNED WHILE PARALLEL: git branches. Branching looks like the fix and is
 the opposite — `git checkout` swaps files on disk beneath the other agent
 mid-edit. One shared directory = one branch (main), small frequent commits,
 staging by path. Branches return the day each agent gets its own clone.
+SHARED FILES (owner's follow-up: what if both agents must edit TASKS/PROGRESS/
+README?): unavoidable, so it is handled rather than forbidden. Key fact recorded
+because it is counter-intuitive: one branch + one directory means git NEVER
+raises a merge conflict — the risk is a silent lost update (read, other agent
+saves, you write stale, their lines are gone). Rules: run scripts/parallel_check.py
+first; edit by ANCHOR not whole-file write (an anchored replace fails loudly when
+the region moved; a full write clobbers silently); re-read immediately before
+writing; write only your own block and commit at once; never "tidy" a shared file
+while another agent is live. Per-file ownership conventions and a recovery recipe
+(git show <sha>:path, re-add, never revert) are in AGENTS.md. NEW GUARD:
+scripts/parallel_check.py reports active claims, dirty shared files, the clobber
+signature (deletions in append-only memory files), and alembic head count; 7
+tests cover the pure parts. On its first run it flagged a genuine case — the
+D023 rewrite itself had removed 20 lines from DECISIONS.md.
 FILES: AGENTS.md "Parallel work"; project-memory/REVIEW.md (checklist, ordered
 intent-before-diff, owner-alignment questions first, + "commit the review,
 never the code"); docs/agent-briefs.md (one paste-ready brief for any agent + a

@@ -96,6 +96,49 @@ mid-edit. One shared directory means one branch (`main`), small frequent
 commits, and staging by path. Branches become useful again the day each agent
 gets its own clone.
 
+**THE SHARED FILES YOU CANNOT AVOID (TASKS, PROGRESS, README, guard tests).**
+"Don't edit the same file" is impossible advice here: every ticket touches
+TASKS.md and PROGRESS.md. And with one branch in one directory you will NEVER
+see a git merge conflict — sequential commits have nothing to merge. That is
+the trap. The real failure is the SILENT LOST UPDATE: you read the file, the
+other agent saves a change, you write back from your stale copy, and their
+lines are gone with no warning.
+
+Four rules prevent it. Follow all four:
+1. **Run `python scripts/parallel_check.py` before you touch a shared file.**
+   It shows active claims, which shared files are dirty right now, whether a
+   recent commit deleted lines from an append-only memory file (the clobber
+   signature), and whether alembic branched.
+2. **Edit by ANCHOR, never rewrite the whole file.** Use a targeted
+   find-and-replace on a unique nearby string. If the other agent moved that
+   region, your edit FAILS LOUDLY — which is what you want. A whole-file write
+   succeeds silently and takes their work with it.
+3. **Re-read the file immediately before you write it.** Seconds, not minutes.
+   The danger is entirely in the gap between your read and your write.
+4. **Write only your own block, then commit it immediately.** Your ticket's
+   lines in TASKS.md, your one dated entry in PROGRESS.md, your section of
+   README. Never reformat, re-sort, or "tidy" a shared file while another agent
+   is live — a tidy is a whole-file rewrite wearing a friendly hat.
+
+**Per-file conventions:**
+- `TASKS.md` — you own your ticket's block and your claim line. The reviewer
+  owns the verdict block under the ticket they reviewed. Nobody else's lines.
+- `PROGRESS.md` — one dated entry per agent per session, inserted at the top
+  ABOVE the newest existing entry. Never edit an entry you did not write.
+- `DECISIONS.md` — append-only in practice. Amending an existing decision is
+  legitimate (that is what "corrected/amended" entries are for) but say so in
+  the entry, because `parallel_check` will flag the deletion and someone will
+  have to judge whether it was intentional.
+- `README.md` — edit only the section your ticket changed.
+- The three tool-count guard tests — change only the numbers and add your own
+  tool to the set. Never delete a name you didn't add.
+
+**If you clobbered someone (or suspect you did):** don't revert. Recover their
+text and re-add it in a new commit:
+`git show <their-sha>:project-memory/PROGRESS.md > /tmp/theirs.md`, lift the
+missing block back in, commit as `restore: <what you clobbered>`, and say so in
+your PROGRESS entry so the reviewer isn't hunting a ghost.
+
 **Shared files that WILL collide — check before editing:**
 - `backend/tests/test_tools.py`, `test_chat.py`, `test_claude_sdk.py` hold tool
   COUNT guards. Two new tools = both agents bump the same numbers. Second to

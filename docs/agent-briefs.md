@@ -32,6 +32,15 @@ Follow AGENTS.md: deterministic money math with hand-computed test values, every
 payload timestamped and sourced, paper-only, sells never blocked, no mock data
 outside tests/fixtures.
 
+STEP 3b — SHARED FILES (TASKS.md, PROGRESS.md, README): the silent killer.
+One branch + one folder = git will NEVER warn you about a conflict. The risk is
+that you read a file, the other agent saves it, you write your stale copy back,
+and their work vanishes. So: run `python scripts/parallel_check.py` first; edit
+by ANCHOR (a targeted find-and-replace that FAILS if the region moved) instead
+of rewriting whole files; re-read the file immediately before writing; write
+only your own block and commit it right away. Never "tidy" or re-sort a shared
+file while another agent is live.
+
 STEP 4 — COMMIT SAFELY. THIS IS THE ONE THAT BITES.
 We share ONE working directory. NEVER `git add -A` or `git commit -a` — you will
 sweep up the other agent's half-written files. Run `git status`, then stage BY
