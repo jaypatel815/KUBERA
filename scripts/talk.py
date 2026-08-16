@@ -11,7 +11,21 @@ At the prompt:
 
 Dependencies (see requirements-voice.txt):  pip install -r requirements-voice.txt
 STT backends (env KUBERA_STT):  whisper (local, default)  |  openai (needs OPENAI_API_KEY)
-TTS backends (env KUBERA_TTS):  sapi (Windows built-in, default)  |  edge (neural voices)
+
+Voice quality ladder (env KUBERA_TTS) — set KUBERA_VOICE to override the default voice:
+  sapi      Windows built-in (default, robotic — works with zero deps)
+  edge      Microsoft neural voices via edge-tts (big quality jump, free, online)
+              pip install edge-tts soundfile
+              KUBERA_VOICE=en-US-AndrewNeural  (most natural; GuyNeural is default)
+  openai    OpenAI TTS API (near-human, ~$0.015/1k chars, OPENAI_API_KEY required)
+              pip install openai soundfile
+              KUBERA_VOICE=alloy  (also: echo, fable, onyx, nova, shimmer)
+              KUBERA_OPENAI_TTS_MODEL=tts-1  (or tts-1-hd for highest quality)
+  kokoro    Local near-human via kokoro-onnx (free, offline, 50+ voices, ~350 MB)
+              pip install kokoro-onnx soundfile
+              Needs kokoro-v1.0.onnx + voices-v1.0.bin in KUBERA_KOKORO_DIR
+              (download from https://github.com/thewh1teagle/kokoro-onnx/releases)
+              KUBERA_VOICE=af_heart  (also: af_sarah, am_adam, bf_emma, bm_george, …)
 
 Safety (D015): speech never confirms an order. Only typing `confirm` sets the flag.
 """
@@ -102,7 +116,15 @@ def make_transcriber():
 # ----------------------------------------------------------------- TTS
 
 def make_speaker():
+    """Factory: return a speak(text: str) -> None callable based on KUBERA_TTS.
+
+    Backends: sapi (default) | edge | openai | kokoro
+    Voice is controlled by KUBERA_VOICE; each backend documents its default above.
+    Voice errors are printed but NEVER raise — the text reply is always shown.
+    """
     backend = os.environ.get("KUBERA_TTS", "sapi").lower()
+
+    # ---- edge: Microsoft neural voices (free, online, needs edge-tts + soundfile) ----
     if backend == "edge":
         try:
             import asyncio  # noqa: PLC0415
@@ -134,6 +156,85 @@ def make_speaker():
 
         return edge_speak
 
+    # ---- openai: OpenAI TTS API (near-human, pennies, needs OPENAI_API_KEY) ----
+    if backend == "openai":
+        key = os.environ.get("OPENAI_API_KEY", "")
+        if not key:
+            raise SystemExit(
+                "KUBERA_TTS=openai needs OPENAI_API_KEY in the environment.\n"
+                "Alternatively, set KUBERA_TTS=edge (free) or KUBERA_TTS=kokoro (offline)."
+            )
+        try:
+            import openai as _openai  # noqa: PLC0415
+            import sounddevice as sd  # noqa: PLC0415
+            import soundfile as sf  # noqa: PLC0415
+        except ImportError:
+            raise SystemExit(
+                "KUBERA_TTS=openai needs: pip install openai soundfile\n"
+                "sounddevice should already be installed from requirements-voice.txt."
+            )
+
+        voice = os.environ.get("KUBERA_VOICE", "alloy")
+        model = os.environ.get("KUBERA_OPENAI_TTS_MODEL", "tts-1")
+        client = _openai.OpenAI(api_key=key)
+
+        def openai_speak(text: str) -> None:
+            try:
+                response = client.audio.speech.create(
+                    model=model,
+                    voice=voice,  # type: ignore[arg-type]
+                    input=text,
+                    response_format="wav",  # wav avoids mp3 decode dependency
+                )
+                audio_bytes = response.read()
+                data, rate = sf.read(io.BytesIO(audio_bytes))
+                sd.play(data, rate)
+                sd.wait()
+            except Exception as e:  # voice must never kill the loop; text still prints
+                print(f"  [voice playback failed: {e}]")
+
+        return openai_speak
+
+    # ---- kokoro: local near-human TTS via kokoro-onnx (free, offline, 50+ voices) ----
+    if backend == "kokoro":
+        try:
+            import sounddevice as sd  # noqa: PLC0415
+            from kokoro_onnx import Kokoro  # noqa: PLC0415
+        except ImportError:
+            raise SystemExit(
+                "KUBERA_TTS=kokoro needs: pip install kokoro-onnx soundfile\n"
+                "sounddevice should already be installed from requirements-voice.txt."
+            )
+
+        kokoro_dir = Path(
+            os.environ.get("KUBERA_KOKORO_DIR", Path(__file__).parent.parent / "models" / "kokoro")
+        )
+        model_path  = kokoro_dir / "kokoro-v1.0.onnx"
+        voices_path = kokoro_dir / "voices-v1.0.bin"
+        if not model_path.exists() or not voices_path.exists():
+            raise SystemExit(
+                f"KUBERA_TTS=kokoro: model files not found in {kokoro_dir}\n"
+                "Download kokoro-v1.0.onnx and voices-v1.0.bin from:\n"
+                "  https://github.com/thewh1teagle/kokoro-onnx/releases\n"
+                "Then either place them in that directory or set KUBERA_KOKORO_DIR "
+                "to the folder that contains them."
+            )
+
+        print("loading kokoro model (first run may take a few seconds)...")
+        voice = os.environ.get("KUBERA_VOICE", "af_heart")
+        koko = Kokoro(str(model_path), str(voices_path))
+
+        def kokoro_speak(text: str) -> None:
+            try:
+                samples, sample_rate = koko.create(text, voice=voice, speed=1.0, lang="en-us")
+                sd.play(samples, sample_rate)
+                sd.wait()
+            except Exception as e:  # voice must never kill the loop; text still prints
+                print(f"  [voice playback failed: {e}]")
+
+        return kokoro_speak
+
+    # ---- sapi: Windows built-in TTS (default, no extra deps) ----
     try:
         import pyttsx3  # noqa: PLC0415
     except ImportError:
