@@ -6,7 +6,10 @@ IDs never get reused. Format per PROJECT_SPEC.md §11.
 **Build-order guidance (D018, 2026-08-13):** T052 intraday (doctrine backbone) →
 T055 no-trade condition (owner's overtrading failure mode — lands WITH or BEFORE
 T054's router, never after) → T077 expected-move → T067 DQS / T062 briefs.
-Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
+Owner actions that unlock the most: T007 finale. (T005 is DONE — the owner has
+been pushing all along; origin/main == local main, 7 Actions runs. Any agent
+still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
+currently RED — see I018, which needs the failing log.)
 
 ## In progress
 (none)
@@ -31,6 +34,8 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.
+  NOTE: "pushed" and "CI green" are different things. CI is active and FAILING —
+  the verify job exits 1 on runs #4 and #7. Tracked as I018.
 - [x] T006 — Alpaca paper keys in `.env` — done 2026-08-11 (owner). Note: owner's `.env` uses `ALPACA_API_KEY` naming + extra vars from another template; settings loader accepts both spellings, extras ignored.
 - [ ] T007 — **Phase 1 sign-off, nearly done:** verify.py passed on Windows 68/68 incl. the 3 live paper tests (per Gemini's 2026-08-11 session ✔). Remaining: `alembic -c backend\alembic.ini upgrade head` + `python scripts\sync.py` + open `http://127.0.0.1:8000/portfolio` once.
 - [x] T008 — pre-commit installed — done 2026-08-11 (owner). Sandbox-side caveat: I003.
