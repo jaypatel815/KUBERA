@@ -12,7 +12,10 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-(none)
+In progress — T016 — Claude/Cowork (Schwab read-only client + transaction mapping,
+D026. Files: backend/data/schwab.py, backend/tests/test_schwab.py,
+backend/settings.py, .env.example, scripts/reconcile_schwab.py — no overlap with
+any Orb/voice work.)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 (none — T069 signed PASS, T072 signed PASS, T098 signed PASS)
