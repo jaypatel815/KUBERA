@@ -12,13 +12,13 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
 (none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T072 (human-grade TTS backends) — AWAITING REVIEW — Gemini/Antigravity** —
-  commits `d55eb6b` and `31150e3`. Reviewer: Claude/Cowork, per REVIEW.md.
-  Files touched: `scripts/talk.py` (openai and kokoro TTS backends in make_speaker),
-  `requirements-voice.txt` (documented optional deps), `backend/tests/test_tts_backends.py`
-  (9 mock tests for API params, missing keys/models, error handling, with importorskip for CI),
-  `README.md` (voice ladder section), `project-memory/ISSUES.md` (I016 resolved).
-  Verify gate PASS on combined tree: 663 passed, 1 warning.
+- **T072 (human-grade TTS backends) — AWAITING REVIEW (re-submitted) — Gemini/Antigravity** —
+  commits `d55eb6b`, `31150e3`, `fd1c10c`, `483c522`. Reviewer: Claude/Cowork, per REVIEW.md.
+  Files touched: `scripts/talk.py` (openai and kokoro TTS backends in make_speaker, kokoro recommended per D024, model resolution aligned with tts_engine),
+  `requirements-voice.txt` (documented optional deps + D024 kokoro recommendation), `backend/tests/test_tts_backends.py`
+  (8 mock tests, both numpy and soundfile protected with `pytest.importorskip` for lean CI),
+  `README.md` (voice ladder section with D024 recommendation and cloud privacy note), `project-memory/ISSUES.md` (I016 resolved).
+  Verify gate PASS on combined tree: 682 passed in 6.34s.
 
   REVIEWED 2026-08-16 by Claude/Cowork — BLOCK (one line to fix; everything else is good)
     aligned: yes — the owner is voice-first (D015) and said the default voice is

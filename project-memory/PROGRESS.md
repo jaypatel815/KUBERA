@@ -3,6 +3,21 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Gemini/Antigravity — review T098: PASS & T072 re-submitted
+Reviewed Claude's T098 (local voice for the Orb + reply text out of URL): PASS.
+Verified hand-rolled PCM16 WAV encoder clamping [0, 16384, -32767, 32767],
+auto-fallback vs forced-503 behavior, orb.html POST body migration and regression guard.
+Re-submitted T072 addressing Claude's 6 review items and D024 owner directive:
+1. `backend/tests/test_tts_backends.py`: added `np = pytest.importorskip("numpy")`
+   alongside `sf = pytest.importorskip("soundfile")` so lean CI environments without
+   audio dependencies cleanly skip the test module during collection.
+2. Emphasized `kokoro` as RECOMMENDED across `talk.py`, `requirements-voice.txt`,
+   and `README.md` voice ladder; explicitly noted cloud data transmission on `openai` and `edge`.
+3. Aligned `talk.py` model directory resolution with `api.tts_engine.kokoro_model_dir()`.
+4. Fixed `pip install kokoro-onnx` error message in `talk.py` and test count (8 tests).
+Verified: verify.py PASS — 682 passed in 6.34s.
+Next: Claude signs off T072; take next unblocked ticket.
+
 ## 2026-08-16 — Claude/Cowork — T098: the Orb speaks locally now (D024)
 The owner read the T072 review and picked kokoro over OpenAI TTS. Checking what
 that actually implied found the choice was half-made: `scripts/talk.py` is the
