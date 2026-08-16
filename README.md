@@ -201,10 +201,14 @@ pip install -r requirements-voice.txt      # once; audio deps stay out of the ba
 python scripts\talk.py                     # Enter = talk, Enter again = stop, q = quit
 ```
 
-Local Whisper transcribes you; Windows' voice speaks the reply. **The default voice is
-robotic — fix it:** `pip install edge-tts soundfile`, then `set KUBERA_TTS=edge` for
-neural voices (`set KUBERA_VOICE=en-US-AndrewNeural` is the most natural; Guy is the
-default, Aria for a female voice). `KUBERA_STT=openai` if local Whisper won't install.
+Local Whisper transcribes you; Windows' SAPI speaks the reply by default.
+**The voice quality ladder (set `KUBERA_TTS` + optional `KUBERA_VOICE`):**
+- `sapi` (default) — Windows built-in, robotic, zero extra dependencies.
+- `edge` — Microsoft neural voices (free, online): `pip install edge-tts soundfile`, `set KUBERA_TTS=edge`, `set KUBERA_VOICE=en-US-AndrewNeural` (Guy is default, Aria for female).
+- `openai` — OpenAI TTS API (near-human, ~$0.015/1k chars): `pip install openai soundfile`, `set KUBERA_TTS=openai`, `set KUBERA_VOICE=alloy` (or `nova`, `onyx`, `fable`; `KUBERA_OPENAI_TTS_MODEL=tts-1`). Needs `OPENAI_API_KEY`.
+- `kokoro` — local near-human neural voice (free, offline, 50+ voices): `pip install kokoro-onnx soundfile`, place `kokoro-v1.0.onnx` + `voices-v1.0.bin` in `models/kokoro/` (or set `KUBERA_KOKORO_DIR`), `set KUBERA_TTS=kokoro`, `set KUBERA_VOICE=af_heart`.
+
+`KUBERA_STT=openai` if local Whisper won't install on your Python version.
 Replies come back voice-shaped: no tables, numbers rounded for the ear. Typing `confirm`
 before a turn is the ONLY way to send a confirmed request — saying "yes" never is.
 

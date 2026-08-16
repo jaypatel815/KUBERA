@@ -12,7 +12,8 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
-import soundfile as sf
+
+sf = pytest.importorskip("soundfile")
 
 # talk.py lives in scripts/ and is not a package — import it by path.
 SCRIPTS_DIR = Path(__file__).resolve().parents[2] / "scripts"
