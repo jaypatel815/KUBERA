@@ -23,6 +23,7 @@ def test_root_serves_orb_page():
 
 
 def test_tts_503_without_edge_tts(monkeypatch):
+    monkeypatch.setenv("KUBERA_TTS_SERVER", "edge")
     monkeypatch.setitem(sys.modules, "edge_tts", None)
     r = client.get("/api/tts", params={"text": "hello"})
     assert r.status_code == 503
@@ -30,6 +31,7 @@ def test_tts_503_without_edge_tts(monkeypatch):
 
 
 def test_tts_streams_audio_with_fake_edge(monkeypatch):
+    monkeypatch.setenv("KUBERA_TTS_SERVER", "edge")
     mod = types.ModuleType("edge_tts")
 
     class Communicate:
@@ -52,6 +54,7 @@ def test_tts_streams_audio_with_fake_edge(monkeypatch):
 
 
 def test_tts_rejects_empty_text(monkeypatch):
+    monkeypatch.setenv("KUBERA_TTS_SERVER", "edge")
     mod = types.ModuleType("edge_tts")
     mod.Communicate = object
     monkeypatch.setitem(sys.modules, "edge_tts", mod)

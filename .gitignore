@@ -19,3 +19,8 @@ node_modules/
 .DS_Store
 Thumbs.db
 backups/
+
+# Local models (large binaries)
+models/
+*.onnx
+*.bin

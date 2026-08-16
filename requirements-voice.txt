@@ -9,7 +9,7 @@ pyttsx3>=2.90
 faster-whisper>=1.0
 # Optional nicer voices — pick ONE, set KUBERA_TTS accordingly:
 #   KUBERA_TTS=kokoro (RECOMMENDED, D024: near-human, free, offline — text stays local)
-#   pip install kokoro-onnx soundfile
+#   pip install kokoro-onnx
 #   Download kokoro-v1.0.onnx + voices-v1.0.bin from:
 #     https://github.com/thewh1teagle/kokoro-onnx/releases
 #   Place in models/kokoro/ or set KUBERA_KOKORO_DIR to their folder.

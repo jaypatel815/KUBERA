@@ -13,7 +13,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 np = pytest.importorskip("numpy")
-sf = pytest.importorskip("soundfile")
 
 # talk.py lives in scripts/ and is not a package — import it by path.
 SCRIPTS_DIR = Path(__file__).resolve().parents[2] / "scripts"
@@ -24,6 +23,7 @@ def _import_talk(extra_mods: dict | None = None):
     import importlib.util
 
     spec = importlib.util.spec_from_file_location("talk_t072", SCRIPTS_DIR / "talk.py")
+    assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)
     with patch.dict(sys.modules, extra_mods or {}):
         spec.loader.exec_module(mod)
@@ -32,6 +32,7 @@ def _import_talk(extra_mods: dict | None = None):
 
 def _silent_wav(duration_samples: int = 800, rate: int = 16_000) -> bytes:
     """Return a minimal silent WAV that soundfile can round-trip."""
+    sf = pytest.importorskip("soundfile")
     samples = np.zeros(duration_samples, dtype=np.float32)
     buf = io.BytesIO()
     sf.write(buf, samples, rate, format="WAV")

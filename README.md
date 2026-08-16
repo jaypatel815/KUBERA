@@ -224,7 +224,7 @@ python scripts\talk.py                     # Enter = talk, Enter again = stop, q
 Local Whisper transcribes you; Windows' SAPI speaks the reply by default.
 **The voice quality ladder (set `KUBERA_TTS` + optional `KUBERA_VOICE`):**
 - `sapi` (default) — Windows built-in, robotic, zero extra dependencies.
-- `kokoro` — **(RECOMMENDED, D024)** local near-human neural voice (free, offline, 50+ voices). Reply text (holdings, dollar P&L) stays on this machine: `pip install kokoro-onnx soundfile`, place `kokoro-v1.0.onnx` + `voices-v1.0.bin` in `models/kokoro/` (or set `KUBERA_KOKORO_DIR`), `set KUBERA_TTS=kokoro`, `set KUBERA_VOICE=af_heart`.
+- `kokoro` — **(RECOMMENDED, D024)** local near-human neural voice (free, offline, 50+ voices). Reply text (holdings, dollar P&L) stays on this machine: `pip install kokoro-onnx`, place `kokoro-v1.0.onnx` + `voices-v1.0.bin` in `models/kokoro/` (or set `KUBERA_KOKORO_DIR`), `set KUBERA_TTS=kokoro`, `set KUBERA_VOICE=af_heart`.
 - `edge` — Microsoft neural voices (free, online — reply text leaves machine): `pip install edge-tts soundfile`, `set KUBERA_TTS=edge`, `set KUBERA_VOICE=en-US-AndrewNeural` (Guy is default, Aria for female).
 - `openai` — OpenAI TTS API (near-human, ~$0.015/1k chars — reply text leaves machine): `pip install openai soundfile`, `set KUBERA_TTS=openai`, `set KUBERA_VOICE=alloy` (or `nova`, `onyx`, `fable`; `KUBERA_OPENAI_TTS_MODEL=tts-1`). Needs `OPENAI_API_KEY`.
 
