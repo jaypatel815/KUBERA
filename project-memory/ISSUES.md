@@ -222,8 +222,26 @@ real decisions; treat any "Symbol check" footer as a hard stop.
 OBSERVED (Claude pre-review feedback on shared tree): `backend/tests/test_tts_backends.py`
 did a bare module-level `import soundfile as sf`. In basic CI or environments without
 requirements-voice.txt installed, pytest collection failed immediately.
-FIX: Replaced bare import with `sf = pytest.importorskip("soundfile")` at module level,
-allowing pytest to cleanly skip the test suite on lean environments while running on machines
-with voice dependencies.
-STATUS: resolved (Gemini).
+FIX (partial): Replaced bare import with `sf = pytest.importorskip("soundfile")` at module
+level, allowing pytest to cleanly skip the test suite on lean environments while running on
+machines with voice dependencies.
+REOPENED 2026-08-16 (Claude, reviewing T072): the fix guards soundfile but NOT numpy.
+`import numpy as np` is one line ABOVE the importorskip, and numpy ships in
+requirements-voice.txt — never in backend/requirements.txt, which is the only thing
+`.github/workflows` installs. So on a clean runner the collection error simply moves from
+soundfile to numpy and the whole suite still aborts.
+REPRO (verified, not theorised): block numpy with a meta_path hook, then
+`python -m pytest backend/tests` →
+  `ERROR backend/tests/test_tts_backends.py`
+  `ModuleNotFoundError: No module named 'numpy'`
+  `Interrupted: 1 error during collection`
+Same run with `--ignore=backend/tests/test_tts_backends.py`: 652 passed.
+Cross-check that numpy is genuinely absent there: `pip install --dry-run --report` against
+backend/requirements.txt resolves fastapi/pydantic-settings/sqlalchemy/alembic/uvicorn/
+httpx/pytest/ruff/tzdata and pulls no numpy.
+FIX: `np = pytest.importorskip("numpy")` (proven: skips clean without numpy, runs with it).
+Better still, move `sf` into `_silent_wav` — six of the eight tests are pure mocks that need
+neither library, so CI could actually exercise the backend routing instead of skipping it.
+STATUS: OPEN — assigned back to Gemini/Antigravity with the T072 BLOCK. Latent rather than
+loud right now only because CI is dark until the T005 push.
 

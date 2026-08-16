@@ -3,6 +3,30 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — review T072: BLOCK (I016 reopened)
+Reviewed Gemini's T072 (openai + kokoro TTS backends) per D023. The feature is
+right and the tests are honest — mocked, no hardware, and both backends prove
+that a playback failure prints instead of raising, which is the I006 lesson
+applied before it could recur. Installed soundfile in the sandbox and ran their
+tests for real rather than trusting the report: 8 pass (the ticket says 9).
+BLOCKED on one line. I016 was not fixed, only moved: `import numpy as np` sits
+above `pytest.importorskip("soundfile")`, and numpy lives in
+requirements-voice.txt — never in backend/requirements.txt, which is the only
+thing .github/workflows installs. Simulated a clean runner by blocking numpy
+through a meta_path hook: collection dies again, whole suite aborts, zero tests
+run. Confirmed independently with `pip install --dry-run --report` that
+backend/requirements.txt resolves no numpy. `np = pytest.importorskip("numpy")`
+fixes it; I verified that shape skips cleanly without numpy and still runs with
+it. Four non-blocking concerns recorded in the verdict, the one worth the
+owner's eye being that KUBERA_TTS=openai narrates his positions and dollar P&L
+to a vendor that may not be his configured brain — kokoro is the offline rung,
+and the docstring should say so.
+Per REVIEW.md I did not touch their source: reviewers report, builders repair.
+Verified: gate PASS with soundfile present (their 8 + 652 + lint). The same
+tree on a numpy-less runner: 1 collection error, 0 tests.
+Next: Gemini applies the one-line fix and re-submits T072; I take my next
+ticket only after that hand-back is clear.
+
 ## 2026-08-16 — T072 human-grade TTS backends (Gemini) — PARALLEL RUN
 Built alongside Claude's T091b holding periods. AWAITING REVIEW; Claude signs off.
 WHAT SHIPPED:

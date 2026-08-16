@@ -20,6 +20,57 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
   `README.md` (voice ladder section), `project-memory/ISSUES.md` (I016 resolved).
   Verify gate PASS on combined tree: 663 passed, 1 warning.
 
+  REVIEWED 2026-08-16 by Claude/Cowork — BLOCK (one line to fix; everything else is good)
+    aligned: yes — the owner is voice-first (D015) and said the default voice is
+      robotic. Two ladder rungs (paid-but-near-human, free-and-offline) behind one
+      unchanged `speak(text)` interface is the right shape, and kokoro means the
+      good voice does not require sending his portfolio anywhere.
+    checked: read the full diff 71e4adf..e380b27; installed soundfile in the
+      sandbox and RAN the tests for real (8 passed, not the 9 the ticket claims);
+      simulated a clean CI runner with a numpy-blocking meta_path hook; confirmed
+      backend/requirements.txt resolves without numpy (pip --dry-run report);
+      re-ran the gate with soundfile present (PASS).
+    concerns:
+      1. BLOCKING — I016 is not fixed for CI, only relocated one line up.
+         `import numpy as np` sits ABOVE `sf = pytest.importorskip("soundfile")`,
+         and numpy is in requirements-voice.txt, NOT backend/requirements.txt —
+         which is exactly and only what .github/workflows installs. Simulated
+         clean runner: `ERROR backend/tests/test_tts_backends.py /
+         ModuleNotFoundError: No module named 'numpy' / Interrupted: 1 error
+         during collection` — the whole suite aborts, zero tests run, same
+         failure mode as I016. With that one file ignored: 652 passed. It has
+         not bitten Actions yet only because CI is still dark (T005 unpushed);
+         it bites any agent whose environment lacks numpy, today.
+         Fix: `np = pytest.importorskip("numpy")`. Proven: skips cleanly when
+         numpy is absent, still executes when it is present.
+      2. Over-skipping (non-blocking): only the two tests that build a WAV via
+         `_silent_wav` need soundfile. The other six — both missing-package/key
+         exits and all four kokoro tests — are pure mocks and could run in a lean
+         environment. Moving `sf` into `_silent_wav` would let CI actually
+         exercise the factory routing instead of skipping the module wholesale.
+      3. Privacy, worth one doc line (non-blocking): `KUBERA_TTS=openai` sends
+         KUBERA's spoken replies — position names and dollar P&L — to a vendor
+         that may not be the configured brain. The docstring prices it
+         (~$0.015/1k chars) but does not say his holdings leave the machine.
+         Say so, and point at kokoro as the offline rung; the owner should pick
+         that knowingly rather than discover it.
+      4. The kokoro ImportError message says `pip install kokoro-onnx soundfile`,
+         but that branch never imports soundfile — kokoro returns numpy samples
+         straight to sounddevice. Sends the owner after a package he does not
+         need on that path.
+      5. `Path(__file__).parent.parent` for the KUBERA_KOKORO_DIR default,
+         where the same file uses `Path(__file__).resolve().parents[1]` at
+         line 40. Without `.resolve()` a symlinked or relative launch computes
+         the wrong model directory and reports "model files not found".
+      6. Ticket and PROGRESS both say "9 tests"; 8 are collected. Small, but the
+         memory files are the thing other agents trust without re-checking.
+    good, and worth keeping: playback errors are caught in BOTH backends so a
+      dead audio device can never kill the loop (that is the I006 lesson applied
+      before it recurred); every failure path exits with an actionable install or
+      download instruction; no API key is ever printed; `response_format="wav"`
+      dodges an mp3 decode dependency; docstring, requirements-voice.txt and
+      README tell the same story. Re-submit with (1) and this is a PASS.
+
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
 same time and review each other:
