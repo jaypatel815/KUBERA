@@ -3,6 +3,20 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-14 — T082a: KUBERA can finally list its own conversations
+Split the Orb pack: the sidebar's BACKEND is backend work and shipped here;
+the UI half stays a Gemini/Antigravity ticket. /api/chat/{id} could replay a
+thread but nothing could enumerate them. data/conversations.py fixes that with
+two deliberate choices: order by LAST ACTIVITY rather than creation (revive a
+month-old thread and it belongs at the top — tested), and take the snippet
+from the owner's FIRST USER message, never a system prompt or tool payload,
+whitespace collapsed, 90 chars with an ellipsis — the line he'd actually
+recognize. Turn count and tool-call count are reported separately, so a thread
+advertises how much evidence it pulled. Conversations with no messages are
+skipped rather than shown as ghosts. GET /api/conversations?limit= (1..200).
+Verified: verify.py PASS — 615 passed (+7), 3 skipped.
+Next: T089 live MAE/MFE, T072 human-grade TTS, or the T082 frontend half.
+
 ## 2026-08-14 — T097 REVERTED: back to the Orb (owner call)
 Six iterations of a particle face — voxel grid, sculpted 3D, holographic
 columns, microscopic rods, skull anatomy, green dots — never produced a

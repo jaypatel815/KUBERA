@@ -47,7 +47,20 @@ Owner actions that unlock the most: T005 push (CI is dark), T007 finale.
   tests bumped in all three files) + `GET /api/correlation?candidate=&days=`.
   Persona-facing description orders the model to run it BEFORE recommending
   buys. T093 extends this (marginal risk contribution, effective bets).
-- [ ] T082 — Orb upgrade pack (D018; strong Gemini/Antigravity ticket — UI-heavy): (a) conversations sidebar — needs new `GET /api/conversations` list endpoint (id, started, first-message snippet; only /api/chat/{id} exists today), click to resume a thread; (b) collapsible portfolio snapshot panel polling /portfolio every 60s (total value, day P&L, top 3 positions); (c) feed-quality + stale badges surfaced on quoted numbers (data already carries source/stale — UI just shows it).
+- [x] T082a — Conversations index (the sidebar's BACKEND) — DONE 2026-08-14
+  (Claude/Cowork): `data/conversations.py` list_conversations — ordered by LAST
+  ACTIVITY not creation (a revived old thread belongs on top, proven in test),
+  snippet taken from the owner's FIRST USER message with whitespace collapsed
+  and 90-char ellipsis (never a system prompt or tool payload), turn count and
+  tool-call count split so a thread shows how much evidence it pulled; empty
+  conversations skipped. `GET /api/conversations?limit=` (1..200). 7 tests.
+- [ ] T082 — Orb upgrade pack, FRONTEND half remains (UI-heavy; good
+  Gemini/Antigravity ticket): (a) conversations sidebar consuming the new
+  `GET /api/conversations` + click-to-resume via existing /api/chat/{id};
+  (b) collapsible portfolio snapshot panel polling /portfolio every 60s (total
+  value, day P&L, top 3 positions); (c) feed-quality + freshness badges on
+  quoted numbers — the data already carries source + the T036b freshness
+  verdict (live / last_session / stale / old), the UI just has to show it.
 - [ ] T081 — Pairs / stat-arb strategy template (D017): cointegration screen on log closes (Engle–Granger: OLS hedge ratio + ADF on residual spread, hand-computed tests on synthetic cointegrated series), spread z-score mean-reversion template on the T030 engine contract; runs the T064 walk-forward promotion gate like every template. ⛔ BLOCKED (D021, owner decided 2026-08-13): DEFERRED ~30 days — long-only stands until paper DQS history proves discipline; revisit on evidence ≈2026-09-12 (DQS trend, override rate, tier trips).
 - [ ] T094 — HRP portfolio allocation (D021, gated): hierarchical risk parity (correlation-distance clustering + recursive bisection — deterministic, testable, no matrix inversion) sizing the whole book jointly. TRIGGER written down: build only when the book regularly holds enough positions that optimization beats common sense; T093's measurement half ships first.
 - [ ] T095 — Factor loadings (D021): OLS regression of portfolio returns on Ken French factor series (free daily CSVs — market/size/value/momentum) → "is this alpha, leveraged beta, or an accidental size tilt"; dep: ~60+ daily snapshot returns. Beta-only version arrives earlier with T093.

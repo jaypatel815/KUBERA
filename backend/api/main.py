@@ -20,6 +20,7 @@ from api.llm import LLMError, build_provider
 from api.tools import ToolArgumentError, ToolContext, ToolError, registry
 from backtest.ledger import list_runs
 from data.alpaca import AlpacaClient, AlpacaError
+from data.conversations import list_conversations
 from data.db import make_engine, make_session_factory
 from data.fred import FredClient, FredError
 from data.history import equity_history
@@ -685,6 +686,22 @@ def chat(
         "tool_calls": r.tool_trail,
         "usage": {"input_tokens": r.input_tokens, "output_tokens": r.output_tokens},
         "stop_reason": r.stop_reason,
+        "asof": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@app.get("/api/conversations")
+def conversations(limit: int = 30, session=Depends(get_db_session)) -> dict:
+    """T082a: thread index for the Orb sidebar — newest activity first."""
+    if not 1 <= limit <= 200:
+        raise HTTPException(status_code=422, detail="limit must be 1..200")
+    try:
+        rows = list_conversations(session, limit=limit)
+    except OperationalError:
+        raise HTTPException(status_code=503, detail="database not initialized")
+    return {
+        "conversations": [asdict(r) for r in rows],
+        "count": len(rows),
         "asof": datetime.now(timezone.utc).isoformat(),
     }
 
