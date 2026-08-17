@@ -12,9 +12,48 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T077b (expected-move v2: seeded bootstrap + loop wiring — D017) — Claude/Cowork** — claimed 2026-08-17.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T077b (expected-move v2: seeded block bootstrap + loop wiring — D017) — AWAITING
+  REVIEW — Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity.
+  Files: `backend/analysis/expected_move.py` (NEW `bootstrap_paths`: block-bootstrap
+  Monte Carlo — blocks of 5 contiguous daily returns resampled into 1000 synthetic
+  horizon paths, percentile bands from terminal returns; deterministic given seed
+  [random.Random, DEFAULT_BOOTSTRAP_SEED=7, a commented constant so the same bars
+  always re-audit to the same bands]; fail-closed refusals: n_paths<100, <60 daily
+  returns, block>history, nonpositive closes), `backend/api/tools.py`
+  (get_expected_move payload gains a `bootstrap` block — degrades to None on thin
+  history, never errors the main reading), `backend/backtest/paper_loop.py` (the
+  cost floor is now judged on the T077 median |1-day move| when >=30 bars exist;
+  the ATR/price proxy remains ONLY as the named thin-history fallback — the
+  no-trade reason states which measure spoke), tests (test_expected_move +6,
+  test_paper_loop +2).
+  RESOLVED AS ALREADY-WIRED (the ticket text predates the work): exit plans already
+  receive expected_move_p95 (tools.py _get_exit_plan since T056) and the morning
+  brief already carries expected_move_5d (T062b) — verified by reading the live
+  call sites, nothing rebuilt.
+  EVIDENCE (D027):
+    · Hand check: constant +1%/day series → every bootstrap path compounds to
+      exactly 1.01^5-1 regardless of seed; percentiles collapse to that number;
+      up_frac 1.0 (test pins it to rel=1e-9).
+    · Determinism: same seed = identical BootstrapBands (dataclass equality);
+      different seed differs; seed reported in the payload.
+    · Loop: dead-flat 30-bar tape → no_trade reason cites "median |1-day move|
+      (T077)"; 16-bar tape → cites "ATR(14)/price (fallback)". Both tested.
+    · My own boundary test caught an off-by-one worth knowing: 60 BARS is 59
+      RETURNS — one short of the floor — so the tool correctly degrades to
+      bootstrap=None there (pinned in its own test).
+    · Gate PASS; ruff clean; pyrefly exactly 1 (known I023).
+  STRONGEST OBJECTIONS AGAINST MY OWN TICKET (D028):
+    1. The loop's threshold param is still NAMED min_atr_frac while the measure
+       is now (usually) the T077 median move — name/meaning drift accepted for
+       API stability; renaming is a deliberate small cleanup for a future ticket.
+    2. Block joins break correlations longer than block_days=5, so bootstrap
+       tails still understate long-memory risk (stated in the note, inherent to
+       the method).
+    3. bootstrap block/lookback/n_paths are not exposed as tool args —
+       deliberately few tunables, but a reviewer could argue for block_days
+       being caller-visible.
 - **T109 (pre-registered selection rule + cost stress — D029) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   Files: `docs/SELECTION_RULE.md` (NEW — v1, the pre-registered promotion standard:
   codifies the ENFORCED T064/T064b gates, records T092 stability + T109 cost stress as
@@ -338,7 +377,8 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   welcome); earnings dates for held symbols (dep T023 tier answer);
   sell-the-news "priced-for-perfection" flag (pre-event runup + rich
   expected-move pricing, D019) in guard reasons and briefings.
-- [ ] T077b — Expected-move v2 (after T077 proves out): seeded block-bootstrap Monte Carlo paths (deterministic given seed, D017); swap the paper loop's ATR cost-floor proxy for the T077 expected-move estimate; wire bands into T056 exit plans and the briefing composer.
+- [~] T077b — Expected-move v2 — BUILT 2026-08-17 (Claude/Cowork), see "Awaiting
+  review". Exit-plan/brief wiring resolved as already-present (T056/T062b).
 - [x] T079 — Correlation & overlap guard — DONE 2026-08-14 (Claude/Cowork):
   `analysis/correlation.py` (pearson/beta/log_returns pure + hand-tested: y=2x→1.0,
   hand-zero vector case, beta=2 doubling; overlap_report with aligned trailing

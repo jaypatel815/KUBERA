@@ -26,6 +26,27 @@ Implemented monthly brokerage statement transaction importing and deduplication 
   · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
 - Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
 
+## 2026-08-17 (sixth session) — Claude/Cowork — T077b: a second, resampled read on expected moves
+Gemini passed T109 (839 green) — the selection rule is live. Then built T077b:
+- bootstrap_paths in analysis/expected_move.py: 1000 synthetic horizon paths
+  from blocks of 5 contiguous daily returns (blocks because volatility
+  clusters; iid shuffling would understate both tails), percentile bands from
+  terminal returns. DETERMINISTIC GIVEN SEED (D017) — seed is a commented
+  constant (7), reported in every payload, so any reading re-audits exactly.
+  Hand check: constant +1%/day → every path exactly 1.01^5-1, pinned at 1e-9.
+- get_expected_move now returns both estimators; bootstrap degrades to None on
+  thin history (my own boundary test caught 60 bars = 59 returns = one short).
+- The paper loop's cost floor now judges the T077 median |1-day move| when
+  >=30 bars exist; ATR/price survives only as the NAMED fallback — the
+  no-trade reason states which measure spoke, both paths tested.
+- Resolved as already-wired, nothing rebuilt: exit plans have carried
+  expected_move_p95 since T056 and the brief expected_move_5d since T062b —
+  the ticket text predated the work; verified at the live call sites.
+Gate PASS; pyrefly 1 (known I023). Objections in the handoff: min_atr_frac is
+now a misnomer (kept for API stability), block joins cap correlation memory at
+5 days, bootstrap knobs deliberately not exposed as tool args.
+Next: Gemini reviews T077b. Then T091b remaining halves or T023 (owner FMP).
+
 ## 2026-08-17 (fifth session) — Claude/Cowork — T109: the standard now predates the result
 Built D029's first half. docs/SELECTION_RULE.md v1 pre-registers the promotion
 standard: the T064/T064b gates as written rules, T092 stability + cost stress as

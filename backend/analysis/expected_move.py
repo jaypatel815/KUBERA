@@ -24,12 +24,19 @@ Definitions (stable contracts):
 Bad input raises ValueError — fail closed.
 """
 
+import random
 from dataclasses import dataclass
 from statistics import mean, median, quantiles, stdev
 from typing import Sequence
 
 PCT_KEYS = ("p05", "p25", "p50", "p75", "p95")
 _PCT_INDEX = {"p05": 4, "p25": 24, "p50": 49, "p75": 74, "p95": 94}
+
+# T077b: default seed for bootstrap bands. A CONSTANT, deliberately (D017):
+# the same bars in must produce the same bands out, today and in a re-audit
+# next month. Callers wanting a different draw pass their own seed — and the
+# seed used is always reported in the payload.
+DEFAULT_BOOTSTRAP_SEED = 7
 
 
 @dataclass(frozen=True)
@@ -68,6 +75,102 @@ def _bands(samples: Sequence[float], last_close: float) -> ReturnBands:
         up_frac=len(gains) / len(samples),
         expected_abs_move_frac=median(abs(s) for s in samples),
         payoff_ratio=payoff,
+    )
+
+
+@dataclass(frozen=True)
+class BootstrapBands:
+    """Percentile bands of block-bootstrapped horizon returns (T077b, D017)."""
+
+    n_paths: int
+    block_days: int
+    seed: int
+    horizon_days: int
+    history_days: int               # daily returns actually resampled from
+    percentiles: dict[str, float]   # horizon-return fractions
+    band_prices: dict[str, float]
+    up_frac: float
+    note: str
+
+
+def bootstrap_paths(
+    closes: Sequence[float],
+    *,
+    horizon_days: int = 5,
+    lookback: int = 252,
+    n_paths: int = 1000,
+    block_days: int = 5,
+    seed: int = DEFAULT_BOOTSTRAP_SEED,
+    min_history: int = 60,
+) -> BootstrapBands:
+    """Block-bootstrap Monte Carlo bands for horizon-day returns.
+
+    Complements `expected_move`'s overlapping-window estimator: instead of
+    reading the h-day windows history happened to produce, this RESAMPLES the
+    trailing daily returns into `n_paths` synthetic h-day paths and reads the
+    percentiles of their terminal returns. Blocks of `block_days` contiguous
+    returns are drawn (with replacement) rather than single days, because
+    volatility clusters — iid resampling would shuffle calm and wild days
+    together and understate both tails.
+
+    DETERMINISTIC GIVEN SEED (D017): random.Random(seed), no global state; the
+    same closes and parameters always produce identical bands, so a reading
+    can be re-audited later. The seed rides along in the result.
+
+    Honesty limits, stated in the note: paths are recombinations of the PAST —
+    the bootstrap cannot produce a regime history never contained, and block
+    joins break correlations longer than `block_days`.
+    """
+    if horizon_days < 1 or lookback < 2 or block_days < 1:
+        raise ValueError("horizon_days >= 1, lookback >= 2, block_days >= 1")
+    if n_paths < 100:
+        raise ValueError(f"n_paths must be >= 100 for stable percentiles, got {n_paths}")
+    if any(c <= 0 for c in closes):
+        raise ValueError("all closes must be > 0")
+
+    window = closes[-(lookback + 1):]
+    rets = [window[i] / window[i - 1] - 1.0 for i in range(1, len(window))]
+    if len(rets) < min_history:
+        raise ValueError(
+            f"need at least {min_history} daily returns to resample, got {len(rets)} "
+            "— widen the history"
+        )
+    if block_days > len(rets):
+        raise ValueError(
+            f"block_days={block_days} exceeds available returns ({len(rets)})"
+        )
+
+    rng = random.Random(seed)
+    last_start = len(rets) - block_days
+    terminals: list[float] = []
+    for _ in range(n_paths):
+        path: list[float] = []
+        while len(path) < horizon_days:
+            start = rng.randint(0, last_start)
+            path.extend(rets[start:start + block_days])
+        growth = 1.0
+        for r in path[:horizon_days]:
+            growth *= 1.0 + r
+        terminals.append(growth - 1.0)
+
+    qs = quantiles(terminals, n=100, method="inclusive")
+    pct = {k: qs[i] for k, i in _PCT_INDEX.items()}
+    last_close = closes[-1]
+    return BootstrapBands(
+        n_paths=n_paths,
+        block_days=block_days,
+        seed=seed,
+        horizon_days=horizon_days,
+        history_days=len(rets),
+        percentiles=pct,
+        band_prices={k: last_close * (1.0 + v) for k, v in pct.items()},
+        up_frac=sum(1 for t in terminals if t > 0) / len(terminals),
+        note=(
+            f"{n_paths} block-bootstrap paths (blocks of {block_days} contiguous "
+            f"days, seed {seed}) resampled from the trailing {len(rets)} daily "
+            "returns — recombinations of the PAST, not a forecast; regimes history "
+            "never contained cannot appear here."
+        ),
     )
 
 

@@ -246,3 +246,23 @@ def test_no_trade_params_validated(db):
              MarketDataClient(settings=paper_settings(), transport=transport) as m:
             run_paper_cycle(db, a, m, RiskEngine(), strategy, "SPY",
                             max_trades_per_day=0)
+
+
+def test_cost_floor_names_the_distribution_not_the_proxy(db):
+    """T077b: with enough history the cost floor is judged on the median
+    |1-day move| from T077's distribution; the reason must name it."""
+    rows = [(100.0, 0.005, 1_000_000.0)] * 30   # dead-flat: every 1-day move is 0
+    r, broker = run_cycle_with_bars(db, _bars_json(rows))
+    assert r.action == "no_trade"
+    assert "median |1-day move| (T077)" in r.detail
+    assert broker.order_posts == []
+
+
+def test_cost_floor_falls_back_to_atr_on_thin_history(db):
+    """Under 30 bars the T077 estimator refuses; the ATR proxy speaks and the
+    reason says it is the fallback — never silently."""
+    rows = [(100.0, 0.005, 1_000_000.0)] * 16   # >= ATR_WINDOW+1, < 30
+    r, broker = run_cycle_with_bars(db, _bars_json(rows))
+    assert r.action == "no_trade"
+    assert "ATR(14)/price (fallback)" in r.detail
+    assert broker.order_posts == []

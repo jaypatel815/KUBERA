@@ -23,6 +23,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from analysis.events import entry_guard
+from analysis.expected_move import expected_move
 from analysis.metrics import atr
 from analysis.regime import classify_regime
 from backtest.engine import Strategy
@@ -252,11 +253,24 @@ def run_paper_cycle(
                                  window_before=event_window_days):
                 no_trade.append(
                     r + " — new entries paused into scheduled event risk (T076)")
+        # T077b: the cost floor is judged on the DISTRIBUTION of actual daily
+        # moves (median |1-day return|, T077) when history allows — the ATR
+        # proxy remains only as the thin-history fallback, and the reason
+        # names which measure spoke.
         atr_frac = atr_value / last_price
-        if atr_frac < eff_min_atr_frac:
+        move_frac, move_src = atr_frac, f"ATR({ATR_WINDOW})/price (fallback)"
+        if len(closes) >= 30:
+            try:
+                em1 = expected_move(closes, [b.date for b in bars.bars],
+                                    horizon_days=1, min_samples=20)
+                move_frac = em1.unconditional.expected_abs_move_frac
+                move_src = "median |1-day move| (T077)"
+            except ValueError:
+                pass  # keep the ATR fallback; the reason will say so
+        if move_frac < eff_min_atr_frac:
             no_trade.append(
-                f"expected move too small to clear costs: ATR is {atr_frac:.4%} of "
-                f"price (floor {eff_min_atr_frac:.4%})"
+                f"expected move too small to clear costs: {move_src} is "
+                f"{move_frac:.4%} of price (floor {eff_min_atr_frac:.4%})"
             )
         if len(bars.bars) >= 21:  # enough history for the full regime classifier
             reading = classify_regime(

@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 from test_alpaca import paper_settings
 
-from analysis.expected_move import expected_move
+from analysis.expected_move import bootstrap_paths, expected_move
 from api.main import app
 from api.tools import ToolContext, ToolError, registry
 from data.market_data import MarketDataClient
@@ -154,3 +154,65 @@ def test_expected_move_endpoint():
     body = r.json()
     assert body["expected_move"]["unconditional"]["samples"] == 55
     assert body["asof"]
+
+
+# ------------------------------------------------ T077b: seeded block bootstrap
+
+def test_bootstrap_constant_returns_is_exact():
+    """+1% every day: EVERY resampled path compounds to exactly 1.01^h - 1,
+    whatever the seed draws — the percentiles collapse to one hand-computable
+    number and up_frac is 1.0."""
+    closes = [100.0 * (1.01 ** i) for i in range(90)]
+    b = bootstrap_paths(closes, horizon_days=5, n_paths=200, block_days=5, seed=1)
+    expected = 1.01 ** 5 - 1
+    for k in ("p05", "p50", "p95"):
+        assert b.percentiles[k] == pytest.approx(expected, rel=1e-9)
+    assert b.up_frac == 1.0
+    assert b.band_prices["p50"] == pytest.approx(closes[-1] * (1 + expected))
+
+
+def test_bootstrap_is_deterministic_given_seed():
+    """D017: same closes + same seed = identical bands; a different seed draws
+    a different resampling."""
+    closes = [100.0 + (i % 7) - 3 + i * 0.1 for i in range(120)]
+    a = bootstrap_paths(closes, seed=42)
+    b = bootstrap_paths(closes, seed=42)
+    c = bootstrap_paths(closes, seed=43)
+    assert a == b
+    assert a.percentiles != c.percentiles
+    assert a.seed == 42 and c.seed == 43
+
+
+def test_bootstrap_refusals():
+    closes = [100.0 + i * 0.1 for i in range(90)]
+    with pytest.raises(ValueError, match="n_paths"):
+        bootstrap_paths(closes, n_paths=50)
+    with pytest.raises(ValueError, match="widen the history"):
+        bootstrap_paths(closes[:30])
+    with pytest.raises(ValueError, match="block_days"):
+        bootstrap_paths(closes, block_days=500)
+    with pytest.raises(ValueError, match="> 0"):
+        bootstrap_paths([100.0, -1.0] + closes)
+
+
+def test_tool_payload_carries_bootstrap_bands():
+    """The tool reports both estimators; the bootstrap names its seed so a
+    reading can be re-audited. 80 bars = 79 daily returns, above the 60 floor."""
+    with market_fake(_alternating_bars(80)) as m:
+        out = registry.execute("get_expected_move", {"symbol": "SPY"},
+                               ToolContext(market=m))
+    assert out["bootstrap"] is not None
+    assert out["bootstrap"]["seed"] == 7
+    assert out["bootstrap"]["history_days"] == 79
+    assert set(out["bootstrap"]["percentiles"]) == {"p05", "p25", "p50", "p75", "p95"}
+    assert "not a forecast" in out["bootstrap"]["note"]
+
+
+def test_tool_degrades_bootstrap_to_none_on_thin_history():
+    """60 bars = 59 returns, one short of the floor: the historical-window
+    reading still delivers and the bootstrap is None — never an error."""
+    with market_fake(_alternating_bars(60)) as m:
+        out = registry.execute("get_expected_move", {"symbol": "SPY"},
+                               ToolContext(market=m))
+    assert out["expected_move"]["unconditional"]["samples"] > 0
+    assert out["bootstrap"] is None

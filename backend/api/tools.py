@@ -30,7 +30,7 @@ from analysis.events import upcoming_events
 from analysis.excursions_live import excursion_book, position_excursion
 from analysis.execution import ExecutionFill, execution_report
 from analysis.exit_plan import build_exit_plan
-from analysis.expected_move import expected_move
+from analysis.expected_move import bootstrap_paths, expected_move
 from analysis.goal_math import goal_scenarios
 from analysis.intraday import build_session_read
 from analysis.levels import find_levels
@@ -542,7 +542,9 @@ class ExpectedMoveArgs(SymbolArgs):
     "for sizing and exits: percentile bands (p05..p95, in both return and price "
     "terms), the share of historical windows that were up, typical |move| size, "
     "and the payoff ratio (avg winner vs avg loser). Bands are also conditioned "
-    "on the current volatility regime (vol clusters). This is the PAST as a "
+    "on the current volatility regime (vol clusters), and a seeded block-bootstrap "
+    "Monte Carlo re-samples history into synthetic paths as a second, "
+    "non-overlapping estimate of the same bands. This is the PAST as a "
     "distribution, NEVER a forecast — present ranges, not targets, and say so.",
     ExpectedMoveArgs,
 )
@@ -556,9 +558,17 @@ def _get_expected_move(ctx: ToolContext, p: ExpectedMoveArgs) -> dict:
         )
     except ValueError as e:
         raise ToolError(str(e)) from e
+    # T077b: bootstrap bands ride along when history is deep enough; the
+    # historical-window reading never fails because the bootstrap can't run.
+    boot = None
+    try:
+        boot = asdict(bootstrap_paths(closes, horizon_days=p.horizon_days))
+    except ValueError:
+        pass
     return {
         "symbol": bars.symbol,
         "expected_move": asdict(reading),
+        "bootstrap": boot,
         "asof": bars.asof.isoformat(),
         "source": bars.source,
     }
