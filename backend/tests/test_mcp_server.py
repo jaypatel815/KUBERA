@@ -209,3 +209,26 @@ def test_make_default_tool_context_has_confirmed_false(memory_db):
         "confirmed must remain False in the default context — the MCP protocol "
         "has no out-of-band confirmation channel (I021, tools.py:110)"
     )
+
+
+def test_install_mcp_config_merge():
+    """T045b: merge() preserves other servers and config keys without mutating input."""
+    import sys
+    from pathlib import Path
+    scripts_dir = str(Path(__file__).resolve().parents[2] / "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    from install_mcp_config import merge
+
+    existing = {
+        "mcpServers": {
+            "other_server": {"command": "node", "args": ["index.js"]}
+        },
+        "theme": "dark",
+    }
+    entry = {"command": "python.exe", "args": ["mcp_server.py"]}
+    res = merge(existing, entry)
+    assert res["theme"] == "dark"
+    assert res["mcpServers"]["other_server"] == {"command": "node", "args": ["index.js"]}
+    assert res["mcpServers"]["kubera"] == entry
+    assert "kubera" not in existing["mcpServers"]  # pure function, no mutation
