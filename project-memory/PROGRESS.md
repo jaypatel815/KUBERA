@@ -3,6 +3,17 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-17 (later) — Claude/Cowork — June + July statements reconciled
+Owner delivered both same-day. SPY 735P 06/08 CONFIRMED exact (3v3) — every
+assumed expiry except NVDA 167.5P (2 contracts, no statement row anywhere,
+likely a missing sale confirmation) is now statement-verified: 9 exact, 3
+quantity mismatches (missing confirmation PDFs, T108b), 0 assigned/exercised.
+July verified as a genuine no-trading month (27k chars extracted, zero
+transaction rows — checked as real absence per I027, not assumed). Headline
+numbers unchanged. Corrected two stale pre-dedupe figures I had recorded
+(735P "x12" → 3; 660P mismatch "6v10" → 2v10, i.e. 8 missing). No code
+changes; memory + artifact only.
+
 ## 2026-08-17 — Claude/Cowork — T108: the losses are visible now (I026/I027/I028)
 Built the survivorship-bias fix the owner forced with one question, and the fix
 forced two more: the data itself was broken in ways nobody had measured.

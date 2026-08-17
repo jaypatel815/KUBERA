@@ -17,12 +17,17 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   overlapping non-nested sets. Duplicates are REPORTED in ParseReport, never
   silent.
   STILL MISSING (reconciler output, owner's statements as ground truth):
-  confirmations for SPY 692P x8 (of 9), SPY 660P x4 (of 10), SPY 733P x35
-  (of 135 — the 35 @ $0.1597 fill is visible in the May statement itself),
-  NVDA 182.5P x2 (Jan 2, before coverage begins); plus the JUNE 2026 monthly
-  statement (SPY 735P 06/08 x12 unverifiable without it). Realized losses are
-  therefore still UNDERSTATED. Repair path: T108b statement-transaction
-  importer, not manual PDF hunting.
+  confirmations for SPY 692P x8 (of 9), SPY 660P x8 (of 10 — my first note here
+  said x4, a stale pre-dedupe number), SPY 733P x35 (of 135 — the 35 @ $0.1597
+  fill is visible in the May statement itself), NVDA 182.5P x2 (Jan 2, before
+  coverage begins). Realized losses are therefore still UNDERSTATED. Repair
+  path: T108b statement-transaction importer, not manual PDF hunting.
+  UPDATE 2026-08-17: owner delivered June + July statements. SPY 735P 06/08
+  CONFIRMED (3 expired vs 3 assumed, exact — the "x12" first recorded was
+  pre-dedupe). July verified as a genuine no-trading month (text extracted,
+  zero transaction rows). Only remaining unexplained item: NVDA 167.5P x2
+  assumed-expired with no Expired row in any statement — most likely a missing
+  SALE confirmation rather than an expiry; T108b's import will settle it.
 - I027 [FIXED 2026-08-17 — parser silently broken by a pypdf version change]
   pypdf 6.13 joins PDF text lines differently from the version the T102 parser
   was built against: every row split ("03/03 Purchase XLE" alone on its line),

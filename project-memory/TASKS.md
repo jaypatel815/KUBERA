@@ -41,6 +41,19 @@ currently RED — see I018, which needs the failing log.)
       unverifiable (no June statement); NVDA 182.5P (Jan 2) + the mismatch remainders are
       invisible to confirmations entirely. Zero assigned/exercised rows — exit-0 assumption
       contradicted nowhere.
+    UPDATE 2026-08-17 (owner delivered June + July statements same day):
+      · SPY 735P 06/08 CONFIRMED — statement 3 expired vs 3 assumed, exact. Nothing
+        assumed remains unverifiable except NVDA 167.5P (2 contracts, no statement row
+        in ANY month — genuinely unexplained, possibly a missing sale confirmation).
+      · July: 27k chars extracted, ZERO Purchase/Sale/Expired rows — a no-trading month,
+        verified as real absence, not a parse failure (I027 lesson applied).
+      · Reconciliation now: 9 confirmed exact / 3 qty mismatches / 1 not-in-statements /
+        1 pre-coverage / 0 assigned-exercised. Headline autopsy numbers UNCHANGED
+        (monthlies contribute no fills; the assumed set did not change).
+      · CORRECTIONS to my own lines above, which quoted the PRE-dedupe printout:
+        660P mismatch is 2v10 (8 confirmations missing), not "6v10"; and the owner
+        action said 735P was "x12" — post-dedupe it was 3. Both numbers were stale
+        from the first reconcile run; the totals (13 trips, -$3,961) were right.
     · T104 evidence rerun: the same 0DTE SPY-put $500 proposal that got "clear, 0 warnings"
       now returns **warning_triggered, 2 high**: 0DTE 24 trips 41.7% -$5,445; SPY symbol
       history 42.1% -$5,108; plus the assumed-trip caveat. The I026 "untrustworthy until
@@ -342,10 +355,11 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   I028 coverage gaps instead of chasing individual confirmation downloads. Dedupe against
   confirmations by the T108 fill-signature. Prereq reading: analysis/expiry_reconcile.py
   docstring for the observed row shapes.
-- [ ] Owner (Chotu): drop the JUNE 2026 monthly statement into private/statements when it
-  exists (SPY 735P 06/08 x12 is unverifiable without it), and any later months. The
-  missing-confirmation gaps (692P x8, 660P x4, 733P x35, NVDA 182.5P x2) can wait for
-  T108b — no need to hunt individual PDFs.
+- [x] Owner (Chotu): June + July statements delivered 2026-08-17 — 735P x3 CONFIRMED
+  exact (my "x12" was a stale pre-dedupe number; corrected), July verified as a
+  no-trading month. Keep dropping each new monthly statement in as it posts.
+  The missing-confirmation gaps (692P x8, 660P x8, 733P x35, NVDA 182.5P x2) wait
+  for T108b — no need to hunt individual PDFs.
 - [ ] T107 — Base URLs and tunables into settings (D028): `api.anthropic.com`,
   `api.openai.com`, `data.alpaca.markets`, `api.stlouisfed.org`,
   `api.schwabapi.com` and the two Schwab OAuth URLs are module constants today.
