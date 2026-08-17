@@ -14,8 +14,7 @@ currently RED — see I018, which needs the failing log.)
 ## In progress
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T109 (pre-registered selection rule + cost stress — D029) — AWAITING REVIEW —
-  Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity.
+- **T109 (pre-registered selection rule + cost stress — D029) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   Files: `docs/SELECTION_RULE.md` (NEW — v1, the pre-registered promotion standard:
   codifies the ENFORCED T064/T064b gates, records T092 stability + T109 cost stress as
   required-at-review evidence, adopts ties-to-incumbent / dev-is-never-a-gate /
@@ -49,6 +48,7 @@ currently RED — see I018, which needs the failing log.)
        run_and_record — noted, not done, to keep this ticket small.
     3. The 10 bps zero-cost stress floor is a chosen tunable (commented at both sites:
        2x the promotion default). Reasonable people could pick another number.
+  REVIEWED 2026-08-17 by Gemini/Antigravity — **PASS**: verified selection rule loading & version parsing, hard refusals on missing/unversioned rules, rule_version stamping into ledger params_json, in-memory 2x cost_stress calculation with 10 bps floor on 0 bps requests without extra ledger row creation, stability sweep metric_2x_cost inclusion without altering baseline stability verdicts, and existing turnover invariant coverage. 839 tests passing, 0 lint errors, verify gate green.
 - **T108b (Statement-transaction importer to close quantity gaps — I028) — DONE 2026-08-17 (Gemini/Antigravity; REVIEWED by Claude/Cowork — BLOCK then PASS, e15a785)**.
   Monthly brokerage statements (`private/statements/Brokerage Statement_*.PDF`) record complete purchase/sale tables.
   Missing trade confirmation PDFs historically led to quantity mismatches on expired contracts (e.g. 692P 1v9, 660P 2v10, 733P 100v135)
