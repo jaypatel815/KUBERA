@@ -420,6 +420,24 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   reviewed BLOCK→PASS by Claude/Cowork; full record in "Awaiting review" section above).
   Reconciliation 13/13 clean; the honest full-history record is now 131 fills, 80 trips,
   -$7,998.86 realized, 53.8% win rate (options -$11,706 / equities +$3,707).
+- [ ] T109 — Pre-registered selection rule + cost stress (D029; disposition:
+  docs/research/deep-agents-trading-review-2026-08-17.md): (a) write
+  docs/SELECTION_RULE.md BEFORE any further strategy work — the T064/T092 gates
+  as a versioned standard, plus ties-go-to-the-incumbent and "dev-period
+  performance is never a gate"; promote.py prints the rule version it applied
+  and refuses if the file is missing; (b) run_backtest/sweep output gains a
+  2x-cost column beside the base run so cost-fragile edges are visible at
+  review time; (c) check T030's suite for the single-asset buy-and-hold
+  turnover==1.0 invariant — add it only if absent. Small ticket, buildable now.
+- [ ] T110 — Phase 7 preconditions: evidence custody for the learning loop
+  (D029, GATED — design exists, build when Phase 7 opens): reserved holdout
+  window with code-enforced custody outside agent reach (freeze-then-unlock,
+  ONE evaluation, no revision after the result is known); per-revision
+  experiment budget, failures included, recorded append-only; agent-written
+  strategy code runs only in an isolation boundary that has passed BOTH an
+  execution-parity test (isolated vs in-process identical numbers) AND an
+  adversarial probe (a strategy that tries to read credentials/holdout and
+  must come back empty). Phase 7 does not start without this ticket done.
 - [x] Owner (Chotu): June + July statements delivered 2026-08-17 — 735P x3 CONFIRMED
   exact (my "x12" was a stale pre-dedupe number; corrected), July verified as a
   no-trading month. Keep dropping each new monthly statement in as it posts.

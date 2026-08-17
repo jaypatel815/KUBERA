@@ -513,3 +513,39 @@ LIMIT, stated so nobody mistakes this for a guarantee: this is a discipline, not
 a mechanism. Nothing forces an agent to actually perform it. What it does is
 make the omission visible — the PROGRESS entry has to say what the pass changed,
 and "reviewed my own diff" followed by nothing is its own signal.
+
+## D029 — evidence custody for strategy research (2026-08-17)
+
+CONTEXT: the owner asked for a review of a freeCodeCamp multi-agent trading
+handbook (disposition: docs/research/deep-agents-trading-review-2026-08-17.md).
+Its architecture is our AGENTS.md thesis restated — agents may generate and
+challenge ideas but must never control the evidence that judges them — and its
+most instructive result is that the disciplined process rejected both agent
+"improvements" and shipped the hand-written baseline, which then beat every
+benchmark on the holdout.
+
+DECIDED, adopted where we had gaps:
+1. PRE-REGISTERED SELECTION RULES. Promotion standards live in a versioned
+   docs/SELECTION_RULE.md written BEFORE experiments run; ties go to the
+   incumbent; development-period performance is never a gate; the standard does
+   not move after a result is seen — a near-miss is a miss (T109).
+2. ONE STRUCTURAL CHANGE PER STRATEGY REVISION, or attribution dies. A revision
+   bundling multiple structural changes is reviewed as unattributable.
+3. COST-STRESS EVERY BACKTEST: report the run at 2x assumed costs beside the
+   base run, so cost-fragile edges are visible at review time (T109).
+4. HOLDOUT CUSTODY (Phase 7 gate): a reserved evaluation window whose custody
+   is enforced in code outside agent reach; champion frozen before exposure;
+   ONE evaluation; no revision after the result is known (T110).
+5. EXPERIMENT BUDGETS (Phase 7 gate): a hard cap on configurations tried per
+   revision, failures included, recorded append-only — otherwise the validation
+   window becomes the next optimization target (T110).
+6. AGENT-WRITTEN STRATEGY CODE runs ONLY inside an isolation boundary that has
+   passed (a) an execution-parity test (isolated vs in-process identical
+   numbers) and (b) an adversarial probe (a strategy that TRIES to read
+   credentials and holdout data and must come back empty). Phase 7 does not
+   start without this (T110).
+
+NOT adopted: LangChain Deep Agents / LangGraph / virtual filesystems / notebook
+orchestration / EODHD (reasons in the disposition doc — the repo IS our shared
+filesystem, and the audited-artifact trail already does what their framework
+simulates).

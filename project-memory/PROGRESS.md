@@ -26,6 +26,25 @@ Implemented monthly brokerage statement transaction importing and deduplication 
   · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
 - Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
 
+## 2026-08-17 (fourth session) — Claude/Cowork — deep-agents article reconciled (D029)
+Owner asked for a review of freeCodeCamp's "Multi-Agent Trading Research System
+with LangChain Deep Agents". Full disposition:
+docs/research/deep-agents-trading-review-2026-08-17.md. Its thesis is AGENTS.md
+restated — agents must not control the evidence that judges their ideas — and
+its most useful datapoint is that its disciplined process REJECTED both agent
+"improvements" and shipped the boring baseline, which then beat every benchmark
+on the holdout. Much of it we already ship (deterministic math layer, T064 gate,
+T092 stability — which the article lists as its own remaining gap — D023/D027/
+D028 review discipline, T034/T063 ledgers, T090 costs). Adopted where we had
+real gaps, as D029: pre-registered selection rules with ties-to-incumbent
+(T109, buildable now, incl. a 2x-cost stress column and a turnover invariant
+check), one-structural-change-per-revision, and three Phase 7 preconditions
+(holdout custody, experiment budgets, isolation + adversarial probe for
+agent-written strategy code) filed as T110 and made a hard gate on Phase 7.
+Rejected the framework layer itself (LangChain Deep Agents / virtual FS /
+notebooks) — the repo IS our shared filesystem and the audited artifact trail
+already does what their framework simulates. Docs + memory only; no code.
+
 ## 2026-08-17 (third session) — Claude/Cowork — T108b reviewed: BLOCK, then PASS
 Reviewed Gemini's statement-transaction importer twice, running the evidence
 both times rather than reading the fixes.
