@@ -35,7 +35,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 OPTION_MULTIPLIER = 100
@@ -81,16 +81,98 @@ _STATEMENT_PERIOD = re.compile(r"Statement\s+Period", re.IGNORECASE)
 _STMT_ACTION = re.compile(r"\b(?P<action>Purchase|Sale)\b")
 _STMT_QTY_PRICE = re.compile(r"\(?(?P<val>\d{1,6}(?:,\d{3})*(?:\.\d+)?)\)?")
 _STMT_SETTLE_DATE = re.compile(r"^(\d{2})/(\d{2})\s+")
-_STMT_END_SECTION = (
-    "Ending Cash",
-    "Total Purchases",
-    "Total Sales",
-    "Total Transactions",
-    "Pending / Open Activity",
-    "Pending Transactions",
-    "Total Pending Transactions",
+_STMT_END_SECTION = re.compile(
+    r"Ending\s+Cash|Total\s+(?:Purchases|Sales|Transactions|Pending)|"
+    r"Pending\s*(?:/\s*Open\s*Activity|\s+Transactions)",
+    re.IGNORECASE,
 )
 _STMT_SKIP_LINE = ("Pending", "Beginning Cash")
+
+
+def is_us_market_holiday(d: date) -> bool:
+    """True if d is a scheduled US equity/options market holiday (NYSE / Nasdaq).
+
+    Observed holidays:
+    - New Year's Day (Jan 1, observed Mon if Sun, Fri if Sat)
+    - Martin Luther King Jr. Day (3rd Mon in Jan)
+    - Washington's Birthday / Presidents Day (3rd Mon in Feb)
+    - Good Friday (Western Easter - 2 days)
+    - Memorial Day (Last Mon in May)
+    - Juneteenth National Independence Day (Jun 19, observed Mon if Sun, Fri if Sat; since 2021)
+    - Independence Day (Jul 4, observed Mon if Sun, Fri if Sat)
+    - Labor Day (1st Mon in Sep)
+    - Thanksgiving Day (4th Thu in Nov)
+    - Christmas Day (Dec 25, observed Mon if Sun, Fri if Sat)
+    """
+    year = d.year
+
+    def _observed(month: int, day: int) -> date:
+        dt = date(year, month, day)
+        if dt.weekday() == 5:  # Saturday -> Friday
+            return date(year, month, day - 1)
+        if dt.weekday() == 6:  # Sunday -> Monday
+            return date(year, month, day + 1)
+        return dt
+
+    if d == _observed(1, 1):
+        return True
+    if year >= 2021 and d == _observed(6, 19):
+        return True
+    if d == _observed(7, 4):
+        return True
+    if d == _observed(12, 25):
+        return True
+
+    # MLK Day: 3rd Monday in January
+    if d.month == 1 and d.weekday() == 0 and 15 <= d.day <= 21:
+        return True
+    # Presidents Day: 3rd Monday in February
+    if d.month == 2 and d.weekday() == 0 and 15 <= d.day <= 21:
+        return True
+    # Memorial Day: Last Monday in May
+    if d.month == 5 and d.weekday() == 0 and d.day >= 25:
+        return True
+    # Labor Day: 1st Monday in September
+    if d.month == 9 and d.weekday() == 0 and d.day <= 7:
+        return True
+    # Thanksgiving: 4th Thursday in November
+    if d.month == 11 and d.weekday() == 3 and 22 <= d.day <= 28:
+        return True
+
+    # Good Friday (computus algorithm for Western Easter)
+    a = year % 19
+    b = year // 100
+    c = year % 100
+    d_c = b // 4
+    e = b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d_c - g + 15) % 30
+    i = c // 4
+    k = c % 4
+    comp_l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * comp_l) // 451
+    month = (h + comp_l - 7 * m + 114) // 31
+    day = ((h + comp_l - 7 * m + 114) % 31) + 1
+    easter = date(year, month, day)
+    good_friday = easter - timedelta(days=2)
+    if d == good_friday:
+        return True
+
+    return False
+
+
+def prior_business_day(d: date) -> date:
+    """Return the prior business trading day before d, stepping past weekends & holidays.
+
+    Under US T+1 settlement rules (SEC Rule 15c6-1 effective May 28, 2024),
+    every trade executed on day T settles on the next business trading day S = T + 1.
+    Given settlement date S, trade date T is exactly prior_business_day(S).
+    """
+    cur = d - timedelta(days=1)
+    while cur.weekday() >= 5 or is_us_market_holiday(cur):
+        cur -= timedelta(days=1)
+    return cur
 
 
 @dataclass(frozen=True)
@@ -112,6 +194,7 @@ class ParsedFill:
     option_strike: float | None = None
     option_right: str | None = None   # put | call
     source_file: str = ""
+    date_source: str = "document"     # "document" | "derived_settle_t1"
 
     @property
     def notional(self) -> float:
@@ -126,16 +209,30 @@ class ParseReport:
     fills: list[ParsedFill] = field(default_factory=list)
     unparsed: list[dict] = field(default_factory=list)
     files_read: int = 0
-    # Files dropped because they are re-downloads of a daily confirmation
-    # already kept (T108). Reported, never silent — same rule as unparsed.
+    # Files or fills dropped because they are duplicates (daily confirmation re-downloads
+    # or statement transactions already covered by confirmation). Reported, never silent.
     duplicates: list[dict] = field(default_factory=list)
 
     def summary(self) -> str:
         opts = sum(1 for f in self.fills if f.asset_type == "option")
-        dup = f", {len(self.duplicates)} duplicate files dropped" if self.duplicates else ""
-        return (f"{self.files_read} files, {len(self.fills)} fills "
-                f"({opts} option / {len(self.fills) - opts} equity), "
-                f"{len(self.unparsed)} unparsed{dup}")
+        dup_files = sum(
+            1
+            for d in self.duplicates
+            if "duplicate download" in d.get("why", "")
+            or "partial duplicate" in d.get("why", "")
+        )
+        dup_fills = len(self.duplicates) - dup_files
+        dup_parts = []
+        if dup_files:
+            dup_parts.append(f"{dup_files} duplicate files dropped")
+        if dup_fills:
+            dup_parts.append(f"{dup_fills} duplicate statement fills dropped")
+        dup_str = f", {', '.join(dup_parts)}" if dup_parts else ""
+        return (
+            f"{self.files_read} files, {len(self.fills)} fills "
+            f"({opts} option / {len(self.fills) - opts} equity), "
+            f"{len(self.unparsed)} unparsed{dup_str}"
+        )
 
 
 def header_trade_date(text: str) -> date | None:
@@ -323,7 +420,7 @@ def parse_statement_transactions(text: str, source_file: str = "") -> ParseRepor
             continue
         if not in_td:
             continue
-        if any(h in line for h in _STMT_END_SECTION):
+        if _STMT_END_SECTION.search(line):
             in_td = False
             continue
         if any(s in line for s in _STMT_SKIP_LINE):
@@ -499,7 +596,8 @@ def parse_statement_transactions(text: str, source_file: str = "") -> ParseRepor
         if fm:
             fee = float(fm.group("fee"))
 
-        trade_date = exp if (is_opt and exp and exp <= cur_settle_date) else cur_settle_date
+        # True trade date derived from settlement date under US T+1 settlement rules (D026/T108b)
+        trade_date = prior_business_day(cur_settle_date)
 
         fills.append(ParsedFill(
             trade_date=trade_date,
@@ -516,13 +614,14 @@ def parse_statement_transactions(text: str, source_file: str = "") -> ParseRepor
             option_strike=strike,
             option_right=right,
             source_file=source_file,
+            date_source="derived_settle_t1",
         ))
 
     return ParseReport(fills=fills, unparsed=unparsed, files_read=1)
 
 
-def _fill_matches_conf(sf: ParsedFill, cf: ParsedFill) -> bool:
-    """True if statement fill sf corresponds to confirmation fill cf."""
+def _fill_matches_trade(sf: ParsedFill, cf: ParsedFill) -> bool:
+    """True if statement fill sf corresponds to confirmation fill cf (or another statement fill)."""
     if sf.symbol != cf.symbol:
         return False
     if sf.side != cf.side:
@@ -540,43 +639,97 @@ def _fill_matches_conf(sf: ParsedFill, cf: ParsedFill) -> bool:
             return False
         if sf.option_expiry != cf.option_expiry:
             return False
+    # Date comparison: matches on trade_date or settlement window (within 4 calendar days)
+    if sf.trade_date == cf.trade_date:
+        return True
     settle = sf.settle_date or sf.trade_date
-    if abs((cf.trade_date - settle).days) > 4 and cf.trade_date != sf.trade_date:
-        return False
-    return True
+    conf_settle = cf.settle_date or cf.trade_date
+    if abs((cf.trade_date - settle).days) <= 4 or abs((sf.trade_date - conf_settle).days) <= 4:
+        return True
+    return False
 
 
 def dedupe_statement_fills(
     conf_reports: list[ParseReport], stmt_reports: list[ParseReport]
 ) -> list[ParseReport]:
-    """Merge confirmation fills and statement fills without double-counting (T108b)."""
+    """Merge confirmation fills and statement fills without double-counting (T108b).
+
+    Cross-source deduplication rules:
+    1. A statement fill that matches an unused confirmation fill is dropped as duplicate.
+    2. A statement fill that matches an already-kept statement fill from an earlier statement
+       (e.g., pending trade appearing on month M statement and settled on month M+1 statement)
+       is dropped as duplicate.
+    3. A statement fill that matches an already-consumed confirmation fill is dropped as duplicate.
+    """
     kept_conf_reports = dedupe_daily_documents(conf_reports)
     all_conf_fills = [f for r in kept_conf_reports for f in r.fills]
 
     kept_stmt_reports: list[ParseReport] = []
     used_conf_indices: set[int] = set()
+    accepted_stmt_fills: list[ParsedFill] = []
 
     for r in stmt_reports:
         kept_fills: list[ParsedFill] = []
         duplicates: list[dict] = list(r.duplicates)
         for sf in r.fills:
-            matched_idx = None
+            # 1. Match against unused confirmation fills
+            matched_conf_idx = None
             for idx, cf in enumerate(all_conf_fills):
-                if idx not in used_conf_indices and _fill_matches_conf(sf, cf):
-                    matched_idx = idx
+                if idx not in used_conf_indices and _fill_matches_trade(sf, cf):
+                    matched_conf_idx = idx
                     break
-            if matched_idx is not None:
-                used_conf_indices.add(matched_idx)
+            if matched_conf_idx is not None:
+                used_conf_indices.add(matched_conf_idx)
                 duplicates.append({
                     "file": sf.source_file,
                     "why": (
                         f"statement fill {sf.symbol} {sf.side} {sf.qty}@{sf.price} on "
                         f"{sf.trade_date} covered by confirmation from "
-                        f"{all_conf_fills[matched_idx].source_file}"
+                        f"{all_conf_fills[matched_conf_idx].source_file}"
                     ),
                 })
-            else:
-                kept_fills.append(sf)
+                continue
+
+            # 2. Match against already-kept statement fills
+            # (cross-statement duplicate / month-boundary)
+            matched_stmt = None
+            for prev_sf in accepted_stmt_fills:
+                if _fill_matches_trade(sf, prev_sf):
+                    matched_stmt = prev_sf
+                    break
+            if matched_stmt is not None:
+                duplicates.append({
+                    "file": sf.source_file,
+                    "why": (
+                        f"statement fill {sf.symbol} {sf.side} {sf.qty}@{sf.price} on "
+                        f"{sf.trade_date} already imported from statement "
+                        f"{matched_stmt.source_file}"
+                    ),
+                })
+                continue
+
+            # 3. Match against already-used confirmation fills (month boundary copy)
+            matched_used_conf = None
+            for idx in used_conf_indices:
+                cf = all_conf_fills[idx]
+                if _fill_matches_trade(sf, cf):
+                    matched_used_conf = cf
+                    break
+            if matched_used_conf is not None:
+                duplicates.append({
+                    "file": sf.source_file,
+                    "why": (
+                        f"statement fill {sf.symbol} {sf.side} {sf.qty}@{sf.price} on "
+                        f"{sf.trade_date} duplicate copy of confirmation fill from "
+                        f"{matched_used_conf.source_file}"
+                    ),
+                })
+                continue
+
+            # Unique new fill: keep it
+            kept_fills.append(sf)
+            accepted_stmt_fills.append(sf)
+
         kept_stmt_reports.append(ParseReport(
             fills=kept_fills,
             unparsed=r.unparsed,

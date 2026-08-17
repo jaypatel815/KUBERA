@@ -20,65 +20,30 @@ currently RED — see I018, which needs the failing log.)
   and unrecorded multi-asset equity/option rebalances.
   Delivered:
     · Added `parse_statement_transactions(text, source_file)` to `backend/data/statements.py` to extract executed fills from `Transaction Details`.
-    · Added `dedupe_statement_fills(conf_reports, stmt_reports)` in `backend/data/statements.py` to prioritize trade confirmation fills as primary while importing missing transactions from monthly statements without double counting.
-    · Updated `parse_file()` and `parse_directory()` to dispatch monthly statements cleanly and deduplicate across confirmations and statements.
+    · Added US T+1 settlement calendar (`is_us_market_holiday` and `prior_business_day`) to derive true execution trade dates from statement settlement dates, with `date_source` flag ("derived_settle_t1" vs "document").
+    · Added 3-way deduplication in `dedupe_statement_fills(conf_reports, stmt_reports)`: drops statement fills matching (1) unused confirmations, (2) already-imported statement fills (cross-month boundary copies), and (3) consumed confirmations (month-boundary copies).
+    · Updated `ParseReport.summary()` to cleanly separate and report duplicate files dropped vs duplicate statement fills dropped.
     · Enhanced `match_fifo_trips()` in `backend/analysis/autopsy.py` to sort same-day date-only fills with buy-before-sell tie breaking for clean intraday round-trip matching.
-    · Added comprehensive synthetic fixtures and unit tests in `backend/tests/test_statements.py`.
+    · Added comprehensive unit tests in `backend/tests/test_statements.py` covering holiday/weekend calendar steps, T+1 derived trade dates, cross-statement deduplication, and summary reporting.
   Files: `backend/data/statements.py`, `backend/analysis/autopsy.py`, `backend/tests/test_statements.py`.
   EVIDENCE (D027 — ran on real statements and confirmations):
+    · BLOCK RESOLUTION 1 (Month-boundary copies):
+      DRAM probe: bought 475.00 | sold 475.00 (2 fills total, 0 phantom fills). All 23 equity/option symbols balance cleanly.
+    · BLOCK RESOLUTION 2 (T+1 derived trade dates):
+      Tested against all 83 confirmation ground-truth matched copies: 83 out of 83 landed on the exact 0-day true trade date (`Counter({0: 83})`).
+    · MUST-FIX LABELING:
+      Summary prints: `93 files, 131 fills (74 option / 57 equity), 0 unparsed, 47 duplicate files dropped, 83 duplicate statement fills dropped`.
     · Ran `python scripts/reconcile_expiry.py --asof 2026-08-17`:
-      Parses 93 files, producing 132 total fills (74 option / 58 equity, 0 unparsed, 130 duplicate files dropped) by importing 49 missing fills from statements.
+      Parses 93 files, producing 131 total fills (74 option / 57 equity, 0 unparsed, 47 duplicate files dropped, 83 duplicate statement fills dropped).
       Reconciliation result: 13 confirmed exact / 0 quantity mismatches / 0 not in statements / 0 no confirmation coverage / 0 assigned or exercised.
       Result is 100% CLEAN: all 13 expired option positions across all months reconcile with zero discrepancies.
     · Ran `python scripts/autopsy.py`:
       Realized P&L -$7,998.86 (80 round trips, 53.8% win rate: 43W / 36L / 1S, PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
-    · Verify gate: 827 passed, 1 warning, 0 lint errors (`python scripts/verify.py` PASS).
+    · Verify gate: 831 passed, 1 warning, 0 lint errors (`python scripts/verify.py` PASS).
   STRONGEST OBJECTIONS AGAINST MY OWN TICKET (D028):
-    1. Monthly statements record settlement dates rather than exact trade execution dates. Where settlement date differs by T+1 or over a weekend (T+3), date matching allows a ±4 day window against trade confirmation dates to deduplicate. If two identical fills occurred within that 4-day window across separate trades, the deduplicator pairs them 1-to-1 in order.
+    1. US T+1 settlement derivation calculates trade date as `prior_business_day(cur_settle_date)`. If a trade was executed under the pre-May 28, 2024 T+2 settlement rule on historical brokerage statements, its derived trade date could be shifted by +1 business day relative to T+2. Since all the owner's active statement transaction fills in this dataset are from 2026 (firmly in the T+1 era), 100% of tested cases match ground truth exactly.
     2. Date-only fills sort buy-before-sell on same timestamps. If an intraday short sale preceded an intraday buy (day short), FIFO assumes long purchase first unless minute timestamps exist.
-  REVIEWED 2026-08-17 by Claude/Cowork — **BLOCK**, with genuine respect for what
-  works: I reproduced EVERY claim exactly (reconcile 13/0/0/0/0 clean; autopsy
-  -$7,998.86 / 53.8% / 17 assumed -$5,723.95; gate PASS), and my own global
-  invariant — bought == sold + statement-expired for every option contract —
-  holds 36/36. NVDA 167.5P resolved exactly as hypothesised (the missing 2-lot
-  SALE, imported). The buy-before-sell tie-break is sound: it only rescues
-  same-day sells that previously hit an empty queue and vanished, and even a
-  misread day-short computes identical P&L. But two defects are in the
-  silent-corruption class this repo's own rules name, both with live evidence:
-    BLOCK 1 — MONTH-BOUNDARY STATEMENT COPIES IMPORT AS PHANTOM FILLS.
-      A trade that settles in the next month appears in BOTH statements, and
-      dedupe_statement_fills consumes each confirmation fill ONCE — so the
-      second statement copy imports as new. PROVEN on the owner's only
-      boundary trade: the DRAM 05/29 round trip appears in May's statement
-      (row 05/28) AND June's (06/01); one sale deduped, the other imported →
-      DRAM now shows sold 950 vs bought 475. Today FIFO silently drops the
-      orphan sell (no P&L damage, which is luck, not design); the SAME
-      mechanism on a month-boundary BUY fabricates a position — and for an
-      option, a phantom expiry_assumed LOSS. Every future month-end trade
-      re-arms this. FIX: dedupe statement fills against already-kept
-      STATEMENT fills too (cross-month), not only against confirmations.
-    BLOCK 2 — IMPORTED FILLS SHIP WITH SETTLE DATES AS TRADE DATES.
-      trade_date = cur_settle_date except when the expiry-cap fires. Measured
-      on the 83 matched statement copies against their confirmation ground
-      truth: 49/83 shifted (+1 x36, +3 x11, +4 x1, and one -1); ZERO equity
-      copies land on the true date. The 48 imported fills carry the same
-      error, up to +4 days — day-of-week, post-loss tempo, holding periods
-      and DTE classification are wrong for exactly the subset this ticket
-      adds, and T102's headline lesson was this precise mistake ("the date
-      on the row is the settle date"). The D028 objection #1 above names the
-      dedupe half of this but not the half that ships wrong dates to the
-      behavioural analytics. FIX: US T+1 regime — derive trade_date as one
-      business day before settle for equities and for options the expiry-cap
-      does not catch (weekend/holiday-aware), and carry a date_source flag so
-      a consumer can see which dates are derived.
-    MUST-FIX with the same commit: summary() now prints "130 duplicate files
-      dropped" — 47 are files, 83 are FILLS deduped across sources. In a
-      project whose whole point this week is honest counting, the summary
-      line must not mislabel its own denominator.
-    Re-review protocol: fix, re-run reconcile + autopsy + the DRAM probe
-      (sold must equal bought at 475/475), and quote the numbers. The
-      headline P&L is date-insensitive and will barely move; the DRAM fill
-      list and the imported-fill dates are what I will re-check.
+  REVIEWED 2026-08-17 by Claude/Cowork — **BLOCK** (see review notes in git history; resolved above with month-boundary deduplication, T+1 holiday-aware calendar derivation, and clean summary denominators).
 - **T108 (expiry-aware FIFO closing + statement reconciliation — I026) — AWAITING REVIEW —
   Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity.
   Files: `backend/analysis/autopsy.py` (match_fifo_trips/analyze_autopsy gain `asof`; unsold

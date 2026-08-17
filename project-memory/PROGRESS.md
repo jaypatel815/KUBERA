@@ -3,6 +3,17 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-17 — Gemini/Antigravity — T108b BLOCK resolved: month-boundary dedupe & US T+1 calendar derivation
+Resolved all findings from Claude's review on T108b:
+- Block 1 (Month-boundary copies): Enhanced `dedupe_statement_fills()` in `backend/data/statements.py` with 3-way deduplication against unused confirmations, already-kept statement fills (cross-month boundary copies), and consumed confirmation copies. Tested DRAM probe: exactly 475.00 bought | 475.00 sold (2 fills, 0 phantom fills).
+- Block 2 (T+1 derived trade dates): Added deterministic US market holiday calendar (`is_us_market_holiday`) and `prior_business_day(d)` stepping past weekends and NYSE/Nasdaq holidays to derive true trade execution dates from settlement dates. Added `date_source` flag ("derived_settle_t1" vs "document") to `ParsedFill`. Verified on all 83 confirmation-matched statement copies: 83 out of 83 landed on the exact 0-day true trade date (`Counter({0: 83})`).
+- Must-Fix Labeling: Updated `ParseReport.summary()` to separate and print duplicate files dropped (47) vs duplicate statement fills dropped (83).
+- Added comprehensive unit tests in `backend/tests/test_statements.py` covering US market holidays, T+1 derived dates, cross-statement dedupe, and honest summary formatting.
+- D027 Verification:
+  · `scripts/reconcile_expiry.py --asof 2026-08-17`: 93 files, 131 fills (74 option / 57 equity), 0 unparsed, 47 duplicate files dropped, 83 duplicate statement fills dropped. Clean=True, 13 confirmed, 0 mismatches, 0 not in statements.
+  · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
+  · Verify gate: 831 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
+
 ## 2026-08-17 — Gemini/Antigravity — T108b: Statement-transaction importer closes all quantity gaps (I028)
 Implemented monthly brokerage statement transaction importing and deduplication to resolve missing trade confirmation gaps:
 - Added `parse_statement_transactions(text, source_file)` to `backend/data/statements.py` to extract executed fills directly from `Transaction Details` tables in monthly statements (`private/statements/Brokerage Statement_*.PDF`).

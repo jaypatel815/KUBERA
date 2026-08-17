@@ -26,9 +26,11 @@ from data.statements import (
     dedupe_daily_documents,
     dedupe_statement_fills,
     header_trade_date,
+    is_us_market_holiday,
     merge,
     parse_confirmation,
     parse_statement_transactions,
+    prior_business_day,
     redact,
 )
 
@@ -307,8 +309,9 @@ def test_parse_statement_transactions_equity_and_option():
     assert opt.option_strike == 177.5
     assert opt.option_right == "call"
     assert opt.option_expiry == date(2026, 3, 20)
-    assert opt.trade_date == date(2026, 3, 20)
+    assert opt.trade_date == date(2026, 3, 19)  # Derived T+1 from settle 03/20 (Fri -> Thu)
     assert opt.settle_date == date(2026, 3, 20)
+    assert opt.date_source == "derived_settle_t1"
     assert opt.commission == 1.95
     assert opt.fees == 0.04
 
@@ -318,8 +321,9 @@ def test_parse_statement_transactions_equity_and_option():
     assert eq.qty == 100.0
     assert eq.price == 175.50
     assert eq.asset_type == "equity"
-    assert eq.trade_date == date(2026, 3, 23)
+    assert eq.trade_date == date(2026, 3, 20)  # Derived T+1 from settle 03/23 (Mon -> Fri)
     assert eq.settle_date == date(2026, 3, 23)
+    assert eq.date_source == "derived_settle_t1"
 
 
 def test_parse_statement_transactions_stops_at_section_boundary():
@@ -401,4 +405,102 @@ def test_incomplete_statement_row_reported_as_unparsed():
     assert rep.fills == []
     assert len(rep.unparsed) == 1
     assert "quantity" in rep.unparsed[0]["why"] or "numeric" in rep.unparsed[0]["why"]
+
+
+def test_us_market_holidays_and_prior_business_day():
+    # 2026 Memorial Day: Monday May 25, 2026
+    assert is_us_market_holiday(date(2026, 5, 25)) is True
+    # Prior business day before Tuesday May 26 is Friday May 22 (skips holiday + weekend)
+    assert prior_business_day(date(2026, 5, 26)) == date(2026, 5, 22)
+
+    # 2026 Good Friday: Friday April 3, 2026
+    assert is_us_market_holiday(date(2026, 4, 3)) is True
+    # Prior business day before Monday April 6 is Thursday April 2 (skips weekend + Good Friday)
+    assert prior_business_day(date(2026, 4, 6)) == date(2026, 4, 2)
+
+    # Regular Monday June 1, 2026 -> prior business day is Friday May 29, 2026
+    assert prior_business_day(date(2026, 6, 1)) == date(2026, 5, 29)
+
+
+def test_statement_transaction_derived_t1_trade_date():
+    text = (
+        "Statement Period June 1-30, 2026\n"
+        "Transaction Details\n"
+        "06/01  Purchase  DRAM  MICRON TECH INC  475.0000  10.0000\n"
+    )
+    rep = parse_statement_transactions(text, "Brokerage Statement_2026-06-30.PDF")
+    assert len(rep.fills) == 1
+    fill = rep.fills[0]
+    # Settle date 06/01 -> Trade date derived under T+1 is 2026-05-29
+    assert fill.settle_date == date(2026, 6, 1)
+    assert fill.trade_date == date(2026, 5, 29)
+    assert fill.date_source == "derived_settle_t1"
+    assert fill.symbol == "DRAM"
+    assert fill.qty == 475.0
+    assert fill.price == 10.0
+
+
+def test_dedupe_statement_cross_statement_copies():
+    # Month M statement: pending transaction DRAM 475 shares
+    fill_may = ParsedFill(
+        trade_date=date(2026, 5, 29),
+        settle_date=date(2026, 6, 1),
+        symbol="DRAM",
+        side="buy",
+        qty=475.0,
+        price=10.0,
+        description="MICRON TECH INC",
+        asset_type="equity",
+        source_file="Brokerage Statement_2026-05-31.PDF",
+        date_source="derived_settle_t1",
+    )
+    rep_may = ParseReport(fills=[fill_may], files_read=1)
+
+    # Month M+1 statement: settled transaction DRAM 475 shares (same trade)
+    fill_june = ParsedFill(
+        trade_date=date(2026, 5, 29),
+        settle_date=date(2026, 6, 1),
+        symbol="DRAM",
+        side="buy",
+        qty=475.0,
+        price=10.0,
+        description="MICRON TECH INC",
+        asset_type="equity",
+        source_file="Brokerage Statement_2026-06-30.PDF",
+        date_source="derived_settle_t1",
+    )
+    rep_june = ParseReport(fills=[fill_june], files_read=1)
+
+    merged = merge(dedupe_statement_fills([], [rep_may, rep_june]))
+    assert len(merged.fills) == 1
+    assert merged.fills[0].source_file == "Brokerage Statement_2026-05-31.PDF"
+    assert len(merged.duplicates) == 1
+    assert "already imported from statement" in merged.duplicates[0]["why"]
+
+
+def test_parse_report_summary_honest_labeling():
+    rep = ParseReport(
+        fills=[
+            ParsedFill(
+                trade_date=date(2026, 5, 8),
+                settle_date=date(2026, 5, 11),
+                symbol="NVDA",
+                side="buy",
+                qty=1.0,
+                price=100.0,
+                description="NVDA",
+                asset_type="equity",
+            )
+        ],
+        unparsed=[],
+        files_read=5,
+        duplicates=[
+            {"file": "a.pdf", "why": "duplicate download of b.pdf"},
+            {"file": "c.pdf", "why": "statement fill covered by confirmation"},
+        ],
+    )
+    summary_text = rep.summary()
+    assert "1 duplicate files dropped" in summary_text
+    assert "1 duplicate statement fills dropped" in summary_text
+
 
