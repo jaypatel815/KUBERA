@@ -3,6 +3,44 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-17 — Claude/Cowork — T108: the losses are visible now (I026/I027/I028)
+Built the survivorship-bias fix the owner forced with one question, and the fix
+forced two more: the data itself was broken in ways nobody had measured.
+- EXPIRY-AWARE MATCHER: an option lot whose expiry passed with no sell closes
+  at exit 0 on the expiry date, flagged closed_by="expiry_assumed" — assumption
+  distinguished from observation on every trip, in the performance block, the
+  narrative, and a caveat. A 100% win rate across >=5 trips is now itself a
+  BUG SIGNAL caveat. Threaded through pattern warnings via the same asof.
+- RECONCILER (new analysis/expiry_reconcile.py + scripts/reconcile_expiry.py):
+  parses the monthly statements' explicit Expired/Assigned/Exercised rows
+  (12 events across the 5 real statements, 0 unparsed) and joins them per
+  contract against the assumed closures. Ran it: 8 exact confirmations, 3
+  quantity mismatches (missing confirmation PDFs — losses still understated),
+  zero assignments, so exit-0 is contradicted nowhere.
+- EN ROUTE, THE DATA HAD TO BE MADE HONEST FIRST: (I027) pypdf 6.13 had
+  silently broken extraction — all 86 confirmations parsed to 0 fills in this
+  sandbox; fixed with layout-mode extraction + version fallback. (I028) 47 of
+  91 PDFs are re-downloads of the same daily documents — "250 fills" is 83;
+  fill-set dedupe with subset/overlap handling, reported never silent. Plus a
+  wrapped option leg that had booked 3 SPY CONTRACTS as 3 shares at $0.45 —
+  option evidence now fails CLOSED instead of degrading to equity.
+- THE HONEST RECORD (owner's real documents, asof 2026-08-17): 49 trips,
+  -$4,228.17 realized (was "+$11,134"), 55.1% win rate (was 73.4%), options
+  -$6,959 / equity +$2,731. SPY puts: 5W/7L, -$3,004. The 0DTE SPY-put
+  proposal that T104 cleared now triggers 2 HIGH warnings (0DTE 41.7% -$5,445;
+  SPY history 42.1% -$5,108). My own I026 measurement corrected: -$3,961
+  visible expired premium, not $6,308 — the old number sat on duplicated data.
+- Verified: gate PASS, ruff clean, pyrefly exactly 1 (known I023). 29 new/
+  updated tests incl. hand-computed expiry math and the real statement-row
+  variants. My reconciler's first join silently matched NOTHING (PUT vs P in
+  the key) — caught only because D027 made me run it on the real documents.
+Next: Gemini reviews T108 (focus list in TASKS). Then T108b (statement-
+transaction importer) closes the remaining coverage gaps. Owner: June
+statement when available.
+(Housekeeping: the 2026-08-17 re-review of Gemini's 516dca5 — T107 v2 PASS,
+T104 fix verified — was committed as d53fd24 but its session entry was never
+written; recorded here.)
+
 ## 2026-08-17 — Gemini/Antigravity — T107 & T104 review adjustments (D027/D028)
 Addressed Claude/Cowork's review feedback on T107 and T104:
 - `scripts/schwab_auth.py`: Fixed `exchange()` runtime crash by wrapping in `with httpx.Client(transport=transport, timeout=30.0)` context manager instead of passing invalid `transport` parameter to module-level `httpx.post()`.

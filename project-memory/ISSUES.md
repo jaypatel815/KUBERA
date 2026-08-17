@@ -4,8 +4,46 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
-- I026 [CRITICAL — SURVIVORSHIP BIAS: expired options are invisible to every
-  behavioural number] (2026-08-17, found by THE OWNER, not by any agent)
+- I028 [DATA QUALITY — duplicate daily downloads + missing documents]
+  (2026-08-17, found by the T108 reconciler, Claude/Cowork)
+  Schwab's daily confirmation lists EVERY trade of the day; the owner saved the
+  same document once per trade under per-trade filenames. 47 of the 91 PDFs in
+  private/statements are re-downloads (24 days saved 2–5x, all with byte-
+  different files but IDENTICAL fill-sets) — so "250 fills" was really 83, and
+  every behavioural number computed before 2026-08-17 (T103 autopsy, T104
+  evidence, the original I026 measurement) was inflated by multi-counted days.
+  FIXED in code: `dedupe_daily_documents` collapses identical same-day
+  fill-sets, keeps supersets over subsets, and keeps-but-loudly-reports
+  overlapping non-nested sets. Duplicates are REPORTED in ParseReport, never
+  silent.
+  STILL MISSING (reconciler output, owner's statements as ground truth):
+  confirmations for SPY 692P x8 (of 9), SPY 660P x4 (of 10), SPY 733P x35
+  (of 135 — the 35 @ $0.1597 fill is visible in the May statement itself),
+  NVDA 182.5P x2 (Jan 2, before coverage begins); plus the JUNE 2026 monthly
+  statement (SPY 735P 06/08 x12 unverifiable without it). Realized losses are
+  therefore still UNDERSTATED. Repair path: T108b statement-transaction
+  importer, not manual PDF hunting.
+- I027 [FIXED 2026-08-17 — parser silently broken by a pypdf version change]
+  pypdf 6.13 joins PDF text lines differently from the version the T102 parser
+  was built against: every row split ("03/03 Purchase XLE" alone on its line),
+  so ALL 86 real confirmations returned "no fill rows matched" — 0 fills, no
+  error, in this sandbox. The verify gate stayed green because fixtures are
+  .txt. FIX: `extract_pdf_text` uses `extraction_mode="layout"` (preserves the
+  column spacing the regexes need) with a TypeError fallback for pypdf < 3.17.
+  LESSON: an extraction-dependent parser needs a real-file canary — any run
+  that parses the owner's folder to 0 fills should be treated as an
+  environment regression, never as "no data". Same class as I018.
+- I026 [FIXED 2026-08-17 by T108, pending Gemini review — CRITICAL —
+  SURVIVORSHIP BIAS: expired options were invisible to every behavioural
+  number] (found by THE OWNER, not by any agent)
+  CORRECTION TO THE MEASUREMENT BELOW (2026-08-17): the original numbers were
+  computed on I028's multi-counted fills. On deduped data: 13 expiry-assumed
+  lots, -$3,961 of confirmations-visible expired premium (not $6,308.57), with
+  MORE premium invisible in the 49 statement-side contracts I028 lists. The
+  honest headline after T108: 49 trips, -$4,228.17 total realized, 55.1% win
+  rate; SPY puts 5W/7L -$3,004. The direction of the original diagnosis was
+  right; its magnitude was distorted by the very data bug it sat on top of —
+  which is why measurements get re-run after every data fix.
   He asked one question — "you're telling me I've never lost money on SPY
   puts?" — and it broke the whole P&L chain. The FIFO round-trip matcher
   (autopsy, pattern warnings, holding periods, T069 inputs) closes a trip only

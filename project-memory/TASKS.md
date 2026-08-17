@@ -12,9 +12,54 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T108 (expiry-aware FIFO closing — I026) — Claude/Cowork** — claimed 2026-08-17.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T108 (expiry-aware FIFO closing + statement reconciliation — I026) — AWAITING REVIEW —
+  Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity.
+  Files: `backend/analysis/autopsy.py` (match_fifo_trips/analyze_autopsy gain `asof`; unsold
+  option lots past expiry close at exit 0 flagged `closed_by="expiry_assumed"`; PerformanceSummary
+  gains expiry_assumed_count/pnl; narrative + caveats incl. the 100%-win-rate BUG SIGNAL),
+  `backend/analysis/pattern_warning.py` (asof threaded; assumed-trip caveat),
+  `backend/analysis/expiry_reconcile.py` (NEW: parses Expired/Assigned/Exercised rows from
+  monthly statements, joins per contract), `scripts/reconcile_expiry.py` (NEW CLI),
+  `backend/data/statements.py` (pypdf layout-mode extraction w/ version fallback — I027;
+  monthly-statement refusal; wrapped-option-leg fallback that fails CLOSED; daily-document
+  dedupe — I028), `scripts/autopsy.py`, tests (test_autopsy +9, test_statements +8,
+  test_expiry_reconcile NEW 12). Gate PASS; ruff clean; pyrefly exactly 1 (known I023).
+  EVIDENCE (D027 — ran on the owner's real documents, not fixtures):
+    · Data first had to be made honest: 47 of 91 PDFs are RE-DOWNLOADS of the same daily
+      confirmations (24 days saved once per trade) — "250 fills" is really **83** (I028).
+      Separately, pypdf 6.13 had silently broken extraction of ALL 86 confirmations in this
+      sandbox (I027), and one SPY 656C buy was misread as 3 SHARES at $0.45 (wrapped leg).
+    · Honest record, asof 2026-08-17: 49 trips, **-$4,228.17 total** (was "+$11,134"),
+      win rate **55.1%** (was 73.4%), options **-$6,959** / equity +$2,731,
+      13 expiry-assumed lots -$3,961. SPY options 8W/11L **-$5,108**; SPY puts 5W/7L
+      **-$3,004** — the owner's sceptical question, answered with his own statements.
+    · reconcile_expiry.py vs the 5 monthly statements (12 Expired rows parsed, 0 unparsed):
+      8 contracts confirmed exact; 3 quantity mismatches = MISSING confirmation PDFs
+      (692P 1v9, 660P 6v10, 733P 100v135) so losses remain UNDERSTATED; SPY 735P 06/08
+      unverifiable (no June statement); NVDA 182.5P (Jan 2) + the mismatch remainders are
+      invisible to confirmations entirely. Zero assigned/exercised rows — exit-0 assumption
+      contradicted nowhere.
+    · T104 evidence rerun: the same 0DTE SPY-put $500 proposal that got "clear, 0 warnings"
+      now returns **warning_triggered, 2 high**: 0DTE 24 trips 41.7% -$5,445; SPY symbol
+      history 42.1% -$5,108; plus the assumed-trip caveat. The I026 "untrustworthy until
+      T108" caveat on T104 is hereby LIFTED contingent on this review passing.
+    · My own I026 measurement is CORRECTED: "-$6,308 invisible losses" was computed on
+      multi-counted fills; the true confirmations-visible figure is -$3,961 (13 lots), with
+      more premium invisible in the 49 statement-side contracts (I028 lists them).
+  STRONGEST OBJECTIONS AGAINST MY OWN TICKET (D028):
+    1. Dedupe collapses same-day documents with IDENTICAL fill-sets. If Schwab ever issued
+       two SEPARATE same-day documents whose trades were coincidentally identical, one would
+       be eaten. All 24 observed dup-days are full-day aggregates (multi-symbol contents
+       match exactly), but future months are the ongoing check.
+    2. analyze_autopsy defaults asof to TODAY: a report generated the day before an expiry
+       differs from the day after. Inherent to the domain; tests pin asof explicitly.
+    3. _OPTION_HINT would send a mixed-case "Covered Call ETF" description to unparsed
+       (visible and ownable, not silent — but a false refusal all the same).
+  REVIEW FOCUS: re-run `python scripts/reconcile_expiry.py --asof 2026-08-17` and
+  `python scripts/autopsy.py` on the owner's machine; verify the -$4,228/55.1% headline and
+  the 12-row statement parse; try to construct a fill-set the dedupe wrongly collapses.
 - **T104 (Pre-trade pattern warnings — D026) — AWAITING REVIEW — Gemini/Antigravity** — Reviewer: Claude/Cowork.
   REVIEWED 2026-08-16 PASS with one must-fix-soon (silent key-drop); FIX
   RE-VERIFIED 2026-08-17 (516dca5) against the original failing input:
@@ -288,13 +333,19 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   `backend/api/llm_claude_sdk.py` (wrapped query stream in `asyncio.wait_for(timeout=self.timeout)`; raises actionable `LLMError` citing `LLM_TIMEOUT_SECONDS` on timeout, cleanly discarding partial stream text to avoid unvalidated partial answers), `backend/tests/test_claude_sdk.py` (3 tests). Gate PASS (731 passed).
 - [x] T045b — Owner: MCP acceptance run — DONE 2026-08-16 (owner):
   Ran `python scripts/install_mcp_config.py`; verified `%APPDATA%\Claude\claude_desktop_config.json` is configured with `.venv` Python interpreter and `scripts/mcp_server.py` stdio entrypoint.
-- [ ] T108 — **CRITICAL, blocks trusting ANY behavioural number (I026):** expiry-aware
-  FIFO closing. An option lot whose expiry passed with no sell = a CLOSED trip at exit 0
-  on the expiry date, flagged closed_by="expiry_assumed", cross-checked against monthly
-  statements for exercise/assignment. Rerun autopsy + pattern warnings after; expect the
-  win rate to drop hard — that is the fix working, not a regression. Owner found this by
-  asking one sceptical question; a 100% win rate must henceforth be treated as a bug
-  signal, not a result.
+- [~] T108 — expiry-aware FIFO closing — BUILT 2026-08-17 (Claude/Cowork), see
+  "Awaiting review". Win rate dropped 73.4% → 55.1% and P&L +$11,134 → -$4,228 —
+  that is the fix working, not a regression.
+- [ ] T108b — Statement-transaction importer: the monthly statements carry COMPLETE
+  purchase/sale/expiry rows (the May statement alone shows a 35-contract SPY 733P fill
+  that has no confirmation PDF). Parse their Transaction Details into fills to close the
+  I028 coverage gaps instead of chasing individual confirmation downloads. Dedupe against
+  confirmations by the T108 fill-signature. Prereq reading: analysis/expiry_reconcile.py
+  docstring for the observed row shapes.
+- [ ] Owner (Chotu): drop the JUNE 2026 monthly statement into private/statements when it
+  exists (SPY 735P 06/08 x12 is unverifiable without it), and any later months. The
+  missing-confirmation gaps (692P x8, 660P x4, 733P x35, NVDA 182.5P x2) can wait for
+  T108b — no need to hunt individual PDFs.
 - [ ] T107 — Base URLs and tunables into settings (D028): `api.anthropic.com`,
   `api.openai.com`, `data.alpaca.markets`, `api.stlouisfed.org`,
   `api.schwabapi.com` and the two Schwab OAuth URLs are module constants today.

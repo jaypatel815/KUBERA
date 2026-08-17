@@ -85,6 +85,12 @@ def format_autopsy_terminal(report) -> str:
         )
         lines.append(f"  Option Realized P&L    : ${perf.option_realized_pnl:,.2f}")
         lines.append(f"  Equity Realized P&L    : ${perf.equity_realized_pnl:,.2f}")
+        if getattr(perf, "expiry_assumed_count", 0) > 0:
+            lines.append(
+                f"  Expired (assumed, T108): {perf.expiry_assumed_count} lots, "
+                f"${perf.expiry_assumed_pnl:,.2f} — exit 0 assumed; reconcile with "
+                f"scripts/reconcile_expiry.py"
+            )
     else:
         lines.append("  (No closed round trips in this fill sample)")
     lines.append("")

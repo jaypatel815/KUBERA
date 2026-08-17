@@ -21,6 +21,9 @@ import pytest
 
 from data.statements import (
     OPTION_MULTIPLIER,
+    ParsedFill,
+    ParseReport,
+    dedupe_daily_documents,
     header_trade_date,
     merge,
     parse_confirmation,
@@ -164,3 +167,114 @@ def test_committed_fixtures_contain_no_identity():
         text = f.read_text(encoding="utf-8")
         assert not [h for h in re.findall(r"\b\d{4}-\d{4}\b", text) if h != "0000-0000"]
         assert not [h for h in re.findall(r"\b\d{6,}\b", text) if h != "000000"]
+
+
+# ------------------------------------------------------- T108: monthly refusal,
+# wrapped option legs, duplicate daily documents
+
+def test_monthly_statement_is_refused_not_double_counted():
+    """A monthly statement's transaction rows LOOK like confirmation rows in
+    layout extraction, and every trade in it also has a confirmation — parsing
+    both counts each fill twice. Detection is content-based ('Statement
+    Period' appears in all 5 real statements and none of 86 confirmations)."""
+    text = (
+        "March 31, 2026\n"
+        "Account Number      Statement  Period\n"
+        "****-*711           March   1-31, 2026\n"
+        "03/25  Purchase   SPY   DESCRIPTION HERE   3   0.45\n"
+    )
+    rep = parse_confirmation(text, "renamed_download.pdf")
+    assert rep.fills == []
+    assert "monthly account statement" in rep.unparsed[0]["why"]
+
+    # Filename is the second line of defence, for statements saved without a
+    # text layer match.
+    rep2 = parse_confirmation("March 31, 2026\nno marker here",
+                              "Brokerage Statement_2026-03-31.PDF")
+    assert rep2.fills == []
+    assert "monthly account statement" in rep2.unparsed[0]["why"]
+
+
+def test_wrapped_option_leg_is_still_an_option():
+    """Long descriptions wrap: '$656' ends the row line and 'Call' lands on the
+    next with the expiry column interleaved, so the contiguous pattern misses.
+    The broker's own '656.00 C' identity column resolves it. On a real
+    confirmation this row was silently misread as 3 SHARES of SPY at $0.45."""
+    text = (
+        "March 24, 2026\n"
+        "03/25  Purchase  SPY  State Street SPDR S&P 500 ETF Trust 03/24/2026 $656   3   0.45\n"
+        "                 03/24/2026   Call\n"
+        "                 656.00 C     Commission 1.95 / Industry Fee 0.04\n"
+    )
+    rep = parse_confirmation(text, "wrapped.pdf")
+    assert len(rep.fills) == 1
+    f = rep.fills[0]
+    assert f.asset_type == "option"
+    assert f.option_strike == 656.0
+    assert f.option_right == "call"
+    assert str(f.option_expiry) == "2026-03-24"
+    assert f.notional == 135.0            # 3 contracts * 0.45 * 100, not 3 shares
+
+
+def test_incomplete_option_evidence_fails_closed_not_as_equity():
+    """Identity column present but no full expiry date anywhere: booking this
+    as equity would be silently 100x wrong, so it must be REPORTED instead."""
+    text = (
+        "March 24, 2026\n"
+        "03/25  Purchase  SPY  State Street SPDR Trust   3   0.45\n"
+        "                 656.00 C     Commission 1.95\n"
+    )
+    rep = parse_confirmation(text, "torn.pdf")
+    assert rep.fills == []
+    assert any("refusing to classify as equity" in u["why"] for u in rep.unparsed)
+
+
+def _report_with(fills):
+    return ParseReport(fills=list(fills), files_read=1)
+
+
+def _pf(source, symbol="AAPL", qty=1.0, price=3.0, day=30):
+    from datetime import date as _date
+    return ParsedFill(
+        trade_date=_date(2026, 4, day), settle_date=None, symbol=symbol, side="buy",
+        qty=qty, price=price, description="d", asset_type="equity", source_file=source,
+    )
+
+
+def test_identical_daily_documents_are_deduped():
+    """Schwab's daily confirmation lists EVERY trade of the day; saving it once
+    per trade multi-counts the whole day. On the owner's real folder this
+    inflated 250 'fills' to 3x-counted days (47 duplicate files)."""
+    a = _report_with([_pf("a.pdf"), _pf("a.pdf", symbol="NVDA", qty=60, price=200.7)])
+    b = _report_with([_pf("b.pdf"), _pf("b.pdf", symbol="NVDA", qty=60, price=200.7)])
+    out = merge(dedupe_daily_documents([a, b]))
+    assert len(out.fills) == 2                       # one day's trades, once
+    assert len(out.duplicates) == 1
+    assert "duplicate download" in out.duplicates[0]["why"]
+    assert out.files_read == 2                       # both files still counted as read
+
+
+def test_subset_download_is_dropped_for_the_superset():
+    early = _report_with([_pf("early.pdf")])                          # intraday download
+    late = _report_with([_pf("late.pdf"), _pf("late.pdf", symbol="NVDA")])  # end of day
+    out = merge(dedupe_daily_documents([early, late]))
+    assert {f.source_file for f in out.fills} == {"late.pdf"}
+    assert "partial duplicate (subset)" in out.duplicates[0]["why"]
+
+
+def test_overlapping_documents_are_kept_and_reported():
+    """Overlap without nesting cannot be resolved mechanically — keep both,
+    say so loudly, never guess."""
+    a = _report_with([_pf("a.pdf"), _pf("a.pdf", symbol="NVDA")])
+    b = _report_with([_pf("b.pdf"), _pf("b.pdf", symbol="TSLA")])
+    out = merge(dedupe_daily_documents([a, b]))
+    assert len(out.fills) == 4                       # nothing dropped
+    assert any("OVERLAPPING" in u["why"] for u in out.unparsed)
+
+
+def test_different_days_are_never_deduped():
+    a = _report_with([_pf("a.pdf", day=29)])
+    b = _report_with([_pf("b.pdf", day=30)])
+    out = merge(dedupe_daily_documents([a, b]))
+    assert len(out.fills) == 2
+    assert out.duplicates == []

@@ -95,6 +95,10 @@ class AutopsyRoundTrip:
     is_0dte: bool
     time_known: bool
     contract_multiplier: int = 1
+    # "sell" = a real closing fill; "expiry_assumed" = the lot's expiry passed
+    # with no sell on record, so it is closed at exit 0 (T108/I026). The flag
+    # exists so no consumer can mistake an assumption for an observation.
+    closed_by: str = "sell"
 
 
 @dataclass(frozen=True)
@@ -128,6 +132,9 @@ class PerformanceSummary:
     largest_loss: float | None
     option_realized_pnl: float
     equity_realized_pnl: float
+    # T108: how much of the record is assumption rather than observation.
+    expiry_assumed_count: int = 0
+    expiry_assumed_pnl: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -282,8 +289,32 @@ def normalize_fill(obj: Any) -> AutopsyFill:
     )
 
 
-def match_fifo_trips(fills: Sequence[AutopsyFill]) -> list[AutopsyRoundTrip]:
-    """FIFO lot matching per unique contract / equity symbol with contract multipliers."""
+def match_fifo_trips(
+    fills: Sequence[AutopsyFill],
+    asof: date | None = None,
+) -> list[AutopsyRoundTrip]:
+    """FIFO lot matching per unique contract / equity symbol with contract multipliers.
+
+    EXPIRY-AWARE (T108, I026): an option lot whose expiry has passed with no
+    sell on record is a COMPLETED trade — the position no longer exists and the
+    premium is gone — not an open position to be silently excluded. Before this,
+    the matcher only ever saw SOLD lots, and since traders sell winners and let
+    losers expire, every downstream number (win rate, P&L, pattern verdicts)
+    carried survivorship bias. The owner caught it with one question: a 100%
+    SPY-put win rate that was really ~$3,500 of invisible expired premium.
+
+    Such lots close at exit 0.0 on the expiry date, flagged
+    closed_by="expiry_assumed". Exit 0 is an ASSUMPTION — an in-the-money lot
+    would have been auto-exercised, not expired worthless — which is why the
+    flag exists and why scripts/reconcile_expiry.py cross-checks every assumed
+    expiry against the monthly statements' explicit "Expired" rows.
+
+    `asof` bounds "has expired": only expiries strictly BEFORE asof close
+    (an option expiring today could still be sold today). Defaults to the
+    current UTC date; tests pass it explicitly for determinism.
+    """
+    if asof is None:
+        asof = datetime.now(timezone.utc).date()
     sorted_fills = sorted(fills, key=lambda f: (f.contract_key, f.ts))
     queues: dict[str, list[AutopsyFill]] = {}
     trips: list[AutopsyRoundTrip] = []
@@ -347,6 +378,40 @@ def match_fifo_trips(fills: Sequence[AutopsyFill]) -> list[AutopsyRoundTrip]:
                 )
             remaining -= take
 
+    # T108: close expired option lots that were never sold. Equity lots have no
+    # expiry and genuinely-open options (expiry >= asof) stay open — only a lot
+    # whose expiry is already in the past is a finished trade.
+    for q in queues.values():
+        for entry in q:
+            if entry.asset_type != "option" or entry.option_expiry is None:
+                continue
+            if entry.option_expiry >= asof:
+                continue
+            exit_ts = datetime.combine(entry.option_expiry, time(0, 0), tzinfo=timezone.utc)
+            days_diff = (entry.option_expiry - entry.ts.date()).days
+            trips.append(
+                AutopsyRoundTrip(
+                    symbol=entry.symbol,
+                    contract_key=entry.contract_key,
+                    asset_type=entry.asset_type,
+                    qty=entry.qty,
+                    entry_price=entry.price,
+                    exit_price=0.0,
+                    pnl=round(entry.qty * (0.0 - entry.price) * entry.contract_multiplier, 2),
+                    held_days=float(days_diff) if days_diff >= 0 else None,
+                    entry_ts=entry.ts,
+                    exit_ts=exit_ts,
+                    is_0dte=entry.is_0dte,
+                    # The expiry DATE is certain; the intraday moment is not.
+                    time_known=False,
+                    contract_multiplier=entry.contract_multiplier,
+                    closed_by="expiry_assumed",
+                )
+            )
+
+    # Chronological by exit. The pre-T108 order (grouped by contract key) was
+    # an artifact of the queue walk that no consumer should have relied on.
+    trips.sort(key=lambda t: (t.exit_ts, t.contract_key))
     return trips
 
 
@@ -544,8 +609,15 @@ def analyze_asset_behavior(
     )
 
 
-def analyze_autopsy(raw_fills: Sequence[Any]) -> TradingAutopsyReport:
-    """Run full deterministic trading autopsy over fills (T103, D026)."""
+def analyze_autopsy(
+    raw_fills: Sequence[Any],
+    asof: date | None = None,
+) -> TradingAutopsyReport:
+    """Run full deterministic trading autopsy over fills (T103, D026).
+
+    `asof` feeds the T108 expiry-aware matcher; None means the current UTC
+    date. Tests pass it explicitly so the output is deterministic.
+    """
     fills = [normalize_fill(f) for f in raw_fills]
     fills.sort(key=lambda f: f.ts)
     n_fills = len(fills)
@@ -617,9 +689,12 @@ def analyze_autopsy(raw_fills: Sequence[Any]) -> TradingAutopsyReport:
         equity_notional=eq_notional,
     )
 
-    # 2. FIFO Round Trips & Performance
-    trips = match_fifo_trips(fills)
+    # 2. FIFO Round Trips & Performance (T108: expiry-aware)
+    trips = match_fifo_trips(fills, asof=asof)
     n_trips = len(trips)
+    assumed = [t for t in trips if t.closed_by == "expiry_assumed"]
+    n_assumed = len(assumed)
+    assumed_pnl = round(sum(t.pnl for t in assumed), 2)
 
     wins = [t for t in trips if t.pnl > 0]
     losses = [t for t in trips if t.pnl < 0]
@@ -663,6 +738,8 @@ def analyze_autopsy(raw_fills: Sequence[Any]) -> TradingAutopsyReport:
         largest_loss=largest_loss,
         option_realized_pnl=opt_pnl,
         equity_realized_pnl=eq_pnl,
+        expiry_assumed_count=n_assumed,
+        expiry_assumed_pnl=assumed_pnl,
     )
 
     # 3. Holding Periods (T091b)
@@ -764,6 +841,15 @@ def analyze_autopsy(raw_fills: Sequence[Any]) -> TradingAutopsyReport:
             f"Performance: {n_trips} round trips, ${tot_pnl:,.2f} realized P&L "
             f"(Win rate: {wr_str} [{len(wins)}W/{len(losses)}L/{len(scratches)}S], PF: {pf_str})."
         )
+        if n_assumed > 0:
+            assumed_contracts = round(sum(t.qty for t in assumed), 2)
+            narrative.append(
+                f"Expired Positions (T108): {n_assumed} option lot(s) "
+                f"({assumed_contracts:g} contracts) reached expiry with no recorded sale — "
+                f"counted as total losses of ${assumed_pnl:,.2f} at exit 0 "
+                f"(closed_by=expiry_assumed). Before this correction these losses were "
+                f"invisible and every win rate was overstated (I026)."
+            )
         if holding_periods["all_same_day_unrecorded"]:
             cnt = holding_periods["same_day_unrecorded_count"]
             narrative.append(
@@ -807,6 +893,22 @@ def analyze_autopsy(raw_fills: Sequence[Any]) -> TradingAutopsyReport:
             "(never mixing options with equities)."
         ),
     ]
+    if n_assumed > 0:
+        caveats.append(
+            f"{n_assumed} round trip(s) are closed by ASSUMED worthless expiry, not an "
+            "observed sale (T108). Exit 0 is wrong for any lot that was exercised or "
+            "assigned — run scripts/reconcile_expiry.py against the monthly statements "
+            "to confirm each one."
+        )
+    if win_rate == 1.0 and n_trips >= 5:
+        # The owner's record proved a perfect win rate was a measurement gap, not
+        # skill: expired-worthless lots generate no sale and silently vanish (I026).
+        caveats.append(
+            f"A 100% win rate across {n_trips} round trips is a BUG SIGNAL, not a result: "
+            "the most common cause is invisible losses (e.g. options that expired "
+            "worthless with no sale on record, I026). Verify data completeness before "
+            "trusting any figure here."
+        )
 
     return TradingAutopsyReport(
         total_fills=n_fills,

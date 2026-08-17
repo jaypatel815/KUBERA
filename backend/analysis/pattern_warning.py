@@ -284,11 +284,22 @@ def evaluate_pattern_warnings(
         trips: list[AutopsyRoundTrip] = list(fills_or_trips)
     else:
         fills = [normalize_fill(f) for f in fills_or_trips]
-        trips = match_fifo_trips(fills)
+        # T108: expiry-aware — lots that expired worthless with no sale are
+        # closed trips at exit 0, so the history evaluated here includes the
+        # losses that survivorship bias used to hide (I026).
+        trips = match_fifo_trips(fills, asof=asof.date())
 
     warnings: list[PatternWarning] = []
     narrative_points: list[str] = []
     caveats: list[str] = []
+
+    n_assumed = sum(1 for t in trips if t.closed_by == "expiry_assumed")
+    if n_assumed > 0:
+        caveats.append(
+            f"{n_assumed} of {len(trips)} historical round trips are closed by ASSUMED "
+            "worthless expiry (no sale on record, exit 0 — T108). Confirm them against "
+            "monthly statements via scripts/reconcile_expiry.py."
+        )
 
     if len(trips) < MIN_SAMPLE_GENERAL:
         caveats.append(

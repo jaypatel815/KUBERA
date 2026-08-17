@@ -145,8 +145,19 @@ def test_distinct_option_strikes_do_not_mix():
         ),
     ]
 
-    trips = match_fifo_trips(fills)
+    # With asof ON the expiry date the lot could still be sold — nothing closes,
+    # and crucially the 182.5 sell must NOT match the 180 buy.
+    trips = match_fifo_trips(fills, asof=date(2026, 3, 13))
     assert len(trips) == 0  # no matches across different strikes
+
+    # Past expiry (T108): the unsold 180P buy closes as an ASSUMED expiry at 0;
+    # the unmatched 182.5P sell still matches nothing. Cross-strike isolation
+    # holds in both regimes.
+    trips = match_fifo_trips(fills, asof=date(2026, 3, 14))
+    assert len(trips) == 1
+    assert trips[0].closed_by == "expiry_assumed"
+    assert trips[0].contract_key.startswith("NVDA_2026-03-13_180.0")
+    assert trips[0].pnl == -500.00  # 1 contract * $5.00 * 100, fully lost
 
 
 def test_date_only_confirmations_do_not_fabricate_clock():
@@ -241,12 +252,119 @@ def test_behavioral_sizing_drift_segregated_by_asset_class():
             ),
         ])
 
-    report = analyze_autopsy(fills)
+    # asof pinned ON the shared expiry date: the OPTN/EQ lots bought after each
+    # win/loss are still open, which is the scenario this test was built around.
+    # (Without it, T108 would close them as expired losses and change the drift
+    # sample — correctly, but that behavior has its own tests below.)
+    report = analyze_autopsy(fills, asof=date(2026, 3, 15))
     assert report.behavior.options.sizing_drift_ratio is None
     assert "insufficient" in report.behavior.options.sizing_drift_verdict
     # Narrative must not accuse the user of 78x revenge sizing
     narrative_text = " ".join(report.narrative)
     assert "78" not in narrative_text
+
+
+# ------------------------------------------------ T108: expiry-aware closing (I026)
+
+def _opt_buy(symbol="SPY", qty=2.0, price=1.50, day=9, expiry_day=9, strike=660.0):
+    return AutopsyFill(
+        symbol=symbol, side="buy", qty=qty, price=price,
+        ts=datetime(2026, 3, day, tzinfo=timezone.utc), time_known=False,
+        asset_type="option", contract_multiplier=100,
+        option_expiry=date(2026, 3, expiry_day), option_strike=strike, option_right="put",
+    )
+
+
+def test_expired_long_option_closes_at_zero():
+    """The owner's actual failure mode: bought puts, never sold, expiry passed.
+    2 contracts * $1.50 * 100 = $300 premium, all of it lost."""
+    trips = match_fifo_trips([_opt_buy()], asof=date(2026, 4, 1))
+    assert len(trips) == 1
+    t = trips[0]
+    assert t.closed_by == "expiry_assumed"
+    assert t.exit_price == 0.0
+    assert t.pnl == -300.00
+    assert t.exit_ts.date() == date(2026, 3, 9)   # closed ON the expiry date
+    assert t.is_0dte is True                       # bought on its expiry day
+    assert t.held_days == 0.0
+    assert t.time_known is False                   # the intraday moment is unknown
+
+
+def test_option_expiring_on_asof_stays_open():
+    """Strictly-before rule: an option expiring TODAY could still be sold today."""
+    assert match_fifo_trips([_opt_buy()], asof=date(2026, 3, 9)) == []
+
+
+def test_equity_lots_are_never_expiry_closed():
+    eq = AutopsyFill(symbol="XLE", side="buy", qty=25.0, price=56.59,
+                     ts=datetime(2026, 3, 2, tzinfo=timezone.utc), time_known=False)
+    assert match_fifo_trips([eq], asof=date(2030, 1, 1)) == []
+
+
+def test_partial_sell_then_expiry_splits_the_lot():
+    """Buy 5, sell 2 at a profit, let 3 expire: one real trip, one assumed."""
+    sell2 = AutopsyFill(
+        symbol="SPY", side="sell", qty=2.0, price=2.10,
+        ts=datetime(2026, 3, 9, tzinfo=timezone.utc), time_known=False,
+        asset_type="option", contract_multiplier=100,
+        option_expiry=date(2026, 3, 9), option_strike=660.0, option_right="put",
+    )
+    trips = match_fifo_trips([_opt_buy(qty=5.0), sell2], asof=date(2026, 4, 1))
+    assert [(t.qty, t.pnl, t.closed_by) for t in trips] == [
+        (2.0, 120.00, "sell"),              # 2 * (2.10 - 1.50) * 100
+        (3.0, -450.00, "expiry_assumed"),   # 3 * 1.50 * 100 lost
+    ]
+
+
+def test_expiry_losses_change_the_headline_numbers():
+    """One sold winner + one expired loser: win rate 50%, and the report says
+    which half is assumption. Before T108 this read as 100% on 1 trip."""
+    win_buy = _opt_buy(symbol="QQQ", qty=1.0, price=1.00, strike=700.0)
+    win_sell = AutopsyFill(
+        symbol="QQQ", side="sell", qty=1.0, price=2.00,
+        ts=datetime(2026, 3, 9, tzinfo=timezone.utc), time_known=False,
+        asset_type="option", contract_multiplier=100,
+        option_expiry=date(2026, 3, 9), option_strike=700.0, option_right="put",
+    )
+    dead_buy = _opt_buy(symbol="SPY", qty=1.0, price=0.67, strike=692.0)
+
+    report = analyze_autopsy([win_buy, win_sell, dead_buy], asof=date(2026, 4, 1))
+    perf = report.performance
+    assert perf.round_trips == 2
+    assert perf.win_rate == 0.5
+    assert perf.expiry_assumed_count == 1
+    assert perf.expiry_assumed_pnl == -67.00
+    assert perf.total_realized_pnl == 100.00 - 67.00
+    joined = " ".join(report.narrative)
+    assert "Expired Positions (T108)" in joined
+    assert any("reconcile_expiry" in c for c in report.caveats)
+
+
+def test_perfect_win_rate_is_flagged_as_bug_signal():
+    """I026's lesson, made permanent: 100% across >=5 trips gets a caveat."""
+    fills = []
+    for i in range(5):
+        d = 2 + i
+        fills.append(AutopsyFill(f"EQ{i}", "buy", 10.0, 100.0,
+                                 datetime(2026, 3, d, tzinfo=timezone.utc), time_known=False))
+        fills.append(AutopsyFill(f"EQ{i}", "sell", 10.0, 101.0,
+                                 datetime(2026, 3, d, tzinfo=timezone.utc), time_known=False))
+    report = analyze_autopsy(fills, asof=date(2026, 4, 1))
+    assert report.performance.win_rate == 1.0
+    assert any("BUG SIGNAL" in c for c in report.caveats)
+
+    # An expired loss breaks the perfection — and the flag correctly disappears.
+    report2 = analyze_autopsy(fills + [_opt_buy()], asof=date(2026, 4, 1))
+    assert report2.performance.win_rate < 1.0
+    assert not any("BUG SIGNAL" in c for c in report2.caveats)
+
+
+def test_expiry_closing_is_deterministic_given_asof():
+    fills = [_opt_buy(), _opt_buy(symbol="QQQ", strike=700.0, price=0.85, qty=1.0)]
+    a = analyze_autopsy(fills, asof=date(2026, 6, 1))
+    b = analyze_autopsy(fills, asof=date(2026, 6, 1))
+    assert a.performance == b.performance
+    assert a.narrative == b.narrative
 
 
 def test_autopsy_tool_execution_via_registry(memory_db):
