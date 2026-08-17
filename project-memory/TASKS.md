@@ -12,7 +12,8 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-(none)
+In progress — T106 — Claude/Cowork (MCP context lifecycle. Files:
+backend/api/mcp_server.py, backend/tests/test_mcp_server.py.)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T103 (Trading Autopsy) v2 — REVIEWED BY Claude/Cowork — PASS.** Both blocks
