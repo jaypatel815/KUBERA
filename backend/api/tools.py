@@ -55,6 +55,7 @@ from analysis.staleness import (
 )
 from analysis.triage import triage_position
 from analysis.twr import time_weighted_return
+from backtest.engine import run_backtest as eng_run_backtest
 from backtest.ledger import (
     PROMOTION_MAX_AGE_DAYS,
     is_promoted,
@@ -1591,6 +1592,20 @@ def _run_backtest(ctx: ToolContext, p: BacktestArgs) -> dict:
         db, market, strategy, {"template": p.strategy}, p.symbol,
         days=p.days, cost_bps=p.cost_bps,
     )
+    # T109/D029 cost stress: the SAME strategy on the SAME history at doubled
+    # costs, computed in-memory and NOT recorded as a second ledger run (it is
+    # a derived view of this run, not a new experiment). A request at 0 bps
+    # still gets a nonzero stress — 10 bps, i.e. 2x the promotion default of
+    # 5 — because "free trading" is exactly the assumption that needs stressing.
+    stress_bps = p.cost_bps * 2 if p.cost_bps > 0 else 10.0
+    # Second bars fetch: run_and_record does not expose the prices it used, and
+    # daily bars are cheap; restructuring its signature for this would touch
+    # every caller for one derived view.
+    bars = market.get_daily_bars(p.symbol, days=p.days)
+    stressed = eng_run_backtest(
+        [b.close for b in bars.bars], [b.date for b in bars.bars],
+        strategy, result.strategy_name, cost_bps=stress_bps,
+    )
     return {
         "run_id": row.id,
         "strategy": result.strategy_name,
@@ -1603,6 +1618,17 @@ def _run_backtest(ctx: ToolContext, p: BacktestArgs) -> dict:
         "sharpe_ann": result.sharpe_ann,
         "max_drawdown_frac": result.max_drawdown_frac,
         "n_rebalances": result.n_rebalances,
+        "cost_stress": {
+            "cost_bps": stress_bps,
+            "cumulative_return": stressed.cumulative_return,
+            "sharpe_ann": stressed.sharpe_ann,
+            "max_drawdown_frac": stressed.max_drawdown_frac,
+            "return_given_up": round(
+                result.cumulative_return - stressed.cumulative_return, 6),
+            "note": ("same strategy and history at doubled transaction costs "
+                     "(SELECTION_RULE.md #4) — a result that dies here is "
+                     "cost-fragile, and the review must say so"),
+        },
         # T064b: per-trade truth + drawdown-adjusted return, not just curve stats
         "trades": asdict(trade_stats(result.weights, result.equity_curve)),
         "calmar": calmar(result.equity_curve),

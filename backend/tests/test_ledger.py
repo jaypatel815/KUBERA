@@ -82,6 +82,37 @@ def test_run_and_record_with_market(db):
     assert row.sharpe_ann is not None
 
 
+def test_run_backtest_tool_reports_cost_stress(db):
+    """T109/D029: every backtest carries its own 2x-cost rerun so cost-fragile
+    edges are visible at review. Derived view only — exactly ONE ledger row."""
+    with market_fake() as m:
+        out = registry.execute(
+            "run_backtest", {"strategy": "buy_and_hold", "symbol": "SPY",
+                             "days": 90, "cost_bps": 5.0},
+            ToolContext(db=db, market=m),
+        )
+    cs = out["cost_stress"]
+    assert cs["cost_bps"] == 10.0                     # exactly 2x the request
+    # Buy-and-hold trades once; doubling costs can only reduce the outcome.
+    assert cs["cumulative_return"] < out["cumulative_return"]
+    assert cs["return_given_up"] > 0
+    assert "cost-fragile" in cs["note"]
+    assert len(list_runs(db)) == 1                    # the stress is not a run
+
+
+def test_cost_stress_at_zero_bps_still_stresses(db):
+    """A 0-cost request gets a 10 bps stress: 'free trading' is exactly the
+    assumption that needs stressing."""
+    with market_fake() as m:
+        out = registry.execute(
+            "run_backtest", {"strategy": "buy_and_hold", "symbol": "SPY",
+                             "days": 90, "cost_bps": 0.0},
+            ToolContext(db=db, market=m),
+        )
+    assert out["cost_stress"]["cost_bps"] == 10.0
+    assert out["cost_stress"]["cumulative_return"] < out["cumulative_return"]
+
+
 def test_tool_rejects_unknown_strategy(db):
     with market_fake() as m:
         with pytest.raises(ToolArgumentError) as exc:

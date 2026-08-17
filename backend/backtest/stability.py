@@ -114,6 +114,13 @@ def run_sweep(closes: Sequence[float], dates: Sequence[str], template: str,
     param_name, default_values, builder = SWEEPS[template]
     warnings: list[str] = []
     results: list[tuple[float, float]] = []
+    # T109/D029 cost stress: every sweep point is also run at doubled costs so
+    # the plateau's survival at 2x costs is visible beside the base metric.
+    # Advisory context only — the stability VERDICT stays a function of the
+    # base metric, because changing the verdict input would silently re-judge
+    # every previously recorded sweep.
+    stress_bps = cost_bps * 2 if cost_bps > 0 else 10.0
+    stressed_by_param: dict = {}
     for v in (values if values is not None else default_values):
         strategy = builder(v)
         res = run_backtest(closes, dates, strategy,
@@ -126,5 +133,16 @@ def run_sweep(closes: Sequence[float], dates: Sequence[str], template: str,
             warnings.append(f"{param_name}={v}: constant equity curve "
                             "(never invested) — metric set to 0")
         results.append((v, round(metric, 4)))
-    return replace(stability_report(template, param_name, results),
-                   warnings=warnings)
+
+        res2 = run_backtest(closes, dates, strategy,
+                            strategy_name=strategy.__name__, cost_bps=stress_bps)
+        try:
+            stressed_by_param[v] = round(sharpe(daily_returns(res2.equity_curve)), 4)
+        except ValueError:
+            stressed_by_param[v] = 0.0
+
+    report = replace(stability_report(template, param_name, results),
+                     warnings=warnings)
+    for row in report.results:
+        row["metric_2x_cost"] = stressed_by_param.get(row["param"])
+    return report

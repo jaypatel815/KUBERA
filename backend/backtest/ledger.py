@@ -94,10 +94,16 @@ def promote_template(
     days: int = 730,
     n_segments: int = 4,
     cost_bps: float = 5.0,
+    rule_version: str | None = None,
 ) -> tuple[WalkForwardResult, BacktestRun]:
     """The T064 promotion gate: run the anchored walk-forward on real history and
     record the verdict. The paper loop (require_promotion) honors ONLY runs whose
-    promotion_status is 'passed_walk_forward' for this (template, symbol) pair."""
+    promotion_status is 'passed_walk_forward' for this (template, symbol) pair.
+
+    `rule_version` (T109/D029) stamps which version of docs/SELECTION_RULE.md
+    judged this run — the promotion record must be able to say what standard it
+    was held to, because the standard is allowed to evolve and results are not
+    re-judged retroactively."""
     result, row = run_and_record(
         session, market, strategy,
         {"template": template, "walk_forward_segments": n_segments},
@@ -108,6 +114,8 @@ def promote_template(
     params = json.loads(row.params_json)
     params["segment_returns"] = [round(r, 6) for r in wf.segment_returns]
     params["walk_forward_criteria"] = wf.criteria
+    if rule_version:
+        params["selection_rule_version"] = rule_version
     row.params_json = json.dumps(params, sort_keys=True)
     session.commit()
     return wf, row

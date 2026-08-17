@@ -15,6 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
 from backtest.ledger import promote_template  # noqa: E402
+from backtest.selection_rule import SelectionRuleMissing, load_selection_rule  # noqa: E402
 from backtest.strategies import TEMPLATES, build_strategy  # noqa: E402
 from data.db import make_engine, make_session_factory  # noqa: E402
 from data.market_data import MarketDataClient  # noqa: E402
@@ -29,13 +30,22 @@ def main() -> int:
     ap.add_argument("--cost-bps", type=float, default=5.0)
     args = ap.parse_args()
 
+    # T109/D029: promotion is judged against the PRE-REGISTERED standard, and
+    # refuses to run without one. The rule's version is stamped on the record.
+    try:
+        rule = load_selection_rule()
+    except SelectionRuleMissing as e:
+        print(str(e))
+        return 2
+    print(f"applying selection rule {rule.version} ({rule.path})")
+
     engine = make_engine()
     factory = make_session_factory(engine)
     with MarketDataClient() as market, factory() as db:
         wf, row = promote_template(
             db, market, build_strategy(args.strategy), args.strategy,
             args.symbol, days=args.days, n_segments=args.segments,
-            cost_bps=args.cost_bps,
+            cost_bps=args.cost_bps, rule_version=rule.version,
         )
     verdict = "PASSED" if wf.passed else "FAILED"
     print(f"{verdict} — {args.strategy} on {row.symbol} "

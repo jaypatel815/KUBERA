@@ -12,9 +12,43 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T109 (pre-registered selection rule + cost stress — D029) — Claude/Cowork** — claimed 2026-08-17.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T109 (pre-registered selection rule + cost stress — D029) — AWAITING REVIEW —
+  Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity.
+  Files: `docs/SELECTION_RULE.md` (NEW — v1, the pre-registered promotion standard:
+  codifies the ENFORCED T064/T064b gates, records T092 stability + T109 cost stress as
+  required-at-review evidence, adopts ties-to-incumbent / dev-is-never-a-gate /
+  one-structural-change from D029, with change control + changelog),
+  `backend/backtest/selection_rule.py` (NEW — versioned loader; SelectionRuleMissing
+  refusals for absent/unversioned), `scripts/promote.py` (loads the rule, prints the
+  version, REFUSES to promote without it, stamps rule_version into the run),
+  `backend/backtest/ledger.py` (promote_template gains rule_version → params_json),
+  `backend/api/tools.py` (run_backtest returns a cost_stress block: same strategy and
+  history at 2x cost_bps — 10 bps floor when 0 requested, commented — computed in-memory,
+  NOT a second ledger row), `backend/backtest/stability.py` (every sweep point carries
+  metric_2x_cost; the VERDICT stays a function of the base metric, deliberately),
+  tests: test_selection_rule.py (NEW, 5) + test_ledger.py (+2) + test_stability.py (+1).
+  EVIDENCE (D027): 48 passed across the five touched suites; full gate PASS; ruff clean;
+  pyrefly exactly 1 (known I023). Cost-stress hand-check in-test: buy-and-hold at 2x
+  costs returns strictly less and exactly one ledger row exists. Rule stamping proven:
+  params_json carries selection_rule_version="v1" when promoted via the CLI path, and
+  nothing is fabricated when absent. T109c finding: the turnover invariant ALREADY
+  EXISTS — test_backtest.py::test_transaction_cost_hand_computed pins the 0→1 shift at
+  exactly |Δw|×bps (the article's single-asset check, expressed through our cost model);
+  nothing added, per the ticket's "only if absent".
+  STRONGEST OBJECTIONS AGAINST MY OWN TICKET (D028):
+    1. The rule doc codifies T092 stability as REQUIRED-AT-REVIEW, not a refusing gate —
+       pre-registering the status quo, not the stricter standard the article implies.
+       Deliberate (hardening enforcement = rule v2 + code change, not a silent practice
+       shift), but a reviewer could reasonably push for v2 now.
+    2. run_backtest's stress block fetches bars a SECOND time (run_and_record does not
+       expose its prices). If the provider returned different data between the two
+       fetches, base and stress would diverge on data, not just costs. Windows are
+       identical and daily bars are stable, but the honest fix is exposing bars from
+       run_and_record — noted, not done, to keep this ticket small.
+    3. The 10 bps zero-cost stress floor is a chosen tunable (commented at both sites:
+       2x the promotion default). Reasonable people could pick another number.
 - **T108b (Statement-transaction importer to close quantity gaps — I028) — DONE 2026-08-17 (Gemini/Antigravity; REVIEWED by Claude/Cowork — BLOCK then PASS, e15a785)**.
   Monthly brokerage statements (`private/statements/Brokerage Statement_*.PDF`) record complete purchase/sale tables.
   Missing trade confirmation PDFs historically led to quantity mismatches on expired contracts (e.g. 692P 1v9, 660P 2v10, 733P 100v135)
@@ -421,15 +455,9 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   reviewed BLOCK→PASS by Claude/Cowork; full record in "Awaiting review" section above).
   Reconciliation 13/13 clean; the honest full-history record is now 131 fills, 80 trips,
   -$7,998.86 realized, 53.8% win rate (options -$11,706 / equities +$3,707).
-- [ ] T109 — Pre-registered selection rule + cost stress (D029; disposition:
-  docs/research/deep-agents-trading-review-2026-08-17.md): (a) write
-  docs/SELECTION_RULE.md BEFORE any further strategy work — the T064/T092 gates
-  as a versioned standard, plus ties-go-to-the-incumbent and "dev-period
-  performance is never a gate"; promote.py prints the rule version it applied
-  and refuses if the file is missing; (b) run_backtest/sweep output gains a
-  2x-cost column beside the base run so cost-fragile edges are visible at
-  review time; (c) check T030's suite for the single-asset buy-and-hold
-  turnover==1.0 invariant — add it only if absent. Small ticket, buildable now.
+- [~] T109 — Pre-registered selection rule + cost stress — BUILT 2026-08-17
+  (Claude/Cowork), see "Awaiting review". (c) resolved as already-present:
+  test_transaction_cost_hand_computed IS the turnover invariant.
 - [ ] T110 — Phase 7 preconditions: evidence custody for the learning loop
   (D029, GATED — design exists, build when Phase 7 opens): reserved holdout
   window with code-enforced custody outside agent reach (freeze-then-unlock,

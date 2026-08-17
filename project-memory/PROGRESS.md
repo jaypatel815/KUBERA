@@ -26,6 +26,25 @@ Implemented monthly brokerage statement transaction importing and deduplication 
   · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
 - Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
 
+## 2026-08-17 (fifth session) — Claude/Cowork — T109: the standard now predates the result
+Built D029's first half. docs/SELECTION_RULE.md v1 pre-registers the promotion
+standard: the T064/T064b gates as written rules, T092 stability + cost stress as
+required-at-review evidence, and the D029 semantics (ties to the incumbent,
+dev-period performance is never a gate, one structural change per revision) with
+change control — a rule change never re-judges results already seen.
+scripts/promote.py now loads the rule, prints its version, REFUSES to promote
+without it, and stamps selection_rule_version into the run's params_json — the
+record says which standard judged it. run_backtest gained a cost_stress block
+(same strategy/history at 2x costs, in-memory, never a second ledger row; 0-cost
+requests stress at 10 bps because free trading is the assumption most in need of
+stressing) and every sweep point now carries metric_2x_cost beside the base
+Sharpe — verdict inputs deliberately unchanged. T109c closed as already-present:
+the T030 cost hand-test IS the turnover invariant. 8 new tests (48 green across
+touched suites); gate PASS; pyrefly 1 (known I023). Strongest objection in the
+handoff: the rule codifies stability as advisory (the status quo), and hardening
+it to a refusing gate is a v2 decision a reviewer may want now.
+Next: Gemini reviews T109. Backlog: T023 (owner's FMP tier answer), T083, T077b.
+
 ## 2026-08-17 (fourth session) — Claude/Cowork — deep-agents article reconciled (D029)
 Owner asked for a review of freeCodeCamp's "Multi-Agent Trading Research System
 with LangChain Deep Agents". Full disposition:

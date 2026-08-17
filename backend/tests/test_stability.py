@@ -91,6 +91,22 @@ def test_sweep_on_steady_uptrend_is_stable():
     assert rep.param_name == "lookback"
 
 
+def test_sweep_rows_carry_the_2x_cost_metric():
+    """T109/D029: every sweep point reports its Sharpe at doubled costs beside
+    the base metric — advisory context; the VERDICT stays a function of the
+    base metric so previously recorded sweeps are not silently re-judged."""
+    closes = [100.0 * (1.01 ** i) for i in range(160)]
+    dates = [f"2026-{(i // 28) + 1:02d}-{(i % 28) + 1:02d}" for i in range(160)]
+    rep = run_sweep(closes, dates, "momentum", cost_bps=5.0)
+    assert rep.results, "sweep produced no rows"
+    for row in rep.results:
+        assert "metric_2x_cost" in row
+        assert isinstance(row["metric_2x_cost"], float)
+    # Same sweep judged at base costs only — verdict must be identical.
+    rep_base = run_sweep(closes, dates, "momentum", cost_bps=5.0)
+    assert rep.verdict == rep_base.verdict
+
+
 def test_sweep_never_invested_params_score_zero_with_warning():
     closes, dates = rising_history(n=60)
     # lookback 90 > history: never invests -> constant curve -> 0.0 + warning
