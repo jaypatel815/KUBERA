@@ -30,7 +30,16 @@ currently RED — see I018, which needs the failing log.)
         Behavior: revenge sizing signature in equity: sizing up by 12.53x after
         losses ($12,488 vs $996 median, N=6)". Both figures are now equity
         notionals, so the 78x artifact is gone.
-      T045b restored to open — the owner still has not run the acceptance test.
+      T045b — I wrote here that "the owner still has not run the acceptance test",
+        and I was wrong twice over. CORRECTED 2026-08-16: he had run it, it is
+        recorded DONE by the owner at line ~201 of this same file, and I did not
+        read that far before asserting otherwise. Then, challenged, I searched
+        %APPDATA% for a .bak and an mcp-server log, found neither, and treated
+        that as support — while unable to READ any of those files from this
+        session, which makes the search worthless as evidence either way. The
+        primary source told me directly and I discounted him for a file I had
+        misread. This is the exact unfounded-claim failure I had been blocking
+        other agents for, committed by the reviewer who wrote the rule.
     concerns (non-blocking):
       1. "SIGNATURE" IS TOO STRONG A WORD FOR N=6. The claim survives the
          MIN_PAIRED_OBSERVATIONS floor of 3, but six paired observations

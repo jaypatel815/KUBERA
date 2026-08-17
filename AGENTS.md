@@ -214,10 +214,35 @@ somebody else wrote it and you are being paid to find the flaw. Specifically:
    literal, a dict instead of an if-chain — is worth taking. Speculative
    abstraction for a future nobody has asked for is not; that is its own bug.
 
-6. **WOULD YOU SIGN IT?** If another agent handed you this diff, would you write
+6. **TRY TO FALSIFY YOUR OWN WORK, NOT CONFIRM IT.** This is the difference
+   between checking and criticising, and it is where the real defects live. Do
+   not ask "does this work?" — you will find that it does. Ask "what would make
+   this WRONG?", then go looking for that. Feed it the input you did not think
+   of. Read your own output as a sceptic hunting for an overclaim. Every defect
+   an agent found here rather than the owner came from that second question:
+   reading per-file parser output instead of trusting totals, RUNNING a tool
+   instead of trusting that it registered, feeding the config installer a BOM
+   instead of a clean file.
+   The same applies to CLAIMS, not just code. Before writing "the owner has not
+   done X" or "this is the cause", ask what would show you are wrong, and go
+   look. A reviewer once asserted twice that the owner had not run an acceptance
+   test; it was recorded as done in the very file being quoted, two hundred lines
+   further down. Read the whole file. Believe the primary source.
+   WRITE THE STRONGEST OBJECTION YOU CAN FIND against your own ticket into the
+   handoff, even if you then explain why you are shipping anyway. A handoff with
+   no objection in it asserts that none exists, and that is almost never true.
+
+7. **WOULD YOU SIGN IT?** If another agent handed you this diff, would you write
    PASS with evidence under D027? If not, it is not ready to commit — fix it now
    rather than discovering it in review, because the reviewer may be having a
    generous day.
+
+A CAUTION, so none of this becomes ritual. More process is not more rigour, and
+a checklist performed is worth nothing. What has actually caught defects in this
+repo is narrow and repeatable: running real data through the thing, reading a
+diff against the requirement, and the owner saying "that looks wrong". If a rule
+here stops earning its place, say so and delete it — a procedure nobody believes
+in is worse than none, because it manufactures confidence without producing it.
 
 Record in the PROGRESS entry what this pass CHANGED. "Reviewed my own diff" with
 nothing following it is not evidence that you did.
