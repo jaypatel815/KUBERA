@@ -4,6 +4,20 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I023 [OPEN — pyrefly is at 1, the config still claims 0] (2026-08-16)
+  T101 drove the checker to zero and wrote "KNOWN REMAINING ERRORS — 0" into
+  pyrefly.toml with the instruction "if new errors appear, investigate
+  immediately before suppressing". T045 then introduced one:
+    backend/api/mcp_server.py:195 — `fn.__signature__ = inspect.Signature(...)`
+    Object of class `FunctionType` has no attribute `__signature__`
+  It is legal Python (functions accept arbitrary attributes, and CPython honours
+  __signature__ for introspection), so this is an expressibility gap rather than
+  a defect — but the invariant an agent just established was broken by the next
+  ticket, and the config now lies about the count.
+  FIX during the T045 v2 review: either express it (a small callable class with a
+  real signature, as T101 did for RegimeRouterStrategy) or update the pyrefly.toml
+  block to say 1 with the reason. Silently leaving the comment wrong is the one
+  option that is not acceptable — it is how the 138-error state started.
 - I021 [BLOCKING T045 — the MCP server bypasses the confirmation gate] (2026-08-16)
   DEMONSTRATED, not inferred: through the MCP server, with no confirmation step,
   `update_ips` set max_drawdown_frac=0.99 and objectives="YOLO everything" on a

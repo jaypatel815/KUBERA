@@ -72,6 +72,46 @@ If it fails, that is an automatic BLOCK — no exceptions, no "it passed for me"
 - [ ] Memory updated: TASKS entry, one PROGRESS entry, ISSUES if anything broke.
 - [ ] No secrets, no mock data outside `tests/fixtures/`.
 
+### 3b. A PASS IS INVALID WITHOUT EVIDENCE YOU RAN SOMETHING (D027)
+
+Added 2026-08-16 after the owner observed that reviews were agreeing with
+everything. The record backed him: six reviews, six PASS, "concerns: none" —
+including a ticket whose main tool raised AttributeError on its first real call,
+passed one commit before a type checker found it. A review that reads code and
+approves it is not a review; it is a second opinion on the same misreading.
+
+So `checked:` must name a COMMAND YOU RAN AND WHAT CAME BACK. These phrases are
+not evidence and a verdict containing only them is void:
+  "looks correct" · "verified the implementation" · "reviewed the code"
+  "the logic is sound" · "tests pass" (whose? on what machine?)
+
+MINIMUM EVIDENCE BY TICKET KIND — do the one that matches:
+
+  new tool or endpoint     EXECUTE IT against a real (in-memory) database and
+                           paste the result. Registration is not function; the
+                           T069 bug was a tool that registered fine and crashed
+                           on call.
+  new dependency           Simulate a clean checkout:
+                             git ls-files -z | tar --null -T - -cf - | tar -x -C /tmp/cico
+                             cd /tmp/cico && python scripts/verify.py
+                           This is how I016, I018 and I022 were each found —
+                           three times, same shape.
+  config that LOWERS an
+  error or warning count   CANARY IT. Inject a deliberate error and confirm the
+                           tool still reports it. A count that falls because the
+                           checker went deaf looks identical to one that fell
+                           because the code got better.
+  parser or importer       Read PER-ITEM output, not aggregates. The T102 window
+                           bug produced perfect totals — 0 unparsed, plausible
+                           counts — while mislabelling an equity buy as a put.
+  safety rail              ATTEMPT THE THING THE RAIL FORBIDS and show it
+                           refused. I021 was found by calling update_ips through
+                           MCP and watching the IPS change.
+  money math               Recompute one number by hand and compare.
+
+"concerns: none" is itself a claim. If you found nothing, say WHAT YOU LOOKED
+FOR and failed to find. A reviewer who never records a concern is not reviewing.
+
 ### 4. Write the verdict in `TASKS.md`, under the ticket
 
 ```

@@ -433,3 +433,50 @@ cannot reach an order, which is the point.
 OPEN UNKNOWN, to be measured not assumed: how far back the Schwab transactions
 endpoint actually serves. First task of T016 is to pull the widest range it
 allows and record the real answer here.
+
+## D027 — reviews must show evidence; builders must self-check (2026-08-16)
+DECIDED BY THE OWNER after he observed that reviews were agreeing with
+everything and that edits kept arriving broken. He asked for the record rather
+than the impression, and the record supported him.
+
+THE EVIDENCE, checkable in git:
+- Gemini's verdicts on Claude's work: SIX reviews, SIX PASS, "concerns: none"
+  wherever recorded.
+- Claude's verdicts on Gemini's work: one PASS with listed concerns, two BLOCK
+  (T072 broke CI collection; T045 bypassed the confirmation gate).
+- The sharpest one: `61f4cd0 review T069: PASS` is immediately followed by
+  `b323691 ... fix the real bug it found in T069`. The reviewed tool referenced a
+  database column that does not exist and raised AttributeError on its first real
+  call. A type checker found it in seconds. The review had not run it.
+
+THE QUALIFICATION, recorded because it changes the right remedy: when told
+precisely what was wrong, Gemini fixed both T045 blocks correctly and promptly —
+mutating tools removed from the default surface, `confirmed` defaulted to False,
+the mcp pin carrying its reason. Re-verified by re-running the exploit. The gap
+is FINDING unspecified problems, not executing specified ones. So the answer is
+not to remove the agent; it is to make "I agree" cost something.
+
+WHAT CHANGED:
+1. REVIEW.md — a PASS is VOID unless `checked:` names a command that was run and
+   what came back. "Looks correct", "verified the implementation", "the logic is
+   sound" and a bare "tests pass" are explicitly listed as non-evidence. Minimum
+   evidence is specified per ticket kind: execute a new tool, simulate a clean
+   checkout for a dependency, canary any config that lowers an error count, read
+   per-item output for a parser, and attempt to violate any new safety rail.
+   "concerns: none" now requires saying what you looked for.
+2. AGENTS.md — the same five checks become the BUILDER's obligation before
+   handing off, and what was run goes in the PROGRESS entry. This is the half
+   that protects against the reviewer being weak: the builder is the last person
+   who will look closely, so behave accordingly.
+
+WHY BOTH HALVES: the owner chose to keep reciprocal review rather than retire
+it. That is the right call on the evidence — Gemini's independent Windows
+environment has caught things this sandbox cannot — but reciprocal review only
+works if agreement is expensive. Every rule above is derived from a bug that
+actually happened here, not from general good practice, and each one is written
+with the incident attached so a future agent can see why it is not optional.
+
+HONEST LIMIT: none of this can force a reviewer to actually run the command it
+claims to have run. What it can do is make a fabricated verdict a specific,
+checkable lie rather than a vague opinion — and put the builder's own five
+checks between a bug and the repository regardless.
