@@ -12,11 +12,20 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- In progress — T102 — Claude/Cowork (Schwab confirmation parser. Files:
-  backend/data/statements.py, backend/tests/test_statements.py,
-  backend/tests/fixtures/schwab/*, scripts/parse_statements.py — no overlap with T101.)
+
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T102 (confirmation parser) — AWAITING REVIEW — Claude/Cowork** — Reviewer:
+  Gemini/Antigravity. Files: `backend/data/statements.py` (new),
+  `backend/tests/test_statements.py` (new, 12 tests),
+  `backend/tests/fixtures/schwab/*.txt` (REDACTED from real confirmations, PII-audited).
+  Gate PASS 740; pyrefly 0 errors. Parses 250 fills from 86 real confirmations, 0 unparsed.
+  Review focus: (a) the row regex is positional — does it survive a statement with a
+  different column layout, or should it key off the header row; (b) `redact()` is
+  regex-based — is that strong enough for something committed to a PUBLIC repo, and
+  is the fixture PII test the right guard; (c) trade date from the page header vs
+  settle date on the row — confirm that reading; (d) I020 says options are 59% of his
+  fills and the API mapper drops them — agree that T103 must wait?
 - **T101 (expressible typing for last 6 pyrefly errors) — AWAITING REVIEW — Gemini/Antigravity** —
   Reviewer: Claude/Cowork, per REVIEW.md. Files: `backend/analysis/correlation.py` (`CorrelationMatch` TypedDict),
   `backend/analysis/ranking.py` (narrowed `pcts` list comprehension),
@@ -283,13 +292,19 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   `backend/data/schwab.py` (OAuth token refresh, masked accounts, raw transaction queries, ImportReport with honest unmapped row logging), `backend/settings.py` (schwab_* settings and require_schwab), `.env.example`, `scripts/schwab_auth.py`, `scripts/reconcile_schwab.py`, `scripts/env_check.py`, and `backend/tests/test_schwab.py` (19 unit tests).
   REVIEW VERDICT: PASS. (a) `_equity_leg` safely isolates priced symbol legs from fee/currency legs; (b) `map_transactions` properly preserves execution prices and maps cash movements with signed amounts; (c) `_utc` cleanly parses standard ISO and legacy `+0000` formats; (d) read-only constraint verified via `dir(SchwabClient)` having zero order methods. Gate PASS (728 passed).
   Remaining live acceptance (T016 live reconciliation against actual account statements) is parked pending Schwab app approval (I019).
-- [ ] T102 — Statement PDF ingest — **NOW THE UNBLOCKED PATH (I019)**: Schwab has the
+- [~] T102 — Statement PDF ingest — BUILT 2026-08-16 (Claude/Cowork, AWAITING REVIEW). Original scope: Schwab has the
   app in "Modification Pending" so no API call can succeed for a few days. This ticket
   needs only a statement PDF and no credentials, so it is the useful work in the
   meantime — and its parser has to exist anyway. Original scope: parse Schwab
   statements for history the API cannot reach. Layouts change across years, so the parser
   reports what it could NOT parse rather than silently dropping rows. Its test is the
   overlap window — parsed rows must reconcile against API rows where both exist.
+- [ ] T105 — Options in the import and the analysis (I020, BLOCKS T103): extend
+  `data/schwab.py` to map option TRADE legs (they are currently reported unmapped by
+  design), give `analysis/attribution.py` a contract multiplier, and add an intraday
+  holding bucket — 62% of his option trades expire the same day, so "1 day" is the
+  wrong floor. Until this lands, any autopsy describes only the 41% of his trading
+  that is equities.
 - [ ] T103 — The trading autopsy (D026, blocked on T016 + T102 reconciling): run the
   existing battery over REAL fills — T091b holding periods vs stated style, T069 sizing
   drift and post-loss tempo, T088 slippage by hour, T089 give-back, T060 TWR — and compose

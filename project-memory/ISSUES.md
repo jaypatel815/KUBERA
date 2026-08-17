@@ -4,6 +4,33 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I020 [OPEN — the Schwab API import would DROP most of the owner's trading] (2026-08-16)
+  FOUND by parsing his real confirmations (T102). His book is not what T016a
+  assumed. Measured over 86 confirmations, Jan-Jun 2026:
+    250 fills total — 147 OPTIONS (59%), 103 equity
+    91 of the 147 option fills expire the SAME DAY they were traded (62%) — 0DTE
+    option notional $93,676 vs equity notional $771,905
+  THE DEFECT: `data/schwab.py::_equity_leg` accepts only a transferItem carrying
+  BOTH a symbol and a price, and everything else is reported as "TRADE with no
+  priced equity leg (option, multi-leg, or corporate action)". Options are
+  therefore classified as unmapped BY DESIGN. That was a defensible default when
+  we believed this was an equity account; on the actual account it means the
+  import silently discards 59% of his fills and essentially all of his 0DTE
+  activity — which, on this evidence, IS his trading style.
+  NOT A REGRESSION, AND NOT GEMINI'S MISS: T016a was reviewed and signed PASS
+  against the assumption stated in its own docstring. The assumption was wrong,
+  and the data arrived afterwards. That is what "reconciliation is the acceptance
+  criterion" (D026) was for — it caught this before any behavioural conclusion
+  was drawn from a 41%-complete import.
+  KNOCK-ON, and the reason this is not just an import ticket: every behavioural
+  module assumes shares. `analysis/attribution.py` FIFO has no contract
+  multiplier, T091b holding periods are measured in DAYS when 62% of his option
+  trades live for HOURS, and T069's sizing drift compares notionals that would be
+  100x wrong if a contract were counted as a share.
+  NEXT: T105 — extend the API mapper to options and give the analysis layer a
+  contract multiplier and an intraday holding bucket. Do NOT run T103 (the
+  autopsy) until this lands; its conclusions would be drawn from the 41% of his
+  trading that happens to be equities.
 - I019 [SCHWAB-SIDE, CONFIRMED — waiting on Schwab review] (2026-08-16)
   SYMPTOM: `python scripts/schwab_auth.py` opens the browser fine, the owner logs
   in and accepts the terms, and Schwab then LOGS HIM OUT with "We are unable to

@@ -3,6 +3,40 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — T102: the parser, and what it revealed
+The owner sent 91 documents — 86 trade CONFIRMATIONS plus 5 monthly statements,
+Jan-Jun 2026. Confirmations are better than statements: exact fills, prices,
+commissions.
+Built `data/statements.py` against the real layout, and three properties of the
+documents each of which would have quietly corrupted the analysis. The row date
+is the SETTLE date — a trade executed 03/02 shows 03/03 — and the TRADE date
+appears only in the page header, so a row without a header date is refused
+rather than defaulted. One confirmation holds MANY fills (up to 7), because
+these are daily documents covering every trade of that day. And option rows
+carry expiry/strike/right on continuation lines with quantity in CONTRACTS.
+CAUGHT A REAL BUG IN MY OWN PARSER BY LOOKING RATHER THAN TRUSTING THE TOTALS.
+First version used a fixed 4-line lookahead for the option details; on a daily
+confirmation that window reached into the NEXT trade and tagged a SCHD equity
+purchase at $30.81 as a 180-strike put. Aggregates looked perfect — 0 unparsed,
+plausible counts — and it only surfaced on reading per-file fills one by one.
+Window is now bounded by the next row, and multi_trade_day.txt exists as the
+regression fixture.
+THE FINDING THAT MATTERS MORE THAN THE TICKET (logged I020): his book is not
+what T016a assumed. 147 of 250 fills are OPTIONS (59%), and 91 of those expire
+the SAME DAY they were traded (62% 0DTE). The Schwab API mapper reports options
+as unmapped BY DESIGN, so the import as built would silently discard the
+majority of his trading. Filed T105 and blocked T103 — an autopsy run now would
+describe the 41% of his activity that happens to be equities and call it his
+style. This is precisely what D026's "reconciliation, not it-ran" was for.
+Fixtures are redacted from his real documents and PII-audited (account number,
+long digit runs, address shapes) with a test that re-audits the committed files,
+because the repo is public.
+Verified: gate PASS 740 passed, 3 skipped; pyrefly 0 errors; 250 fills parsed
+from 86 real PDFs with 0 unparsed.
+Next: Gemini reviews T102. Then T105 (options in import + analysis) before any
+autopsy. Owner: Schwab app still "Modification Pending" (I019).
+
+
 ## 2026-08-16 — Gemini/Antigravity — T101: expressible typing for last 6 pyrefly errors (AWAITING REVIEW)
 Built T101 to eliminate all 6 known tolerated type-checking false positives:
 - `backend/analysis/correlation.py`: Defined `CorrelationMatch(TypedDict)` with fields `with: str` and `corr: float`; typed `candidate_max` and `best` as `CorrelationMatch | None`.
