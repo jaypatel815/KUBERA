@@ -12,7 +12,9 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-
+In progress — T105 — Claude/Cowork (I020: options in the import + analysis.
+Files: backend/data/schwab.py, backend/analysis/attribution.py,
+backend/tests/test_schwab.py, backend/tests/test_holding_periods.py.)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T101 (expressible typing for last 6 pyrefly errors) — AWAITING REVIEW — Gemini/Antigravity** —
