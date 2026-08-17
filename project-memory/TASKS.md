@@ -15,6 +15,62 @@ currently RED — see I018, which needs the failing log.)
 (none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T103 (Trading Autopsy) — REVIEWED BY Claude/Cowork — BLOCK.** Two fabricated
+  findings, both presented to the owner as measurements.
+    aligned: yes, and it is the payoff of the whole Schwab arc. The disciplines
+      READ correctly — every figure carries N, "insufficient" is handled, the note
+      says "zero predictions". Which is exactly why reading it was not enough.
+    checked — RAN IT ON THE OWNER'S 250 REAL FILLS (D027), not on fixtures:
+      python -c "... parse 86 confirmations -> normalize_fill -> analyze_autopsy"
+    BLOCKING 1 — HOLDING PERIODS ARE COMPUTED FROM A FABRICATED CLOCK.
+      autopsy.py:174 and :216 do `datetime.combine(trade_date, time(12, 0))`.
+      Schwab CONFIRMATIONS CARRY NO TIME OF DAY — statements.py exposes
+      `trade_date: date` by design, because the document only prints a date.
+      So every fill is stamped noon, and I verified the consequence directly:
+        distinct times of day across all 250 fills: {''}
+        median_days: 0.0   shortest_days: 0.0
+        by_bucket["minutes"]: 61 round trips, $12,939 realized
+      Those 61 are NOT 20-minute scalps. They are same-day trades whose duration
+      is 12:00 minus 12:00 = exactly zero. The narrative then states
+      "Holding Time: Median hold is 0.0 hours (0.000 days)" as a finding.
+      This is the rule in AGENTS.md priority 1 — never present placeholder data
+      as if it were real — and it is the sub-day bucket split from T105 being
+      populated by an invented clock. My T105 is complicit here: I built
+      minutes/hours/same_day without stating that statement data cannot fill
+      them. The buckets are correct for API fills (which do carry timestamps)
+      and unpopulatable from confirmations.
+      FIX: normalize_fill must NOT invent a time. Carry `time_known: bool`; when
+      false, holding periods report `unknown` rather than 0.0, and the narrative
+      must say "confirmations do not record time of day" instead of quoting a
+      median. Note this makes the autopsy genuinely weaker on statement data —
+      which is the honest outcome, not a regression.
+    BLOCKING 2 — "REVENGE SIZING 78.05x" IS A CATEGORY ERROR.
+      Narrative: "revenge sizing signature: sizing up by 78.05x after losses
+      ($12,488 vs $160 median, N=7)". That compares an EQUITY notional against
+      an OPTION PREMIUM. Verified the extremes in the same dataset:
+        LARGE equity NOK 1925 @ 15.98 -> $30,761
+        SMALL option NVDA   1 @ 0.05  -> $5
+      A median over both populations is meaningless, and 78x is the ratio of
+      "he bought shares" to "he bought one cheap contract", not of behaviour.
+      This is the most dangerous line in the report: it is a confident accusation
+      about his psychology, on N=7, produced by mixing instrument classes.
+      FIX: compute sizing drift WITHIN an asset class, or on risk-normalised
+      terms, and refuse to emit the tell when the two sides are not comparable.
+    concerns:
+      1. test_autopsy.py contains no fills with an intraday time, so no test
+         could have caught blocking 1 — the fixtures share the defect they would
+         need to detect.
+      2. Registry grew to #35 and all three count guards were updated correctly.
+      3. T045b was marked DONE "verified by Gemini" while ALSO still listed open
+         at line 173. The ticket was redefined from "the owner runs the Claude
+         Desktop acceptance test" to "Claude wrote an installer script". The
+         owner has never run it — he was still hitting path errors after that
+         DONE was written. Restore it to open.
+    what is good and should survive the fix: the instrument profile is correct
+      and independently reproduces my T102 numbers (250 fills, 147 options 58.8%,
+      91 0DTE 61.9%, $865,580 exposure). The realized P&L, win rate and profit
+      factor are computed per round trip with counts attached. The structure is
+      right; two of its conclusions are not.
 - AWAITING REVIEW — T103 (The trading autopsy: analysis/autopsy.py, api/main.py /api/autopsy, tool #35, scripts/autopsy.py, tests) — built by Gemini/Antigravity.
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";

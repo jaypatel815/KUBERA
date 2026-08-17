@@ -4,6 +4,28 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I024 [BLOCKING T103 — holding periods computed from an invented clock] (2026-08-16)
+  `analysis/autopsy.py:174,216` stamp every dateless fill with `time(12, 0)`.
+  Schwab confirmations carry NO time of day (statements.py exposes `trade_date:
+  date` because the document prints only a date), so every same-day round trip
+  measures as exactly 0.0 days and lands in the "minutes" bucket.
+  VERIFIED on the owner's real data: distinct times of day across 250 fills =
+  {''}; median_days 0.0; 61 round trips reported in "minutes" with $12,939
+  realized. The narrative prints "Median hold is 0.0 hours" as a finding.
+  This violates AGENTS.md priority 1 (never present placeholder data as real).
+  MY SHARE OF IT: T105 added minutes/hours/same_day buckets without recording
+  that statement data cannot populate them. Correct for API fills, impossible
+  for confirmations.
+  FIX: carry `time_known: bool`; report `unknown` rather than 0.0, and say
+  plainly that confirmations do not record time of day.
+- I025 [BLOCKING T103 — "revenge sizing 78x" mixes equities with option premiums]
+  The tell compares an equity notional against an option premium in one median:
+  NOK 1925 shares @ $15.98 = $30,761 against NVDA 1 contract @ $0.05 = $5.
+  The resulting "sizing up by 78.05x after losses (N=7)" is a category error
+  presented as a psychological finding — the single most consequential line in
+  the report, and the one most likely to change how the owner trades.
+  FIX: compute drift WITHIN an asset class or on risk-normalised terms, and
+  refuse to emit the tell when the two populations are not comparable.
 - I023 [OPEN — pyrefly is at 1, the config still claims 0] (2026-08-16)
   T101 drove the checker to zero and wrote "KNOWN REMAINING ERRORS — 0" into
   pyrefly.toml with the instruction "if new errors appear, investigate
