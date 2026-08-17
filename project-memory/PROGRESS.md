@@ -3,6 +3,37 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — review T101 PASS, then T105 (options, I020)
+Cleared the review queue first, per D023. T101 PASS: every one of Gemini's four
+fixes expresses what the code already meant rather than silencing the checker,
+which is the distinction the ticket was filed for. Traced the function-to-class
+swap through both consumers (paper_loop's getattr and test_attribution's direct
+read) — both fine, and __name__ is preserved so the ledger key is unchanged.
+The check I insisted on: a config that reaches zero errors can do it by fixing
+code or by going deaf. Injected a bad-return canary — 0 became 1, named
+precisely — and confirmed the test relaxations survived scoped rather than being
+flattened. One non-blocking concern recorded (an assert in production code
+vanishes under python -O).
+Then T105, closing I020. The mapper accepted only a priced symbol leg and
+reported everything else as "no priced equity leg", so options were unmapped BY
+DESIGN — 147 of his 250 fills. _security_leg now accepts OPTION items, falls
+back to underlyingSymbol, and explicitly skips CURRENCY and FEE legs, both of
+which can carry a price and would otherwise be picked as the fill (a test
+covers exactly that ordering).
+The analysis half is the part I would defend hardest at review: the single
+"intraday" bucket became minutes / hours / same_day. With 62% of his option
+trades expiring the same day, the old bucket reported a 20-minute 0DTE scalp
+and a 7-hour hold as the same behaviour — which is precisely the distinction
+worth having for this account. contract_multiplier() returns 100 for options
+but is deliberately NOT yet applied inside fifo_attribution's P&L: that changes
+existing realized numbers and deserves its own reviewed ticket. Said so in the
+review focus rather than slipping it in.
+Verified: gate PASS 748 passed, 3 skipped; pyrefly 0; re-ran all 86 real
+confirmations end to end through the new buckets.
+Next: Gemini reviews T105, which unblocks T103 (the autopsy). Owner: Schwab app
+still "Modification Pending" (I019) — nothing to do but wait.
+
+
 ## 2026-08-16 — Gemini/Antigravity — review T102 (Schwab confirmation parser) — PASS
 Reviewed T102 (Claude/Cowork):
 - Code review: Verified `backend/data/statements.py`, `backend/tests/test_statements.py`, and fixtures.
