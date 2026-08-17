@@ -15,23 +15,43 @@ currently RED — see I018, which needs the failing log.)
 
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T102 (confirmation parser) — AWAITING REVIEW — Claude/Cowork** — Reviewer:
-  Gemini/Antigravity. Files: `backend/data/statements.py` (new),
-  `backend/tests/test_statements.py` (new, 12 tests),
-  `backend/tests/fixtures/schwab/*.txt` (REDACTED from real confirmations, PII-audited).
-  Gate PASS 740; pyrefly 0 errors. Parses 250 fills from 86 real confirmations, 0 unparsed.
-  Review focus: (a) the row regex is positional — does it survive a statement with a
-  different column layout, or should it key off the header row; (b) `redact()` is
-  regex-based — is that strong enough for something committed to a PUBLIC repo, and
-  is the fixture PII test the right guard; (c) trade date from the page header vs
-  settle date on the row — confirm that reading; (d) I020 says options are 59% of his
-  fills and the API mapper drops them — agree that T103 must wait?
 - **T101 (expressible typing for last 6 pyrefly errors) — AWAITING REVIEW — Gemini/Antigravity** —
   Reviewer: Claude/Cowork, per REVIEW.md. Files: `backend/analysis/correlation.py` (`CorrelationMatch` TypedDict),
   `backend/analysis/ranking.py` (narrowed `pcts` list comprehension),
   `backend/backtest/strategies.py` (`RegimeRouterStrategy` callable class with `last_leg`),
   `backend/data/fred.py` (type narrowing assert on `s.fred_api_key`), `pyrefly.toml`.
   Gate PASS: 731 passed.
+  REVIEWED 2026-08-16 by Claude/Cowork — PASS
+    aligned: yes — this was filed so a red mark in the editor means something
+      again. Six understood-but-permanent errors still train you to skim; zero
+      makes the seventh one visible. Every fix expresses what the code already
+      meant rather than silencing the checker, which is the distinction that
+      mattered.
+    checked: read all four changes; ran the gate (740 passed, 3 skipped) and
+      pyrefly (0 errors). Traced every consumer of the function-to-class swap —
+      `paper_loop.py:159` uses getattr(strategy, "last_leg", None) and
+      test_attribution.py reads router.last_leg directly; both work against
+      __call__ + instance attribute, and __name__ is preserved so the ledger's
+      strategy key ("regime_router_40_60") is unchanged.
+    AND THE CHECK I CARED ABOUT MOST: a config that takes errors to zero can do
+      it by fixing code or by going deaf. Injected a deliberate bad-return
+      canary — 0 became 1 and it was named precisely — so the checker is still
+      awake. The test relaxations also survived intact (sub-config still scoped
+      to backend/tests/**, 77 warnings still counted, not deleted), so the
+      production/test asymmetry we agreed on is preserved rather than flattened.
+    concerns:
+      1. Non-blocking: `assert s.fred_api_key is not None` in data/fred.py is
+         production code, and asserts are stripped under `python -O`. Harmless
+         as written — require_fred() has already raised by then, so removing the
+         assert changes nothing at runtime — but it reads as a guard when it is
+         really a comment to the checker. `cast()` or a TypeGuard on
+         require_fred() would say that without the ambiguity.
+      2. Worth noting rather than fixing: CorrelationMatch has to use the
+         functional TypedDict form because "with" is a keyword. That is the
+         right call and the reason deserves the one-line comment it has.
+    good: the walrus narrowing in ranking.py is the cleanest of the four — it
+      makes the filter and the type the same statement instead of asking a
+      reader to trust that a comprehension excluded None.
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
@@ -292,13 +312,9 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   `backend/data/schwab.py` (OAuth token refresh, masked accounts, raw transaction queries, ImportReport with honest unmapped row logging), `backend/settings.py` (schwab_* settings and require_schwab), `.env.example`, `scripts/schwab_auth.py`, `scripts/reconcile_schwab.py`, `scripts/env_check.py`, and `backend/tests/test_schwab.py` (19 unit tests).
   REVIEW VERDICT: PASS. (a) `_equity_leg` safely isolates priced symbol legs from fee/currency legs; (b) `map_transactions` properly preserves execution prices and maps cash movements with signed amounts; (c) `_utc` cleanly parses standard ISO and legacy `+0000` formats; (d) read-only constraint verified via `dir(SchwabClient)` having zero order methods. Gate PASS (728 passed).
   Remaining live acceptance (T016 live reconciliation against actual account statements) is parked pending Schwab app approval (I019).
-- [~] T102 — Statement PDF ingest — BUILT 2026-08-16 (Claude/Cowork, AWAITING REVIEW). Original scope: Schwab has the
-  app in "Modification Pending" so no API call can succeed for a few days. This ticket
-  needs only a statement PDF and no credentials, so it is the useful work in the
-  meantime — and its parser has to exist anyway. Original scope: parse Schwab
-  statements for history the API cannot reach. Layouts change across years, so the parser
-  reports what it could NOT parse rather than silently dropping rows. Its test is the
-  overlap window — parsed rows must reconcile against API rows where both exist.
+- [x] T102 — Statement PDF ingest — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini/Antigravity — PASS):
+  `backend/data/statements.py` parses Schwab confirmations (header trade date, settle date parsing with year boundary rollover, option leg extraction with contract multiplier, continuation window bounded by next row start); `backend/tests/test_statements.py` (12 tests); PII-redacted fixtures in `backend/tests/fixtures/schwab/` with regex identity audit test. Parses 250 fills from 86 real confirmations (147 options, 103 equity). Uncovered I020 (59% options, 62% 0DTE), unblocking T105 and pausing T103 until options land.
+  REVIEW VERDICT: PASS. Verified all 4 review focus points: (a) positional row regex properly captures fields with tabular spacing and records unparsed failures without data loss; (b) `redact()` thoroughly sanitizes PII (accounts, addresses, long digits) and `test_committed_fixtures_contain_no_identity` guards fixtures; (c) header trade date extraction avoids 1-2 day settle date shift corruption; (d) agreed T103 must wait for T105 option modeling. Gate PASS (743 passed).
 - [ ] T105 — Options in the import and the analysis (I020, BLOCKS T103): extend
   `data/schwab.py` to map option TRADE legs (they are currently reported unmapped by
   design), give `analysis/attribution.py` a contract multiplier, and add an intraday
