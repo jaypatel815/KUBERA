@@ -15,6 +15,17 @@ currently RED — see I018, which needs the failing log.)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T104 (Pre-trade pattern warnings — D026) — AWAITING REVIEW — Gemini/Antigravity** — Reviewer: Claude/Cowork.
+  REVIEWED 2026-08-16 PASS with one must-fix-soon (silent key-drop); FIX
+  RE-VERIFIED 2026-08-17 (516dca5) against the original failing input:
+    · {"is_0dte": True, "side": "buy"} now evaluates as a TRUE 0DTE buy —
+      the is_0dte alias is proven equivalent to dte=0 directly.
+    · An actually-unknown key ({"zero_dte": True}) RAISES with the allowed-key
+      list, instead of silently evaluating a different trade. Fail-closed AND
+      aliased — both halves.
+  STANDING CAVEAT (I026): all option-setup verdicts from this tool remain
+  untrustworthy until T108 lands — the trip base excludes expired-worthless
+  positions, and the owner's own record proves the bias is material
+  (~$6,308 of invisible losses).
   Files: `backend/analysis/pattern_warning.py`, `backend/api/tools.py`, `backend/api/main.py`, `backend/api/mcp_server.py`,
   `scripts/pattern_check.py`, `backend/tests/test_pattern_warning.py`, `backend/tests/test_tools.py`,
   `backend/tests/test_chat.py`, `backend/tests/test_claude_sdk.py`, `README.md`.
@@ -71,6 +82,17 @@ currently RED — see I018, which needs the failing log.)
        context manager instead of passing transport to module-level `httpx.post`.
     2. Added explicit D028 safety rail rationale comment above `PAPER_BASE_URL` in `backend/data/alpaca.py`.
     3. Added unit test in `backend/tests/test_settings.py` calling `exchange()` through a `MockTransport`.
+  RE-REVIEWED 2026-08-17 by Claude/Cowork — **PASS** (516dca5), verified by
+  re-running the exact evidence that produced the BLOCK:
+    · exchange() through MockTransport returns the token payload
+      ({'refresh_token': 'tok-1'}); with transport=None — the owner's real
+      weekly path — it survives the kwarg and genuinely reaches the wire
+      (sandbox ProxyError = the network was actually attempted). TypeError gone.
+    · The not-optional test exists and runs (test_settings.py:225, exchange()
+      through MockTransport, inside the green gate).
+    · PAPER_BASE_URL now carries the D028 safety-rail comment: "Configurable
+      would mean pointable at live capital before spec §7.4 promotion."
+    Gate 795+ passed; pyrefly exactly 1 (the known I023).
 - **T103 (Trading Autopsy) v2 — REVIEWED BY Claude/Cowork — PASS.** Both blocks
   genuinely fixed; verified by re-running the same evidence that produced them.
     checked — RE-RAN ON THE OWNER'S 250 REAL FILLS (D027):
