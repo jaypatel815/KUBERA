@@ -19,6 +19,63 @@ currently RED — see I018, which needs the failing log.)
   Reviewer: Claude/Cowork, per REVIEW.md. Files: `backend/api/mcp_server.py`,
   `backend/tests/test_mcp_server.py` (7 tests), `scripts/mcp_server.py`.
   Gate PASS: 758 passed. Exposes all 34 registry tools via FastMCP with dynamic parameter schemas.
+  REVIEWED 2026-08-16 by Claude/Cowork — **BLOCK** (two must-fix, one of them a safety rail)
+    aligned: yes, and worth building — KUBERA over MCP makes Claude Desktop and
+      Antigravity into frontends without waiting for the PWA (D011). The shape is
+      right: generate MCP tools from the ONE registry rather than hand-writing a
+      second surface that can drift from it.
+    checked: read all three files; installed mcp and RAN the server; enumerated
+      the generated tool schemas; executed a tool end to end against an in-memory
+      DB; simulated a clean CI runner from a fresh checkout.
+    BLOCKING 1 — THE CONFIRMATION GATE IS BYPASSED. SAFETY.
+      `make_default_tool_context()` hardcodes `confirmed=True`. That flag exists
+      for exactly one purpose: tools registered `requires_confirmation=True` may
+      only run when the OWNER confirmed out of band (T043, D014). The registry
+      even says so at tools.py:110 — "Never set it from model output."
+      `update_ips` is the gated tool, and it is exposed. I did not infer this, I
+      ran it: through the MCP server, with no confirmation step, I set
+      max_drawdown_frac to 0.99 and objectives to "YOLO everything" on a live
+      row. Any MCP client — or any model driving one — can rewrite the
+      Investment Policy Statement that every recommendation is checked against.
+      The module docstring says "Read-only analysis & portfolio intelligence by
+      default. No direct trade execution", and four MUTATING tools are exposed:
+      update_ips, record_decision, mark_decision, update_watchlist.
+      FIX: default `confirmed=False`, and default the tool_filter to a read-only
+      allowlist. If a caller genuinely wants the gated tools, that should be an
+      explicit opt-in argument, not the default.
+    BLOCKING 2 — THE SERVER CANNOT IMPORT ON A FRESH INSTALL, AND CI IS RED.
+      `mcp` appears in NO requirements file, and test_mcp_server.py imports it at
+      module scope. Fresh checkout + backend/requirements.txt: collection ERROR,
+      whole suite aborts, zero tests run. This is I016/I018 for the third time
+      today, same shape each time.
+      Worse than undeclared — it is also version-wrong. `pip install mcp` now
+      gives 2.0.0, which has NO `mcp.server.fastmcp` module at all (2.0's server
+      package exposes mcpserver/lowlevel/stdio/...). The import only works on
+      mcp 1.x; I confirmed it against 1.29.0. So a fresh machine following the
+      README gets ModuleNotFoundError.
+      FIX: add a pinned `mcp>=1.29,<2` to a requirements file, and guard the test
+      with `pytest.importorskip("mcp.server.fastmcp")` so CI stays green when the
+      optional dep is absent. Note the pin is load-bearing: this is not a nicety.
+    concerns (non-blocking):
+      1. `make_default_tool_context()` is called INSIDE the per-call handler, so
+         every tool invocation constructs a new AlpacaClient, MarketDataClient,
+         FredClient and DB session, and none are closed. Over a long Claude
+         Desktop session that leaks sockets and file handles. Build the context
+         once per server, or close it in a finally.
+      2. `registry._tools` reaches into a private attribute. `names()` and
+         `schemas()` are the public surface; a rename would break this silently.
+      3. The required/optional default logic is subtle enough to deserve a test:
+         a pydantic required field's `.default` is `PydanticUndefined`, not None
+         or Ellipsis, so it survives the `is not None` check. It happens to work
+         — I verified get_daily_bars renders required=['symbol'] and days
+         default 30 — but it works by accident rather than by intent.
+      4. `handler(*args, **kwargs)` discards positional args entirely while the
+         signature advertises POSITIONAL_OR_KEYWORD. Harmless with FastMCP, which
+         calls by keyword, but the signature promises something untrue.
+    what is genuinely good: generating from the registry is the right call, the
+      error mapping (ToolError -> MCPToolError, plus a catch-all that logs) is
+      right, and the Claude Desktop config in the entrypoint docstring is the
+      kind of thing that saves the owner twenty minutes.
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the

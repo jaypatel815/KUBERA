@@ -4,6 +4,23 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I021 [BLOCKING T045 — the MCP server bypasses the confirmation gate] (2026-08-16)
+  DEMONSTRATED, not inferred: through the MCP server, with no confirmation step,
+  `update_ips` set max_drawdown_frac=0.99 and objectives="YOLO everything" on a
+  live row. Cause: `make_default_tool_context()` hardcodes `confirmed=True`, the
+  flag that tools.py:110 explicitly says must never be set from model output.
+  Four mutating tools are exposed (update_ips, record_decision, mark_decision,
+  update_watchlist) behind a docstring claiming read-only.
+  FIX: confirmed=False by default; read-only allowlist as the default
+  tool_filter; gated tools only via an explicit opt-in argument.
+- I022 [BLOCKING T045 — undeclared AND version-wrong dependency; CI is red]
+  `mcp` is in no requirements file and test_mcp_server.py imports it at module
+  scope, so a fresh checkout aborts collection — I016/I018 a third time.
+  ALSO: `pip install mcp` now resolves to 2.0.0, which has no
+  `mcp.server.fastmcp` module; that path only exists on 1.x (verified against
+  1.29.0). A fresh machine following the README cannot import the server at all.
+  FIX: pin `mcp>=1.29,<2` in a requirements file and guard the test with
+  `pytest.importorskip("mcp.server.fastmcp")`.
 - I020 [FIXED 2026-08-16 in T105] the Schwab API import would have DROPPED most of the owner's trading
   FOUND by parsing his real confirmations (T102). His book is not what T016a
   assumed. Measured over 86 confirmations, Jan-Jun 2026:
