@@ -166,6 +166,62 @@ TASKS.md first: two agents both adding registry tools, or both writing
 migrations. When in doubt, take the ticket that touches files the other agent
 isn't in.
 
+## Before you commit: read your own diff, line by line (D028)
+
+The five checks below the next heading are MECHANICAL — they catch things that
+run wrong. This section is the other half, and it catches the thing tests never
+will: code that runs perfectly and does the wrong job. Both of the T103 blocks
+were of this kind. The suite was green, every discipline was present in the
+source, and the report still told the owner his median hold was "0.0 hours"
+from a timestamp the code had invented.
+
+So before `git commit`, re-read the diff you are about to commit as though
+somebody else wrote it and you are being paid to find the flaw. Specifically:
+
+1. **DID YOU BUILD WHAT WAS ASKED, OR WHAT WAS EASY?** Go back to the ticket
+   text and the owner's actual words. Tick each requirement off against a line
+   of code. If a requirement turned out to be impossible, the deliverable is a
+   sentence saying so — never a plausible substitute. Inventing a noon timestamp
+   because the data had no clock is the canonical failure: it satisfied the
+   shape of the request and destroyed its meaning.
+
+2. **NO FABRICATED INPUTS. EVER.** If a value is unknown, the answer is
+   `None`/`unknown` and a stated reason. Never a default that looks like a
+   measurement. AGENTS.md priority 1 exists for this, and it is violated most
+   often by accident, in a helper, three layers from where anyone is looking.
+
+3. **NO HARDCODED ENDPOINTS OR TUNABLES — unless the constant IS the point.**
+   Base URLs, timeouts, thresholds, limits and window sizes belong in
+   `settings.py` (env-overridable) or in a named module constant with a comment
+   explaining why it is fixed. Two legitimate exceptions, both of which must say
+   so in a comment: values hardcoded as a SAFETY RAIL (the Alpaca paper base URL
+   is deliberately not configurable, because "configurable" would mean "can be
+   pointed at live money"), and values fixed by an external spec (the option
+   contract multiplier is 100 because the market says so).
+   A magic number with no name and no comment is a bug waiting for a maintainer.
+
+4. **SECURE AND ROBUST BY DEFAULT.** Secrets never printed, logged, or put in a
+   URL. Every external input treated as hostile — including files the owner
+   hand-edits, which arrive with BOMs, wrong shapes and stray whitespace.
+   Fail CLOSED: when something is ambiguous, refuse and explain rather than
+   guess. Every network call has a timeout. Every resource that is opened is
+   closed.
+
+5. **FUTURE-PROOF WHERE IT IS CHEAP, AND ONLY THERE.** Will this break when the
+   account holds a third instrument type, when a second broker arrives, when the
+   list has one element or a million, at a year boundary, in a different
+   timezone, on a fresh clone? Cheap insurance now — a parameter instead of a
+   literal, a dict instead of an if-chain — is worth taking. Speculative
+   abstraction for a future nobody has asked for is not; that is its own bug.
+
+6. **WOULD YOU SIGN IT?** If another agent handed you this diff, would you write
+   PASS with evidence under D027? If not, it is not ready to commit — fix it now
+   rather than discovering it in review, because the reviewer may be having a
+   generous day.
+
+Record in the PROGRESS entry what this pass CHANGED. "Reviewed my own diff" with
+nothing following it is not evidence that you did.
+
 ## Before you hand a ticket off: the self-check (D027)
 
 You are the last person who will look at this closely. Run these BEFORE marking

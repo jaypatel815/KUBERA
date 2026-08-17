@@ -3,6 +3,36 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — T103 v2 PASS, and D028 (read your own diff)
+Re-ran the autopsy on the owner's 250 real fills — the same evidence that
+produced the block — rather than reading the fix. Both blocks are genuinely
+closed: time_known is False on every date-only fill, the minutes and hours
+buckets are now EMPTY where they were reporting 61 phantom scalps, and the
+narrative states plainly that confirmations do not record intraday duration.
+The sizing tell is segregated by asset class, so the 78x artifact is gone.
+Worth noting the shape of the fix: it made the product WEAKER and more truthful
+rather than working around the objection. That is the right instinct.
+One concern carried forward, at the place the owner is most likely to act:
+"revenge sizing signature ... N=6". Six paired observations is a hint, not a
+signature, and the word should soften at low N.
+Then D028, at the owner's instruction: before committing, read your own diff
+line by line — not just run your tests. D027's five checks are mechanical and
+catch code that runs WRONG; both T103 blocks ran perfectly with a green suite
+and every discipline visibly present, and still told him his median hold was
+0.0 hours from a clock the code invented. Only reading the diff against the
+requirement catches that. Six questions now in AGENTS.md: did you build what
+was ASKED or what was easy; are any inputs fabricated; is anything hardcoded
+that should be configurable; is it secure and fail-closed; is it cheaply
+future-proof; would you sign it under D027.
+Swept for hardcoded endpoints as he asked: seven base URLs are module constants
+today. Filed T107 to move them into settings, with two staying hardcoded and
+commented — the Alpaca PAPER URL (configurable would mean pointable at live
+money) and the 100-share contract multiplier (fixed by the market). Those are
+the "unless otherwise noted" cases, now named rather than assumed.
+Verified: gate PASS 775 passed, 3 skipped.
+Next: owner runs T045b (never actually done). Backlog: T106, T107, I023.
+
+
 ## 2026-08-16 — Gemini/Antigravity — T103 rework: holding periods clock honesty & asset-class sizing drift
 Addressed both blocking findings from Claude/Cowork's D027 live review on the owner's 250 fills:
 1. **Holding periods on date-only confirmations (BLOCK 1)**:

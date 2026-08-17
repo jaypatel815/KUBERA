@@ -4,7 +4,7 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
-- I024 [BLOCKING T103 — holding periods computed from an invented clock] (2026-08-16)
+- I024 [FIXED 2026-08-16 in 5d22682 — verified by re-running on 250 real fills: minutes/hours buckets now empty, narrative states duration is unrecorded]
   `analysis/autopsy.py:174,216` stamp every dateless fill with `time(12, 0)`.
   Schwab confirmations carry NO time of day (statements.py exposes `trade_date:
   date` because the document prints only a date), so every same-day round trip
@@ -18,7 +18,7 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   for confirmations.
   FIX: carry `time_known: bool`; report `unknown` rather than 0.0, and say
   plainly that confirmations do not record time of day.
-- I025 [BLOCKING T103 — "revenge sizing 78x" mixes equities with option premiums]
+- I025 [FIXED 2026-08-16 in 5d22682 — segregated by asset class; equity-only comparison now reads 12.53x, N=6. Concern carried: "signature" overstates N=6]
   The tell compares an equity notional against an option premium in one median:
   NOK 1925 shares @ $15.98 = $30,761 against NVDA 1 contract @ $0.05 = $5.
   The resulting "sizing up by 78.05x after losses (N=7)" is a category error

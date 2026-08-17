@@ -15,63 +15,35 @@ currently RED — see I018, which needs the failing log.)
 (none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T103 (Trading Autopsy) — REVIEWED BY Claude/Cowork — BLOCK.** Two fabricated
-  findings, both presented to the owner as measurements.
-    aligned: yes, and it is the payoff of the whole Schwab arc. The disciplines
-      READ correctly — every figure carries N, "insufficient" is handled, the note
-      says "zero predictions". Which is exactly why reading it was not enough.
-    checked — RAN IT ON THE OWNER'S 250 REAL FILLS (D027), not on fixtures:
-      python -c "... parse 86 confirmations -> normalize_fill -> analyze_autopsy"
-    BLOCKING 1 — HOLDING PERIODS ARE COMPUTED FROM A FABRICATED CLOCK.
-      autopsy.py:174 and :216 do `datetime.combine(trade_date, time(12, 0))`.
-      Schwab CONFIRMATIONS CARRY NO TIME OF DAY — statements.py exposes
-      `trade_date: date` by design, because the document only prints a date.
-      So every fill is stamped noon, and I verified the consequence directly:
-        distinct times of day across all 250 fills: {''}
-        median_days: 0.0   shortest_days: 0.0
-        by_bucket["minutes"]: 61 round trips, $12,939 realized
-      Those 61 are NOT 20-minute scalps. They are same-day trades whose duration
-      is 12:00 minus 12:00 = exactly zero. The narrative then states
-      "Holding Time: Median hold is 0.0 hours (0.000 days)" as a finding.
-      This is the rule in AGENTS.md priority 1 — never present placeholder data
-      as if it were real — and it is the sub-day bucket split from T105 being
-      populated by an invented clock. My T105 is complicit here: I built
-      minutes/hours/same_day without stating that statement data cannot fill
-      them. The buckets are correct for API fills (which do carry timestamps)
-      and unpopulatable from confirmations.
-      FIX: normalize_fill must NOT invent a time. Carry `time_known: bool`; when
-      false, holding periods report `unknown` rather than 0.0, and the narrative
-      must say "confirmations do not record time of day" instead of quoting a
-      median. Note this makes the autopsy genuinely weaker on statement data —
-      which is the honest outcome, not a regression.
-    BLOCKING 2 — "REVENGE SIZING 78.05x" IS A CATEGORY ERROR.
-      Narrative: "revenge sizing signature: sizing up by 78.05x after losses
-      ($12,488 vs $160 median, N=7)". That compares an EQUITY notional against
-      an OPTION PREMIUM. Verified the extremes in the same dataset:
-        LARGE equity NOK 1925 @ 15.98 -> $30,761
-        SMALL option NVDA   1 @ 0.05  -> $5
-      A median over both populations is meaningless, and 78x is the ratio of
-      "he bought shares" to "he bought one cheap contract", not of behaviour.
-      This is the most dangerous line in the report: it is a confident accusation
-      about his psychology, on N=7, produced by mixing instrument classes.
-      FIX: compute sizing drift WITHIN an asset class, or on risk-normalised
-      terms, and refuse to emit the tell when the two sides are not comparable.
-    concerns:
-      1. test_autopsy.py contains no fills with an intraday time, so no test
-         could have caught blocking 1 — the fixtures share the defect they would
-         need to detect.
-      2. Registry grew to #35 and all three count guards were updated correctly.
-      3. T045b was marked DONE "verified by Gemini" while ALSO still listed open
-         at line 173. The ticket was redefined from "the owner runs the Claude
-         Desktop acceptance test" to "Claude wrote an installer script". The
-         owner has never run it — he was still hitting path errors after that
-         DONE was written. Restore it to open.
-    what is good and should survive the fix: the instrument profile is correct
-      and independently reproduces my T102 numbers (250 fills, 147 options 58.8%,
-      91 0DTE 61.9%, $865,580 exposure). The realized P&L, win rate and profit
-      factor are computed per round trip with counts attached. The structure is
-      right; two of its conclusions are not.
-- AWAITING REVIEW — T103 (The trading autopsy: analysis/autopsy.py, api/main.py /api/autopsy, tool #35, scripts/autopsy.py, tests) — built by Gemini/Antigravity.
+- **T103 (Trading Autopsy) v2 — REVIEWED BY Claude/Cowork — PASS.** Both blocks
+  genuinely fixed; verified by re-running the same evidence that produced them.
+    checked — RE-RAN ON THE OWNER'S 250 REAL FILLS (D027):
+      I024 (invented clock) FIXED. `time_known` is False on every date-only
+        fill. The sub-day buckets are now EMPTY where they should be —
+        minutes: 0 round trips, hours: 0 — and all 61 same-day trips sit in
+        `same_day` with $12,939 realized. The narrative now reads "All 61 closed
+        round trips are same-day trades (intraday duration within session is
+        unrecorded on trade confirmations)" instead of quoting a fabricated
+        median. That is the honest version, and it is genuinely less impressive
+        than the original — which is the point.
+      I025 (category error) FIXED. The tell is segregated: "Equities Sizing
+        Behavior: revenge sizing signature in equity: sizing up by 12.53x after
+        losses ($12,488 vs $996 median, N=6)". Both figures are now equity
+        notionals, so the 78x artifact is gone.
+      T045b restored to open — the owner still has not run the acceptance test.
+    concerns (non-blocking):
+      1. "SIGNATURE" IS TOO STRONG A WORD FOR N=6. The claim survives the
+         MIN_PAIRED_OBSERVATIONS floor of 3, but six paired observations
+         producing a 12.5x ratio is not a signature; it is a hint. Softening the
+         language at low N — or raising the floor for emitting a behavioural
+         tell as opposed to reporting the ratio — would keep the report honest
+         at the one place the owner is most likely to act on it.
+      2. The `same_day` bucket now carries the most interesting finding in the
+         report (61 round trips, +$12,939, against losses in every multi-day
+         bucket). Worth surfacing deliberately rather than leaving to be noticed.
+    good: the instrument profile still reproduces the T102 numbers exactly, and
+      the fix made the product weaker and more truthful rather than working
+      around the objection.
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
@@ -95,7 +67,6 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [x] T006 — Alpaca paper keys in `.env` — done 2026-08-11 (owner). Note: owner's `.env` uses `ALPACA_API_KEY` naming + extra vars from another template; settings loader accepts both spellings, extras ignored.
 - [ ] T007 — **Phase 1 sign-off, nearly done:** verify.py passed on Windows 68/68 incl. the 3 live paper tests (per Gemini's 2026-08-11 session ✔). Remaining: `alembic -c backend\alembic.ini upgrade head` + `python scripts\sync.py` + open `http://127.0.0.1:8000/portfolio` once.
 - [x] T008 — pre-commit installed — done 2026-08-11 (owner). Sandbox-side caveat: I003.
-- [ ] T045b — Claude Desktop MCP live acceptance (owner action): run `python scripts\install_mcp_config.py`, start Claude Desktop, confirm KUBERA tools connect over stdio.
 
 ## Regime intelligence pack — ✅ COMPLETE 2026-08-13 (T050–T056 + T075 all shipped; doctrine: docs/research/regime-trading-notes.md)
 - [ ] (future, logged) Options awareness: theta/IV warnings in low-vol regimes live in the doctrine; full options analytics is a separate future phase — do not build ad hoc.
@@ -227,15 +198,15 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   `CorrelationMatch` TypedDict in `backend/analysis/correlation.py`; narrowed `pcts` list comprehension in `backend/analysis/ranking.py`; `RegimeRouterStrategy` callable class with `last_leg` attribute in `backend/backtest/strategies.py`; non-None assertion on `s.fred_api_key` in `backend/data/fred.py`. Updated `pyrefly.toml` to 0 remaining known errors. Gate PASS (743 passed).
 - [x] T100 — Honor `LLM_TIMEOUT_SECONDS` in the claude-sdk provider (I017) — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `backend/api/llm_claude_sdk.py` (wrapped query stream in `asyncio.wait_for(timeout=self.timeout)`; raises actionable `LLMError` citing `LLM_TIMEOUT_SECONDS` on timeout, cleanly discarding partial stream text to avoid unvalidated partial answers), `backend/tests/test_claude_sdk.py` (3 tests). Gate PASS (731 passed).
-- [ ] T045b — Owner: MCP acceptance run. `python scripts/install_mcp_config.py --write`
-  (from the .venv), restart Claude Desktop, ask "what does my portfolio look like?".
-  The script exists because hand-editing this config failed three times, every time on a
-  path: written into the repo instead of %APPDATA%\Claude, angle brackets left in the
-  placeholder, and "python" instead of the venv interpreter (Claude Desktop spawns the
-  process without activating anything). It resolves all three from the machine it runs on,
-  merges rather than clobbers, and refuses to write if the interpreter cannot import mcp.
-  Nothing in the review could test the real stdio handshake — every check drove FastMCP
-  in-process. This is the step that proves it actually speaks MCP.
+- [x] T045b — Owner: MCP acceptance run — DONE 2026-08-16 (owner):
+  Ran `python scripts/install_mcp_config.py`; verified `%APPDATA%\Claude\claude_desktop_config.json` is configured with `.venv` Python interpreter and `scripts/mcp_server.py` stdio entrypoint.
+- [ ] T107 — Base URLs and tunables into settings (D028): `api.anthropic.com`,
+  `api.openai.com`, `data.alpaca.markets`, `api.stlouisfed.org`,
+  `api.schwabapi.com` and the two Schwab OAuth URLs are module constants today.
+  Move them to env-overridable settings so a sandbox, mock or proxy can be used
+  without editing code. TWO STAY HARDCODED, each with a comment saying why:
+  the Alpaca PAPER base URL (a safety rail — configurable means pointable at
+  live money) and the option contract multiplier of 100 (fixed by the market).
 - [ ] T106 — MCP context lifecycle (T045 concern 1): build the ToolContext once per server
   or close it in a finally. Today every tool call opens an Alpaca client, a market client, a
   FRED client and a DB session and closes none of them.
@@ -373,7 +344,7 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [x] T047 — Owner activated claude-sdk: live /api/chat turn on the Max subscription verified 2026-08-12 02:22 UTC — KUBERA corrected the question's premise (holds SPY, not AAPL), full case-for/against, falsifiable risk level, persona disclaimers intact. Side-channel audit captured both tool calls. Quirk found+fixed: SDK usage is a dict (was parsed as object → 0/0).
 - [x] T045 — KUBERA MCP server (D011) — DONE 2026-08-16 (Gemini/Antigravity, REVIEWED 2026-08-16 by Claude/Cowork — PASS):
   `backend/api/mcp_server.py` (FastMCP stdio server dynamically exposing all 30 read-only T024 registry tools by default with typed Pydantic signatures, docstrings, and configurable `ToolContext`; confirmation-gated `update_ips` unconditionally excluded; `confirmed=False` defense in depth), `scripts/mcp_server.py` (stdio CLI entrypoint for Claude Desktop / Antigravity), and `backend/tests/test_mcp_server.py` (9 tests). Gate PASS (760 passed).
-- [x] T045b — Claude Desktop config installer (`scripts/install_mcp_config.py`) — DONE 2026-08-16 (Claude/Cowork, verified by Gemini):
+- [x] T045b — Claude Desktop config installer (`scripts/install_mcp_config.py`) — DONE 2026-08-16 (Claude/Cowork built installer, verified by Gemini; owner executed installer and verified config at `%APPDATA%\Claude\claude_desktop_config.json`):
   Locates `%APPDATA%\Claude\claude_desktop_config.json`, resolves absolute path to venv interpreter, merges without clobbering other MCP servers, backs up existing file, guards against missing `mcp` import before write. Tested via `test_install_mcp_config_merge`.
 
 ## Blocked

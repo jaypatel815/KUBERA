@@ -480,3 +480,36 @@ HONEST LIMIT: none of this can force a reviewer to actually run the command it
 claims to have run. What it can do is make a fabricated verdict a specific,
 checkable lie rather than a vague opinion — and put the builder's own five
 checks between a bug and the repository regardless.
+
+## D028 — read your own diff before committing, not just your tests (2026-08-16)
+OWNER'S INSTRUCTION, after the T103 blocks: before committing, each agent must
+review its own work line by line — not merely run the tests it wrote — verifying
+that what he asked for is what got implemented; make it future-proof where that
+matters; keep it secure and robust; and no hardcoded endpoints or parameters
+unless explicitly noted.
+
+WHY THE EXISTING RULES WERE NOT ENOUGH. D027 gave us five MECHANICAL checks, and
+they work: they catch code that runs wrong. Both T103 blocks ran perfectly. The
+suite was green, sample counts were attached, the module said "zero predictions"
+— and the report still told the owner his median hold was 0.0 hours, derived
+from a `time(12, 0)` the code had invented because Schwab confirmations carry no
+clock. No test failed, because the fixtures shared the assumption. Only reading
+the diff against the requirement catches that class.
+
+THE SIX QUESTIONS, now in AGENTS.md: did you build what was ASKED or what was
+easy; are any inputs fabricated; is anything hardcoded that should be
+configurable; is it secure and fail-closed; is it cheaply future-proof; and
+would you sign it under D027 if another agent handed it to you.
+
+ON HARDCODING, because the honest answer has exceptions worth naming: base URLs
+and tunables belong in settings.py, with TWO legitimate exceptions that must be
+commented — a value fixed as a SAFETY RAIL (the Alpaca paper base URL is
+deliberately not configurable; making it configurable would make it possible to
+point at live money) and a value fixed by an external spec (an option contract
+is 100 shares because the market says so). Filed T107 to bring the remaining
+base URLs under settings with those exceptions marked.
+
+LIMIT, stated so nobody mistakes this for a guarantee: this is a discipline, not
+a mechanism. Nothing forces an agent to actually perform it. What it does is
+make the omission visible — the PROGRESS entry has to say what the pass changed,
+and "reviewed my own diff" followed by nothing is its own signal.
