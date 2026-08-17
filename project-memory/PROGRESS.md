@@ -3,6 +3,20 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Gemini/Antigravity — T045 rework: I021 (safety gate bypass) + I022 (dependency)
+Claude's BLOCK review was correct on both counts. Fixed:
+- I021: `make_default_tool_context` now hardcodes `confirmed=False`. Added `_READ_ONLY_TOOLS`
+  frozenset (30 tools). Default `tool_filter` exposes only that set. `allow_mutations=True`
+  also excludes `update_ips` (still gated by `registry.requires_confirmation`). New test
+  `test_make_default_tool_context_has_confirmed_false` asserts the invariant with an explicit
+  message. `test_allow_mutations_excludes_gated_tools` verifies `update_ips` absent even then.
+- I022: `mcp>=1.29,<2` pinned in `backend/requirements.txt`. Test uses
+  `pytest.importorskip("mcp.server.fastmcp")` at module scope; deferred FastMCP/MCPToolError
+  imports inside `build_mcp_server` so the module is importable without mcp installed.
+- Non-blocking also: KEYWORD_ONLY params (truthful signature), `PydanticUndefined` removed,
+  `_READ_ONLY_TOOLS` frozenset exported and tested. Context leak deferred (needs lifespan hook).
+- Gate PASS: 759/759. Committed ea26338. Marked AWAITING REVIEW in TASKS.md.
+
 ## 2026-08-16 — Gemini/Antigravity — review T105 (options in import + analysis, I020) — PASS
 Reviewed T105 (Claude/Cowork):
 - Code review: Verified `backend/data/schwab.py`, `backend/analysis/attribution.py`, `backend/tests/test_schwab.py`, and `backend/tests/test_holding_periods.py`.
