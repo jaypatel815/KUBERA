@@ -24,9 +24,11 @@ from data.statements import (
     ParsedFill,
     ParseReport,
     dedupe_daily_documents,
+    dedupe_statement_fills,
     header_trade_date,
     merge,
     parse_confirmation,
+    parse_statement_transactions,
     redact,
 )
 
@@ -278,3 +280,125 @@ def test_different_days_are_never_deduped():
     out = merge(dedupe_daily_documents([a, b]))
     assert len(out.fills) == 2
     assert out.duplicates == []
+
+
+# ------------------------------------------------------- T108b: statement transaction parsing
+# and deduplication against confirmations
+
+def test_parse_statement_transactions_equity_and_option():
+    text = (
+        "Statement Period March 1-31, 2026\n"
+        "Transaction Details\n"
+        "03/20  Purchase  NVDA  NVIDIA CORP 03/20/2026 $177.5 Call   6.0000   0.1000   60.00\n"
+        "                 177.50 C     Commission 1.95  Industry Fee 0.04\n"
+        "03/23  Purchase  AAPL  APPLE INC                            100.0000 175.5000 17,550.00\n"
+        "Ending Cash\n"
+    )
+    rep = parse_statement_transactions(text, "Brokerage Statement_2026-03-31_711.PDF")
+    assert len(rep.fills) == 2
+    assert rep.unparsed == []
+
+    opt = rep.fills[0]
+    assert opt.symbol == "NVDA"
+    assert opt.side == "buy"
+    assert opt.qty == 6.0
+    assert opt.price == 0.10
+    assert opt.asset_type == "option"
+    assert opt.option_strike == 177.5
+    assert opt.option_right == "call"
+    assert opt.option_expiry == date(2026, 3, 20)
+    assert opt.trade_date == date(2026, 3, 20)
+    assert opt.settle_date == date(2026, 3, 20)
+    assert opt.commission == 1.95
+    assert opt.fees == 0.04
+
+    eq = rep.fills[1]
+    assert eq.symbol == "AAPL"
+    assert eq.side == "buy"
+    assert eq.qty == 100.0
+    assert eq.price == 175.50
+    assert eq.asset_type == "equity"
+    assert eq.trade_date == date(2026, 3, 23)
+    assert eq.settle_date == date(2026, 3, 23)
+
+
+def test_parse_statement_transactions_stops_at_section_boundary():
+    text = (
+        "Statement Period May 1-31, 2026\n"
+        "Transaction Details\n"
+        "05/08  Purchase  NVDA  NVIDIA CORP 05/08/2026 $217.5 Call   50.0000  0.2000  1000.00\n"
+        "Total Transactions\n"
+        "05/08  Purchase  NVDA  NVIDIA CORP 05/08/2026 $217.5 Call   50.0000  0.2000  1000.00\n"
+    )
+    rep = parse_statement_transactions(text, "Brokerage Statement_2026-05-31_711.PDF")
+    assert len(rep.fills) == 1
+
+
+def test_dedupe_statement_fills_preserves_confirmations_and_imports_gaps():
+    conf_fill = ParsedFill(
+        trade_date=date(2026, 5, 8),
+        settle_date=date(2026, 5, 11),
+        symbol="NVDA",
+        side="buy",
+        qty=50.0,
+        price=0.20,
+        description="NVDA 217.5 Call",
+        asset_type="option",
+        option_expiry=date(2026, 5, 8),
+        option_strike=217.5,
+        option_right="call",
+        source_file="Confirm - NVDA_2026-05-08.PDF",
+    )
+    conf_rep = ParseReport(fills=[conf_fill], files_read=1)
+
+    stmt_fill_dup = ParsedFill(
+        trade_date=date(2026, 5, 8),
+        settle_date=date(2026, 5, 11),
+        symbol="NVDA",
+        side="buy",
+        qty=50.0,
+        price=0.20,
+        description="NVIDIA CORP 05/08/2026 $217.5 Call",
+        asset_type="option",
+        option_expiry=date(2026, 5, 8),
+        option_strike=217.5,
+        option_right="call",
+        source_file="Brokerage Statement_2026-05-31.PDF",
+    )
+    stmt_fill_new = ParsedFill(
+        trade_date=date(2026, 5, 8),
+        settle_date=date(2026, 5, 11),
+        symbol="NVDA",
+        side="buy",
+        qty=100.0,
+        price=0.10,
+        description="NVIDIA CORP 05/08/2026 $217.5 Call",
+        asset_type="option",
+        option_expiry=date(2026, 5, 8),
+        option_strike=217.5,
+        option_right="call",
+        source_file="Brokerage Statement_2026-05-31.PDF",
+    )
+    stmt_rep = ParseReport(fills=[stmt_fill_dup, stmt_fill_new], files_read=1)
+
+    merged = merge(dedupe_statement_fills([conf_rep], [stmt_rep]))
+    assert len(merged.fills) == 2
+    assert merged.fills[0].qty == 50.0
+    assert merged.fills[0].source_file == "Confirm - NVDA_2026-05-08.PDF"
+    assert merged.fills[1].qty == 100.0
+    assert merged.fills[1].source_file == "Brokerage Statement_2026-05-31.PDF"
+    assert len(merged.duplicates) == 1
+    assert "covered by confirmation" in merged.duplicates[0]["why"]
+
+
+def test_incomplete_statement_row_reported_as_unparsed():
+    text = (
+        "Statement Period May 1-31, 2026\n"
+        "Transaction Details\n"
+        "05/08  Purchase  NVDA  Incomplete Option Row $217.5 Call  NOT_NUMERIC  NOT_NUMERIC\n"
+    )
+    rep = parse_statement_transactions(text, "Brokerage Statement_2026-05-31.PDF")
+    assert rep.fills == []
+    assert len(rep.unparsed) == 1
+    assert "quantity" in rep.unparsed[0]["why"] or "numeric" in rep.unparsed[0]["why"]
+

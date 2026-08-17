@@ -76,14 +76,21 @@ _FULL_DATE = re.compile(r"\b(\d{2}/\d{2}/\d{4})\b")
 
 _FEES = re.compile(r"Commission\s+(?P<commission>[\d.]+)|Industry Fee\s+(?P<fee>[\d.]+)")
 
-# Monthly account statements are NOT trade confirmations, but in layout-mode
-# extraction their Transaction Details rows match _ROW well enough to parse —
-# and every trade in them ALSO has its own confirmation, so parsing both
-# double-counts every fill. "Statement Period" appears in the header of all 5
-# of the owner's monthly statements and none of his 86 confirmations (checked
-# against the real documents, 2026-08-17). Detection is content-based first,
-# filename second, because files get renamed.
+# Monthly account statements (T108, T108b)
 _STATEMENT_PERIOD = re.compile(r"Statement\s+Period", re.IGNORECASE)
+_STMT_ACTION = re.compile(r"\b(?P<action>Purchase|Sale)\b")
+_STMT_QTY_PRICE = re.compile(r"\(?(?P<val>\d{1,6}(?:,\d{3})*(?:\.\d+)?)\)?")
+_STMT_SETTLE_DATE = re.compile(r"^(\d{2})/(\d{2})\s+")
+_STMT_END_SECTION = (
+    "Ending Cash",
+    "Total Purchases",
+    "Total Sales",
+    "Total Transactions",
+    "Pending / Open Activity",
+    "Pending Transactions",
+    "Total Pending Transactions",
+)
+_STMT_SKIP_LINE = ("Pending", "Beginning Cash")
 
 
 @dataclass(frozen=True)
@@ -283,13 +290,310 @@ def parse_confirmation(text: str, source_file: str = "") -> ParseReport:
     return ParseReport(fills=fills, unparsed=unparsed, files_read=1)
 
 
+def parse_statement_transactions(text: str, source_file: str = "") -> ParseReport:
+    """Extract every executed fill from a monthly statement's Transaction Details (T108b)."""
+    year = None
+    if source_file:
+        ym = re.search(r"20\d\d", source_file)
+        if ym:
+            year = int(ym.group(0))
+    if year is None:
+        for line in text.splitlines()[:20]:
+            if "statement period" in line.lower() or "period" in line.lower():
+                ym = re.search(r"\b(20\d\d)\b", line)
+                if ym:
+                    year = int(ym.group(1))
+                    break
+    if year is None:
+        ym = re.search(r"\b(20\d\d)\b", text[:1000])
+        if ym:
+            year = int(ym.group(1))
+        else:
+            year = datetime.now().year
+
+    lines = text.splitlines()
+    in_td = False
+    cur_settle_date = None
+    fills: list[ParsedFill] = []
+    unparsed: list[dict] = []
+
+    for i, line in enumerate(lines):
+        if re.search(r"Transaction\s+Details", line, re.IGNORECASE):
+            in_td = True
+            continue
+        if not in_td:
+            continue
+        if any(h in line for h in _STMT_END_SECTION):
+            in_td = False
+            continue
+        if any(s in line for s in _STMT_SKIP_LINE):
+            continue
+
+        dm = _STMT_SETTLE_DATE.match(line)
+        if dm:
+            try:
+                m_num, d_num = int(dm.group(1)), int(dm.group(2))
+                cur_settle_date = date(year, m_num, d_num)
+            except ValueError:
+                cur_settle_date = None
+
+        act_m = _STMT_ACTION.search(line)
+        if not act_m:
+            continue
+
+        if cur_settle_date is None:
+            unparsed.append({
+                "file": source_file,
+                "line": line.strip()[:80],
+                "why": "transaction row without settle date",
+            })
+            continue
+
+        action = act_m.group("action")
+        side = "buy" if action.lower() in {"purchase", "bought"} else "sell"
+
+        # Build continuation window (up to 2 lines)
+        window = [line[act_m.end():]]
+        for k in range(1, 3):
+            if i + k < len(lines):
+                next_line = lines[i + k]
+                if not re.search(
+                    r"\b(Purchase|Sale|Expired|Assigned|Exercised|Deposit|Withdrawal|"
+                    r"Other\s+Activity|Beginning\s+Cash|Pending)\b",
+                    next_line,
+                ) and not _STMT_SETTLE_DATE.match(next_line):
+                    window.append(next_line)
+                else:
+                    break
+        win_text = " ".join(window)
+
+        # Symbol
+        tokens = line[act_m.end():].split()
+        sym = ""
+        for t in tokens:
+            t_clean = t.strip(".,;:()")
+            if re.fullmatch(r"[A-Z]{1,6}", t_clean) and t_clean not in {
+                "CALL", "PUT", "EXP", "ADR", "ETF", "F", "C", "P", "SHORT", "LONG"
+            }:
+                sym = t_clean
+                break
+        if not sym:
+            unparsed.append({
+                "file": source_file,
+                "line": line.strip()[:80],
+                "why": "could not extract symbol from statement row",
+            })
+            continue
+
+        # Numbers
+        num_matches = list(_STMT_QTY_PRICE.finditer(line[act_m.end():]))
+        qp_matches = [m for m in num_matches if re.search(r"\.\d{4}", m.group(0))]
+        if len(qp_matches) >= 2:
+            qty_str = qp_matches[0].group("val").replace(",", "")
+            price_str = qp_matches[1].group("val").replace(",", "")
+            try:
+                qty = float(qty_str)
+                price = float(price_str)
+            except ValueError:
+                unparsed.append({
+                    "file": source_file,
+                    "line": line.strip()[:80],
+                    "why": "quantity or price not numeric",
+                })
+                continue
+        elif len(qp_matches) == 1:
+            idx = num_matches.index(qp_matches[0])
+            try:
+                qty = float(qp_matches[0].group("val").replace(",", ""))
+                if idx + 1 < len(num_matches):
+                    price = float(num_matches[idx + 1].group("val").replace(",", ""))
+                else:
+                    unparsed.append({
+                        "file": source_file,
+                        "line": line.strip()[:80],
+                        "why": "price column missing after quantity",
+                    })
+                    continue
+            except ValueError:
+                unparsed.append({
+                    "file": source_file,
+                    "line": line.strip()[:80],
+                    "why": "quantity or price not numeric",
+                })
+                continue
+        else:
+            unparsed.append({
+                "file": source_file,
+                "line": line.strip()[:80],
+                "why": "no 4-decimal quantity found in transaction row",
+            })
+            continue
+
+        # Option detection
+        opt_match = _OPTION.search(win_text)
+        is_opt = bool(
+            opt_match
+            or re.search(r"\b(CALL|PUT)\b", win_text, re.IGNORECASE)
+            or _OPTION_IDENTITY.search(win_text)
+            or re.search(r"\bEXP\s+\d{2}/\d{2}/\d{2}\b", win_text)
+        )
+        asset_type = "option" if is_opt else "equity"
+
+        exp = None
+        strike = None
+        right = None
+
+        if is_opt:
+            if opt_match:
+                try:
+                    exp = datetime.strptime(opt_match.group("expiry"), "%m/%d/%Y").date()
+                    strike = float(opt_match.group("strike").replace(",", ""))
+                    right = opt_match.group("right").lower()
+                except ValueError:
+                    pass
+            if strike is None:
+                sm = _OPTION_IDENTITY.search(win_text)
+                if sm:
+                    strike = float(sm.group("strike").replace(",", ""))
+                    right = "put" if sm.group("letter").upper() == "P" else "call"
+                else:
+                    rm = re.search(r"\b(CALL|PUT)\b", win_text, re.IGNORECASE)
+                    if rm:
+                        right = rm.group(1).lower()
+                    st_m = re.search(r"\$(\d+(?:\.\d+)?)", win_text)
+                    if st_m:
+                        strike = float(st_m.group(1))
+
+            if exp is None:
+                dm_full = _FULL_DATE.search(win_text)
+                if dm_full:
+                    try:
+                        exp = datetime.strptime(dm_full.group(1), "%m/%d/%Y").date()
+                    except ValueError:
+                        exp = None
+                if exp is None:
+                    em_short = re.search(r"\bEXP\s+(\d{2}/\d{2}/\d{2})\b", win_text)
+                    if em_short:
+                        try:
+                            exp = datetime.strptime(em_short.group(1), "%m/%d/%y").date()
+                        except ValueError:
+                            exp = None
+
+            if strike is None or right is None or exp is None:
+                unparsed.append({
+                    "file": source_file,
+                    "line": line.strip()[:80],
+                    "why": (
+                        f"incomplete option parameters for {sym} "
+                        f"(exp={exp}, strike={strike}, right={right})"
+                    ),
+                })
+                continue
+
+        comm = 0.0
+        cm = re.search(r"Commission\s*\$?(?P<comm>[\d.]+)", win_text)
+        if cm:
+            comm = float(cm.group("comm"))
+        fee = 0.0
+        fm = re.search(r"(?:IndustryFee|Industry\s+Fee|Charges)\s*\$?(?P<fee>[\d.]+)", win_text)
+        if fm:
+            fee = float(fm.group("fee"))
+
+        trade_date = exp if (is_opt and exp and exp <= cur_settle_date) else cur_settle_date
+
+        fills.append(ParsedFill(
+            trade_date=trade_date,
+            settle_date=cur_settle_date,
+            symbol=sym,
+            side=side,
+            qty=qty,
+            price=price,
+            description=re.sub(r"\s{2,}", " ", win_text)[:120],
+            asset_type=asset_type,
+            commission=round(comm, 4),
+            fees=round(fee, 4),
+            option_expiry=exp,
+            option_strike=strike,
+            option_right=right,
+            source_file=source_file,
+        ))
+
+    return ParseReport(fills=fills, unparsed=unparsed, files_read=1)
+
+
+def _fill_matches_conf(sf: ParsedFill, cf: ParsedFill) -> bool:
+    """True if statement fill sf corresponds to confirmation fill cf."""
+    if sf.symbol != cf.symbol:
+        return False
+    if sf.side != cf.side:
+        return False
+    if sf.asset_type != cf.asset_type:
+        return False
+    if abs(sf.qty - cf.qty) > 1e-4:
+        return False
+    if abs(sf.price - cf.price) > 1e-3:
+        return False
+    if sf.asset_type == "option":
+        if sf.option_right != cf.option_right:
+            return False
+        if abs((sf.option_strike or 0.0) - (cf.option_strike or 0.0)) > 0.005:
+            return False
+        if sf.option_expiry != cf.option_expiry:
+            return False
+    settle = sf.settle_date or sf.trade_date
+    if abs((cf.trade_date - settle).days) > 4 and cf.trade_date != sf.trade_date:
+        return False
+    return True
+
+
+def dedupe_statement_fills(
+    conf_reports: list[ParseReport], stmt_reports: list[ParseReport]
+) -> list[ParseReport]:
+    """Merge confirmation fills and statement fills without double-counting (T108b)."""
+    kept_conf_reports = dedupe_daily_documents(conf_reports)
+    all_conf_fills = [f for r in kept_conf_reports for f in r.fills]
+
+    kept_stmt_reports: list[ParseReport] = []
+    used_conf_indices: set[int] = set()
+
+    for r in stmt_reports:
+        kept_fills: list[ParsedFill] = []
+        duplicates: list[dict] = list(r.duplicates)
+        for sf in r.fills:
+            matched_idx = None
+            for idx, cf in enumerate(all_conf_fills):
+                if idx not in used_conf_indices and _fill_matches_conf(sf, cf):
+                    matched_idx = idx
+                    break
+            if matched_idx is not None:
+                used_conf_indices.add(matched_idx)
+                duplicates.append({
+                    "file": sf.source_file,
+                    "why": (
+                        f"statement fill {sf.symbol} {sf.side} {sf.qty}@{sf.price} on "
+                        f"{sf.trade_date} covered by confirmation from "
+                        f"{all_conf_fills[matched_idx].source_file}"
+                    ),
+                })
+            else:
+                kept_fills.append(sf)
+        kept_stmt_reports.append(ParseReport(
+            fills=kept_fills,
+            unparsed=r.unparsed,
+            files_read=r.files_read,
+            duplicates=duplicates,
+        ))
+
+    return kept_conf_reports + kept_stmt_reports
+
+
 def merge(reports: list[ParseReport]) -> ParseReport:
     out = ParseReport(files_read=sum(r.files_read for r in reports))
     for r in reports:
         out.fills.extend(r.fills)
         out.unparsed.extend(r.unparsed)
         out.duplicates.extend(r.duplicates)
-    out.fills.sort(key=lambda f: (f.trade_date, f.symbol))
+    out.fills.sort(key=lambda f: (f.trade_date, f.symbol, 0 if f.side == "buy" else 1))
     return out
 
 
@@ -411,7 +715,7 @@ def extract_pdf_text(path: str | Path) -> str:
 
 
 def parse_file(path: str | Path) -> ParseReport:
-    """Parse a single trade confirmation file (.txt or .pdf)."""
+    """Parse a single trade confirmation or monthly statement file (.txt or .pdf)."""
     p = Path(path)
     if not p.exists():
         return ParseReport(
@@ -421,15 +725,21 @@ def parse_file(path: str | Path) -> ParseReport:
 
     if p.suffix.lower() in {".txt", ".text"}:
         text = p.read_text(encoding="utf-8", errors="replace")
+        if is_monthly_statement(text, source_file=p.name):
+            return parse_statement_transactions(text, source_file=p.name)
         return parse_confirmation(text, source_file=p.name)
 
     if p.suffix.lower() == ".pdf":
         try:
             text = extract_pdf_text(p)
+            if is_monthly_statement(text, source_file=p.name):
+                return parse_statement_transactions(text, source_file=p.name)
             return parse_confirmation(text, source_file=p.name)
         except ImportError:
             try:
                 text = p.read_text(encoding="utf-8", errors="replace")
+                if is_monthly_statement(text, source_file=p.name):
+                    return parse_statement_transactions(text, source_file=p.name)
                 return parse_confirmation(text, source_file=p.name)
             except Exception as e:
                 return ParseReport(
@@ -444,6 +754,8 @@ def parse_file(path: str | Path) -> ParseReport:
 
     try:
         text = p.read_text(encoding="utf-8", errors="replace")
+        if is_monthly_statement(text, source_file=p.name):
+            return parse_statement_transactions(text, source_file=p.name)
         return parse_confirmation(text, source_file=p.name)
     except Exception as e:
         return ParseReport(
@@ -453,15 +765,36 @@ def parse_file(path: str | Path) -> ParseReport:
 
 
 def parse_directory(dir_path: str | Path) -> ParseReport:
-    """Parse all trade confirmations (.txt and .pdf) in a directory."""
+    """Parse all trade confirmations and monthly statements (.txt and .pdf) in a directory."""
     p = Path(dir_path)
     if not p.exists() or not p.is_dir():
         return ParseReport(files_read=0)
 
-    reports = []
+    conf_reports: list[ParseReport] = []
+    stmt_reports: list[ParseReport] = []
     for item in sorted(p.iterdir()):
         if item.is_file() and item.suffix.lower() in {".txt", ".pdf"}:
-            reports.append(parse_file(item))
-    if not reports:
+            try:
+                if item.suffix.lower() == ".pdf":
+                    text = extract_pdf_text(item)
+                else:
+                    text = item.read_text(encoding="utf-8", errors="replace")
+            except Exception as e:
+                conf_reports.append(ParseReport(
+                    unparsed=[{"file": item.name, "why": f"read error ({e})"}],
+                    files_read=1,
+                ))
+                continue
+
+            if is_monthly_statement(text, source_file=item.name):
+                stmt_reports.append(parse_statement_transactions(text, source_file=item.name))
+            else:
+                conf_reports.append(parse_confirmation(text, source_file=item.name))
+
+    if not conf_reports and not stmt_reports:
         return ParseReport(files_read=0)
-    return merge(dedupe_daily_documents(reports))
+    if stmt_reports and conf_reports:
+        return merge(dedupe_statement_fills(conf_reports, stmt_reports))
+    if stmt_reports:
+        return merge(stmt_reports)
+    return merge(dedupe_daily_documents(conf_reports))

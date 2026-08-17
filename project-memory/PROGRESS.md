@@ -3,6 +3,18 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-17 — Gemini/Antigravity — T108b: Statement-transaction importer closes all quantity gaps (I028)
+Implemented monthly brokerage statement transaction importing and deduplication to resolve missing trade confirmation gaps:
+- Added `parse_statement_transactions(text, source_file)` to `backend/data/statements.py` to extract executed fills directly from `Transaction Details` tables in monthly statements (`private/statements/Brokerage Statement_*.PDF`).
+- Added `dedupe_statement_fills(conf_reports, stmt_reports)` to merge confirmation fills (primary) and monthly statement fills without double counting, allowing ±4 day settlement-window matching while importing all missing transactions.
+- Updated `parse_file()` and `parse_directory()` to dispatch monthly statements and deduplicate across confirmations and statements.
+- Updated `match_fifo_trips()` in `backend/analysis/autopsy.py` to sort same-day date-only fills with buy-before-sell precedence, ensuring clean intraday round trip matching.
+- Ran D027 verification on the owner's real documents (93 files across 7 monthly statements and 86 confirmations):
+  · `scripts/reconcile_expiry.py --asof 2026-08-17`: 132 total fills (74 option / 58 equity, 0 unparsed, 130 duplicate files dropped). 49 missing fills imported from statements.
+  · Reconciliation: 13 confirmed exact / 0 quantity mismatches / 0 not in statements / 0 no confirmation coverage / 0 assigned or exercised. 100% CLEAN — all quantity gaps closed.
+  · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
+- Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
+
 ## 2026-08-17 (later) — Claude/Cowork — June + July statements reconciled
 Owner delivered both same-day. SPY 735P 06/08 CONFIRMED exact (3v3) — every
 assumed expiry except NVDA 167.5P (2 contracts, no statement row anywhere,

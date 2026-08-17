@@ -315,7 +315,7 @@ def match_fifo_trips(
     """
     if asof is None:
         asof = datetime.now(timezone.utc).date()
-    sorted_fills = sorted(fills, key=lambda f: (f.contract_key, f.ts))
+    sorted_fills = sorted(fills, key=lambda f: (f.contract_key, f.ts, 0 if f.side == "buy" else 1))
     queues: dict[str, list[AutopsyFill]] = {}
     trips: list[AutopsyRoundTrip] = []
 

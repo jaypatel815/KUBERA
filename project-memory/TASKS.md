@@ -12,9 +12,30 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- In progress — T108b — Gemini/Antigravity
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T108b (Statement-transaction importer to close quantity gaps — I028) — AWAITING REVIEW — Gemini/Antigravity 2026-08-17** — Reviewer: Claude/Cowork.
+  Monthly brokerage statements (`private/statements/Brokerage Statement_*.PDF`) record complete purchase/sale tables.
+  Missing trade confirmation PDFs historically led to quantity mismatches on expired contracts (e.g. 692P 1v9, 660P 2v10, 733P 100v135)
+  and unrecorded multi-asset equity/option rebalances.
+  Delivered:
+    · Added `parse_statement_transactions(text, source_file)` to `backend/data/statements.py` to extract executed fills from `Transaction Details`.
+    · Added `dedupe_statement_fills(conf_reports, stmt_reports)` in `backend/data/statements.py` to prioritize trade confirmation fills as primary while importing missing transactions from monthly statements without double counting.
+    · Updated `parse_file()` and `parse_directory()` to dispatch monthly statements cleanly and deduplicate across confirmations and statements.
+    · Enhanced `match_fifo_trips()` in `backend/analysis/autopsy.py` to sort same-day date-only fills with buy-before-sell tie breaking for clean intraday round-trip matching.
+    · Added comprehensive synthetic fixtures and unit tests in `backend/tests/test_statements.py`.
+  Files: `backend/data/statements.py`, `backend/analysis/autopsy.py`, `backend/tests/test_statements.py`.
+  EVIDENCE (D027 — ran on real statements and confirmations):
+    · Ran `python scripts/reconcile_expiry.py --asof 2026-08-17`:
+      Parses 93 files, producing 132 total fills (74 option / 58 equity, 0 unparsed, 130 duplicate files dropped) by importing 49 missing fills from statements.
+      Reconciliation result: 13 confirmed exact / 0 quantity mismatches / 0 not in statements / 0 no confirmation coverage / 0 assigned or exercised.
+      Result is 100% CLEAN: all 13 expired option positions across all months reconcile with zero discrepancies.
+    · Ran `python scripts/autopsy.py`:
+      Realized P&L -$7,998.86 (80 round trips, 53.8% win rate: 43W / 36L / 1S, PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
+    · Verify gate: 827 passed, 1 warning, 0 lint errors (`python scripts/verify.py` PASS).
+  STRONGEST OBJECTIONS AGAINST MY OWN TICKET (D028):
+    1. Monthly statements record settlement dates rather than exact trade execution dates. Where settlement date differs by T+1 or over a weekend (T+3), date matching allows a ±4 day window against trade confirmation dates to deduplicate. If two identical fills occurred within that 4-day window across separate trades, the deduplicator pairs them 1-to-1 in order.
+    2. Date-only fills sort buy-before-sell on same timestamps. If an intraday short sale preceded an intraday buy (day short), FIFO assumes long purchase first unless minute timestamps exist.
 - **T108 (expiry-aware FIFO closing + statement reconciliation — I026) — AWAITING REVIEW —
   Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity.
   Files: `backend/analysis/autopsy.py` (match_fifo_trips/analyze_autopsy gain `asof`; unsold
