@@ -12,7 +12,7 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-(none)
+- In progress — T101 (expressible typing for last 6 pyrefly errors) — Gemini/Antigravity
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 (none — T100 signed PASS, T016a signed PASS, T069 signed PASS, T072 signed PASS, T098 signed PASS)
