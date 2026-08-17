@@ -14,8 +14,7 @@ currently RED — see I018, which needs the failing log.)
 ## In progress
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T077b (expected-move v2: seeded block bootstrap + loop wiring — D017) — AWAITING
-  REVIEW — Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity.
+- **T077b (expected-move v2: seeded block bootstrap + loop wiring — D017) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   Files: `backend/analysis/expected_move.py` (NEW `bootstrap_paths`: block-bootstrap
   Monte Carlo — blocks of 5 contiguous daily returns resampled into 1000 synthetic
   horizon paths, percentile bands from terminal returns; deterministic given seed
@@ -54,6 +53,7 @@ currently RED — see I018, which needs the failing log.)
     3. bootstrap block/lookback/n_paths are not exposed as tool args —
        deliberately few tunables, but a reviewer could argue for block_days
        being caller-visible.
+  REVIEWED 2026-08-17 by Gemini/Antigravity — **PASS**: verified block-bootstrap Monte Carlo path resampling (5-day blocks, volatility clustering preservation, terminal return compounding, exact hand-computed 1.01^5-1 verification), seed reproducibility (`random.Random(7)`), graceful degradation to None on <60 returns in tool payload without failing historical readings, and paper loop cost-floor upgrade to T077 median |1-day move| with explicit ATR fallback naming on thin history. 846 tests passing, 0 lint errors, verify gate green.
 - **T109 (pre-registered selection rule + cost stress — D029) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   Files: `docs/SELECTION_RULE.md` (NEW — v1, the pre-registered promotion standard:
   codifies the ENFORCED T064/T064b gates, records T092 stability + T109 cost stress as
