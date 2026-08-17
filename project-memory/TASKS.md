@@ -12,7 +12,9 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-(none)
+In progress — T104 — Gemini/Antigravity (Pre-trade pattern warnings. Files:
+backend/analysis/pattern_warning.py, backend/api/tools.py, backend/api/main.py,
+backend/api/mcp_server.py, scripts/pattern_check.py, tests.)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T107 (Base URLs and tunables into settings) — AWAITING REVIEW — Gemini/Antigravity** — Reviewer:
