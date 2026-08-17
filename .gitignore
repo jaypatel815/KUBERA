@@ -35,3 +35,9 @@ private/
 *.pdf
 *.csv
 !backend/tests/fixtures/**/*.csv     # redacted test fixtures stay tracked
+
+# The live Claude Desktop config belongs in %APPDATA%\Claude\, not here. A copy
+# in the repo root is a sign someone edited the wrong file — ignored so it cannot
+# be committed and mistaken for the real one. The template lives in
+# scripts/mcp_server.py's docstring.
+claude_desktop_config.json
