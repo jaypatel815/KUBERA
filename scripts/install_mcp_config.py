@@ -39,9 +39,13 @@ def config_path() -> Path:
     if appdata:                                   # Windows
         return Path(appdata) / "Claude" / "claude_desktop_config.json"
     home = Path.home()
-    mac = home / "Library" / "Application Support" / "Claude"
-    if mac.exists():                              # macOS
-        return mac / "claude_desktop_config.json"
+    if sys.platform == "darwin":
+        # Branch on the PLATFORM, not on whether the directory already exists.
+        # Keying off .exists() meant that on a Mac where Claude Desktop had not
+        # yet created its folder, this silently wrote to ~/.config/Claude — a
+        # path nothing reads. Writing a correct file to the wrong place is the
+        # exact failure this script exists to prevent.
+        return home / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
     return home / ".config" / "Claude" / "claude_desktop_config.json"
 
 
@@ -62,8 +66,15 @@ def desired_entry() -> dict:
 
 
 def merge(existing: dict, entry: dict) -> dict:
+    """Add/replace the kubera entry, preserving everything else.
+
+    `mcpServers` is coerced defensively: this file is hand-edited, so it can
+    legitimately arrive as a list or a string, and crashing with a raw
+    ValueError would be a worse experience than quietly rebuilding it.
+    """
     out = dict(existing)
-    servers = dict(out.get("mcpServers") or {})
+    raw = out.get("mcpServers")
+    servers = dict(raw) if isinstance(raw, dict) else {}
     servers["kubera"] = entry
     out["mcpServers"] = servers
     return out
@@ -97,7 +108,13 @@ def main() -> int:
     existing: dict = {}
     if path.exists():
         try:
-            existing = json.loads(path.read_text(encoding="utf-8") or "{}")
+            # utf-8-sig, NOT utf-8: this is a file a human edits in Notepad on
+            # Windows, and Notepad writes a BOM. Reading it as plain utf-8 makes
+            # json.loads fail with "Unexpected UTF-8 BOM", so the script written
+            # to unblock the owner would refuse to run for the single most likely
+            # reason his file is unusual. env_check.py already knew this (I018-era
+            # lesson); I failed to carry it one file across.
+            existing = json.loads(path.read_text(encoding="utf-8-sig") or "{}")
         except json.JSONDecodeError as e:
             print(f"\nERROR: the existing config is not valid JSON ({e}).")
             print("  Fix or delete it first — refusing to overwrite something")
