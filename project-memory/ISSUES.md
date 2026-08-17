@@ -4,6 +4,38 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I026 [CRITICAL — SURVIVORSHIP BIAS: expired options are invisible to every
+  behavioural number] (2026-08-17, found by THE OWNER, not by any agent)
+  He asked one question — "you're telling me I've never lost money on SPY
+  puts?" — and it broke the whole P&L chain. The FIFO round-trip matcher
+  (autopsy, pattern warnings, holding periods, T069 inputs) closes a trip only
+  when a SELL fill exists. An option that expires worthless produces NO
+  confirmation, so every 100%-loss ride-to-zero simply never becomes a trip.
+  Only sold positions — disproportionately winners — enter the record.
+  MEASURED on his confirmations: 14 of 28 option contracts carry unsold
+  quantity past expiry, ~$6,308.57 of premium with no exit fill. SPY alone:
+  8 contracts, ~$4,226 (the 2026-05-11 733P x100 is ~$2,900 of it).
+  CONSEQUENCES, all overstated in his favour — the worst direction:
+    · "SPY options 19/19 wins +$2,470" (my T104 review evidence) is FALSE as
+      a record of his trading; true SPY option net is roughly -$1,756.
+    · The autopsy's "+$11,134 realized, 73.4% win rate" excludes up to ~$6,308
+      of pure losses; true realized is nearer $4,826 and the win rate is far
+      lower once ~14 expired lots count as losing trips.
+    · T104's "clear" verdict on a 0DTE SPY put was issued against this biased
+      base — precisely the trade class where his losses are hidden.
+  WHO MISSED IT: Gemini built the matcher; I reviewed T103 AND T104 against
+  the same biased data and called the clear verdict "earned". D028's falsify
+  question — "what would make 19/19 wrong?" — had an obvious answer (where are
+  the losses?) and I did not ask it. A 100% win rate should itself have been
+  treated as an anomaly detector.
+  CAVEAT, stated so the fix is honest: unsold-past-expiry can also mean
+  exercised/assigned (would show as stock+cash movements) — the monthly
+  STATEMENTS can distinguish; for OTM 0DTE puts worthless expiry dominates.
+  FIX (T108): expiry-aware trip closing — an option lot whose expiry has
+  passed with no sell closes at exit price 0 on the expiry date, flagged
+  `closed_by="expiry_assumed"`, reconciled against monthly statements where
+  available. Until T108 lands, EVERY win-rate and realized-P&L figure from
+  confirmations must carry the caveat that expired options are missing.
 - I024 [FIXED 2026-08-16 in 5d22682 — verified by re-running on 250 real fills: minutes/hours buckets now empty, narrative states duration is unrecorded]
   `analysis/autopsy.py:174,216` stamp every dateless fill with `time(12, 0)`.
   Schwab confirmations carry NO time of day (statements.py exposes `trade_date:

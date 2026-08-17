@@ -27,11 +27,15 @@ currently RED — see I018, which needs the failing log.)
   REVIEWED 2026-08-16 by Claude/Cowork — PASS, with one must-fix-soon concern.
     checked (D027 — ran it, on the owner's 250 real fills, not fixtures):
       1. Real proposal (0DTE SPY put, $500) against 109 completed round trips:
-         verdict "clear", 0 warnings. VERIFIED THE CLEAR IS EARNED, not lazy —
-         recomputed his SPY option record independently: 19/19 winning round
-         trips, +$2,470. "No negative expectancy" is what his history actually
-         says for that setup. The tool declining to warn here is honesty, not
-         a miss.
+         verdict "clear", 0 warnings. I originally wrote here that the clear
+         was "EARNED — 19/19 winning round trips, +$2,470". THE OWNER FALSIFIED
+         THAT (I026): expired-worthless options produce no sell confirmation, so
+         the matcher only ever sees sold (mostly winning) positions. His true
+         SPY option net is roughly -$1,756 once ~$4,226 of expired premium is
+         counted. My "independent recomputation" used the same biased trips and
+         verified nothing. The PASS stands for the small-N refusal and typed
+         registry path; the evidentiary claim is retracted, and the tool must
+         not be trusted on option setups until T108 lands.
       2. SMALL-N REFUSAL: same proposal against 4 fills -> verdict
          "insufficient_history", explicit "minimum 3 required" caveat, zero
          warnings emitted. The D026 refusal discipline is real and worded well.
@@ -289,6 +293,13 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   `backend/api/llm_claude_sdk.py` (wrapped query stream in `asyncio.wait_for(timeout=self.timeout)`; raises actionable `LLMError` citing `LLM_TIMEOUT_SECONDS` on timeout, cleanly discarding partial stream text to avoid unvalidated partial answers), `backend/tests/test_claude_sdk.py` (3 tests). Gate PASS (731 passed).
 - [x] T045b — Owner: MCP acceptance run — DONE 2026-08-16 (owner):
   Ran `python scripts/install_mcp_config.py`; verified `%APPDATA%\Claude\claude_desktop_config.json` is configured with `.venv` Python interpreter and `scripts/mcp_server.py` stdio entrypoint.
+- [ ] T108 — **CRITICAL, blocks trusting ANY behavioural number (I026):** expiry-aware
+  FIFO closing. An option lot whose expiry passed with no sell = a CLOSED trip at exit 0
+  on the expiry date, flagged closed_by="expiry_assumed", cross-checked against monthly
+  statements for exercise/assignment. Rerun autopsy + pattern warnings after; expect the
+  win rate to drop hard — that is the fix working, not a regression. Owner found this by
+  asking one sceptical question; a 100% win rate must henceforth be treated as a bug
+  signal, not a result.
 - [ ] T107 — Base URLs and tunables into settings (D028): `api.anthropic.com`,
   `api.openai.com`, `data.alpaca.markets`, `api.stlouisfed.org`,
   `api.schwabapi.com` and the two Schwab OAuth URLs are module constants today.
