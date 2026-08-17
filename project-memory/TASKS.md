@@ -14,7 +14,7 @@ currently RED — see I018, which needs the failing log.)
 ## In progress
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T108b (Statement-transaction importer to close quantity gaps — I028) — AWAITING REVIEW — Gemini/Antigravity 2026-08-17** — Reviewer: Claude/Cowork.
+- **T108b (Statement-transaction importer to close quantity gaps — I028) — DONE 2026-08-17 (Gemini/Antigravity; REVIEWED by Claude/Cowork — BLOCK then PASS, e15a785)**.
   Monthly brokerage statements (`private/statements/Brokerage Statement_*.PDF`) record complete purchase/sale tables.
   Missing trade confirmation PDFs historically led to quantity mismatches on expired contracts (e.g. 692P 1v9, 660P 2v10, 733P 100v135)
   and unrecorded multi-asset equity/option rebalances.
@@ -44,8 +44,28 @@ currently RED — see I018, which needs the failing log.)
     1. US T+1 settlement derivation calculates trade date as `prior_business_day(cur_settle_date)`. If a trade was executed under the pre-May 28, 2024 T+2 settlement rule on historical brokerage statements, its derived trade date could be shifted by +1 business day relative to T+2. Since all the owner's active statement transaction fills in this dataset are from 2026 (firmly in the T+1 era), 100% of tested cases match ground truth exactly.
     2. Date-only fills sort buy-before-sell on same timestamps. If an intraday short sale preceded an intraday buy (day short), FIFO assumes long purchase first unless minute timestamps exist.
   REVIEWED 2026-08-17 by Claude/Cowork — **BLOCK** (see review notes in git history; resolved above with month-boundary deduplication, T+1 holiday-aware calendar derivation, and clean summary denominators).
-- **T108 (expiry-aware FIFO closing + statement reconciliation — I026) — AWAITING REVIEW —
-  Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity.
+  RE-REVIEWED 2026-08-17 by Claude/Cowork — **PASS** (e15a785), verified by re-running
+  the exact probes that produced the BLOCK, independently of the builder's evidence:
+    · DRAM 475 bought / 475 sold — the phantom sale is gone; only the two confirmation
+      fills remain. Option-balance invariant still 36/36; no equity symbol oversold.
+    · Date shift vs confirmation ground truth: Counter({0: 83}) — every measurable
+      statement copy lands on the EXACT trade date, including the former +3/+4 weekend
+      spans and the unexplained -1 (all resolved by the derived T+1 logic).
+    · The holiday calendar proved itself inside the owner's own data window:
+      prior_business_day(2026-01-20) = 2026-01-16, correctly skipping MLK Monday.
+      733P: 100 (document) + 35 (derived_settle_t1) both on 05/11 — 0DTE preserved,
+      provenance flagged.
+    · Twin-risk for dedupe pass 3 (a genuine repeat-identical trade eaten as a copy):
+      measured ZERO identical-spec pairs within 4 days anywhere in the final record —
+      the hazard is documented (their D028 #1) and currently has no live instance.
+    · Reconcile 13/0/0/0/0 CLEAN; autopsy unchanged at 80 trips / -$7,998.86 / 53.8%
+      (removing the phantom moved nothing — FIFO had silently dropped it, as the BLOCK
+      predicted); gate PASS; pyrefly exactly 1 (known I023).
+    Standing note for future consumers: reconciliation is now partially SELF-referential
+    (imported fills and expiry rows share source documents) — it validates internal
+    consistency plus confirmation cross-checks, which is what T108b intended.
+- **T108 (expiry-aware FIFO closing + statement reconciliation — I026) — DONE 2026-08-17
+  (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS, 39121cb)**.
   Files: `backend/analysis/autopsy.py` (match_fifo_trips/analyze_autopsy gain `asof`; unsold
   option lots past expiry close at exit 0 flagged `closed_by="expiry_assumed"`; PerformanceSummary
   gains expiry_assumed_count/pnl; narrative + caveats incl. the 100%-win-rate BUG SIGNAL),
@@ -396,12 +416,10 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   Ran `python scripts/install_mcp_config.py`; verified `%APPDATA%\Claude\claude_desktop_config.json` is configured with `.venv` Python interpreter and `scripts/mcp_server.py` stdio entrypoint.
 - [x] T108 — expiry-aware FIFO closing — DONE 2026-08-17 (Claude/Cowork, REVIEWED 2026-08-17 by Gemini/Antigravity — PASS):
   `backend/analysis/autopsy.py` (match_fifo_trips/analyze_autopsy gain `asof`; unsold option lots past expiry close at exit 0 flagged `closed_by="expiry_assumed"`; PerformanceSummary gains expiry_assumed_count/pnl; narrative + caveats incl. the 100%-win-rate BUG SIGNAL), `backend/analysis/pattern_warning.py` (asof threaded; assumed-trip caveat), `backend/analysis/expiry_reconcile.py` (parses Expired/Assigned/Exercised rows from monthly statements, joins per contract), `scripts/reconcile_expiry.py` (CLI), `backend/data/statements.py` (pypdf layout-mode extraction w/ version fallback — I027; monthly-statement refusal; wrapped-option-leg fallback that fails CLOSED; daily-document dedupe — I028), `scripts/autopsy.py`, tests (test_autopsy +9, test_statements +8, test_expiry_reconcile +12). Gate PASS (823 passed, 0 lint errors).
-- [ ] T108b — Statement-transaction importer: the monthly statements carry COMPLETE
-  purchase/sale/expiry rows (the May statement alone shows a 35-contract SPY 733P fill
-  that has no confirmation PDF). Parse their Transaction Details into fills to close the
-  I028 coverage gaps instead of chasing individual confirmation downloads. Dedupe against
-  confirmations by the T108 fill-signature. Prereq reading: analysis/expiry_reconcile.py
-  docstring for the observed row shapes.
+- [x] T108b — Statement-transaction importer — DONE 2026-08-17 (Gemini/Antigravity,
+  reviewed BLOCK→PASS by Claude/Cowork; full record in "Awaiting review" section above).
+  Reconciliation 13/13 clean; the honest full-history record is now 131 fills, 80 trips,
+  -$7,998.86 realized, 53.8% win rate (options -$11,706 / equities +$3,707).
 - [x] Owner (Chotu): June + July statements delivered 2026-08-17 — 735P x3 CONFIRMED
   exact (my "x12" was a stale pre-dedupe number; corrected), July verified as a
   no-trading month. Keep dropping each new monthly statement in as it posts.

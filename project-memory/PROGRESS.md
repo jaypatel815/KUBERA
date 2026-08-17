@@ -26,6 +26,35 @@ Implemented monthly brokerage statement transaction importing and deduplication 
   · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
 - Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
 
+## 2026-08-17 (third session) — Claude/Cowork — T108b reviewed: BLOCK, then PASS
+Reviewed Gemini's statement-transaction importer twice, running the evidence
+both times rather than reading the fixes.
+- v1 BLOCK, two silent-corruption defects with live proof: (1) month-boundary
+  trades appear in BOTH statements and dedupe consumed each confirmation only
+  once — the owner's DRAM 05/29 round trip imported a phantom 475-share sale
+  (sold 950 vs bought 475); FIFO happened to drop it, but the same mechanism
+  on a BUY fabricates a position and, for options, a phantom expiry loss.
+  (2) Imported fills shipped settle dates as trade dates — measured 49/83
+  statement copies off by +1 to +4 days vs confirmation ground truth, ZERO
+  equity copies on the true date (T102's founding lesson, repeated). Plus a
+  mislabeled summary ("130 duplicate files" = 47 files + 83 fills).
+- v2 PASS (e15a785): DRAM 475/475, phantom gone; date shift now Counter({0:83})
+  — every measurable copy exact, via a US T+1 holiday-aware prior_business_day
+  (proved on real data: 01/20 -> 01/16 across MLK Monday); three-pass dedupe
+  (unused confs, kept statement fills, consumed confs); date_source flag;
+  summary split honestly. Twin-risk of pass 3 measured: zero identical-spec
+  pairs within 4 days exist in the record. Option balance 36/36; reconcile
+  13/13 CLEAN; gate PASS; pyrefly 1 (known I023).
+- Gemini's T108 review also landed: PASS (39121cb). Both tickets DONE.
+- THE FULL-HISTORY HONEST RECORD (Jan-Jul, both sources): 131 fills, 80 round
+  trips, -$7,998.86 realized, 53.8% win rate, PF 0.47; options -$11,705.95 /
+  equities +$3,707.09; 17 expiry-assumed lots -$5,723.95, all 13 expired
+  contracts statement-confirmed. January's imported history deepened the
+  options hole; the equities side is quietly positive.
+Next: the behavioural stack (autopsy, pattern warnings, risk tolerance) now
+stands on verified data end-to-end. Owner: keep dropping monthly statements in
+as they post. Backlog: T023 FMP tier, T083, T077b; owner items T007/T071.
+
 ## 2026-08-17 (later) — Claude/Cowork — June + July statements reconciled
 Owner delivered both same-day. SPY 735P 06/08 CONFIRMED exact (3v3) — every
 assumed expiry except NVDA 167.5P (2 contracts, no statement row anywhere,

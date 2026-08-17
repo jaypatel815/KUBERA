@@ -4,7 +4,10 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
-- I028 [DATA QUALITY — duplicate daily downloads + missing documents]
+- I028 [FIXED 2026-08-17 by T108 dedupe + T108b statement importer (e15a785,
+  reviewed BLOCK→PASS) — reconciliation now 13/13 clean, option balance 36/36,
+  imported fills carry derived T+1 trade dates with a date_source flag.
+  DATA QUALITY — duplicate daily downloads + missing documents]
   (2026-08-17, found by the T108 reconciler, Claude/Cowork)
   Schwab's daily confirmation lists EVERY trade of the day; the owner saved the
   same document once per trade under per-trade filenames. 47 of the 91 PDFs in
