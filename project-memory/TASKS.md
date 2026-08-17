@@ -17,43 +17,7 @@ Files: backend/data/schwab.py, backend/analysis/attribution.py,
 backend/tests/test_schwab.py, backend/tests/test_holding_periods.py.)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T101 (expressible typing for last 6 pyrefly errors) — AWAITING REVIEW — Gemini/Antigravity** —
-  Reviewer: Claude/Cowork, per REVIEW.md. Files: `backend/analysis/correlation.py` (`CorrelationMatch` TypedDict),
-  `backend/analysis/ranking.py` (narrowed `pcts` list comprehension),
-  `backend/backtest/strategies.py` (`RegimeRouterStrategy` callable class with `last_leg`),
-  `backend/data/fred.py` (type narrowing assert on `s.fred_api_key`), `pyrefly.toml`.
-  Gate PASS: 731 passed.
-  REVIEWED 2026-08-16 by Claude/Cowork — PASS
-    aligned: yes — this was filed so a red mark in the editor means something
-      again. Six understood-but-permanent errors still train you to skim; zero
-      makes the seventh one visible. Every fix expresses what the code already
-      meant rather than silencing the checker, which is the distinction that
-      mattered.
-    checked: read all four changes; ran the gate (740 passed, 3 skipped) and
-      pyrefly (0 errors). Traced every consumer of the function-to-class swap —
-      `paper_loop.py:159` uses getattr(strategy, "last_leg", None) and
-      test_attribution.py reads router.last_leg directly; both work against
-      __call__ + instance attribute, and __name__ is preserved so the ledger's
-      strategy key ("regime_router_40_60") is unchanged.
-    AND THE CHECK I CARED ABOUT MOST: a config that takes errors to zero can do
-      it by fixing code or by going deaf. Injected a deliberate bad-return
-      canary — 0 became 1 and it was named precisely — so the checker is still
-      awake. The test relaxations also survived intact (sub-config still scoped
-      to backend/tests/**, 77 warnings still counted, not deleted), so the
-      production/test asymmetry we agreed on is preserved rather than flattened.
-    concerns:
-      1. Non-blocking: `assert s.fred_api_key is not None` in data/fred.py is
-         production code, and asserts are stripped under `python -O`. Harmless
-         as written — require_fred() has already raised by then, so removing the
-         assert changes nothing at runtime — but it reads as a guard when it is
-         really a comment to the checker. `cast()` or a TypeGuard on
-         require_fred() would say that without the ambiguity.
-      2. Worth noting rather than fixing: CorrelationMatch has to use the
-         functional TypedDict form because "with" is a keyword. That is the
-         right call and the reason deserves the one-line comment it has.
-    good: the walrus narrowing in ranking.py is the cleanest of the four — it
-      makes the filter and the type the same statement instead of asking a
-      reader to trust that a comprehension excluded None.
+(none — T101 signed PASS, T102 signed PASS)
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
@@ -204,8 +168,8 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   silent `except Exception` around the api.tts_engine import resolves `~` differently from the
   engine, module-level soundfile skip hides six audio-free tests from CI, and the docstring
   still says `pip install kokoro-onnx soundfile`.
-- [~] T101 — Make the last 6 pyrefly errors expressible rather than tolerated — BUILT 2026-08-16 (Gemini/Antigravity, AWAITING REVIEW):
-  `CorrelationMatch` TypedDict in `backend/analysis/correlation.py`; narrowed `pcts` list comprehension in `backend/analysis/ranking.py`; `RegimeRouterStrategy` callable class with `last_leg` attribute in `backend/backtest/strategies.py`; non-None assertion on `s.fred_api_key` in `backend/data/fred.py`. Updated `pyrefly.toml` to 0 remaining known errors. Gate PASS (731 passed).
+- [x] T101 — Make the last 6 pyrefly errors expressible rather than tolerated — DONE 2026-08-16 (Gemini/Antigravity, REVIEWED 2026-08-16 by Claude/Cowork — PASS):
+  `CorrelationMatch` TypedDict in `backend/analysis/correlation.py`; narrowed `pcts` list comprehension in `backend/analysis/ranking.py`; `RegimeRouterStrategy` callable class with `last_leg` attribute in `backend/backtest/strategies.py`; non-None assertion on `s.fred_api_key` in `backend/data/fred.py`. Updated `pyrefly.toml` to 0 remaining known errors. Gate PASS (743 passed).
 - [x] T100 — Honor `LLM_TIMEOUT_SECONDS` in the claude-sdk provider (I017) — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `backend/api/llm_claude_sdk.py` (wrapped query stream in `asyncio.wait_for(timeout=self.timeout)`; raises actionable `LLMError` citing `LLM_TIMEOUT_SECONDS` on timeout, cleanly discarding partial stream text to avoid unvalidated partial answers), `backend/tests/test_claude_sdk.py` (3 tests). Gate PASS (731 passed).
 - [ ] T071 — Owner: voice acceptance run — `pip install -r requirements-voice.txt`, server up, `python scripts\talk.py`, hold a conversation. If faster-whisper wheels fail on Python 3.14 → `set KUBERA_STT=openai`. Report quirks to ISSUES.

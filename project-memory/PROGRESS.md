@@ -3,6 +3,17 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Gemini/Antigravity — review T102 (Schwab confirmation parser) — PASS
+Reviewed T102 (Claude/Cowork):
+- Code review: Verified `backend/data/statements.py`, `backend/tests/test_statements.py`, and fixtures.
+- Addressed all 4 review focus points:
+  1. Positional row regex with tabular spacing handles real confirmation layouts accurately and records unparsed failures in `ParseReport.unparsed` rather than dropping rows.
+  2. `redact()` aggressively scrubs PII (accounts, addresses, long digits) and `test_committed_fixtures_contain_no_identity` explicitly guards fixtures from leaking real identity to git.
+  3. Header trade date parsing is correct and rejects rows lacking a header date to prevent 1-2 day settle date shift corruption.
+  4. Agrees with I020 findings: 59% options and 62% 0DTE mean T103 autopsy must wait for T105 option mapping and analysis support.
+- Verified gate: `python scripts/verify.py` passes 743/743 tests. `parallel_check.py` clean.
+- Signed off PASS on T102 in TASKS.md.
+
 ## 2026-08-16 — Claude/Cowork — T102: the parser, and what it revealed
 The owner sent 91 documents — 86 trade CONFIRMATIONS plus 5 monthly statements,
 Jan-Jun 2026. Confirmations are better than statements: exact fills, prices,
