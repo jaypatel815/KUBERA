@@ -42,14 +42,13 @@ sys.path.insert(0, str(ROOT / "backend"))
 
 from settings import ConfigError, KuberaSettings, get_settings  # noqa: E402
 
-AUTH_URL = "https://api.schwabapi.com/v1/oauth/authorize"
-TOKEN_URL = "https://api.schwabapi.com/v1/oauth/token"
 
-
-def build_auth_url(app_key: str, callback: str) -> str:
+def build_auth_url(app_key: str, callback: str, settings: KuberaSettings | None = None) -> str:
     """The URL that starts the browser flow. `readonly` is not a Schwab scope —
     read-only is enforced by KUBERA's client having no order methods (D026)."""
-    return f"{AUTH_URL}?client_id={quote(app_key, safe='')}&redirect_uri={quote(callback, safe='')}"
+    s = settings or get_settings()
+    auth_url = s.schwab_auth_url
+    return f"{auth_url}?client_id={quote(app_key, safe='')}&redirect_uri={quote(callback, safe='')}"
 
 
 def extract_code(pasted: str) -> str:
@@ -75,13 +74,23 @@ def extract_code(pasted: str) -> str:
     return code
 
 
-def exchange(app_key: str, app_secret: str, callback: str, code: str) -> dict:
+def exchange(
+    app_key: str,
+    app_secret: str,
+    callback: str,
+    code: str,
+    transport: httpx.BaseTransport | None = None,
+    settings: KuberaSettings | None = None,
+) -> dict:
+    s = settings or get_settings()
+    token_url = s.schwab_token_url
     resp = httpx.post(
-        TOKEN_URL,
+        token_url,
         data={"grant_type": "authorization_code", "code": code, "redirect_uri": callback},
         auth=(app_key, app_secret),
         headers={"Content-Type": "application/x-www-form-urlencoded"},
         timeout=30.0,
+        transport=transport,
     )
     if resp.status_code >= 400:
         body = resp.text[:300]

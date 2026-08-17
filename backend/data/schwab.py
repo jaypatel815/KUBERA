@@ -131,7 +131,7 @@ class SchwabClient:
         self._token: str | None = None
         self._token_expires_at: float = 0.0
         self._http = httpx.Client(
-            base_url=BASE_URL, timeout=TIMEOUT_SECONDS, transport=transport
+            base_url=self._s.schwab_base_url, timeout=TIMEOUT_SECONDS, transport=transport
         )
 
     # ---------------------------------------------------------------- lifecycle
@@ -153,7 +153,7 @@ class SchwabClient:
         assert self._s.schwab_refresh_token is not None
         try:
             resp = self._http.post(
-                TOKEN_PATH,
+                self._s.schwab_token_url,
                 data={
                     "grant_type": "refresh_token",
                     "refresh_token": self._s.schwab_refresh_token.get_secret_value(),

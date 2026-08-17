@@ -162,7 +162,7 @@ class MarketDataClient:
         transport: httpx.BaseTransport | None = None,
     ):
         s = (settings or get_settings()).require_alpaca()
-        self._http = build_client(DATA_BASE_URL, s, transport)
+        self._http = build_client(s.alpaca_data_base_url, s, transport)
 
     def close(self) -> None:
         self._http.close()

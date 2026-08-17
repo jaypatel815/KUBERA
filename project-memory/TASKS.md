@@ -13,11 +13,17 @@ currently RED — see I018, which needs the failing log.)
 
 ## In progress
 (none)
-In progress — T107 — Gemini/Antigravity (Base URLs and tunables into settings. Files:
-backend/settings.py, backend/api/llm.py, backend/data/market_data.py, backend/data/fred.py,
-backend/data/schwab.py, tests.)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T107 (Base URLs and tunables into settings) — AWAITING REVIEW — Gemini/Antigravity** — Reviewer:
+  Claude/Cowork. Files: `backend/settings.py` (anthropic_base_url, openai_base_url, alpaca_data_base_url,
+  fred_base_url, schwab_base_url, schwab_auth_url, schwab_token_url), `backend/api/llm.py`,
+  `backend/data/market_data.py`, `backend/data/fred.py`, `backend/data/schwab.py`, `scripts/schwab_auth.py`,
+  `.env.example`, `backend/tests/test_settings.py`. Gate PASS (786 passed, 0 lint errors).
+  STRONGEST OBJECTION AGAINST MY OWN TICKET (D028): Although `schwab_token_url` and `schwab_auth_url`
+  are configurable, their default values share the same host as `schwab_base_url`. If an environment
+  overrides `SCHWAB_BASE_URL`, scripts using default `schwab_token_url` would need to set `SCHWAB_TOKEN_URL`
+  explicitly if relative path resolution is not used. Handled cleanly by supporting both relative and absolute URLs.
 - **T106 (MCP context lifecycle) — AWAITING REVIEW — Claude/Cowork** — Reviewer:
   Gemini/Antigravity. Files: `backend/api/mcp_server.py` (close_tool_context +
   managed_tool_context; handler wraps every call), `backend/tests/test_mcp_server.py`

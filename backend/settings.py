@@ -58,6 +58,10 @@ class KuberaSettings(BaseSettings):
         validation_alias=AliasChoices("ALPACA_API_SECRET_KEY", "ALPACA_SECRET_KEY"),
     )
     alpaca_paper: bool = True
+    alpaca_data_base_url: str = Field(
+        default="https://data.alpaca.markets",
+        validation_alias=AliasChoices("ALPACA_DATA_BASE_URL", "KUBERA_ALPACA_DATA_BASE_URL"),
+    )
 
     # Conversation layer (Phase 4). Provider picked here; keys never leave SecretStr.
     llm_provider: str = Field(
@@ -83,6 +87,10 @@ class KuberaSettings(BaseSettings):
     anthropic_model: str = Field(
         default="claude-sonnet-5", validation_alias=AliasChoices("ANTHROPIC_MODEL",)
     )
+    anthropic_base_url: str = Field(
+        default="https://api.anthropic.com",
+        validation_alias=AliasChoices("ANTHROPIC_BASE_URL", "KUBERA_ANTHROPIC_BASE_URL"),
+    )
     openai_model: str = Field(
         default="gpt-5", validation_alias=AliasChoices("OPENAI_MODEL",)
     )
@@ -90,7 +98,7 @@ class KuberaSettings(BaseSettings):
     # Gemini's compat endpoint, etc. Default = the real OpenAI.
     openai_base_url: str = Field(
         default="https://api.openai.com/v1",
-        validation_alias=AliasChoices("OPENAI_BASE_URL",),
+        validation_alias=AliasChoices("OPENAI_BASE_URL", "KUBERA_OPENAI_BASE_URL"),
     )
 
     # T044: how much conversation history (in characters, ~4 chars/token) the chat
@@ -128,6 +136,10 @@ class KuberaSettings(BaseSettings):
         default=None,
         validation_alias=AliasChoices("FRED_API_KEY", "KUBERA_FRED_API_KEY"),
     )
+    fred_base_url: str = Field(
+        default="https://api.stlouisfed.org",
+        validation_alias=AliasChoices("FRED_BASE_URL", "KUBERA_FRED_BASE_URL"),
+    )
 
     # Schwab Trader API (T016, D026) — READ-ONLY. OAuth, not a key pair: the app
     # key/secret identify the APPLICATION, the refresh token identifies the LOGIN,
@@ -144,6 +156,18 @@ class KuberaSettings(BaseSettings):
     schwab_refresh_token: SecretStr | None = Field(
         default=None,
         validation_alias=AliasChoices("SCHWAB_REFRESH_TOKEN", "KUBERA_SCHWAB_REFRESH_TOKEN"),
+    )
+    schwab_base_url: str = Field(
+        default="https://api.schwabapi.com",
+        validation_alias=AliasChoices("SCHWAB_BASE_URL", "KUBERA_SCHWAB_BASE_URL"),
+    )
+    schwab_auth_url: str = Field(
+        default="https://api.schwabapi.com/v1/oauth/authorize",
+        validation_alias=AliasChoices("SCHWAB_AUTH_URL", "KUBERA_SCHWAB_AUTH_URL"),
+    )
+    schwab_token_url: str = Field(
+        default="https://api.schwabapi.com/v1/oauth/token",
+        validation_alias=AliasChoices("SCHWAB_TOKEN_URL", "KUBERA_SCHWAB_TOKEN_URL"),
     )
     # Must EXACTLY match the callback registered on the app at developer.schwab.com —
     # Schwab compares it byte for byte, and it must be https even for localhost.

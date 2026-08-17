@@ -76,10 +76,12 @@ def _post(url: str, headers: dict, payload: dict, provider: str,
 class AnthropicProvider:
     def __init__(self, api_key: str, model: str,
                  transport: httpx.BaseTransport | None = None,
+                 base_url: str = "https://api.anthropic.com",
                  timeout: float = DEFAULT_TIMEOUT):
         self._key = api_key
         self.model = model
         self._transport = transport
+        self._url = base_url.rstrip("/") + "/v1/messages"
         self.timeout = timeout
 
     @staticmethod
@@ -119,7 +121,7 @@ class AnthropicProvider:
                 for t in tools
             ]
         d = _post(
-            ANTHROPIC_URL,
+            self._url,
             {"x-api-key": self._key, "anthropic-version": "2023-06-01"},
             payload, "anthropic", self._transport, timeout=self.timeout,
         )
@@ -217,6 +219,7 @@ def build_provider(settings: KuberaSettings | None = None,
             )
         return AnthropicProvider(s.anthropic_api_key.get_secret_value(),
                                  s.anthropic_model, transport,
+                                 base_url=s.anthropic_base_url,
                                  timeout=s.llm_timeout_seconds)
     if provider == "openai":
         # Local/compat endpoints (e.g. Ollama) don't need a real key — allow a dummy.

@@ -3,6 +3,23 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Gemini/Antigravity — T107: Base URLs and tunables into settings (D028)
+Moved external API endpoints and OAuth URLs from module constants into environment-overridable `KuberaSettings` (allowing seamless testing against sandboxes, mocks, and local proxies without modifying source code):
+- `backend/settings.py`: Added `anthropic_base_url`, `openai_base_url` (with `KUBERA_` alias), `alpaca_data_base_url`, `fred_base_url`, `schwab_base_url`, `schwab_auth_url`, and `schwab_token_url`.
+- `backend/api/llm.py`: `AnthropicProvider` accepts `base_url` and defaults to `settings.anthropic_base_url`.
+- `backend/data/market_data.py`: `MarketDataClient` uses `settings.alpaca_data_base_url`.
+- `backend/data/fred.py`: `FredClient` uses `settings.fred_base_url`.
+- `backend/data/schwab.py`: `SchwabClient` uses `settings.schwab_base_url` and `settings.schwab_token_url`.
+- `scripts/schwab_auth.py`: `build_auth_url` and `exchange` accept `settings` and use `schwab_auth_url` and `schwab_token_url`.
+- `.env.example`: Documented optional base URL override variables.
+- Two values remain hardcoded with explicit D028 rationale comments:
+  * `PAPER_BASE_URL` in `backend/data/alpaca.py` (safety rail against pointing at live capital without spec §7.4 promotion).
+  * `OPTION_MULTIPLIER = 100` in `backend/analysis/attribution.py` (fixed by external market standards).
+- `backend/tests/test_settings.py`: Added 4 new tests asserting defaults, env overrides, mock transport client routing, and hardcoded safety rails.
+- Verified: `python scripts/verify.py` full gate PASS (786 passed, 1 warning, 0 lint errors).
+Next: Review Claude's T106 (MCP context lifecycle).
+
+
 ## 2026-08-16 — Claude/Cowork — T106: the MCP server now closes what it opens
 The leak was concrete once the owner wired Claude Desktop up: every question he
 asks opens an Alpaca client, a market client, a FRED client and a DB session,
