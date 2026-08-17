@@ -101,7 +101,7 @@ def rank_watchlist(closes_by_symbol: dict[str, list[float]],
             {s: window_return(closes_by_symbol[s], w) for s in symbols})
     out = []
     for s in symbols:
-        pcts = [per_window[w][s] for w in RS_WINDOWS if per_window[w][s] is not None]
+        pcts: list[float] = [val for w in RS_WINDOWS if (val := per_window[w][s]) is not None]
         rs = sum(pcts) / len(pcts) if pcts else None
         label = regime_labels.get(s, "unknown")
         fit = REGIME_FIT.get(label, DEFAULT_FIT)

@@ -12,6 +12,7 @@ the portfolio-risk summary (T093 extends it). Pure functions, hand-tested.
 
 import math
 from dataclasses import dataclass, field
+from typing import TypedDict
 
 HIGH_CORR = 0.80          # a pair above this is flagged as one bet in two wrappers
 MIN_OVERLAP = 20          # fewer shared return observations -> refuse, don't guess
@@ -65,6 +66,9 @@ def _aligned_returns(closes_by_symbol: dict[str, list[float]],
     return ra[-n:], rb[-n:]
 
 
+CorrelationMatch = TypedDict("CorrelationMatch", {"with": str, "corr": float})
+
+
 @dataclass(frozen=True)
 class OverlapReport:
     symbols: list[str]
@@ -75,7 +79,7 @@ class OverlapReport:
     portfolio_beta: float | None
     benchmark: str
     candidate: str | None
-    candidate_max_corr: dict | None   # {"with": sym, "corr": x} | None
+    candidate_max_corr: CorrelationMatch | None   # {"with": sym, "corr": x} | None
     warnings: list = field(default_factory=list)
 
 
@@ -139,9 +143,9 @@ def overlap_report(
                     "some holdings lacked usable history"
                 )
 
-    candidate_max = None
+    candidate_max: CorrelationMatch | None = None
     if candidate is not None:
-        best = None
+        best: CorrelationMatch | None = None
         for s in symbols:
             if s == candidate:
                 continue
@@ -149,7 +153,7 @@ def overlap_report(
             if c is not None and (best is None or c > best["corr"]):
                 best = {"with": s, "corr": c}
         candidate_max = best
-        if best and best["corr"] >= HIGH_CORR:
+        if best is not None and best["corr"] >= HIGH_CORR:
             warnings.append(
                 f"candidate {candidate} correlates {best['corr']:.2f} with held "
                 f"{best['with']} — this adds exposure, not diversification"

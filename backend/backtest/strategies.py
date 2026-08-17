@@ -141,23 +141,30 @@ def make_range(lookback: int = 40, entry_frac: float = 0.5):
     return range_trader
 
 
-def make_regime_router(lookback: int = 40, momentum_lookback: int = 60,
-                       entry_frac: float = 0.5):
+class RegimeRouterStrategy:
     """The meta-strategy (T054): first determine what kind of market it is, then
     pick the playbook — trending structure -> momentum (which itself goes to cash
     in downtrends), no structure -> range trading (which refuses non-ranges).
     CASH emerges whenever the chosen playbook declines; that is a feature."""
-    mom = make_momentum(lookback=momentum_lookback)
-    rng = make_range(lookback=lookback, entry_frac=entry_frac)
 
-    def regime_router(closes: Sequence[float]) -> float:
-        if _regime_lite(closes, lookback) in ("up", "down"):
-            regime_router.last_leg = "momentum"  # T091: which leg fired (introspection)
-            return mom(closes)
-        regime_router.last_leg = "range"
-        return rng(closes)
+    def __init__(self, lookback: int = 40, momentum_lookback: int = 60, entry_frac: float = 0.5):
+        self.lookback = lookback
+        self.momentum_lookback = momentum_lookback
+        self.entry_frac = entry_frac
+        self._mom = make_momentum(lookback=momentum_lookback)
+        self._rng = make_range(lookback=lookback, entry_frac=entry_frac)
+        self.last_leg: str | None = None
+        self.__name__ = f"regime_router_{lookback}_{momentum_lookback}"
 
-    regime_router.last_leg = None
+    def __call__(self, closes: Sequence[float]) -> float:
+        if _regime_lite(closes, self.lookback) in ("up", "down"):
+            self.last_leg = "momentum"  # T091: which leg fired (introspection)
+            return self._mom(closes)
+        self.last_leg = "range"
+        return self._rng(closes)
 
-    regime_router.__name__ = f"regime_router_{lookback}_{momentum_lookback}"
-    return regime_router
+
+def make_regime_router(lookback: int = 40, momentum_lookback: int = 60,
+                       entry_frac: float = 0.5) -> RegimeRouterStrategy:
+    return RegimeRouterStrategy(lookback=lookback, momentum_lookback=momentum_lookback,
+                                entry_frac=entry_frac)

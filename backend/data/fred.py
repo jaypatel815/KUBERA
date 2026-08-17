@@ -58,6 +58,7 @@ class FredClient:
         transport: httpx.BaseTransport | None = None,
     ):
         s = (settings or get_settings()).require_fred()
+        assert s.fred_api_key is not None  # require_fred() guarantees
         self._api_key = s.fred_api_key.get_secret_value()
         self._http = httpx.Client(
             base_url=FRED_BASE_URL, timeout=10.0, transport=transport
