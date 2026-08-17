@@ -236,9 +236,13 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   `CorrelationMatch` TypedDict in `backend/analysis/correlation.py`; narrowed `pcts` list comprehension in `backend/analysis/ranking.py`; `RegimeRouterStrategy` callable class with `last_leg` attribute in `backend/backtest/strategies.py`; non-None assertion on `s.fred_api_key` in `backend/data/fred.py`. Updated `pyrefly.toml` to 0 remaining known errors. Gate PASS (743 passed).
 - [x] T100 — Honor `LLM_TIMEOUT_SECONDS` in the claude-sdk provider (I017) — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `backend/api/llm_claude_sdk.py` (wrapped query stream in `asyncio.wait_for(timeout=self.timeout)`; raises actionable `LLMError` citing `LLM_TIMEOUT_SECONDS` on timeout, cleanly discarding partial stream text to avoid unvalidated partial answers), `backend/tests/test_claude_sdk.py` (3 tests). Gate PASS (731 passed).
-- [ ] T045b — Owner: MCP acceptance run. `pip install -r backend\requirements.txt`, add the
-  block from scripts/mcp_server.py's docstring to claude_desktop_config.json, restart Claude
-  Desktop, and ask it something that needs a tool ("what does my portfolio look like?").
+- [ ] T045b — Owner: MCP acceptance run. `python scripts/install_mcp_config.py --write`
+  (from the .venv), restart Claude Desktop, ask "what does my portfolio look like?".
+  The script exists because hand-editing this config failed three times, every time on a
+  path: written into the repo instead of %APPDATA%\Claude, angle brackets left in the
+  placeholder, and "python" instead of the venv interpreter (Claude Desktop spawns the
+  process without activating anything). It resolves all three from the machine it runs on,
+  merges rather than clobbers, and refuses to write if the interpreter cannot import mcp.
   Nothing in the review could test the real stdio handshake — every check drove FastMCP
   in-process. This is the step that proves it actually speaks MCP.
 - [ ] T106 — MCP context lifecycle (T045 concern 1): build the ToolContext once per server
