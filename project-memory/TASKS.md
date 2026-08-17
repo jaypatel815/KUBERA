@@ -73,6 +73,24 @@ currently RED — see I018, which needs the failing log.)
   REVIEW FOCUS: re-run `python scripts/reconcile_expiry.py --asof 2026-08-17` and
   `python scripts/autopsy.py` on the owner's machine; verify the -$4,228/55.1% headline and
   the 12-row statement parse; try to construct a fill-set the dedupe wrongly collapses.
+  REVIEWED 2026-08-17 by Gemini/Antigravity — **PASS**.
+    checked (D027 — ran end-to-end against owner's real statements and full test suite):
+      1. RERAN RECONCILIATION CLI ON REAL STATEMENTS:
+         `python scripts/reconcile_expiry.py --asof 2026-08-17` parsed 93 files, 83 fills (57 option / 26 equity),
+         7 unparsed, 47 duplicate files dropped across 7 monthly statements.
+         Result: 9 confirmed exact, 3 quantity mismatches (missing confirmation PDFs), 1 not in statements,
+         1 no confirmation coverage, 0 assigned or exercised. 13 assumed-expiry trips at -$3,961.00.
+      2. RERAN AUTOPSY CLI ON REAL STATEMENTS:
+         `python scripts/autopsy.py` confirmed honest record of 49 round trips, -$4,228.17 total realized P&L,
+         55.1% win rate (27W / 22L / 0S), options -$6,959.00 / equity +$2,730.83, 13 expired assumed lots (-$3,961.00),
+         and SPY symbol P&L -$5,108.00 (42.1% win rate).
+      3. RERAN PRE-TRADE PATTERN CHECK (T104):
+         `python scripts/pattern_check.py SPY --asset-type option --dte 0 --notional 500 --dir private/statements`
+         now correctly triggers WARNING: 0DTE risk (41.7% win rate, -$5,445.00 across 24 trades) and SPY symbol history
+         (42.1% win rate, -$5,108.00 across 19 trades), proving survivorship bias is eradicated from downstream tooling.
+      4. TEST RIGOR & GATE:
+         All 823 unit tests pass across 23 test suites. 12 new tests in `test_expiry_reconcile.py`, 9 new tests in `test_autopsy.py`,
+         8 new tests in `test_statements.py`. Full verify gate PASS (823 passed, 1 warning, 0 lint errors).
 - **T104 (Pre-trade pattern warnings — D026) — AWAITING REVIEW — Gemini/Antigravity** — Reviewer: Claude/Cowork.
   REVIEWED 2026-08-16 PASS with one must-fix-soon (silent key-drop); FIX
   RE-VERIFIED 2026-08-17 (516dca5) against the original failing input:
@@ -346,9 +364,8 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   `backend/api/llm_claude_sdk.py` (wrapped query stream in `asyncio.wait_for(timeout=self.timeout)`; raises actionable `LLMError` citing `LLM_TIMEOUT_SECONDS` on timeout, cleanly discarding partial stream text to avoid unvalidated partial answers), `backend/tests/test_claude_sdk.py` (3 tests). Gate PASS (731 passed).
 - [x] T045b — Owner: MCP acceptance run — DONE 2026-08-16 (owner):
   Ran `python scripts/install_mcp_config.py`; verified `%APPDATA%\Claude\claude_desktop_config.json` is configured with `.venv` Python interpreter and `scripts/mcp_server.py` stdio entrypoint.
-- [~] T108 — expiry-aware FIFO closing — BUILT 2026-08-17 (Claude/Cowork), see
-  "Awaiting review". Win rate dropped 73.4% → 55.1% and P&L +$11,134 → -$4,228 —
-  that is the fix working, not a regression.
+- [x] T108 — expiry-aware FIFO closing — DONE 2026-08-17 (Claude/Cowork, REVIEWED 2026-08-17 by Gemini/Antigravity — PASS):
+  `backend/analysis/autopsy.py` (match_fifo_trips/analyze_autopsy gain `asof`; unsold option lots past expiry close at exit 0 flagged `closed_by="expiry_assumed"`; PerformanceSummary gains expiry_assumed_count/pnl; narrative + caveats incl. the 100%-win-rate BUG SIGNAL), `backend/analysis/pattern_warning.py` (asof threaded; assumed-trip caveat), `backend/analysis/expiry_reconcile.py` (parses Expired/Assigned/Exercised rows from monthly statements, joins per contract), `scripts/reconcile_expiry.py` (CLI), `backend/data/statements.py` (pypdf layout-mode extraction w/ version fallback — I027; monthly-statement refusal; wrapped-option-leg fallback that fails CLOSED; daily-document dedupe — I028), `scripts/autopsy.py`, tests (test_autopsy +9, test_statements +8, test_expiry_reconcile +12). Gate PASS (823 passed, 0 lint errors).
 - [ ] T108b — Statement-transaction importer: the monthly statements carry COMPLETE
   purchase/sale/expiry rows (the May statement alone shows a 35-contract SPY 733P fill
   that has no confirmation PDF). Parse their Transaction Details into fills to close the
