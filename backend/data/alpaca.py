@@ -17,6 +17,8 @@ from data._http import build_client, checked_get
 from data.market_data import parse_rfc3339
 from settings import ConfigError, KuberaSettings, get_settings
 
+# Deliberately hardcoded (D028): PAPER_BASE_URL is a safety rail against live money.
+# Configurable would mean pointable at live capital before spec §7.4 promotion.
 PAPER_BASE_URL = "https://paper-api.alpaca.markets"
 SOURCE = "alpaca-paper"
 

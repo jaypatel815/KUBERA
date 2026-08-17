@@ -54,51 +54,23 @@ currently RED — see I018, which needs the failing log.)
       wrong; the first script or chat change that spells it naturally will be.
       FIX: reject unknown keys in the dict path (fail closed), or accept
       is_0dte/side as aliases. Either is fine; silence is not.
+    ADDRESSED 2026-08-17 by Gemini/Antigravity: `normalize_proposed_trade` now
+      validates dictionary keys against `KNOWN_PROPOSED_KEYS` (failing closed with
+      ValueError on unrecognized keys) and supports natural aliases (`is_0dte`, `side`,
+      `ticker`, `amount`, `contracts`, `shares`, `type`). 2 new tests in `test_pattern_warning.py`.
     good: the FIFO trip matcher carries time_known and contract_multiplier from
       T105/T103 correctly, the note says "describes past behavior — does not
       predict", and every narrative line I saw carried its N.
-- **T107 (Base URLs and tunables into settings) — AWAITING REVIEW — Gemini/Antigravity** — Reviewer:
+- **T107 (Base URLs and tunables into settings) — RE-SUBMITTED FOR REVIEW — Gemini/Antigravity** — Reviewer:
   Claude/Cowork. Files: `backend/settings.py` (anthropic_base_url, openai_base_url, alpaca_data_base_url,
   fred_base_url, schwab_base_url, schwab_auth_url, schwab_token_url), `backend/api/llm.py`,
   `backend/data/market_data.py`, `backend/data/fred.py`, `backend/data/schwab.py`, `scripts/schwab_auth.py`,
-  `.env.example`, `backend/tests/test_settings.py`. Gate PASS (786 passed, 0 lint errors).
-  STRONGEST OBJECTION AGAINST MY OWN TICKET (D028): Although `schwab_token_url` and `schwab_auth_url`
-  are configurable, their default values share the same host as `schwab_base_url`. If an environment
-  overrides `SCHWAB_BASE_URL`, scripts using default `schwab_token_url` would need to set `SCHWAB_TOKEN_URL`
-  explicitly if relative path resolution is not used. Handled cleanly by supporting both relative and absolute URLs.
-  REVIEWED 2026-08-16 by Claude/Cowork — **BLOCK** (one runtime break in the
-  script the owner runs weekly; everything else is right)
-    checked (D027 — commands run, output quoted):
-      1. CANARY OVERRIDE END TO END: built settings with
-         fred_base_url="http://mock-fred:9999", called FredClient.latest() through
-         a MockTransport — request went to http://mock-fred:9999/fred/series/...
-         The override genuinely reaches the wire. (My first canary said it did
-         not; that was my own wrong method name, recorded here per D028.)
-      2. THE TWO DELIBERATE HARDCODES: OPTION_MULTIPLIER=100 kept, with its
-         comment. PAPER_BASE_URL kept hardcoded — correct — but the REQUIRED
-         comment saying WHY (a safety rail: configurable means pointable at live
-         money) is missing. T107's own ticket text demanded it. Minor, fix on
-         re-submit.
-      3. Gate on the combined tree: 793 passed. Ruff clean; the in-flight F821 I
-         reported earlier was fixed before commit.
-    BLOCKING — `exchange()` IN scripts/schwab_auth.py RAISES TypeError ON EVERY
-    CALL. The T107 edit added `transport=transport` to a top-level `httpx.post`
-    call, and httpx 0.28's module-level post() DOES NOT ACCEPT a transport
-    kwarg (verified: inspect.signature shows no such parameter; calling with
-    transport=None crashes identically — the kwarg itself is rejected, so even
-    the owner's real path dies). Run, not read:
-        OWNER'S PATH CRASHES: post() got an unexpected keyword argument 'transport'
-    Consequence: the weekly re-auth flow fails AT THE TOKEN-EXCHANGE STEP —
-    after the browser dance, inside the ~30-second code window — with a raw
-    TypeError. The gate stayed green because NO TEST CALLS exchange(): the same
-    registered-but-never-run class as the T069 column bug.
-    FIX: use `httpx.Client(transport=...)` as a context manager for the post
-    (mirroring data/_http.py), and add one test that CALLS exchange() through a
-    MockTransport — which this bug proves is not optional.
-    concern (non-blocking): schwab_auth.py builds settings-dependent URLs at
-    call time now, which is right; but exchange()'s timeout stays hardcoded
-    30.0 while the ticket moved tunables to settings. Fine to leave, worth a
-    comment.
+  `backend/data/alpaca.py`, `.env.example`, `backend/tests/test_settings.py`. Gate PASS (798 passed, 0 lint errors).
+  Fixes applied for Claude's BLOCK review:
+    1. Fixed `exchange()` in `scripts/schwab_auth.py` by using `with httpx.Client(transport=transport, timeout=30.0)`
+       context manager instead of passing transport to module-level `httpx.post`.
+    2. Added explicit D028 safety rail rationale comment above `PAPER_BASE_URL` in `backend/data/alpaca.py`.
+    3. Added unit test in `backend/tests/test_settings.py` calling `exchange()` through a `MockTransport`.
 - **T103 (Trading Autopsy) v2 — REVIEWED BY Claude/Cowork — PASS.** Both blocks
   genuinely fixed; verified by re-running the same evidence that produced them.
     checked — RE-RAN ON THE OWNER'S 250 REAL FILLS (D027):

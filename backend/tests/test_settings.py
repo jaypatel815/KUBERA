@@ -159,7 +159,11 @@ def test_clients_honor_base_url_settings(monkeypatch):
         if "token" in str(request.url):
             return httpx.Response(
                 200,
-                json={"access_token": "mock-token", "expires_in": 1800},
+                json={
+                    "access_token": "mock-token",
+                    "refresh_token": "mock-refresh-token",
+                    "expires_in": 1800,
+                },
             )
         if "accountNumbers" in str(request.url):
             return httpx.Response(
@@ -213,9 +217,20 @@ def test_clients_honor_base_url_settings(monkeypatch):
         assert len(accounts) == 1
         assert accounts[0].hash_value == "hash123"
 
-    # 5. Schwab auth script URL builder
-    auth_url = _auth_module().build_auth_url("app-key", "https://127.0.0.1", settings=s_settings)
+    # 5. Schwab auth script URL builder and exchange()
+    auth_mod = _auth_module()
+    auth_url = auth_mod.build_auth_url("app-key", "https://127.0.0.1", settings=s_settings)
     assert auth_url.startswith("http://mock-schwab:8000/custom-auth?")
+
+    exchange_resp = auth_mod.exchange(
+        app_key="app-key",
+        app_secret="app-secret",
+        callback="https://127.0.0.1",
+        code="code123@",
+        transport=transport,
+        settings=s_settings,
+    )
+    assert exchange_resp["refresh_token"] == "mock-refresh-token"
 
 
 def test_safety_rails_stay_hardcoded():

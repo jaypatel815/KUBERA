@@ -84,14 +84,13 @@ def exchange(
 ) -> dict:
     s = settings or get_settings()
     token_url = s.schwab_token_url
-    resp = httpx.post(
-        token_url,
-        data={"grant_type": "authorization_code", "code": code, "redirect_uri": callback},
-        auth=(app_key, app_secret),
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-        timeout=30.0,
-        transport=transport,
-    )
+    with httpx.Client(transport=transport, timeout=30.0) as client:
+        resp = client.post(
+            token_url,
+            data={"grant_type": "authorization_code", "code": code, "redirect_uri": callback},
+            auth=(app_key, app_secret),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
     if resp.status_code >= 400:
         body = resp.text[:300]
         hint = ""

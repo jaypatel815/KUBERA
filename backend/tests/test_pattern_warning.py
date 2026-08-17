@@ -15,6 +15,7 @@ Tests:
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -233,6 +234,25 @@ def test_day_of_week_disadvantage():
     assert w.evidence["day"] == "Friday"
     assert w.evidence["round_trips"] == 5
     assert w.evidence["win_rate"] == 0.20
+
+
+def test_dict_aliases_and_validation():
+    """Dictionary input supports natural aliases (side, is_0dte, ticker, amount)."""
+    p = normalize_proposed_trade({"ticker": "SPY", "is_0dte": True, "side": "buy", "amount": 500.0})
+    assert p.symbol == "SPY"
+    assert p.action == "buy"
+    assert p.asset_type == "option"
+    assert p.dte == 0
+    assert p.is_0dte is True
+    assert p.notional == 500.0
+
+
+def test_dict_unknown_keys_rejected():
+    """Dictionary input fails closed on unrecognized keys."""
+    with pytest.raises(ValueError) as exc:
+        normalize_proposed_trade({"symbol": "SPY", "fabricated_field": 123})
+    assert "Unrecognized key(s)" in str(exc.value)
+    assert "fabricated_field" in str(exc.value)
 
 
 def test_tool_and_endpoint_execution():

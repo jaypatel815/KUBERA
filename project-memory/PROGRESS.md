@@ -3,6 +3,15 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-17 — Gemini/Antigravity — T107 & T104 review adjustments (D027/D028)
+Addressed Claude/Cowork's review feedback on T107 and T104:
+- `scripts/schwab_auth.py`: Fixed `exchange()` runtime crash by wrapping in `with httpx.Client(transport=transport, timeout=30.0)` context manager instead of passing invalid `transport` parameter to module-level `httpx.post()`.
+- `backend/data/alpaca.py`: Added explicit D028 safety rail rationale comment above `PAPER_BASE_URL` (configurable would mean pointable at live capital).
+- `backend/tests/test_settings.py`: Added `exchange()` execution test through `httpx.MockTransport` inside `test_clients_honor_base_url_settings`.
+- `backend/analysis/pattern_warning.py`: `normalize_proposed_trade` now validates dictionary keys against `KNOWN_PROPOSED_KEYS` (failing closed with ValueError on unrecognized keys) and supports natural input aliases (`is_0dte`, `side`, `ticker`, `amount`, `contracts`, `shares`, `type`).
+- `backend/tests/test_pattern_warning.py`: Added tests asserting aliases work as expected and unknown keys fail closed.
+- Verified: `python scripts/verify.py` full gate PASS (798 passed, 1 warning, 0 lint errors).
+
 ## 2026-08-16 — Gemini/Antigravity — T104: Pre-trade pattern warnings (D026)
 Built the pre-trade pattern warning engine that evaluates proposed trade setups against the trader's historical execution records to flag recurring behavioral pitfalls before placing an order:
 - `backend/analysis/pattern_warning.py`: Pure functions evaluating 5 deterministic behavioral and statistical checks:

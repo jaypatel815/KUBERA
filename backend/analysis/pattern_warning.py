@@ -122,32 +122,95 @@ class PatternWarningReport:
     )
 
 
+KNOWN_PROPOSED_KEYS = frozenset({
+    "symbol", "ticker",
+    "action", "side",
+    "asset_type", "type",
+    "qty", "quantity", "shares", "contracts",
+    "price", "limit_price",
+    "notional", "amount", "total",
+    "dte", "days_to_expiration",
+    "is_0dte",
+    "option_expiry", "expiry", "expiration",
+    "option_strike", "strike",
+    "option_right", "right",
+    "asof", "ts", "timestamp",
+})
+
+
 def normalize_proposed_trade(p: ProposedTrade | dict[str, Any]) -> ProposedTrade:
-    """Ensure ProposedTrade has parsed OCC symbols, asset types, DTE, and timestamps."""
+    """Ensure ProposedTrade has parsed OCC symbols, asset types, DTE, and timestamps.
+
+    For dictionary inputs, rejects unknown keys (fail closed) and maps common aliases
+    (e.g. side -> action, is_0dte -> dte=0, ticker -> symbol, amount -> notional).
+    """
     if isinstance(p, ProposedTrade):
         trade = p
     else:
-        sym = str(p.get("symbol", "")).strip().upper()
-        act = str(p.get("action", "buy")).strip().lower()
+        unknown = set(p.keys()) - KNOWN_PROPOSED_KEYS
+        if unknown:
+            raise ValueError(
+                f"Unrecognized key(s) in proposed trade: {sorted(unknown)}. "
+                f"Allowed keys: {sorted(KNOWN_PROPOSED_KEYS)}"
+            )
+
+        sym = str(p.get("symbol") or p.get("ticker") or "").strip().upper()
+        if not sym:
+            raise ValueError("Proposed trade requires a 'symbol' or 'ticker'.")
+
+        act = str(p.get("action") or p.get("side") or "buy").strip().lower()
         is_occ = bool(OCC_OPTION_RE.match(sym))
-        atype = str(p.get("asset_type") or ("option" if is_occ else "equity")).strip().lower()
-        qty = float(p["qty"]) if p.get("qty") is not None else None
-        prc = float(p["price"]) if p.get("price") is not None else None
-        notional = float(p["notional"]) if p.get("notional") is not None else None
-        exp = p.get("option_expiry")
+
+        is_0dte_flag = p.get("is_0dte")
+        if is_0dte_flag is True:
+            dte = 0
+            atype = str(p.get("asset_type") or p.get("type") or "option").strip().lower()
+        else:
+            dte_val = p.get("dte") if p.get("dte") is not None else p.get("days_to_expiration")
+            dte = int(dte_val) if dte_val is not None else None
+            atype = str(
+                p.get("asset_type") or p.get("type") or ("option" if is_occ else "equity")
+            ).strip().lower()
+
+        qty_val = (
+            p.get("qty") if p.get("qty") is not None
+            else p.get("quantity") if p.get("quantity") is not None
+            else p.get("shares") if p.get("shares") is not None
+            else p.get("contracts")
+        )
+        qty = float(qty_val) if qty_val is not None else None
+
+        prc_val = p.get("price") if p.get("price") is not None else p.get("limit_price")
+        prc = float(prc_val) if prc_val is not None else None
+
+        notional_val = (
+            p.get("notional") if p.get("notional") is not None
+            else p.get("amount") if p.get("amount") is not None
+            else p.get("total")
+        )
+        notional = float(notional_val) if notional_val is not None else None
+
+        exp = p.get("option_expiry") or p.get("expiry") or p.get("expiration")
         if isinstance(exp, str):
             try:
                 exp = date.fromisoformat(exp)
             except ValueError:
                 exp = None
-        strike = float(p["option_strike"]) if p.get("option_strike") is not None else None
-        right = str(p["option_right"]).lower() if p.get("option_right") else None
-        dte = int(p["dte"]) if p.get("dte") is not None else None
-        raw_asof = p.get("asof")
+
+        strike_val = (
+            p.get("option_strike") if p.get("option_strike") is not None
+            else p.get("strike")
+        )
+        strike = float(strike_val) if strike_val is not None else None
+
+        right = str(p.get("option_right") or p.get("right") or "").lower() or None
+
+        raw_asof = p.get("asof") or p.get("ts") or p.get("timestamp")
         if isinstance(raw_asof, datetime):
             asof = raw_asof if raw_asof.tzinfo else raw_asof.replace(tzinfo=timezone.utc)
         else:
             asof = datetime.now(timezone.utc)
+
         trade = ProposedTrade(
             symbol=sym,
             action=act,
