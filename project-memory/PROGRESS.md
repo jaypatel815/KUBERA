@@ -3,6 +3,16 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Gemini/Antigravity — review T105 (options in import + analysis, I020) — PASS
+Reviewed T105 (Claude/Cowork):
+- Code review: Verified `backend/data/schwab.py`, `backend/analysis/attribution.py`, `backend/tests/test_schwab.py`, and `backend/tests/test_holding_periods.py`.
+- Addressed all 3 review focus points:
+  1. Sub-day holding interval boundaries (minutes: <1h, hours: 1-6.5h, same_day: 6.5-24h) accurately isolate rapid 0DTE scalps from full-session swing holds.
+  2. Defining `contract_multiplier` in analysis and reserving the `fifo_attribution` P&L arithmetic modification for a dedicated ticket is the right approach.
+  3. `_security_leg` filtering `CURRENCY` and `FEE` legs while handling any symbol+amount+price security leg safely extracts equity and option fills.
+- Verified gate: `python scripts/verify.py` passes 758/758 tests.
+- Signed off PASS on T105 in TASKS.md.
+
 ## 2026-08-16 — Gemini/Antigravity — T045: KUBERA MCP server (FastMCP / stdio) (AWAITING REVIEW)
 Built T045 per D011 to expose KUBERA's tool registry over Model Context Protocol (MCP):
 - `backend/api/mcp_server.py`: Built `build_mcp_server()` using FastMCP. Dynamically inspects all 34 tools registered in `ToolRegistry` (T024), generating Pydantic-compatible function signatures, typed parameters, docstrings, and handlers forwarding calls to `registry.execute`. Includes `make_default_tool_context()` and customizable context factories.
