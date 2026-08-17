@@ -23,13 +23,19 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from analysis.attribution import (
+    attributed_fills_from_rows,
+    decompose_costs,
+    fifo_attribution,
+)
 from analysis.expected_move import expected_move
 from analysis.levels import find_levels
+from analysis.liquidity import spread_bps
 from analysis.regime import classify_regime
 from data.alpaca import AlpacaClient
 from data.history import equity_history
 from data.market_data import MarketDataClient
-from data.models import SignalLog
+from data.models import SignalLog, Transaction
 from risk.dqs import score_decisions
 from risk.engine import RiskEngine
 from risk.persistence import restore_risk_state
@@ -194,6 +200,22 @@ def compose_eod_report(db: Session, alpaca: AlpacaClient) -> dict:
     counts: dict[str, int] = {}
     for r in rows:
         counts[r.action] = counts.get(r.action, 0) + 1
+
+    # T091b: the day's decisions BY THE REGIME they were made in — every row has
+    # carried its regime stamp since T091, so this is a regroup, not a guess.
+    by_regime: dict[str, dict[str, int]] = {}
+    for r in rows:
+        slot = by_regime.setdefault(r.regime_label or "untagged", {})
+        slot[r.action] = slot.get(r.action, 0) + 1
+    dominant = max(by_regime, key=lambda k: sum(by_regime[k].values())) if by_regime else None
+    regime_attribution = {
+        "by_regime": by_regime,
+        "dominant_regime": dominant,
+        "note": ("today's decisions grouped by the regime read AT DECISION TIME "
+                 "(T091 stamps); day P&L sits in `account.day_pl_frac` beside it — "
+                 "attribution of P&L to regime needs closed round trips, which the "
+                 "weekly review carries"),
+    }
     return {
         "type": "eod",
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -212,6 +234,7 @@ def compose_eod_report(db: Session, alpaca: AlpacaClient) -> dict:
                 for r in rows
             ],
         },
+        "regime_attribution": regime_attribution,
         "source": acct.source,
     }
 
@@ -265,10 +288,71 @@ def compose_weekly_review(db: Session, alpaca: AlpacaClient,
     if performance.get("available"):
         facts.append(f"equity moved {performance['return_frac']:+.2%} over the period")
 
+    # T091b: the investment-committee half the review was missing — WHERE the
+    # realized P&L actually came from (regime, holding period), plus the T090
+    # spread-cost estimate. All from recorded fills; degrades to a plain "why".
+    tags_by_order = {
+        r.order_external_id: (r.regime_label, r.sub_strategy, r.entry_bucket)
+        for r in rows if r.order_external_id
+    }
+    txns = db.execute(select(Transaction).order_by(Transaction.occurred_at)).scalars().all()
+    if txns:
+        rep = fifo_attribution(attributed_fills_from_rows(txns, tags_by_order))
+        hp = rep.holding_periods or {}
+        regimes_with_trips = {k: v for k, v in rep.by_regime.items()
+                              if v["round_trips"] > 0}
+        best = max(regimes_with_trips, key=lambda k: regimes_with_trips[k]["realized_pnl"],
+                   default=None)
+        worst = min(regimes_with_trips, key=lambda k: regimes_with_trips[k]["realized_pnl"],
+                    default=None)
+        costs = None
+        try:
+            half_by_symbol: dict[str, float] = {}
+            for sym in sorted({t["symbol"] for t in rep.trips}):
+                q = market.get_latest_quote(sym)
+                if q.bid > 0 and q.ask > 0:
+                    half_by_symbol[sym] = spread_bps(q.bid, q.ask) / 2.0
+            costs = decompose_costs(rep.trips, half_by_symbol)
+        except Exception:  # noqa: BLE001 — cost estimate is optional context
+            costs = None
+        attribution = {
+            "available": True,
+            "round_trips": rep.round_trips,
+            "realized_pnl": round(rep.realized_pnl, 2),
+            "by_regime": rep.by_regime,
+            "holding_periods": hp,
+            "best_regime": best,
+            "worst_regime": worst,
+            "cost_decomposition": costs,
+        }
+        if rep.round_trips:
+            med = hp.get("median_days")
+            facts.append(
+                f"{rep.round_trips} closed round trips realized "
+                f"${rep.realized_pnl:,.2f}"
+                + (f"; median hold {med:g} days" if med is not None else "")
+            )
+            if best and worst and best != worst:
+                facts.append(
+                    f"best regime {best} (${regimes_with_trips[best]['realized_pnl']:,.2f}), "
+                    f"worst {worst} (${regimes_with_trips[worst]['realized_pnl']:,.2f}) — "
+                    f"counts: {regimes_with_trips[best]['round_trips']} vs "
+                    f"{regimes_with_trips[worst]['round_trips']}"
+                )
+            if costs and costs["total_est_spread_cost"] > 0:
+                facts.append(
+                    f"estimated spread cost ${costs['total_est_spread_cost']:,.2f} "
+                    "(at today's spreads — an estimate, never netted into P&L)"
+                )
+    else:
+        attribution = {"available": False,
+                       "why": "no recorded fills yet — run scripts/sync.py after trading"}
+
     return {
         "type": "weekly",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "performance": performance,
+        "attribution": attribution,
         "discipline": {
             "dqs": {"score": dqs.score, "components": dqs.components},
             "orders": len(ordered), "no_trades": len(no_trades),

@@ -26,6 +26,28 @@ Implemented monthly brokerage statement transaction importing and deduplication 
   · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
 - Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
 
+## 2026-08-17 (seventh session) — Claude/Cowork — T091b closed out: the review knows where the money came from
+Gemini passed T077b. Then built T091b's three remaining halves:
+- WEEKLY REVIEW gains the investment-committee half it was missing: closed
+  round trips, realized P&L by regime (best/worst named with counts), the
+  T091b holding-period distribution, and an estimated spread-cost line —
+  each fact appended to facts_for_lessons, where the narration rule already
+  forbids invented numbers. Shares one fills->attribution path with the tool
+  (new attributed_fills_from_rows) so the two can never disagree.
+- EOD REPORT gains regime_attribution: today's decisions grouped by the
+  regime stamped AT DECISION TIME (T091), dominant regime named; the note
+  says plainly that P&L-per-regime needs closed trips and lives in weekly.
+- COST DECOMPOSITION (the T090 half): decompose_costs prices each trip's
+  exit notional at TODAY's half-spread, both sides — hand test: $10,000 at
+  10 bps half = $20 round trip. Labeled ESTIMATE, never netted into P&L;
+  unpriced symbols listed, never zeroed. Rides get_attribution when a market
+  client is present (optional, None degrades) and the weekly review.
+All degrade paths tested (no fills / no quotes / no market client). Gate
+PASS; pyrefly 1 (known I023); 5 new tests. Objections in the handoff: today's
+spread on historical trips (only honest option, loudly labeled), one quote
+fetch per traded symbol in weekly (cap/cache is a future nit).
+Next: Gemini reviews T091b-rest. Owner unlocks: FMP tier (T023), T007 finale.
+
 ## 2026-08-17 (sixth session) — Claude/Cowork — T077b: a second, resampled read on expected moves
 Gemini passed T109 (839 green) — the selection rule is live. Then built T077b:
 - bootstrap_paths in analysis/expected_move.py: 1000 synthetic horizon paths

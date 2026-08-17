@@ -12,9 +12,37 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T091b-rest (weekly attribution + EOD regime line + cost decomposition) — Claude/Cowork** — claimed 2026-08-17.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T091b-rest (weekly attribution + EOD regime line + cost decomposition) — AWAITING
+  REVIEW — Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity. Closes T091b.
+  Files: `backend/analysis/attribution.py` (trips gain exit-side `notional`; NEW
+  `attributed_fills_from_rows` — shared by tool and weekly review so the two can never
+  disagree; NEW `decompose_costs` — per-symbol est. spread cost = exit notional x
+  TODAY's half-spread x 2 sides, unpriced symbols LISTED never zeroed, "ESTIMATE ...
+  never netted in" in the note), `backend/api/tools.py` (get_attribution gains
+  `cost_decomposition` when a market client is present — market is OPTIONAL there,
+  None degrades cleanly; refactored to the shared helper), `backend/api/brief.py`
+  (EOD gains `regime_attribution`: today's decisions grouped by the regime stamped AT
+  DECISION TIME + dominant regime; weekly gains `attribution`: round trips, realized
+  P&L, by_regime, T091b holding periods, best/worst regime, cost estimate, plus
+  facts_for_lessons lines — narration rule already forbids invented numbers), tests
+  (test_attribution +2 incl. the hand-computed $10,000 @ 10bps-half = $20 round trip;
+  test_brief +3 incl. both degrade paths).
+  EVIDENCE (D027): 22 passed across the two touched suites; full gate PASS; ruff
+  clean; pyrefly exactly 1 (known I023). Degrades proven: no fills → available:false
+  with the sync.py pointer; no /quotes route → cost_decomposition None, no error;
+  no market client on the tool → None.
+  STRONGEST OBJECTIONS AGAINST MY OWN TICKET (D028):
+    1. The spread estimate prices HISTORICAL trips at TODAY's spread — the only
+       honest option (historical spreads unrecorded) and labeled as such in the
+       payload, but a reviewer should confirm the label is loud enough that no
+       narration ever nets it into realized P&L.
+    2. The weekly review now runs one quote fetch per traded symbol — bounded by
+       distinct symbols in the trip history, but a long history could make the
+       weekly brief slow; a cap-or-cache is a reasonable future nit.
+    3. compose_eod_report's dominant_regime is by DECISION COUNT, not P&L — P&L
+       per regime needs closed trips (weekly's job); the note says so explicitly.
 - **T077b (expected-move v2: seeded block bootstrap + loop wiring — D017) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   Files: `backend/analysis/expected_move.py` (NEW `bootstrap_paths`: block-bootstrap
   Monte Carlo — blocks of 5 contiguous daily returns resampled into 1000 synthetic
@@ -594,8 +622,8 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
     aligned: Tracks actual trade holding periods to detect style drift and early-cutting habits.
     checked: Half-open interval boundary edge cases [lo, hi), FIFO partial-sell multi-slice accounting, clock corruptions/undated lot handling in unknown bucket, get_attribution tool doc update, verify.py combined tree (663 passed).
     concerns: none
-  REMAINING in this ticket: weekly-review integration (T062), regime-attribution
-  line in the EOD report, costs decomposition once T090 lands per-symbol spreads.
+  REMAINING halves BUILT 2026-08-17 (Claude/Cowork) — see the T091b-rest entry in
+  "Awaiting review". Ticket fully closes when Gemini signs it.
 - [x] T092 — Parameter stability sweeps — DONE 2026-08-14 (Claude/Cowork):
   `backtest/stability.py` — SWEEPS map (momentum lookback 20–90, sma_cross fast,
   mean_reversion window, range lookback), pure `stability_report` verdicts

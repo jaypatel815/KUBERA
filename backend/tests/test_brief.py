@@ -16,7 +16,7 @@ from api.main import app
 from api.tools import ToolArgumentError, ToolContext, registry
 from data.alpaca import AlpacaClient
 from data.market_data import MarketDataClient
-from data.models import AccountSnapshot, Base, BrokerAccount, SignalLog
+from data.models import AccountSnapshot, Base, BrokerAccount, SignalLog, Transaction
 from risk.engine import RiskEngine
 from risk.persistence import persist_risk_state
 
@@ -210,3 +210,67 @@ def test_brief_endpoint(db):
         app.dependency_overrides.pop(main_module.get_db_session)
     assert ok.status_code == 200 and ok.json()["type"] == "eod"
     assert bad.status_code == 422
+
+
+# --- T091b: EOD regime line + weekly attribution section ------------------------
+
+def test_eod_carries_the_regime_attribution_line(db):
+    _seed_day(db)
+    for action, regime in (("ordered", "trending_up"), ("no_trade", "trending_up"),
+                           ("no_trade", "range_bound"), ("rejected", None)):
+        db.add(SignalLog(
+            strategy="s", symbol="SPY", signal_weight=1.0, equity=100_000.0,
+            current_value=0.0, target_value=1000.0, action=action,
+            bars_asof=datetime.now(timezone.utc), source="t",
+            regime_label=regime, ts=datetime.now(timezone.utc),
+        ))
+    db.commit()
+    alpaca, market = clients(route())
+    with alpaca, market:
+        out = compose_eod_report(db, alpaca)
+    ra = out["regime_attribution"]
+    assert ra["by_regime"]["trending_up"] == {"ordered": 1, "no_trade": 1}
+    assert ra["by_regime"]["range_bound"] == {"no_trade": 1}
+    assert ra["by_regime"]["untagged"] == {"rejected": 1}
+    assert ra["dominant_regime"] == "trending_up"
+    assert "AT DECISION TIME" in ra["note"]
+
+
+def test_weekly_attribution_section_and_facts(db):
+    now = datetime.now(timezone.utc)
+    _seed_day(db)
+    db.add(SignalLog(
+        strategy="s", symbol="SPY", signal_weight=1.0, equity=100_000.0,
+        current_value=0.0, target_value=1000.0, action="ordered",
+        order_external_id="ord-1", bars_asof=now, source="t",
+        regime_label="trending_up", sub_strategy="momentum",
+        entry_bucket="midday", ts=now,
+    ))
+    db.add(Transaction(account_id=1, external_id="w1", symbol="SPY", side="buy",
+                       qty=10.0, price=100.0, occurred_at=now, source="t",
+                       order_id="ord-1"))
+    db.add(Transaction(account_id=1, external_id="w2", symbol="SPY", side="sell",
+                       qty=10.0, price=106.0, occurred_at=now, source="t",
+                       order_id="ord-1"))
+    db.commit()
+    alpaca, market = clients(route())
+    with alpaca, market:
+        out = compose_weekly_review(db, alpaca, market)
+    att = out["attribution"]
+    assert att["available"] is True
+    assert att["round_trips"] == 1
+    assert att["realized_pnl"] == pytest.approx(60.0)
+    assert att["by_regime"]["trending_up"]["realized_pnl"] == pytest.approx(60.0)
+    assert att["holding_periods"]["by_bucket"]  # populated, shape from T091b
+    # route() has no /quotes/latest -> cost estimate degrades to None, no error
+    assert att["cost_decomposition"] is None
+    assert any("closed round trips realized" in f for f in out["facts_for_lessons"])
+
+
+def test_weekly_attribution_degrades_without_fills(db):
+    _seed_day(db)
+    alpaca, market = clients(route())
+    with alpaca, market:
+        out = compose_weekly_review(db, alpaca, market)
+    assert out["attribution"]["available"] is False
+    assert "sync.py" in out["attribution"]["why"]

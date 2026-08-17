@@ -195,7 +195,10 @@ def fifo_attribution(fills: Sequence[AttributedFill]) -> AttributionReport:
             _credit(by_bucket, _bucket_key(lot["bucket"]), pnl)
             trips.append({"symbol": f.symbol, "pnl": pnl,
                           "held_days": _held_days(lot.get("ts"), f.ts_iso),
-                          "entry_ts": lot.get("ts"), "exit_ts": f.ts_iso})
+                          "entry_ts": lot.get("ts"), "exit_ts": f.ts_iso,
+                          # T091b costs: exit-side notional of this slice, the
+                          # base the spread estimate is charged against
+                          "notional": round(take * f.price, 6)})
             lot["qty"] -= take
             remaining -= take
             if lot["qty"] <= 1e-9:
@@ -233,3 +236,63 @@ def fifo_attribution(fills: Sequence[AttributedFill]) -> AttributionReport:
             "narrate counts alongside every P&L figure."
         ),
     )
+
+
+def attributed_fills_from_rows(transactions, tags_by_order: dict) -> list[AttributedFill]:
+    """Transaction ORM rows (duck-typed) -> AttributedFills, joining each fill's
+    order id to the logged decision that placed it. Shared by the attribution
+    tool and the weekly review so the two can never disagree (T091b)."""
+    out = []
+    for f in transactions:
+        tag = tags_by_order.get(getattr(f, "order_id", None) or "")
+        regime, leg, bucket = tag if tag else (None, None, None)
+        out.append(AttributedFill(
+            symbol=f.symbol, side=f.side, qty=f.qty, price=f.price,
+            ts_iso=f.occurred_at.isoformat(),
+            regime=regime, sub_strategy=leg, entry_bucket=bucket,
+        ))
+    return out
+
+
+def decompose_costs(trips: list[dict],
+                    half_spread_bps_by_symbol: dict[str, float]) -> dict:
+    """Estimated round-trip spread cost per symbol (T091b, closing the T090 half).
+
+    Historical spreads were not recorded, so the estimate prices each trip's
+    exit-side notional at TODAY's half-spread, twice (entry side + exit side)
+    — an approximation labeled as one, never blended into realized P&L.
+    Symbols with no usable quote are listed as unpriced rather than silently
+    priced at zero.
+    """
+    by_symbol: dict = {}
+    unpriced: list[str] = []
+    total = 0.0
+    for t in trips:
+        sym = t["symbol"]
+        notional = t.get("notional")
+        if notional is None:
+            continue  # pre-T091b trip shape: nothing honest to charge against
+        half = half_spread_bps_by_symbol.get(sym)
+        if half is None:
+            if sym not in unpriced:
+                unpriced.append(sym)
+            continue
+        est = notional * (half / 10_000.0) * 2.0   # entry side + exit side
+        slot = by_symbol.setdefault(sym, {"round_trips": 0, "notional": 0.0,
+                                          "half_spread_bps": half,
+                                          "est_spread_cost": 0.0})
+        slot["round_trips"] += 1
+        slot["notional"] = round(slot["notional"] + notional, 6)
+        slot["est_spread_cost"] = round(slot["est_spread_cost"] + est, 6)
+        total += est
+    return {
+        "by_symbol": by_symbol,
+        "total_est_spread_cost": round(total, 6),
+        "unpriced_symbols": sorted(unpriced),
+        "note": (
+            "ESTIMATE: each round trip charged its exit notional at TODAY's "
+            "half-spread, twice (both sides). Historical spreads are unrecorded; "
+            "commissions are not in the transaction record. Kept separate from "
+            "realized P&L — never netted in."
+        ),
+    }

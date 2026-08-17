@@ -134,3 +134,57 @@ def test_get_attribution_tool_join(db):  # noqa: F811
     assert rep["by_sub_strategy"]["momentum"]["round_trips"] == 1
     assert out["activity_by_regime"]["trending_up"]["ordered"] == 1
     assert out["fills_analyzed"] == 2
+
+
+# --- T091b: cost decomposition + the tool's optional market path ----------------
+
+def test_decompose_costs_hand_computed():
+    """$10,000 exit notional at a 10 bps half-spread: $10 per side, $20 the
+    round trip. A symbol with no quote is LISTED, never priced at zero."""
+    from analysis.attribution import decompose_costs
+    trips = [
+        {"symbol": "SPY", "pnl": 50.0, "notional": 10_000.0},
+        {"symbol": "NOK", "pnl": -5.0, "notional": 2_000.0},   # no quote below
+        {"symbol": "OLD", "pnl": 1.0},                          # pre-T091b shape
+    ]
+    out = decompose_costs(trips, {"SPY": 10.0})
+    assert out["by_symbol"]["SPY"]["est_spread_cost"] == pytest.approx(20.0)
+    assert out["total_est_spread_cost"] == pytest.approx(20.0)
+    assert out["unpriced_symbols"] == ["NOK"]
+    assert "ESTIMATE" in out["note"] and "never netted" in out["note"]
+
+
+def test_attribution_tool_carries_cost_block_with_market(db):  # noqa: F811
+    now = datetime.now(timezone.utc)
+    db.add(SignalLog(
+        strategy="s", symbol="SPY", signal_weight=1.0, equity=100_000.0,
+        current_value=0.0, target_value=1000.0, action="ordered",
+        order_external_id="ord-1", bars_asof=now, source="t",
+        regime_label="trending_up", sub_strategy="momentum",
+        entry_bucket="midday", ts=now,
+    ))
+    db.add(Transaction(account_id=1, external_id="a1", symbol="SPY", side="buy",
+                       qty=10.0, price=100.0, occurred_at=now, source="t",
+                       order_id="ord-1"))
+    db.add(Transaction(account_id=1, external_id="a2", symbol="SPY", side="sell",
+                       qty=10.0, price=105.0, occurred_at=now, source="t",
+                       order_id="ord-1"))
+    db.commit()
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "/quotes/latest" in request.url.path:
+            return httpx.Response(200, json={"symbol": "SPY", "quote": {
+                "t": now.isoformat(), "bp": 104.9, "bs": 1, "ap": 105.1, "as": 1}})
+        return httpx.Response(404, json={})
+
+    with MarketDataClient(settings=paper_settings(),
+                          transport=httpx.MockTransport(handler)) as m:
+        out = registry.execute("get_attribution", {}, ToolContext(db=db, market=m))
+    cd = out["cost_decomposition"]
+    assert cd is not None
+    # spread 0.2 on mid 105 = ~19.05 bps; half ~9.52; 1050 notional * 2 sides
+    assert cd["by_symbol"]["SPY"]["est_spread_cost"] == pytest.approx(
+        1050.0 * (19.047619 / 2 / 10_000) * 2, rel=1e-4)
+    # and WITHOUT a market client the block is None, never an error
+    out2 = registry.execute("get_attribution", {}, ToolContext(db=db))
+    assert out2["cost_decomposition"] is None

@@ -19,7 +19,12 @@ from pydantic import BaseModel, Field, ValidationError, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from analysis.attribution import AttributedFill, fifo_attribution
+from analysis.attribution import (
+    AttributedFill,
+    attributed_fills_from_rows,
+    decompose_costs,
+    fifo_attribution,
+)
 from analysis.autopsy import analyze_autopsy
 from analysis.benchmark import compare
 from analysis.breakout import detect_breakouts
@@ -39,6 +44,7 @@ from analysis.liquidity import (
     average_daily_volume,
     liquidity_profile,
     participation_cap_shares,
+    spread_bps,
 )
 from analysis.macro import compose_macro_context
 from analysis.metrics import atr, volatility
@@ -1123,16 +1129,7 @@ def _get_attribution(ctx: ToolContext, _: NoArgs) -> dict:
     }
 
     fills = db.execute(select(Transaction).order_by(Transaction.occurred_at)).scalars().all()
-    attributed = []
-    for f in fills:
-        # join key: the fill's ORDER id -> the logged decision that placed it
-        tag = tags_by_order.get(f.order_id or "")
-        regime, leg, bucket = tag if tag else (None, None, None)
-        attributed.append(AttributedFill(
-            symbol=f.symbol, side=f.side, qty=f.qty, price=f.price,
-            ts_iso=f.occurred_at.isoformat(),
-            regime=regime, sub_strategy=leg, entry_bucket=bucket,
-        ))
+    attributed = attributed_fills_from_rows(fills, tags_by_order)
     report = fifo_attribution(attributed)
 
     # activity counts by tag (includes no_trade/rejected — the decisions themselves)
@@ -1143,12 +1140,27 @@ def _get_attribution(ctx: ToolContext, _: NoArgs) -> dict:
         slot = activity.setdefault(key, {})
         slot[r.action] = slot.get(r.action, 0) + 1
 
+    # T091b: estimated spread-cost decomposition — only when a market client is
+    # in the context (it is optional here) and only from two-sided quotes.
+    costs = None
+    if ctx.market is not None and report.trips:
+        half_by_symbol: dict[str, float] = {}
+        for sym in sorted({t["symbol"] for t in report.trips}):
+            try:
+                q = ctx.market.get_latest_quote(sym)
+                if q.bid > 0 and q.ask > 0:
+                    half_by_symbol[sym] = spread_bps(q.bid, q.ask) / 2.0
+            except Exception:  # noqa: BLE001 — one bad symbol must not kill the report
+                continue
+        costs = decompose_costs(report.trips, half_by_symbol)
+
     payload = asdict(report)
     # Working data for T069, not part of this report — the model gets the
     # aggregates, which is what it can actually narrate.
     payload.pop("trips", None)
     return {
         "attribution": payload,
+        "cost_decomposition": costs,
         "activity_by_regime": activity,
         "fills_analyzed": len(attributed),
         "asof": datetime.now(timezone.utc).isoformat(),
