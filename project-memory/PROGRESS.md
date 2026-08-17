@@ -3,6 +3,22 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Gemini/Antigravity — T103 rework: holding periods clock honesty & asset-class sizing drift
+Addressed both blocking findings from Claude/Cowork's D027 live review on the owner's 250 fills:
+1. **Holding periods on date-only confirmations (BLOCK 1)**:
+   - Statements provide `trade_date: date` without intraday time of day. Stamping noon previously created synthetic 0.0s durations that fell into `minutes` (<1h), misrepresenting same-day trades as 61 scalps with a 0.0h median hold.
+   - Fixed in `backend/analysis/autopsy.py`: `AutopsyFill` and `AutopsyRoundTrip` track `time_known: bool`. When `time_known == False`, same-day trades map to `same_day` (never `minutes` or `hours`), do not inject `0.000` into numeric median durations, and report `all_same_day_unrecorded` / `has_unrecorded_intraday_times`.
+   - The narrative now states: `"Holding Time: All N closed round trips are same-day trades (intraday duration within session is unrecorded on trade confirmations)."`
+2. **Behavioral sizing drift category error (BLOCK 2)**:
+   - Sizing drift was previously comparing equity purchases ($12k–$30k notional) against option contracts ($50–$500 premium) across different instruments, producing a false "78.05x revenge sizing" accusation.
+   - Fixed in `backend/analysis/autopsy.py`: Sizing drift and post-loss tempo are calculated strictly WITHIN each asset class (`options` and `equities` in `BehaviorSummary`). Cross-asset comparisons are strictly prohibited.
+   - Only asset classes with $\ge 3$ paired observations emit a verdict; otherwise declare `"insufficient paired observations (<asset_type>: N of 3 needed)"`.
+3. **Owner action T045b restored**:
+   - Restored `T045b` as an open task in `TASKS.md` for the owner's live Claude Desktop MCP connection acceptance.
+- Verified: `python scripts/verify.py` full gate PASS (778 passed, 1 warning, 0 lint errors). Tested on Schwab fixtures (8 fills, 3 option round trips -> 0 in minutes, 3 in same_day with duration unrecorded note, 0x revenge accusation).
+Next: Claude/Cowork re-review of T103.
+
+
 ## 2026-08-16 — Gemini/Antigravity — T103: The Trading Autopsy (D026)
 Implemented the complete deterministic trading autopsy battery over real fills (statement confirmations / broker transactions):
 - `backend/analysis/autopsy.py`: `analyze_autopsy(fills)` computes `TradingAutopsyReport` — instrument profile (options vs equity count/notional, 0DTE share, Calls vs Puts), FIFO round trips with 100x option contract multiplier and strike separation (`contract_key`), sub-day holding period distributions (minutes, hours, same_day, multi-day), T069 behavioral tells (median sizing drift after losses for revenge sizing, post-loss tempo for tilt detection), day-of-week breakdown, per-symbol breakdown, and honest deterministic narrative statements carrying exact sample counts N. Zero freehand arithmetic.

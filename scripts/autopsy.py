@@ -93,7 +93,19 @@ def format_autopsy_terminal(report) -> str:
     hp = report.holding_periods
     lines.append("3. HOLDING PERIOD DISTRIBUTION (T091b)")
     lines.append("-" * 72)
-    if hp.get("median_days") is not None:
+    if hp.get("all_same_day_unrecorded"):
+        cnt = hp.get("same_day_unrecorded_count", 0)
+        lines.append(
+            f"  Same-Day Duration      : {cnt} trades (intraday times unrecorded on confirmations)"
+        )
+    elif hp.get("has_unrecorded_intraday_times"):
+        cnt = hp.get("same_day_unrecorded_count", 0)
+        lines.append(
+            f"  Intraday Times         : {cnt} same-day trades have unrecorded intraday times"
+        )
+        if hp.get("median_days") is not None:
+            lines.append(f"  Multi-Day Median Hold  : {hp['median_days']:.1f} days")
+    elif hp.get("median_days") is not None:
         med = hp["median_days"]
         med_str = f"{med * 24.0:.1f} hours ({med:.3f} days)" if med < 1.0 else f"{med:.1f} days"
         lines.append(f"  Median Holding Time    : {med_str}")
@@ -111,10 +123,12 @@ def format_autopsy_terminal(report) -> str:
 
     # 4. Behavioral Tells
     b = report.behavior
-    lines.append("4. BEHAVIORAL TELLS & DISCIPLINE (T069)")
+    lines.append("4. BEHAVIORAL TELLS & DISCIPLINE (T069 — computed within asset class)")
     lines.append("-" * 72)
-    lines.append(f"  Sizing Drift (Revenge) : {b.sizing_drift_verdict}")
-    lines.append(f"  Post-Loss Pace (Tilt)  : {b.post_loss_pace_verdict}")
+    lines.append(f"  Options Sizing Drift   : {b.options.sizing_drift_verdict}")
+    lines.append(f"  Options Post-Loss Pace : {b.options.post_loss_pace_verdict}")
+    lines.append(f"  Equities Sizing Drift  : {b.equities.sizing_drift_verdict}")
+    lines.append(f"  Equities Post-Loss Pace: {b.equities.post_loss_pace_verdict}")
     lines.append("")
 
     # 5. Symbols Breakdown

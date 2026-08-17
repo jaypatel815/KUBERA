@@ -4,9 +4,11 @@ Runs the full battery of behavioral, execution, and attribution diagnostics
 over a trader's real fills (from statement confirmations or broker transactions):
   1. Instrument profile: options vs equities, 0DTE vs swing options, contracts vs shares.
   2. Holding period distribution (T091b): sub-day minutes/hours/same_day vs multi-day.
-  3. Behavioral tells (T069): sizing drift after losses (revenge) and tempo (tilt).
+     Honest about date-only confirmations (never fabricating a clock or reporting 0.0h scalps).
+  3. Behavioral tells (T069): sizing drift and tempo computed WITHIN asset class.
+     Never mixing equity capital against option premium.
   4. Realized P&L, win rate, profit factor, payoff ratio, largest win/loss.
-  5. Day-of-week and time-of-day execution distributions (T088 execution timing).
+  5. Day-of-week and time-of-day execution distributions.
   6. Per-symbol performance & trade counts.
   7. Honest factual narrative points: every figure carries sample size (N),
      small samples state "insufficient", zero prediction.
@@ -23,7 +25,6 @@ from typing import Any, Sequence
 from analysis.attribution import (
     OPTION_MULTIPLIER,
     _held_days,
-    holding_period_distribution,
 )
 from analysis.risk_tolerance import (
     MIN_PAIRED_OBSERVATIONS,
@@ -46,6 +47,7 @@ class AutopsyFill:
     qty: float
     price: float
     ts: datetime                       # tz-aware UTC or normalized datetime
+    time_known: bool = True            # False if source is date-only (e.g. statement confirmation)
     asset_type: str = "equity"         # "equity" | "option"
     contract_multiplier: int = 1       # 100 for options, 1 for equity
     option_expiry: date | None = None
@@ -91,6 +93,7 @@ class AutopsyRoundTrip:
     entry_ts: datetime
     exit_ts: datetime
     is_0dte: bool
+    time_known: bool
     contract_multiplier: int = 1
 
 
@@ -128,13 +131,21 @@ class PerformanceSummary:
 
 
 @dataclass(frozen=True)
-class BehaviorSummary:
+class AssetBehavior:
+    asset_type: str
     sizing_drift_ratio: float | None
     sizing_drift_sample: int
     sizing_drift_verdict: str
     post_loss_pace_ratio: float | None
     post_loss_pace_sample: int
     post_loss_pace_verdict: str
+
+
+@dataclass(frozen=True)
+class BehaviorSummary:
+    options: AssetBehavior
+    equities: AssetBehavior
+    summary_verdict: str
 
 
 @dataclass(frozen=True)
@@ -168,19 +179,27 @@ def normalize_fill(obj: Any) -> AutopsyFill:
         qty = abs(float(obj.get("qty", 0.0)))
         price = float(obj.get("price", 0.0))
         raw_ts = obj.get("ts") or obj.get("occurred_at") or obj.get("trade_date")
+        time_known = True
         if isinstance(raw_ts, datetime):
             ts = raw_ts if raw_ts.tzinfo else raw_ts.replace(tzinfo=timezone.utc)
+            time_known = bool(obj.get("time_known", True))
         elif isinstance(raw_ts, date):
-            ts = datetime.combine(raw_ts, time(12, 0), tzinfo=timezone.utc)
+            ts = datetime.combine(raw_ts, time(0, 0), tzinfo=timezone.utc)
+            time_known = False
         elif isinstance(raw_ts, str):
             try:
                 ts = datetime.fromisoformat(raw_ts.replace("Z", "+00:00"))
                 if not ts.tzinfo:
                     ts = ts.replace(tzinfo=timezone.utc)
+                # If only date format "YYYY-MM-DD"
+                if len(raw_ts) == 10:
+                    time_known = False
             except ValueError:
                 ts = datetime.now(timezone.utc)
+                time_known = False
         else:
             ts = datetime.now(timezone.utc)
+            time_known = False
 
         asset_type = str(obj.get("asset_type") or obj.get("fill_type") or "equity").lower()
         default_mult = OPTION_MULTIPLIER if asset_type == "option" else 1
@@ -201,6 +220,7 @@ def normalize_fill(obj: Any) -> AutopsyFill:
             qty=qty,
             price=price,
             ts=ts,
+            time_known=time_known,
             asset_type=asset_type,
             contract_multiplier=mult,
             option_expiry=exp,
@@ -210,10 +230,10 @@ def normalize_fill(obj: Any) -> AutopsyFill:
             source=src,
         )
 
-    # ParsedFill (data/statements.py)
+    # ParsedFill (data/statements.py) — confirmations carry trade_date only, no time of day
     if hasattr(obj, "trade_date") and hasattr(obj, "asset_type"):
         trade_d = getattr(obj, "trade_date")
-        ts = datetime.combine(trade_d, time(12, 0), tzinfo=timezone.utc)
+        ts = datetime.combine(trade_d, time(0, 0), tzinfo=timezone.utc)
         asset_type = str(getattr(obj, "asset_type", "equity")).lower()
         mult = OPTION_MULTIPLIER if asset_type == "option" else 1
         return AutopsyFill(
@@ -222,6 +242,7 @@ def normalize_fill(obj: Any) -> AutopsyFill:
             qty=abs(float(getattr(obj, "qty"))),
             price=float(getattr(obj, "price")),
             ts=ts,
+            time_known=False,  # Schwab confirmation statements print date only
             asset_type=asset_type,
             contract_multiplier=mult,
             option_expiry=getattr(obj, "option_expiry", None),
@@ -239,8 +260,10 @@ def normalize_fill(obj: Any) -> AutopsyFill:
     raw_ts = getattr(obj, "occurred_at", None) or getattr(obj, "asof", None)
     if isinstance(raw_ts, datetime):
         ts = raw_ts if raw_ts.tzinfo else raw_ts.replace(tzinfo=timezone.utc)
+        time_known = True
     else:
         ts = datetime.now(timezone.utc)
+        time_known = False
 
     fill_t = str(getattr(obj, "fill_type", getattr(obj, "asset_type", "equity"))).lower()
     asset_type = "option" if "option" in fill_t else "equity"
@@ -251,6 +274,7 @@ def normalize_fill(obj: Any) -> AutopsyFill:
         qty=qty,
         price=price,
         ts=ts,
+        time_known=time_known,
         asset_type=asset_type,
         contract_multiplier=mult,
         description=str(getattr(obj, "description", "")),
@@ -276,7 +300,14 @@ def match_fifo_trips(fills: Sequence[AutopsyFill]) -> list[AutopsyRoundTrip]:
             entry = q[0]
             take = min(remaining, entry.qty)
             pnl = round(take * (f.price - entry.price) * f.contract_multiplier, 2)
-            held = _held_days(entry.ts.isoformat(), f.ts.isoformat())
+            both_time_known = entry.time_known and f.time_known
+            if both_time_known:
+                held = _held_days(entry.ts.isoformat(), f.ts.isoformat())
+            else:
+                # Date-only duration in full calendar days
+                days_diff = (f.ts.date() - entry.ts.date()).days
+                held = float(days_diff) if days_diff >= 0 else None
+
             trips.append(
                 AutopsyRoundTrip(
                     symbol=f.symbol,
@@ -290,6 +321,7 @@ def match_fifo_trips(fills: Sequence[AutopsyFill]) -> list[AutopsyRoundTrip]:
                     entry_ts=entry.ts,
                     exit_ts=f.ts,
                     is_0dte=f.is_0dte,
+                    time_known=both_time_known,
                     contract_multiplier=f.contract_multiplier,
                 )
             )
@@ -304,6 +336,7 @@ def match_fifo_trips(fills: Sequence[AutopsyFill]) -> list[AutopsyRoundTrip]:
                     qty=entry.qty - take,
                     price=entry.price,
                     ts=entry.ts,
+                    time_known=entry.time_known,
                     asset_type=entry.asset_type,
                     contract_multiplier=entry.contract_multiplier,
                     option_expiry=entry.option_expiry,
@@ -315,6 +348,200 @@ def match_fifo_trips(fills: Sequence[AutopsyFill]) -> list[AutopsyRoundTrip]:
             remaining -= take
 
     return trips
+
+
+def autopsy_holding_periods(trips: Sequence[AutopsyRoundTrip]) -> dict:
+    """Holding period distribution that respects date-only vs timestamped fills."""
+    by_bucket: dict[str, dict] = {
+        "minutes": {"round_trips": 0, "wins": 0, "realized_pnl": 0.0, "win_rate": None},
+        "hours": {"round_trips": 0, "wins": 0, "realized_pnl": 0.0, "win_rate": None},
+        "same_day": {"round_trips": 0, "wins": 0, "realized_pnl": 0.0, "win_rate": None},
+        "1-3d": {"round_trips": 0, "wins": 0, "realized_pnl": 0.0, "win_rate": None},
+        "1-2wk": {"round_trips": 0, "wins": 0, "realized_pnl": 0.0, "win_rate": None},
+        "2wk-1mo": {"round_trips": 0, "wins": 0, "realized_pnl": 0.0, "win_rate": None},
+        "over_1mo": {"round_trips": 0, "wins": 0, "realized_pnl": 0.0, "win_rate": None},
+        "unknown": {"round_trips": 0, "wins": 0, "realized_pnl": 0.0, "win_rate": None},
+    }
+
+    intraday_measured_count = 0
+    same_day_unrecorded_count = 0
+    measured_days_list: list[float] = []
+
+    for t in trips:
+        if t.held_days is None:
+            bucket = "unknown"
+        elif t.held_days >= 1.0:
+            measured_days_list.append(t.held_days)
+            if t.held_days < 3.0:
+                bucket = "1-3d"
+            elif t.held_days < 14.0:
+                bucket = "1-2wk"
+            elif t.held_days < 30.0:
+                bucket = "2wk-1mo"
+            else:
+                bucket = "over_1mo"
+        else:
+            # Same calendar day (held_days < 1.0)
+            if t.time_known and t.held_days > 0:
+                intraday_measured_count += 1
+                measured_days_list.append(t.held_days)
+                if t.held_days < 1.0 / 24.0:
+                    bucket = "minutes"
+                elif t.held_days < 6.5 / 24.0:
+                    bucket = "hours"
+                else:
+                    bucket = "same_day"
+            else:
+                # Same day, but time is not recorded on statement confirmation
+                same_day_unrecorded_count += 1
+                bucket = "same_day"
+
+        slot = by_bucket[bucket]
+        slot["round_trips"] += 1
+        slot["realized_pnl"] = round(slot["realized_pnl"] + t.pnl, 2)
+        if t.pnl > 0:
+            slot["wins"] += 1
+
+    for slot in by_bucket.values():
+        if slot["round_trips"] > 0:
+            slot["win_rate"] = round(slot["wins"] / slot["round_trips"], 4)
+
+    median_days = None
+    if measured_days_list:
+        measured_days_list.sort()
+        n = len(measured_days_list)
+        median_days = (
+            measured_days_list[n // 2]
+            if n % 2
+            else (measured_days_list[n // 2 - 1] + measured_days_list[n // 2]) / 2
+        )
+        median_days = round(median_days, 4)
+
+    return {
+        "by_bucket": by_bucket,
+        "n_round_trips": len(trips),
+        "intraday_measured_count": intraday_measured_count,
+        "same_day_unrecorded_count": same_day_unrecorded_count,
+        "median_days": median_days,
+        "has_unrecorded_intraday_times": same_day_unrecorded_count > 0,
+        "all_same_day_unrecorded": (
+            same_day_unrecorded_count > 0 and intraday_measured_count == 0
+        ),
+    }
+
+
+def analyze_asset_behavior(
+    asset_type: str,
+    trips: Sequence[AutopsyRoundTrip],
+    fills: Sequence[AutopsyFill],
+) -> AssetBehavior:
+    """Analyze sizing drift and post-loss tempo strictly within a single asset class."""
+    asset_trips = [t for t in trips if t.asset_type == asset_type]
+    asset_fills = [f for f in fills if f.asset_type == asset_type]
+
+    t_dicts = [
+        {
+            "pnl": t.pnl,
+            "exit_ts": t.exit_ts.isoformat(),
+            "entry_ts": t.entry_ts.isoformat(),
+            "symbol": t.symbol,
+        }
+        for t in asset_trips
+    ]
+    f_dicts = [
+        {
+            "side": f.side,
+            "ts_iso": f.ts.isoformat(),
+            "qty": f.qty,
+            "price": f.price * f.contract_multiplier,
+        }
+        for f in asset_fills
+    ]
+
+    drift_res = sizing_drift(t_dicts, f_dicts)
+    drift_ratio = drift_res.get("ratio")
+    drift_sample = drift_res.get("sample", 0)
+    if drift_ratio is None:
+        drift_verdict = (
+            f"insufficient paired observations ({asset_type}: "
+            f"{drift_sample} of {MIN_PAIRED_OBSERVATIONS} needed)"
+        )
+    elif drift_ratio >= REVENGE_SIZING_RATIO:
+        drift_verdict = (
+            f"revenge sizing signature in {asset_type}: sizing up by {drift_ratio:.2f}x after "
+            f"losses (${drift_res['after_loss']:,.0f} vs ${drift_res['after_win']:,.0f} median, "
+            f"N={drift_sample})"
+        )
+    elif drift_ratio <= 0.90:
+        drift_verdict = (
+            f"disciplined {asset_type} sizing: sizing down by {drift_ratio:.2f}x after losses "
+            f"(N={drift_sample})"
+        )
+    else:
+        drift_verdict = (
+            f"stable {asset_type} sizing across wins and losses ({drift_ratio:.2f}x, "
+            f"N={drift_sample})"
+        )
+
+    # Post-loss tempo
+    buys = [f for f in asset_fills if f.side == "buy"]
+    n_buys = len(buys)
+    loss_exits = [t.exit_ts for t in asset_trips if t.pnl < 0]
+    n_loss_exits = len(loss_exits)
+
+    pace_ratio = None
+    pace_sample = n_loss_exits
+    if n_buys < MIN_TRIPS_FOR_BEHAVIOR or n_loss_exits < MIN_PAIRED_OBSERVATIONS:
+        pace_verdict = (
+            f"insufficient loss observations ({asset_type}: {n_loss_exits} of "
+            f"{MIN_PAIRED_OBSERVATIONS} needed, {n_buys} total buys)"
+        )
+    else:
+        span_days = max((buys[-1].ts - buys[0].ts).total_seconds() / 86400.0, 1.0)
+        baseline_rate = n_buys / span_days
+
+        window = timedelta(hours=REACTION_WINDOW_HOURS)
+        spans = sorted((ts, ts + window) for ts in loss_exits)
+        merged: list[list[datetime]] = []
+        for s, e in spans:
+            if merged and s <= merged[-1][1]:
+                merged[-1][1] = max(merged[-1][1], e)
+            else:
+                merged.append([s, e])
+
+        covered_days = sum((e - s).total_seconds() for s, e in merged) / 86400.0
+        in_window_buys = sum(1 for b in buys if any(s < b.ts <= e for s, e in merged))
+        after_loss_rate = in_window_buys / covered_days if covered_days > 0 else 0.0
+
+        if baseline_rate > 0:
+            pace_ratio = round(after_loss_rate / baseline_rate, 4)
+            if pace_ratio >= TILT_FREQUENCY_RATIO:
+                pace_verdict = (
+                    f"tilt tempo in {asset_type}: entering {pace_ratio:.2f}x faster in 24h after "
+                    f"losses ({after_loss_rate:.2f} vs {baseline_rate:.2f} entries/day, "
+                    f"N={pace_sample})"
+                )
+            elif pace_ratio <= 1.10:
+                pace_verdict = (
+                    f"disciplined {asset_type} tempo: post-loss pace matches baseline "
+                    f"({pace_ratio:.2f}x, N={pace_sample})"
+                )
+            else:
+                pace_verdict = (
+                    f"mildly elevated {asset_type} pace ({pace_ratio:.2f}x, N={pace_sample})"
+                )
+        else:
+            pace_verdict = f"baseline {asset_type} rate is zero"
+
+    return AssetBehavior(
+        asset_type=asset_type,
+        sizing_drift_ratio=drift_ratio,
+        sizing_drift_sample=drift_sample,
+        sizing_drift_verdict=drift_verdict,
+        post_loss_pace_ratio=pace_ratio,
+        post_loss_pace_sample=pace_sample,
+        post_loss_pace_verdict=pace_verdict,
+    )
 
 
 def analyze_autopsy(raw_fills: Sequence[Any]) -> TradingAutopsyReport:
@@ -335,17 +562,22 @@ def analyze_autopsy(raw_fills: Sequence[Any]) -> TradingAutopsyReport:
             payoff_ratio=None, largest_win=None, largest_loss=None,
             option_realized_pnl=0.0, equity_realized_pnl=0.0,
         )
-        empty_behav = BehaviorSummary(
-            sizing_drift_ratio=None, sizing_drift_sample=0,
+        empty_asset_behav = AssetBehavior(
+            asset_type="none", sizing_drift_ratio=None, sizing_drift_sample=0,
             sizing_drift_verdict="insufficient trades (0 fills)",
             post_loss_pace_ratio=None, post_loss_pace_sample=0,
             post_loss_pace_verdict="insufficient trades (0 fills)",
+        )
+        empty_behav = BehaviorSummary(
+            options=empty_asset_behav,
+            equities=empty_asset_behav,
+            summary_verdict="insufficient trades (0 fills)",
         )
         return TradingAutopsyReport(
             total_fills=0,
             instrument_profile=empty_inst,
             performance=empty_perf,
-            holding_periods=holding_period_distribution([]),
+            holding_periods=autopsy_holding_periods([]),
             behavior=empty_behav,
             day_of_week_distribution={},
             symbols=[],
@@ -434,110 +666,31 @@ def analyze_autopsy(raw_fills: Sequence[Any]) -> TradingAutopsyReport:
     )
 
     # 3. Holding Periods (T091b)
-    trips_dicts = [
-        {"pnl": t.pnl, "held_days": t.held_days, "symbol": t.symbol}
-        for t in trips
-    ]
-    holding_periods = holding_period_distribution(trips_dicts)
+    holding_periods = autopsy_holding_periods(trips)
 
-    # 4. Behavioral Tells (T069)
-    t069_trips = [
-        {
-            "pnl": t.pnl,
-            "exit_ts": t.exit_ts.isoformat(),
-            "entry_ts": t.entry_ts.isoformat(),
-            "symbol": t.symbol,
-        }
-        for t in trips
-    ]
-    t069_fills = [
-        {
-            "side": f.side,
-            "ts_iso": f.ts.isoformat(),
-            "qty": f.qty,
-            "price": f.price * f.contract_multiplier,  # economic price for notional
-        }
-        for f in fills
-    ]
+    # 4. Behavioral Tells (T069) — segregated by asset class
+    opt_behavior = analyze_asset_behavior("option", trips, fills)
+    eq_behavior = analyze_asset_behavior("equity", trips, fills)
 
-    drift_res = sizing_drift(t069_trips, t069_fills)
-    drift_ratio = drift_res.get("ratio")
-    drift_sample = drift_res.get("sample", 0)
-    if drift_ratio is None:
-        drift_verdict = (
-            f"insufficient paired observations ({drift_sample} of {MIN_PAIRED_OBSERVATIONS} needed)"
+    if opt_behavior.sizing_drift_ratio is not None and eq_behavior.sizing_drift_ratio is not None:
+        summary_verdict = (
+            f"{opt_behavior.sizing_drift_verdict} | {eq_behavior.sizing_drift_verdict}"
         )
-    elif drift_ratio >= REVENGE_SIZING_RATIO:
-        drift_verdict = (
-            f"revenge sizing signature: sizing up by {drift_ratio:.2f}x after losses "
-            f"(${drift_res['after_loss']:,.0f} vs ${drift_res['after_win']:,.0f} median, "
-            f"N={drift_sample})"
-        )
-    elif drift_ratio <= 0.90:
-        drift_verdict = (
-            f"disciplined sizing: sizing down by {drift_ratio:.2f}x after losses (N={drift_sample})"
-        )
+    elif opt_behavior.sizing_drift_ratio is not None:
+        summary_verdict = opt_behavior.sizing_drift_verdict
+    elif eq_behavior.sizing_drift_ratio is not None:
+        summary_verdict = eq_behavior.sizing_drift_verdict
     else:
-        drift_verdict = (
-            f"stable sizing across wins and losses ({drift_ratio:.2f}x, N={drift_sample})"
+        summary_verdict = (
+            f"insufficient observations within asset classes "
+            f"(options N={opt_behavior.sizing_drift_sample}, "
+            f"equities N={eq_behavior.sizing_drift_sample}; {MIN_PAIRED_OBSERVATIONS} needed)"
         )
-
-    # Post-loss tempo
-    buys = [f for f in fills if f.side == "buy"]
-    n_buys = len(buys)
-    loss_exits = [t.exit_ts for t in losses]
-    n_loss_exits = len(loss_exits)
-
-    pace_ratio = None
-    pace_sample = n_loss_exits
-    if n_buys < MIN_TRIPS_FOR_BEHAVIOR or n_loss_exits < MIN_PAIRED_OBSERVATIONS:
-        pace_verdict = (
-            f"insufficient loss observations ({n_loss_exits} of {MIN_PAIRED_OBSERVATIONS} needed, "
-            f"{n_buys} total buys)"
-        )
-    else:
-        span_days = max((buys[-1].ts - buys[0].ts).total_seconds() / 86400.0, 1.0)
-        baseline_rate = n_buys / span_days
-
-        window = timedelta(hours=REACTION_WINDOW_HOURS)
-        spans = sorted((ts, ts + window) for ts in loss_exits)
-        merged: list[list[datetime]] = []
-        for s, e in spans:
-            if merged and s <= merged[-1][1]:
-                merged[-1][1] = max(merged[-1][1], e)
-            else:
-                merged.append([s, e])
-
-        covered_days = sum((e - s).total_seconds() for s, e in merged) / 86400.0
-        in_window_buys = sum(1 for b in buys if any(s < b.ts <= e for s, e in merged))
-        after_loss_rate = in_window_buys / covered_days if covered_days > 0 else 0.0
-
-        if baseline_rate > 0:
-            pace_ratio = round(after_loss_rate / baseline_rate, 4)
-            if pace_ratio >= TILT_FREQUENCY_RATIO:
-                pace_verdict = (
-                    f"tilt tempo signature: entering {pace_ratio:.2f}x faster in 24h after losses "
-                    f"({after_loss_rate:.2f} vs {baseline_rate:.2f} entries/day, N={pace_sample})"
-                )
-            elif pace_ratio <= 1.10:
-                pace_verdict = (
-                    f"disciplined tempo: post-loss pace matches baseline "
-                    f"({pace_ratio:.2f}x, N={pace_sample})"
-                )
-            else:
-                pace_verdict = (
-                    f"mildly elevated post-loss pace ({pace_ratio:.2f}x, N={pace_sample})"
-                )
-        else:
-            pace_verdict = "baseline rate is zero"
 
     behavior = BehaviorSummary(
-        sizing_drift_ratio=drift_ratio,
-        sizing_drift_sample=drift_sample,
-        sizing_drift_verdict=drift_verdict,
-        post_loss_pace_ratio=pace_ratio,
-        post_loss_pace_sample=pace_sample,
-        post_loss_pace_verdict=pace_verdict,
+        options=opt_behavior,
+        equities=eq_behavior,
+        summary_verdict=summary_verdict,
     )
 
     # 5. Day of Week Breakdown
@@ -611,25 +764,48 @@ def analyze_autopsy(raw_fills: Sequence[Any]) -> TradingAutopsyReport:
             f"Performance: {n_trips} round trips, ${tot_pnl:,.2f} realized P&L "
             f"(Win rate: {wr_str} [{len(wins)}W/{len(losses)}L/{len(scratches)}S], PF: {pf_str})."
         )
-        med_days = holding_periods.get("median_days")
-        if med_days is not None:
-            if med_days < 1.0:
-                hrs = med_days * 24.0
-                narrative.append(
-                    f"Holding Time: Median hold is {hrs:.1f} hours ({med_days:.3f} days)."
-                )
-            else:
-                narrative.append(f"Holding Time: Median hold is {med_days:.1f} calendar days.")
+        if holding_periods["all_same_day_unrecorded"]:
+            cnt = holding_periods["same_day_unrecorded_count"]
+            narrative.append(
+                f"Holding Time: All {cnt} closed round trips are same-day trades "
+                f"(intraday duration within session is unrecorded on trade confirmations)."
+            )
+        elif holding_periods["has_unrecorded_intraday_times"]:
+            cnt = holding_periods["same_day_unrecorded_count"]
+            med = holding_periods["median_days"]
+            med_s = f"{med:.1f} days" if med else "N/A"
+            narrative.append(
+                f"Holding Time: {cnt} same-day round trips (intraday times unrecorded); "
+                f"multi-day median hold: {med_s}."
+            )
+        else:
+            med_days = holding_periods.get("median_days")
+            if med_days is not None:
+                if med_days < 1.0:
+                    hrs = med_days * 24.0
+                    narrative.append(
+                        f"Holding Time: Median hold is {hrs:.1f} hours ({med_days:.3f} days)."
+                    )
+                else:
+                    narrative.append(f"Holding Time: Median hold is {med_days:.1f} calendar days.")
     else:
         narrative.append("Performance: No closed round trips detected in the provided fill window.")
 
-    narrative.append(f"Sizing Behavior: {drift_verdict}.")
-    narrative.append(f"Pacing Behavior: {pace_verdict}.")
+    if opt_behavior.sizing_drift_ratio is not None:
+        narrative.append(f"Options Sizing Behavior: {opt_behavior.sizing_drift_verdict}.")
+    if eq_behavior.sizing_drift_ratio is not None:
+        narrative.append(f"Equities Sizing Behavior: {eq_behavior.sizing_drift_verdict}.")
+    if opt_behavior.sizing_drift_ratio is None and eq_behavior.sizing_drift_ratio is None:
+        narrative.append(f"Sizing Behavior: {summary_verdict}.")
 
     caveats = [
         f"All metrics derived from {n_fills} fills. Small sample sizes are explicitly declared.",
         "Options notional includes the 100x contract multiplier.",
-        "Holding periods are calculated from FIFO entry-to-exit matching per contract.",
+        "Trade confirmations lack intraday timestamps — same-day durations are marked unrecorded.",
+        (
+            "Behavioral sizing drift is computed strictly within asset classes "
+            "(never mixing options with equities)."
+        ),
     ]
 
     return TradingAutopsyReport(
