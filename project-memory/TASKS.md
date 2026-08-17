@@ -12,6 +12,7 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
+- In progress — T108b — Gemini/Antigravity
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T108 (expiry-aware FIFO closing + statement reconciliation — I026) — AWAITING REVIEW —
