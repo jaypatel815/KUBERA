@@ -3,6 +3,37 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — T045 v2 PASS, the first review under D027
+D027 says a PASS is void without a command that was run and its output, so this
+verdict is the test of whether the rule changes anything. It did: writing it
+meant building the server, attempting the call it forbids, executing a tool
+end to end, and simulating a clean checkout — none of which a read-through
+would have produced.
+The rail is real. Before the fix, calling update_ips through MCP rewrote the
+IPS with no confirmation. Now: absent from the default surface, ToolError,
+IPS row still None. Executed goal_math against an in-memory database and got
+a real payload back; the default surface is 30 of 34 tools with four mutators
+withheld. Clean checkout PASSes, so the importorskip guard and the
+mcp>=1.29,<2 pin both hold.
+Worth recording plainly, because the last session was about Gemini being an
+uncritical reviewer: on this ticket it IMPROVED on the instruction. I asked for
+the gated tool behind an explicit opt-in; it excluded update_ips
+unconditionally, reasoning that MCP structurally cannot carry an out-of-band
+confirmation. That is the better reading of the rail, and the fix is stronger
+than the one requested. Fair is fair.
+Two concerns carried forward rather than rushed: the per-call context still
+opens an Alpaca client, market client, FRED client and DB session and closes
+none (T106), and I023 stands — pyrefly reports 1 while pyrefly.toml still says
+0 and tells the reader to investigate new errors immediately. Neither blocks
+the ticket; both are now tickets rather than notes.
+What I could not verify and said so in the verdict: nothing here spoke real MCP
+over stdio to a real client. Every check drove FastMCP in-process. Filed T045b
+as the owner's acceptance step.
+Verified: gate PASS 748 passed, 3 skipped; clean-checkout PASS; the I021
+exploit no longer reproduces.
+Next: owner runs T045b. Backlog: T106, I023, T103 (the autopsy, now unblocked).
+
+
 ## 2026-08-16 — Gemini/Antigravity — T045 rework: I021 (safety gate bypass) + I022 (dependency)
 Claude's BLOCK review was correct on both counts. Fixed:
 - I021: `make_default_tool_context` now hardcodes `confirmed=False`. Added `_READ_ONLY_TOOLS`
