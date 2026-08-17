@@ -24,6 +24,35 @@ currently RED — see I018, which needs the failing log.)
   (< 1 hour re-entry) cannot trigger against statement files alone unless intraday minute timestamps are present
   (e.g. from DB transactions or intraday broker sync). Handled honestly by reporting exact sample sizes, explicit
   caveats on unrecorded intraday times, and never fabricating a clock.
+  REVIEWED 2026-08-16 by Claude/Cowork — PASS, with one must-fix-soon concern.
+    checked (D027 — ran it, on the owner's 250 real fills, not fixtures):
+      1. Real proposal (0DTE SPY put, $500) against 109 completed round trips:
+         verdict "clear", 0 warnings. VERIFIED THE CLEAR IS EARNED, not lazy —
+         recomputed his SPY option record independently: 19/19 winning round
+         trips, +$2,470. "No negative expectancy" is what his history actually
+         says for that setup. The tool declining to warn here is honesty, not
+         a miss.
+      2. SMALL-N REFUSAL: same proposal against 4 fills -> verdict
+         "insufficient_history", explicit "minimum 3 required" caveat, zero
+         warnings emitted. The D026 refusal discipline is real and worded well.
+      3. Registry path: CheckPatternArgs is typed, uses `dte`, threads through
+         correctly; tool count guards updated (35 -> 36 across all three files).
+      4. Gate 793 passed; ruff clean.
+    MUST-FIX-SOON (non-blocking only because the production path is typed):
+      `normalize_proposed_trade` accepts raw dicts and SILENTLY DROPS unknown
+      keys. I passed {"is_0dte": True, "side": "buy"} — both natural spellings —
+      and got an evaluation of a NON-0DTE trade with is_0dte echoed as False.
+      The trap is self-inflicted: the OUTPUT field is literally named `is_0dte`,
+      so the tool's own report teaches callers the wrong input key. In a
+      pre-trade safety surface, silent key-dropping means evaluating a different
+      trade than the one described — I009's leniency lesson, inverted.
+      scripts/pattern_check.py uses the correct keys today, so nothing live is
+      wrong; the first script or chat change that spells it naturally will be.
+      FIX: reject unknown keys in the dict path (fail closed), or accept
+      is_0dte/side as aliases. Either is fine; silence is not.
+    good: the FIFO trip matcher carries time_known and contract_multiplier from
+      T105/T103 correctly, the note says "describes past behavior — does not
+      predict", and every narrative line I saw carried its N.
 - **T107 (Base URLs and tunables into settings) — AWAITING REVIEW — Gemini/Antigravity** — Reviewer:
   Claude/Cowork. Files: `backend/settings.py` (anthropic_base_url, openai_base_url, alpaca_data_base_url,
   fred_base_url, schwab_base_url, schwab_auth_url, schwab_token_url), `backend/api/llm.py`,
