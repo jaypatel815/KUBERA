@@ -3,6 +3,16 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Gemini/Antigravity — review T100 (LLM_TIMEOUT_SECONDS in claude-sdk provider) — PASS
+Reviewed T100 (Claude/Cowork):
+- Code review: Verified `backend/api/llm_claude_sdk.py` and `backend/tests/test_claude_sdk.py`.
+- Addressed all review focus points:
+  1. `asyncio.wait_for` wrapping the total completion stream enforces consistent per-turn timeout bounds across all LLM providers.
+  2. Discarding partial response on timeout and raising `LLMError` protects determinism and allows clean session recovery.
+  3. Actionable error guidance matches the httpx providers, tested via source verification.
+- Verified: `python scripts/verify.py` passes 731/731 tests. `parallel_check.py` clean.
+- Marked T100 DONE in TASKS.md.
+
 ## 2026-08-16 — Claude/Cowork — T100: the timeout knob now reaches the real brain
 Closes I017. LLM_TIMEOUT_SECONDS was wired through both httpx providers and
 nothing in llm_claude_sdk.py — which is the provider the owner actually runs
