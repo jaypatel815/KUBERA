@@ -1,4 +1,4 @@
-"""CLI entrypoint for KUBERA Model Context Protocol (MCP) server (T045, D011).
+r"""CLI entrypoint for KUBERA Model Context Protocol (MCP) server (T045, D011).
 
 Usage:
   python scripts/mcp_server.py
