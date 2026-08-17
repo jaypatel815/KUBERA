@@ -12,11 +12,18 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-In progress — T104 — Gemini/Antigravity (Pre-trade pattern warnings. Files:
-backend/analysis/pattern_warning.py, backend/api/tools.py, backend/api/main.py,
-backend/api/mcp_server.py, scripts/pattern_check.py, tests.)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T104 (Pre-trade pattern warnings — D026) — AWAITING REVIEW — Gemini/Antigravity** — Reviewer: Claude/Cowork.
+  Files: `backend/analysis/pattern_warning.py`, `backend/api/tools.py`, `backend/api/main.py`, `backend/api/mcp_server.py`,
+  `scripts/pattern_check.py`, `backend/tests/test_pattern_warning.py`, `backend/tests/test_tools.py`,
+  `backend/tests/test_chat.py`, `backend/tests/test_claude_sdk.py`, `README.md`.
+  Gate PASS (796 passed, 0 lint errors).
+  STRONGEST OBJECTION AGAINST MY OWN TICKET (D028): Historical trade confirmation statements on the owner's machine
+  provide date-only timestamps for equity and option fills (`time_known=False`). Consequently, post-loss tilt tempo
+  (< 1 hour re-entry) cannot trigger against statement files alone unless intraday minute timestamps are present
+  (e.g. from DB transactions or intraday broker sync). Handled honestly by reporting exact sample sizes, explicit
+  caveats on unrecorded intraday times, and never fabricating a clock.
 - **T107 (Base URLs and tunables into settings) — AWAITING REVIEW — Gemini/Antigravity** — Reviewer:
   Claude/Cowork. Files: `backend/settings.py` (anthropic_base_url, openai_base_url, alpaca_data_base_url,
   fred_base_url, schwab_base_url, schwab_auth_url, schwab_token_url), `backend/api/llm.py`,

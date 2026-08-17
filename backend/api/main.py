@@ -947,3 +947,73 @@ def autopsy(
         )
     except ToolError as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class PatternWarningRequest(BaseModel):
+    symbol: str
+    action: str = "buy"
+    asset_type: str | None = None
+    qty: float | None = None
+    price: float | None = None
+    notional: float | None = None
+    dte: int | None = None
+
+
+@app.post("/api/pattern-warnings")
+def evaluate_trade_patterns(
+    req: PatternWarningRequest,
+    session=Depends(get_db_session),
+) -> dict:
+    """Evaluate a proposed trade setup against historical execution records (T104, D026)."""
+    try:
+        return registry.execute(
+            "check_trade_pattern",
+            req.model_dump(),
+            ToolContext(db=session),
+        )
+    except ToolArgumentError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except OperationalError:
+        raise HTTPException(
+            status_code=503,
+            detail="database not initialized — run: alembic -c backend/alembic.ini upgrade head",
+        )
+    except ToolError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/pattern-warnings/{symbol}")
+def get_symbol_pattern_warnings(
+    symbol: str,
+    action: str = "buy",
+    asset_type: str | None = None,
+    qty: float | None = None,
+    price: float | None = None,
+    notional: float | None = None,
+    dte: int | None = None,
+    session=Depends(get_db_session),
+) -> dict:
+    """GET endpoint for evaluating a proposed trade setup on a specific symbol (T104)."""
+    try:
+        return registry.execute(
+            "check_trade_pattern",
+            {
+                "symbol": symbol,
+                "action": action,
+                "asset_type": asset_type,
+                "qty": qty,
+                "price": price,
+                "notional": notional,
+                "dte": dte,
+            },
+            ToolContext(db=session),
+        )
+    except ToolArgumentError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except OperationalError:
+        raise HTTPException(
+            status_code=503,
+            detail="database not initialized — run: alembic -c backend/alembic.ini upgrade head",
+        )
+    except ToolError as e:
+        raise HTTPException(status_code=500, detail=str(e))

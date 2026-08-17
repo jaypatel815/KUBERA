@@ -42,6 +42,7 @@ log = logging.getLogger("kubera.mcp")
 # are excluded by default and must be explicitly opted-in via allow_mutations=True.
 # This is the authoritative list — update it when new read-only tools are added.
 _READ_ONLY_TOOLS: frozenset[str] = frozenset({
+    "check_trade_pattern",
     "compare_benchmark",
     "estimate_risk_tolerance",
     "get_attribution",

@@ -3,6 +3,22 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Gemini/Antigravity — T104: Pre-trade pattern warnings (D026)
+Built the pre-trade pattern warning engine that evaluates proposed trade setups against the trader's historical execution records to flag recurring behavioral pitfalls before placing an order:
+- `backend/analysis/pattern_warning.py`: Pure functions evaluating 5 deterministic behavioral and statistical checks:
+  1. 0DTE Option Negative Expectancy: Flags trades matching historical 0DTE setups with negative total P&L or win rate < 50% (N >= 3).
+  2. Revenge Sizing Drift Alert: Flags proposed orders where sizing ratio exceeds 1.5x historical median following a recent loss in the same asset class (high severity, N >= 3).
+  3. Post-Loss Tilt Tempo: Warns if entering a trade < 1 hour after a losing exit (medium severity).
+  4. Symbol-Specific Negative Expectancy: Flags symbols with repeated historical losses and negative total P&L (N >= 3).
+  5. Day-of-Week Disadvantage: Flags proposed setups on days with poor win rate (< 35%) and net losses (N >= 5).
+- Fail-Closed Discipline: If total round trips < 3, returns verdict="insufficient_history" with exact N and zero false alarms.
+- Asset Class Segregation: Options notionals are computed with 100x multiplier and never compared against equity capital.
+- OCC Option Parsing: Parses OCC option symbols (e.g. `SPY260315C00500000`) to extract underlying, strike, expiration, right, and calculates DTE.
+- Tool & API Surface: Registered tool #36 `check_trade_pattern` in `backend/api/tools.py`, added to `_READ_ONLY_TOOLS` in `backend/api/mcp_server.py`, added `POST /api/pattern-warnings` and `GET /api/pattern-warnings/{symbol}` in `backend/api/main.py`.
+- CLI Interface: Created `scripts/pattern_check.py` with text and JSON reporting modes.
+- Tests & Guard Tests: Added 10 tests in `backend/tests/test_pattern_warning.py`. Updated tool count guard tests (35 -> 36) in `test_tools.py`, `test_chat.py`, and `test_claude_sdk.py`.
+- Verified: `python scripts/verify.py` full gate PASS (796 passed, 1 warning, 0 lint errors). Tested CLI end-to-end against test fixtures.
+
 ## 2026-08-16 — Gemini/Antigravity — T107: Base URLs and tunables into settings (D028)
 Moved external API endpoints and OAuth URLs from module constants into environment-overridable `KuberaSettings` (allowing seamless testing against sandboxes, mocks, and local proxies without modifying source code):
 - `backend/settings.py`: Added `anthropic_base_url`, `openai_base_url` (with `KUBERA_` alias), `alpaca_data_base_url`, `fred_base_url`, `schwab_base_url`, `schwab_auth_url`, and `schwab_token_url`.

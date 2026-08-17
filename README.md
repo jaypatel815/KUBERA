@@ -108,6 +108,8 @@ http://127.0.0.1:8000/api/attribution                       WHY is the money mov
 http://127.0.0.1:8000/api/autopsy                           the trading autopsy: instrument profile (0DTE/options),
                                                             sub-day holding period splits, revenge sizing drift,
                                                             post-loss tempo, and per-symbol P&L
+http://127.0.0.1:8000/api/pattern-warnings/SPY              pre-trade pattern warnings: 0DTE expectancy, revenge
+                                                            sizing drift, post-loss tilt tempo, symbol track record
 http://127.0.0.1:8000/api/tools                             the tool registry the chat layer will use
 http://127.0.0.1:8000/api/backtests                         the results ledger: every recorded backtest
 POST /api/backtests/run?strategy=momentum&symbol=SPY        run + record a backtest (use /docs to click it)
@@ -135,6 +137,7 @@ Backtest the strategy templates on real history (no server needed):
 python scripts\backtest_demo.py                 # SPY, ~2 years: buy-and-hold vs momentum vs
 python scripts\backtest_demo.py AAPL --days 365 # SMA-cross vs mean-reversion, with costs
 python scripts\autopsy.py                       # Trading autopsy across executed fills/confirmations
+python scripts\pattern_check.py SPY --dte 0     # Pre-trade pattern check against historical records
 ```
 
 Let a strategy trade your **paper** account (migrate the DB first — see above).

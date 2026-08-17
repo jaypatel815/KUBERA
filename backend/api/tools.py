@@ -42,6 +42,7 @@ from analysis.liquidity import (
 )
 from analysis.macro import compose_macro_context
 from analysis.metrics import atr, volatility
+from analysis.pattern_warning import ProposedTrade, evaluate_pattern_warnings
 from analysis.portfolio import summarize, win_loss
 from analysis.portfolio_risk import portfolio_risk
 from analysis.ranking import rank_watchlist
@@ -1820,5 +1821,94 @@ def _get_trading_autopsy(ctx: ToolContext, args: AutopsyArgs) -> dict:
         "symbols": report.symbols,
         "narrative": report.narrative,
         "caveats": report.caveats,
+        "note": report.note,
+    }
+
+
+class CheckPatternArgs(LenientArgs):
+    symbol: str = Field(
+        ...,
+        description="Ticker symbol or OCC option symbol (e.g. 'SPY' or 'SPY260315C00500000').",
+    )
+    action: str = Field(
+        default="buy",
+        description="Contemplated action ('buy', 'sell', 'short', 'cover'). Default is 'buy'.",
+    )
+    asset_type: str | None = Field(
+        default=None,
+        description="Asset type ('equity' or 'option'). If omitted, inferred from symbol format.",
+    )
+    qty: float | None = Field(
+        default=None,
+        description="Proposed order quantity (number of shares or option contracts).",
+    )
+    price: float | None = Field(
+        default=None,
+        description="Estimated or limit price for the proposed trade.",
+    )
+    notional: float | None = Field(
+        default=None,
+        description="Explicit total proposed dollar amount / premium. Overrides qty * price.",
+    )
+    dte: int | None = Field(
+        default=None,
+        description="Days to option expiration (e.g. 0 for 0DTE). Inferred if OCC option symbol.",
+    )
+
+
+@registry.tool(
+    "check_trade_pattern",
+    "Evaluate a proposed trade setup against historical execution records to detect "
+    "recurring behavioral pitfalls (0DTE negative expectancy, revenge sizing drift "
+    "following losses, post-loss tilt tempo, symbol-specific track record, weekday disadvantages). "
+    "Every finding reports exact sample size (N). Zero prediction.",
+    CheckPatternArgs,
+)
+def _check_trade_pattern(ctx: ToolContext, args: CheckPatternArgs) -> dict:
+    db = ctx.require("db")
+    q = select(Transaction).order_by(Transaction.occurred_at)
+    fills: list[Any] = list(db.execute(q).scalars().all())
+
+    if not fills:
+        private_dir = Path("private/statements")
+        if private_dir.exists():
+            parsed_rep = parse_directory(private_dir)
+            fills = parsed_rep.fills
+
+    proposed = ProposedTrade(
+        symbol=args.symbol,
+        action=args.action,
+        asset_type=args.asset_type or "equity",
+        qty=args.qty,
+        price=args.price,
+        notional=args.notional,
+        dte=args.dte,
+    )
+    report = evaluate_pattern_warnings(fills, proposed)
+    return {
+        "symbol": report.symbol,
+        "underlying": report.underlying,
+        "proposed_action": report.proposed_action,
+        "asset_type": report.asset_type,
+        "proposed_notional": report.proposed_notional,
+        "is_0dte": report.is_0dte,
+        "verdict": report.verdict,
+        "warnings_count": report.warnings_count,
+        "has_high_severity": report.has_high_severity,
+        "historical_trips_count": report.historical_trips_count,
+        "warnings": [
+            {
+                "category": w.category,
+                "severity": w.severity,
+                "headline": w.headline,
+                "sample_size": w.sample_size,
+                "evidence": w.evidence,
+                "narrative": w.narrative,
+            }
+            for w in report.warnings
+        ],
+        "narrative": report.narrative,
+        "caveats": report.caveats,
+        "asof": report.asof,
         "note": report.note,
     }
