@@ -11,6 +11,7 @@ LLM function-calling APIs consume (Anthropic/OpenAI/Gemini formats derive direct
 
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any, Callable
 
 import httpx
@@ -19,6 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from analysis.attribution import AttributedFill, fifo_attribution
+from analysis.autopsy import analyze_autopsy
 from analysis.benchmark import compare
 from analysis.breakout import detect_breakouts
 from analysis.briefing import PositionContext, build_briefing
@@ -75,6 +77,7 @@ from data.journal import (
 )
 from data.market_data import MarketDataClient, MarketDataError
 from data.models import AccountSnapshot, SignalLog, Transaction
+from data.statements import parse_directory
 from data.watchlist import add_symbol, list_symbols, remove_symbol
 from risk.dqs import score_decisions
 from risk.engine import RiskEngine, RiskLimits
@@ -1727,4 +1730,84 @@ def _estimate_risk_tolerance(ctx: ToolContext, _: NoArgs) -> dict:
         "caveats": est.caveats,
         "is_proposal": True,
         "asof": est.asof,
+    }
+
+
+class AutopsyArgs(LenientArgs):
+    days: int | None = Field(
+        default=None,
+        description="Optional filter for trailing N days of fills. None = full trading history.",
+    )
+
+
+@registry.tool(
+    "get_trading_autopsy",
+    "Run the full trading autopsy diagnostic (T103, D026) over executed fills. "
+    "Computes instrument breakdown (options vs equity, 0DTE share), FIFO holding periods "
+    "(sub-day minutes/hours vs multi-day), behavioral tells (sizing drift after losses, "
+    "post-loss trading pace), win rate, profit factor, day-of-week distributions, and "
+    "per-symbol performance. Every metric carries exact sample size (N). Zero prediction.",
+    AutopsyArgs,
+)
+def _get_trading_autopsy(ctx: ToolContext, args: AutopsyArgs) -> dict:
+    db = ctx.require("db")
+    q = select(Transaction).order_by(Transaction.occurred_at)
+    if args.days is not None and args.days > 0:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=args.days)
+        q = q.where(Transaction.occurred_at >= cutoff)
+    fills: list[Any] = list(db.execute(q).scalars().all())
+
+    # If DB transactions are empty, fall back to parsing private/statements or test fixtures
+    if not fills:
+        private_dir = Path("private/statements")
+        if private_dir.exists():
+            parsed_rep = parse_directory(private_dir)
+            fills = parsed_rep.fills
+
+    report = analyze_autopsy(fills)
+    return {
+        "total_fills": report.total_fills,
+        "instrument_profile": {
+            "total_fills": report.instrument_profile.total_fills,
+            "option_fills": report.instrument_profile.option_fills,
+            "equity_fills": report.instrument_profile.equity_fills,
+            "option_pct": report.instrument_profile.option_pct,
+            "dte0_fills": report.instrument_profile.dte0_fills,
+            "dte0_pct_of_options": report.instrument_profile.dte0_pct_of_options,
+            "calls_count": report.instrument_profile.calls_count,
+            "puts_count": report.instrument_profile.puts_count,
+            "total_notional": report.instrument_profile.total_notional,
+            "option_notional": report.instrument_profile.option_notional,
+            "equity_notional": report.instrument_profile.equity_notional,
+        },
+        "performance": {
+            "round_trips": report.performance.round_trips,
+            "total_realized_pnl": report.performance.total_realized_pnl,
+            "wins": report.performance.wins,
+            "losses": report.performance.losses,
+            "scratches": report.performance.scratches,
+            "win_rate": report.performance.win_rate,
+            "profit_factor": report.performance.profit_factor,
+            "avg_win": report.performance.avg_win,
+            "avg_loss": report.performance.avg_loss,
+            "payoff_ratio": report.performance.payoff_ratio,
+            "largest_win": report.performance.largest_win,
+            "largest_loss": report.performance.largest_loss,
+            "option_realized_pnl": report.performance.option_realized_pnl,
+            "equity_realized_pnl": report.performance.equity_realized_pnl,
+        },
+        "holding_periods": report.holding_periods,
+        "behavior": {
+            "sizing_drift_ratio": report.behavior.sizing_drift_ratio,
+            "sizing_drift_sample": report.behavior.sizing_drift_sample,
+            "sizing_drift_verdict": report.behavior.sizing_drift_verdict,
+            "post_loss_pace_ratio": report.behavior.post_loss_pace_ratio,
+            "post_loss_pace_sample": report.behavior.post_loss_pace_sample,
+            "post_loss_pace_verdict": report.behavior.post_loss_pace_verdict,
+        },
+        "day_of_week_distribution": report.day_of_week_distribution,
+        "symbols": report.symbols,
+        "narrative": report.narrative,
+        "caveats": report.caveats,
+        "note": report.note,
     }

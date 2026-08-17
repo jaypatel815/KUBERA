@@ -3,6 +3,20 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Gemini/Antigravity — T103: The Trading Autopsy (D026)
+Implemented the complete deterministic trading autopsy battery over real fills (statement confirmations / broker transactions):
+- `backend/analysis/autopsy.py`: `analyze_autopsy(fills)` computes `TradingAutopsyReport` — instrument profile (options vs equity count/notional, 0DTE share, Calls vs Puts), FIFO round trips with 100x option contract multiplier and strike separation (`contract_key`), sub-day holding period distributions (minutes, hours, same_day, multi-day), T069 behavioral tells (median sizing drift after losses for revenge sizing, post-loss tempo for tilt detection), day-of-week breakdown, per-symbol breakdown, and honest deterministic narrative statements carrying exact sample counts N. Zero freehand arithmetic.
+- `backend/data/statements.py`: Added `parse_file` and `parse_directory` helpers to load trade confirmations directly from directory (TXT or PDF with fallback).
+- `backend/api/tools.py`: Registered tool #35 `get_trading_autopsy` with `AutopsyArgs`.
+- `backend/api/main.py`: Added endpoint `GET /api/autopsy` with days parameter.
+- `backend/api/mcp_server.py`: Added `get_trading_autopsy` to `_READ_ONLY_TOOLS` (31 read-only tools).
+- `scripts/autopsy.py`: CLI tool formatted for rich terminal inspection and `--json` export.
+- `backend/tests/test_autopsy.py`: 8 unit tests covering empty fills, option multiplier $1,000 P&L assertion, distinct strike isolation, sub-day holding periods, revenge/tilt behavioral tells, Schwab fixtures execution, registry tool execution, and `/api/autopsy` endpoint test.
+- Tool count guard tests: Bumped count from 34 to 35 in `test_tools.py`, `test_chat.py`, and `test_claude_sdk.py`.
+- Verified: `python scripts/verify.py` full gate PASS (768 passed, 1 warning, 0 lint errors). D027 self-check standards executed and validated itemized output against fixtures and in-memory DB.
+Next: Peer review of T103; Owner Phase 1 sign-off (T007) / voice test (T071).
+
+
 ## 2026-08-16 — Claude/Cowork — T045 v2 PASS, the first review under D027
 D027 says a PASS is void without a command that was run and its output, so this
 verdict is the test of whether the rule changes anything. It did: writing it

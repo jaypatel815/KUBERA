@@ -36,6 +36,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
+from pathlib import Path
 
 OPTION_MULTIPLIER = 100
 
@@ -240,3 +241,60 @@ def redact(text: str) -> str:
     out = re.sub(r"(?m)^\s*\d+\s+[A-Z][A-Z0-9 .#]{4,}$", "  [REDACTED ADDRESS]", out)
     out = re.sub(r"Schwab One® Account of.*", "Schwab One® Account of [REDACTED]", out)
     return out
+
+
+def parse_file(path: str | Path) -> ParseReport:
+    """Parse a single trade confirmation file (.txt or .pdf)."""
+    p = Path(path)
+    if not p.exists():
+        return ParseReport(
+            unparsed=[{"file": str(p), "why": "file does not exist"}],
+            files_read=0,
+        )
+
+    if p.suffix.lower() in {".txt", ".text"}:
+        text = p.read_text(encoding="utf-8", errors="replace")
+        return parse_confirmation(text, source_file=p.name)
+
+    if p.suffix.lower() == ".pdf":
+        try:
+            import pypdf
+            reader = pypdf.PdfReader(str(p))
+            text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            return parse_confirmation(text, source_file=p.name)
+        except ImportError:
+            try:
+                text = p.read_text(encoding="utf-8", errors="replace")
+                return parse_confirmation(text, source_file=p.name)
+            except Exception as e:
+                return ParseReport(
+                    unparsed=[{"file": p.name, "why": f"PDF extraction failed ({e})"}],
+                    files_read=1,
+                )
+        except Exception as e:
+            return ParseReport(
+                unparsed=[{"file": p.name, "why": f"PDF parse error ({e})"}],
+                files_read=1,
+            )
+
+    try:
+        text = p.read_text(encoding="utf-8", errors="replace")
+        return parse_confirmation(text, source_file=p.name)
+    except Exception as e:
+        return ParseReport(
+            unparsed=[{"file": p.name, "why": f"read error ({e})"}],
+            files_read=1,
+        )
+
+
+def parse_directory(dir_path: str | Path) -> ParseReport:
+    """Parse all trade confirmations (.txt and .pdf) in a directory."""
+    p = Path(dir_path)
+    if not p.exists() or not p.is_dir():
+        return ParseReport(files_read=0)
+
+    reports = []
+    for item in sorted(p.iterdir()):
+        if item.is_file() and item.suffix.lower() in {".txt", ".pdf"}:
+            reports.append(parse_file(item))
+    return merge(reports) if reports else ParseReport(files_read=0)

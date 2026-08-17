@@ -66,6 +66,7 @@ _READ_ONLY_TOOLS: frozenset[str] = frozenset({
     "get_regime",
     "get_risk_status",
     "get_symbol_briefing",
+    "get_trading_autopsy",
     "get_watchlist",
     "goal_math",
     "run_backtest",

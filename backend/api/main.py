@@ -924,3 +924,26 @@ def benchmark(
         "asof": bars.asof.isoformat(),
         "source": f"snapshots + {bars.source}",
     }
+
+
+@app.get("/api/autopsy")
+def autopsy(
+    days: int | None = None,
+    session=Depends(get_db_session),
+) -> dict:
+    """Run the trading autopsy diagnostic (T103, D026) over executed fills."""
+    try:
+        return registry.execute(
+            "get_trading_autopsy",
+            {"days": days},
+            ToolContext(db=session),
+        )
+    except ToolArgumentError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except OperationalError:
+        raise HTTPException(
+            status_code=503,
+            detail="database not initialized — run: alembic -c backend/alembic.ini upgrade head",
+        )
+    except ToolError as e:
+        raise HTTPException(status_code=500, detail=str(e))

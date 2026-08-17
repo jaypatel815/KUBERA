@@ -12,10 +12,10 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- In progress — T103 — Gemini/Antigravity (The trading autopsy: analysis/autopsy.py, api/main.py /api/autopsy, tool #35, scripts/autopsy.py, tests).
+(none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-(none)
+- AWAITING REVIEW — T103 (The trading autopsy: analysis/autopsy.py, api/main.py /api/autopsy, tool #35, scripts/autopsy.py, tests) — built by Gemini/Antigravity.
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
@@ -294,11 +294,8 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [x] T105 — Options in the import and the analysis (I020) — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini/Antigravity — PASS):
   `backend/data/schwab.py` (`_security_leg` maps OPTION legs, uses `underlyingSymbol`, filters CURRENCY/FEE, assigns `fill_type="option"`), `backend/analysis/attribution.py` (`HOLD_BUCKETS` sub-day splits: minutes [<1h], hours [1-6.5h], same_day [6.5-24h]; `contract_multiplier` helper), and 5 unit tests in `test_schwab.py` + `test_holding_periods.py`. Unblocks T103.
   REVIEW VERDICT: PASS. (a) 1h / 6.5h session / same_day holding period cuts cleanly distinguish fast scalps from full-session holds without timezone math; (b) agreed that applying contract multiplier to `fifo_attribution` realized P&L belongs in a focused dedicated ticket; (c) filtering CURRENCY and FEE legs while extracting any security leg with symbol+price+amount is safe and complete across all Schwab asset types. Gate PASS (758 passed).
-- [ ] T103 — The trading autopsy (D026, blocked on T016 + T102 reconciling): run the
-  existing battery over REAL fills — T091b holding periods vs stated style, T069 sizing
-  drift and post-loss tempo, T088 slippage by hour, T089 give-back, T060 TWR — and compose
-  one report. Little new analysis; the analysis was built first and has been waiting for
-  data worth reading. Every figure carries its sample count.
+- [ ] T103 — The trading autopsy (D026) — AWAITING REVIEW (Gemini/Antigravity):
+  `backend/analysis/autopsy.py` (TradingAutopsyReport: options vs equities, 0DTE share, FIFO round trips with 100x option contract multiplier and strike separation, sub-day holding period splits, T069 revenge sizing drift and tilt tempo detection, per-symbol breakdown, honest deterministic narrative with N); `backend/api/tools.py` (`get_trading_autopsy` tool #35); `backend/api/main.py` (`GET /api/autopsy`); `backend/api/mcp_server.py` (`get_trading_autopsy` exposed in `_READ_ONLY_TOOLS`); `scripts/autopsy.py` CLI; `backend/tests/test_autopsy.py` (8 unit tests).
 - [ ] T104 — Pre-trade pattern warnings (D026, last): before an action, flag when it
   resembles a setup that historically cost him, with n attached. Refuses to speak when the
   sample is too small — the T069 "insufficient" precedent. Never predictive.
