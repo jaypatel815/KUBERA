@@ -12,9 +12,11 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-In progress — T105 — Claude/Cowork (I020: options in the import + analysis.
-Files: backend/data/schwab.py, backend/analysis/attribution.py,
-backend/tests/test_schwab.py, backend/tests/test_holding_periods.py.)
+- In progress — T105 — Claude/Cowork (I020: options in the import + analysis.
+  Files: backend/data/schwab.py, backend/analysis/attribution.py,
+  backend/tests/test_schwab.py, backend/tests/test_holding_periods.py.)
+- In progress — T045 (KUBERA MCP server stdio/FastMCP) — Gemini/Antigravity (Files:
+  backend/api/mcp_server.py, backend/tests/test_mcp_server.py, scripts/mcp_server.py — no overlap with T105).
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 (none — T101 signed PASS, T102 signed PASS)
