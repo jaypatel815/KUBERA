@@ -12,10 +12,33 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-In progress — T106 — Claude/Cowork (MCP context lifecycle. Files:
-backend/api/mcp_server.py, backend/tests/test_mcp_server.py.)
+(none)
+In progress — T107 — Gemini/Antigravity (Base URLs and tunables into settings. Files:
+backend/settings.py, backend/api/llm.py, backend/data/market_data.py, backend/data/fred.py,
+backend/data/schwab.py, tests.)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T106 (MCP context lifecycle) — AWAITING REVIEW — Claude/Cowork** — Reviewer:
+  Gemini/Antigravity. Files: `backend/api/mcp_server.py` (close_tool_context +
+  managed_tool_context; handler wraps every call), `backend/tests/test_mcp_server.py`
+  (+4 lifecycle tests; one existing test rewritten — see below). Gate PASS 779;
+  pyrefly back to 1 (the known I023).
+  STRONGEST OBJECTION AGAINST MY OWN TICKET (D028): closing the DB session per
+  call means SQLAlchemy discards the identity map each time — if a future tool
+  BATCHES several registry calls expecting shared session state, this design
+  fights it. I ship anyway because no current tool does that, build-per-call is
+  the documented contract, and a stale shared Alpaca client is the worse bug.
+  Noted so the future ticket that batches knows to revisit.
+  Also in this diff: test_execute_with_custom_context previously passed ONLY
+  BECAUSE OF THE LEAK — its factory returned one shared context, dead after call
+  one once closing became real. Factory is now per-call, matching the real
+  default. And Gemini's test_install_mcp_config_merge no longer mutates sys.path
+  (which persisted for every later test) — importlib by path instead, which also
+  returns pyrefly to 1.
+  Review focus: (a) close order — db last, after the clients that may hold it;
+  (b) close_tool_context swallows close() errors by design — agree, or should
+  repeated failures escalate; (c) the objection above.
+(none)
 - **T103 (Trading Autopsy) v2 — REVIEWED BY Claude/Cowork — PASS.** Both blocks
   genuinely fixed; verified by re-running the same evidence that produced them.
     checked — RE-RAN ON THE OWNER'S 250 REAL FILLS (D027):
@@ -217,9 +240,12 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   without editing code. TWO STAY HARDCODED, each with a comment saying why:
   the Alpaca PAPER base URL (a safety rail — configurable means pointable at
   live money) and the option contract multiplier of 100 (fixed by the market).
-- [ ] T106 — MCP context lifecycle (T045 concern 1): build the ToolContext once per server
-  or close it in a finally. Today every tool call opens an Alpaca client, a market client, a
-  FRED client and a DB session and closes none of them.
+- [~] T106 — MCP context lifecycle — BUILT 2026-08-16 (Claude/Cowork, AWAITING REVIEW):
+  chose close-per-call over build-once — a shared client would serve stale sessions and
+  a shared DB session would grow unbounded; the leak was the missing close, not the
+  per-call build. managed_tool_context guarantees close on success AND exception paths;
+  close failures are logged, never raised. Leak proven by counting fakes: 5 calls =
+  15 opened / 0 closed before, 15/15 after.
 - [ ] T071 — Owner: voice acceptance run — `pip install -r requirements-voice.txt`, server up, `python scripts\talk.py`, hold a conversation. If faster-whisper wheels fail on Python 3.14 → `set KUBERA_STT=openai`. Report quirks to ISSUES.
 - [x] T069 — Adaptive risk-tolerance estimation — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `analysis/risk_tolerance.py` measures four things from real data — deepest drawdown actually lived through (flow-adjusted, so a deposit cannot fake resilience and a withdrawal cannot fake a loss), sizing drift after losses (the revenge tell), post-loss trade frequency (the tilt tell, with overlapping reaction windows merged so time is not double-counted), and cash buffer. Emits a PROPOSED daily-loss / per-trade / position budget with per-component evidence and sample sizes, hard-clamped to BANDS. Every component returns None rather than a plausible number when under-sampled, and confidence 'insufficient' proposes NO change. Registry tool #34 `estimate_risk_tolerance`. Nothing is auto-applied — the owner ratifies via update_ips; enforcement stays in /backend/risk.
@@ -332,8 +358,8 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [x] T105 — Options in the import and the analysis (I020) — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini/Antigravity — PASS):
   `backend/data/schwab.py` (`_security_leg` maps OPTION legs, uses `underlyingSymbol`, filters CURRENCY/FEE, assigns `fill_type="option"`), `backend/analysis/attribution.py` (`HOLD_BUCKETS` sub-day splits: minutes [<1h], hours [1-6.5h], same_day [6.5-24h]; `contract_multiplier` helper), and 5 unit tests in `test_schwab.py` + `test_holding_periods.py`. Unblocks T103.
   REVIEW VERDICT: PASS. (a) 1h / 6.5h session / same_day holding period cuts cleanly distinguish fast scalps from full-session holds without timezone math; (b) agreed that applying contract multiplier to `fifo_attribution` realized P&L belongs in a focused dedicated ticket; (c) filtering CURRENCY and FEE legs while extracting any security leg with symbol+price+amount is safe and complete across all Schwab asset types. Gate PASS (758 passed).
-- [ ] T103 — The trading autopsy (D026) — AWAITING REVIEW (Gemini/Antigravity):
-  `backend/analysis/autopsy.py` (TradingAutopsyReport: options vs equities, 0DTE share, FIFO round trips with 100x option contract multiplier and strike separation, sub-day holding period splits, T069 revenge sizing drift and tilt tempo detection, per-symbol breakdown, honest deterministic narrative with N); `backend/api/tools.py` (`get_trading_autopsy` tool #35); `backend/api/main.py` (`GET /api/autopsy`); `backend/api/mcp_server.py` (`get_trading_autopsy` exposed in `_READ_ONLY_TOOLS`); `scripts/autopsy.py` CLI; `backend/tests/test_autopsy.py` (8 unit tests).
+- [x] T103 — The trading autopsy (D026) — DONE 2026-08-16 (Gemini/Antigravity, REVIEWED 2026-08-16 by Claude/Cowork — PASS):
+  `backend/analysis/autopsy.py` (TradingAutopsyReport: options vs equities, 0DTE share, FIFO round trips with 100x option contract multiplier and strike separation, sub-day holding period splits, honest unrecorded intraday duration handling for confirmations, T069 revenge sizing drift and tilt tempo detection strictly segregated within asset classes, per-symbol breakdown, honest deterministic narrative with N); `backend/api/tools.py` (`get_trading_autopsy` tool #35); `backend/api/main.py` (`GET /api/autopsy`); `backend/api/mcp_server.py` (`get_trading_autopsy` exposed in `_READ_ONLY_TOOLS`); `scripts/autopsy.py` CLI; `backend/tests/test_autopsy.py` (8 unit tests).
 - [ ] T104 — Pre-trade pattern warnings (D026, last): before an action, flag when it
   resembles a setup that historically cost him, with n attached. Refuses to speak when the
   sample is too small — the T069 "insufficient" precedent. Never predictive.

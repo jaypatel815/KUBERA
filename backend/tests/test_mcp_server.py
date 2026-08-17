@@ -160,13 +160,20 @@ def test_execute_goal_math_pure():
 
 def test_execute_with_custom_context(memory_db):
     async def run():
-        fake_ctx = ToolContext(
-            alpaca=alpaca_fake(),
-            market=market_fake(),
-            db=memory_db,
-            confirmed=False,  # confirmed=False — read-only tools do not need it (I021)
-        )
-        server = build_mcp_server(ctx_factory=lambda: fake_ctx)
+        # T106 made the lifecycle honest: the server CLOSES the context after
+        # every call. A factory returning one shared instance therefore hands a
+        # dead client to the second call — this test used to do exactly that,
+        # and only passed because the old handler leaked instead of closing.
+        # The factory contract is now what the real default already did: a
+        # FRESH context per call, owned (and closed) by the callee.
+        def fresh_ctx() -> ToolContext:
+            return ToolContext(
+                alpaca=alpaca_fake(),
+                market=market_fake(),
+                db=memory_db,
+                confirmed=False,  # read-only tools do not need it (I021)
+            )
+        server = build_mcp_server(ctx_factory=fresh_ctx)
 
         # Test get_latest
         latest_res = await server.call_tool("get_latest", {"symbol": "AAPL"})
@@ -212,13 +219,22 @@ def test_make_default_tool_context_has_confirmed_false(memory_db):
 
 
 def test_install_mcp_config_merge():
-    """T045b: merge() preserves other servers and config keys without mutating input."""
-    import sys
+    """T045b: merge() preserves other servers and config keys without mutating input.
+
+    Imported by PATH rather than by mutating sys.path: the old version inserted
+    scripts/ into sys.path and left it there for every test that ran after it,
+    and the bare `from install_mcp_config import ...` was also a permanent
+    pyrefly missing-import. The fuller suite lives in test_install_mcp_config.py;
+    this stays as a smoke check.
+    """
+    import importlib.util
     from pathlib import Path
-    scripts_dir = str(Path(__file__).resolve().parents[2] / "scripts")
-    if scripts_dir not in sys.path:
-        sys.path.insert(0, scripts_dir)
-    from install_mcp_config import merge
+
+    script = Path(__file__).resolve().parents[2] / "scripts" / "install_mcp_config.py"
+    spec = importlib.util.spec_from_file_location("install_mcp_config_t045b", script)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    merge = mod.merge
 
     existing = {
         "mcpServers": {
@@ -232,3 +248,80 @@ def test_install_mcp_config_merge():
     assert res["mcpServers"]["other_server"] == {"command": "node", "args": ["index.js"]}
     assert res["mcpServers"]["kubera"] == entry
     assert "kubera" not in existing["mcpServers"]  # pure function, no mutation
+
+
+# --- T106: the lifecycle itself -----------------------------------------------
+
+
+class _CountingResource:
+    """A close-tracking stand-in for any client the context owns."""
+
+    def __init__(self, ledger: dict):
+        self.ledger = ledger
+        ledger["opened"] += 1
+
+    def close(self):
+        self.ledger["closed"] += 1
+
+
+def test_every_tool_call_closes_what_it_opened(memory_db):
+    """THE LEAK, proven fixed by counting. Before T106, five calls from a
+    Claude Desktop session meant five Alpaca clients, five market clients and
+    five DB sessions left open — the counts below read opened=15, closed=0."""
+    from api.mcp_server import managed_tool_context
+
+    ledger = {"opened": 0, "closed": 0}
+
+    def factory() -> ToolContext:
+        return ToolContext(
+            alpaca=_CountingResource(ledger),
+            market=_CountingResource(ledger),
+            db=_CountingResource(ledger),
+            confirmed=False,
+        )
+
+    for _ in range(5):
+        with managed_tool_context(factory):
+            pass
+
+    assert ledger["opened"] == 15
+    assert ledger["closed"] == 15          # was 0 before the fix
+
+
+def test_context_is_closed_even_when_the_tool_raises():
+    """The exception path is where leaks hide: an error mid-tool must still
+    release the clients, or every failed call costs sockets forever."""
+    from api.mcp_server import managed_tool_context
+
+    ledger = {"opened": 0, "closed": 0}
+
+    def factory() -> ToolContext:
+        return ToolContext(alpaca=_CountingResource(ledger), confirmed=False)
+
+    with pytest.raises(RuntimeError, match="boom"):
+        with managed_tool_context(factory):
+            raise RuntimeError("boom")
+
+    assert ledger["closed"] == 1
+
+
+def test_a_failing_close_is_logged_never_raised():
+    """close() blowing up must not mask the tool's real result (or its real
+    exception) — the close error is secondary by definition."""
+    from api.mcp_server import close_tool_context
+
+    class ExplodingClose:
+        def close(self):
+            raise OSError("socket already gone")
+
+    ctx = ToolContext(alpaca=ExplodingClose(), confirmed=False)
+    close_tool_context(ctx)                # must not raise
+
+
+def test_resources_without_close_are_tolerated():
+    """A context may legitimately carry None or a bare object (tests do it
+    constantly); the closer must skip them rather than crash."""
+    from api.mcp_server import close_tool_context
+
+    close_tool_context(ToolContext(confirmed=False))                 # all None
+    close_tool_context(ToolContext(alpaca=object(), confirmed=False))  # no close()

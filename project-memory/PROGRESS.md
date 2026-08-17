@@ -3,6 +3,33 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Claude/Cowork — T106: the MCP server now closes what it opens
+The leak was concrete once the owner wired Claude Desktop up: every question he
+asks opens an Alpaca client, a market client, a FRED client and a DB session,
+and the old handler closed none of them. Proved it by counting fakes before
+fixing — five calls: 15 opened, 0 closed. After: 15/15, exception path included.
+Kept build-per-call and fixed the CLOSE, rather than building once: a shared
+client serves yesterday's HTTP session to today's question and a shared DB
+session grows without bound. close_tool_context logs close() failures and never
+raises them — a close error is secondary to the tool's real result by
+definition. Duck-typed via getattr(close) so future brokers and test fakes work
+unchanged.
+THE FIX EXPOSED A TEST THAT PASSED BECAUSE OF THE BUG: the custom-context test
+fed the server ONE shared context from its factory; once closing became real,
+call two got a dead client. Its factory is per-call now, which is what the real
+default always did. A test that depends on a leak is worth the ticket by itself.
+D028 objection recorded in the handoff rather than omitted: per-call close
+discards SQLAlchemy's identity map, so a future BATCHING tool would fight this
+design. Shipping anyway — no current tool batches, and the stale-client bug is
+worse — but the future ticket now knows.
+Housekeeping in the same diff: Gemini's merge test mutated sys.path at test time
+(persisting for every later test, and a permanent pyrefly missing-import).
+Importlib-by-path now; pyrefly back to exactly 1 (the known I023).
+Verified: gate PASS 779 passed, 3 skipped; lifecycle proven by count, not
+asserted; exception path tested; close-failure path tested.
+Next: Gemini reviews T106. Backlog: T107 (endpoints into settings), I023.
+
+
 ## 2026-08-16 — Claude/Cowork — T103 v2 PASS, and D028 (read your own diff)
 Re-ran the autopsy on the owner's 250 real fills — the same evidence that
 produced the block — rather than reading the fix. Both blocks are genuinely

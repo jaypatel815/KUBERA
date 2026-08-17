@@ -28,7 +28,8 @@ from __future__ import annotations
 
 import inspect
 import logging
-from typing import Any, Callable
+from contextlib import contextmanager
+from typing import Any, Callable, Iterator
 
 from api.tools import ToolContext, ToolError, registry
 from settings import KuberaSettings, get_settings
@@ -115,6 +116,42 @@ def make_default_tool_context(
     )
 
 
+def close_tool_context(ctx: ToolContext) -> None:
+    """Close every resource a context owns. Failures are logged, never raised —
+    a close() error must not mask the tool's real result or exception (T106).
+
+    Uses getattr rather than isinstance so it works for any client that follows
+    the close() convention, including test fakes and future brokers.
+    """
+    for name in ("alpaca", "market", "fred", "db"):
+        resource = getattr(ctx, name, None)
+        close = getattr(resource, "close", None)
+        if callable(close):
+            try:
+                close()
+            except Exception:                      # noqa: BLE001 — log and continue
+                log.warning("close() failed for ToolContext.%s", name, exc_info=True)
+
+
+@contextmanager
+def managed_tool_context(
+    factory: Callable[[], ToolContext] | None = None,
+) -> Iterator[ToolContext]:
+    """The per-call lifecycle (T106): build, yield, ALWAYS close.
+
+    Before this existed, every MCP tool call from a long-lived Claude Desktop
+    session opened an Alpaca client, a market-data client, a FRED client and a
+    DB session and closed none of them — a socket and file-handle leak that grew
+    with every question the owner asked. The context manager makes the close
+    unconditional, including on the exception path.
+    """
+    ctx = (factory or make_default_tool_context)()
+    try:
+        yield ctx
+    finally:
+        close_tool_context(ctx)
+
+
 def build_mcp_server(
     ctx_factory: Callable[[], ToolContext] | None = None,
     name: str = "kubera",
@@ -181,14 +218,18 @@ def build_mcp_server(
 
         def _make_handler(t_name: str) -> Callable[..., dict]:
             def handler(**kwargs: Any) -> dict:
-                ctx = get_ctx()
-                try:
-                    return registry.execute(t_name, kwargs, ctx)
-                except ToolError as e:
-                    raise MCPToolError(str(e)) from e
-                except Exception as e:
-                    log.exception("Unexpected error executing MCP tool %s", t_name)
-                    raise MCPToolError(f"Internal error executing '{t_name}': {e}") from e
+                # T106: build-per-call is deliberate (a stale shared client would
+                # serve yesterday's session to today's question) but it only
+                # works if every call CLOSES what it opened — which this now
+                # guarantees, on the success and exception paths alike.
+                with managed_tool_context(get_ctx) as ctx:
+                    try:
+                        return registry.execute(t_name, kwargs, ctx)
+                    except ToolError as e:
+                        raise MCPToolError(str(e)) from e
+                    except Exception as e:
+                        log.exception("Unexpected error executing MCP tool %s", t_name)
+                        raise MCPToolError(f"Internal error executing '{t_name}': {e}") from e
 
             return handler
 
