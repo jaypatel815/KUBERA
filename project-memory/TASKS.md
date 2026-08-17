@@ -36,6 +36,53 @@ currently RED — see I018, which needs the failing log.)
       is a module-level frozenset (the test imports it to verify). Context lifecycle leak
       (non-blocking concern #1) deferred — requires a lifespan hook; filed for a later ticket.
 
+  RE-REVIEWED 2026-08-16 by Claude/Cowork — PASS (first verdict under D027)
+    aligned: yes — KUBERA over MCP turns Claude Desktop and Antigravity into
+      frontends without waiting for the PWA (D011), and generating the tools from
+      the ONE registry is the right shape: a second hand-written surface would
+      drift from the first.
+    checked — COMMANDS RUN AND WHAT CAME BACK (D027 requires this, not a read):
+      1. SAFETY RAIL, attempted the thing it forbids. Built the default server,
+         listed tools, then called update_ips with max_drawdown_frac=0.99:
+           update_ips exposed by default: False
+           ToolError: Unknown tool: update_ips
+           IPS row after the attempt: None
+         Same call succeeded before the fix (I021), so the rail is real, not
+         decorative.
+      2. THE OPT-IN, and it is STRONGER than the fix I asked for. I suggested
+         gated tools behind an explicit flag; Gemini excluded update_ips
+         UNCONDITIONALLY — allow_mutations=True still yields 33 tools with
+         update_ips absent — on the reasoning that MCP structurally cannot carry
+         an out-of-band confirmation. That is the better reading of the rail and
+         I am recording that it improved on the instruction.
+      3. EXECUTED A TOOL END TO END against an in-memory DB, not just listed it:
+           goal_math schema required: ['start','target']
+           -> {"scenarios": {"start": 1000.0, "target": 1000000.0, "required_cagr_...
+         Default surface is 30 of 34 tools (4 mutators withheld).
+      4. CLEAN CHECKOUT for the dependency — tracked files only, no optional
+         deps, the exact shape that broke three times (I016/I018/I022):
+           VERIFY: PASS.  The importorskip guard holds and the mcp pin
+           (>=1.29,<2, with the 2.x-dropped-fastmcp reason inline) is correct;
+           I confirmed separately that 2.0.0 has no mcp.server.fastmcp.
+      5. Re-ran the I021 exploit verbatim. It no longer reproduces.
+    concerns:
+      1. CARRIED FORWARD, unfixed and still non-blocking: `ctx = get_ctx()` is
+         still inside the per-call handler (line 183) with no finally/close, so
+         every tool call builds a fresh Alpaca client, market client, FRED client
+         and DB session and never closes them. Fine for short sessions; a long
+         Claude Desktop connection will accumulate sockets. Worth its own ticket
+         rather than a rushed fix here.
+      2. I023 IS UNRESOLVED. pyrefly reports 1 error
+         (mcp_server.py — `fn.__signature__` on a FunctionType) while
+         pyrefly.toml still says "KNOWN REMAINING ERRORS — 0" and instructs the
+         reader to investigate new ones immediately. The code is legal and works;
+         the problem is that the config now states something false, which is how
+         the 138-error state began. Not blocking the ticket — but the comment
+         must be corrected or the error expressed before the next config change.
+    what I could NOT verify from here: the server has never spoken real MCP over
+      stdio to a real client. Everything above drives FastMCP in-process. The
+      Claude Desktop handshake is the owner's acceptance step (T045b).
+
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
 same time and review each other:
@@ -189,6 +236,14 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   `CorrelationMatch` TypedDict in `backend/analysis/correlation.py`; narrowed `pcts` list comprehension in `backend/analysis/ranking.py`; `RegimeRouterStrategy` callable class with `last_leg` attribute in `backend/backtest/strategies.py`; non-None assertion on `s.fred_api_key` in `backend/data/fred.py`. Updated `pyrefly.toml` to 0 remaining known errors. Gate PASS (743 passed).
 - [x] T100 — Honor `LLM_TIMEOUT_SECONDS` in the claude-sdk provider (I017) — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `backend/api/llm_claude_sdk.py` (wrapped query stream in `asyncio.wait_for(timeout=self.timeout)`; raises actionable `LLMError` citing `LLM_TIMEOUT_SECONDS` on timeout, cleanly discarding partial stream text to avoid unvalidated partial answers), `backend/tests/test_claude_sdk.py` (3 tests). Gate PASS (731 passed).
+- [ ] T045b — Owner: MCP acceptance run. `pip install -r backend\requirements.txt`, add the
+  block from scripts/mcp_server.py's docstring to claude_desktop_config.json, restart Claude
+  Desktop, and ask it something that needs a tool ("what does my portfolio look like?").
+  Nothing in the review could test the real stdio handshake — every check drove FastMCP
+  in-process. This is the step that proves it actually speaks MCP.
+- [ ] T106 — MCP context lifecycle (T045 concern 1): build the ToolContext once per server
+  or close it in a finally. Today every tool call opens an Alpaca client, a market client, a
+  FRED client and a DB session and closes none of them.
 - [ ] T071 — Owner: voice acceptance run — `pip install -r requirements-voice.txt`, server up, `python scripts\talk.py`, hold a conversation. If faster-whisper wheels fail on Python 3.14 → `set KUBERA_STT=openai`. Report quirks to ISSUES.
 - [x] T069 — Adaptive risk-tolerance estimation — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `analysis/risk_tolerance.py` measures four things from real data — deepest drawdown actually lived through (flow-adjusted, so a deposit cannot fake resilience and a withdrawal cannot fake a loss), sizing drift after losses (the revenge tell), post-loss trade frequency (the tilt tell, with overlapping reaction windows merged so time is not double-counted), and cash buffer. Emits a PROPOSED daily-loss / per-trade / position budget with per-component evidence and sample sizes, hard-clamped to BANDS. Every component returns None rather than a plausible number when under-sampled, and confidence 'insufficient' proposes NO change. Registry tool #34 `estimate_risk_tolerance`. Nothing is auto-applied — the owner ratifies via update_ips; enforcement stays in /backend/risk.
