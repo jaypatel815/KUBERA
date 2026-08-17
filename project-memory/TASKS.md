@@ -12,6 +12,7 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
+- **T091b-rest (weekly attribution + EOD regime line + cost decomposition) — Claude/Cowork** — claimed 2026-08-17.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T077b (expected-move v2: seeded block bootstrap + loop wiring — D017) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
