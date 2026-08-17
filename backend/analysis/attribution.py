@@ -45,13 +45,30 @@ def _bucket_key(tag: str | None) -> str:
 # practice. Buckets are calendar days between the ENTRY fill and the exit fill
 # that consumed it (FIFO), so a partially-sold lot contributes one record per
 # consumed slice — which is correct: each slice really was held that long.
+# I020/T105 — the sub-day buckets exist because "intraday" was hiding the owner's
+# actual behaviour. His real record is 147 option fills out of 250, and 91 of
+# those expire the SAME DAY they were opened. Lumping a 20-minute 0DTE scalp and
+# a 7-hour swing into one "intraday" bucket answers the wrong question: for this
+# account the interesting split is BELOW a day, not above it.
 HOLD_BUCKETS = (
-    ("intraday", 0.0, 1.0),
+    ("minutes", 0.0, 1.0 / 24.0),          # under an hour
+    ("hours", 1.0 / 24.0, 6.5 / 24.0),     # under one trading session
+    ("same_day", 6.5 / 24.0, 1.0),         # opened and closed, but held the session
     ("1-3d", 1.0, 4.0),
     ("1-2wk", 4.0, 15.0),
     ("2wk-1mo", 15.0, 31.0),
     ("over_1mo", 31.0, float("inf")),
 )
+
+# One option contract controls 100 shares. A fill counted as one share
+# understates the position by two orders of magnitude, and 59% of this owner's
+# fills are options — so this is not a rounding concern (I020).
+OPTION_MULTIPLIER = 100
+
+
+def contract_multiplier(fill_type: str | None) -> int:
+    """100 for an option fill, 1 otherwise. Keyed off the importer's fill_type."""
+    return OPTION_MULTIPLIER if (fill_type or "").lower() == "option" else 1
 
 
 def _held_days(entry_ts: str | None, exit_ts: str) -> float | None:

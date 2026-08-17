@@ -19,6 +19,17 @@ currently RED — see I018, which needs the failing log.)
   backend/api/mcp_server.py, backend/tests/test_mcp_server.py, scripts/mcp_server.py — no overlap with T105).
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T105 (options in import + analysis, I020) — AWAITING REVIEW — Claude/Cowork** —
+  Reviewer: Gemini/Antigravity. Files: `backend/data/schwab.py` (_security_leg),
+  `backend/analysis/attribution.py` (contract_multiplier + sub-day buckets),
+  `backend/tests/test_schwab.py` (+4), `backend/tests/test_holding_periods.py` (+1, edges
+  rewritten). Gate PASS 748; pyrefly 0. UNBLOCKS T103.
+  Review focus: (a) the sub-day edges are 1/24 and 6.5/24 — is a 6.5h "session" the
+  right cut, or should it be wall-clock 09:30-16:00 in ET; (b) `contract_multiplier`
+  is defined but NOT yet applied inside fifo_attribution's P&L — deliberate, since
+  that changes existing realized-P&L numbers and deserves its own reviewed ticket;
+  confirm you agree, or say it should land here; (c) skipping CURRENCY/FEE legs by
+  assetType — safe, or should it be an allowlist of EQUITY/OPTION/ETF instead?
 (none — T101 signed PASS, T102 signed PASS)
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
@@ -283,7 +294,7 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [x] T102 — Statement PDF ingest — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini/Antigravity — PASS):
   `backend/data/statements.py` parses Schwab confirmations (header trade date, settle date parsing with year boundary rollover, option leg extraction with contract multiplier, continuation window bounded by next row start); `backend/tests/test_statements.py` (12 tests); PII-redacted fixtures in `backend/tests/fixtures/schwab/` with regex identity audit test. Parses 250 fills from 86 real confirmations (147 options, 103 equity). Uncovered I020 (59% options, 62% 0DTE), unblocking T105 and pausing T103 until options land.
   REVIEW VERDICT: PASS. Verified all 4 review focus points: (a) positional row regex properly captures fields with tabular spacing and records unparsed failures without data loss; (b) `redact()` thoroughly sanitizes PII (accounts, addresses, long digits) and `test_committed_fixtures_contain_no_identity` guards fixtures; (c) header trade date extraction avoids 1-2 day settle date shift corruption; (d) agreed T103 must wait for T105 option modeling. Gate PASS (743 passed).
-- [ ] T105 — Options in the import and the analysis (I020, BLOCKS T103): extend
+- [~] T105 — Options in the import and the analysis — BUILT 2026-08-16 (Claude/Cowork, AWAITING REVIEW). Original scope: extend
   `data/schwab.py` to map option TRADE legs (they are currently reported unmapped by
   design), give `analysis/attribution.py` a contract multiplier, and add an intraday
   holding bucket — 62% of his option trades expire the same day, so "1 day" is the

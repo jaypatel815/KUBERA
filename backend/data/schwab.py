@@ -296,13 +296,13 @@ def map_transactions(rows: list[dict]) -> ImportReport:
             continue
 
         if kind == "TRADE":
-            leg = _equity_leg(row)
+            leg = _security_leg(row)
             if leg is None:
                 report.unmapped.append(
-                    {"id": activity_id, "why": "TRADE with no priced equity leg "
-                                               "(option, multi-leg, or corporate action)"})
+                    {"id": activity_id, "why": "TRADE with no priced security leg "
+                                               "(multi-leg spread or corporate action)"})
                 continue
-            qty, price, symbol = leg
+            qty, price, symbol, asset_type = leg
             report.fills.append(Fill(
                 external_id=activity_id,
                 symbol=symbol,
@@ -311,7 +311,10 @@ def map_transactions(rows: list[dict]) -> ImportReport:
                 price=price,
                 occurred_at=occurred,
                 order_id=str(row.get("orderId") or ""),
-                fill_type="fill",
+                # An option fill is per CONTRACT. Recording the type here is what
+                # lets attribution apply the 100x multiplier instead of treating
+                # one contract as one share (I020).
+                fill_type="option" if asset_type == "option" else "fill",
                 asof=now,
                 source=SOURCE,
             ))
@@ -335,22 +338,38 @@ def map_transactions(rows: list[dict]) -> ImportReport:
     return report
 
 
-def _equity_leg(row: dict) -> tuple[float, float, str] | None:
-    """Find the (qty, price, symbol) leg of a TRADE.
+OPTION_MULTIPLIER = 100
+
+
+def _security_leg(row: dict) -> tuple[float, float, str, str] | None:
+    """Find the (qty, price, symbol, asset_type) leg of a TRADE.
 
     A Schwab TRADE carries several transferItems — the security, the cash side,
     and sometimes fees. Only the one with a symbol AND a price is the fill.
+
+    I020 — WHY THIS IS NO LONGER EQUITY-ONLY. The first version accepted the
+    priced symbol leg and reported everything else as "no priced equity leg",
+    which classified options as unmapped BY DESIGN. That was defensible while we
+    believed this was an equity account. Parsing the owner's real confirmations
+    (T102) showed 147 of 250 fills are options and 62% of those are 0DTE — so the
+    original mapper would have silently discarded the majority of his trading and
+    every behavioural conclusion would have described the leftover 41%.
     """
     for item in row.get("transferItems") or []:
         instrument = item.get("instrument") or {}
-        symbol = instrument.get("symbol")
+        symbol = instrument.get("symbol") or instrument.get("underlyingSymbol")
         price = item.get("price")
         amount = item.get("amount")
-        if symbol and price is not None and amount is not None:
-            try:
-                return float(amount), float(price), str(symbol).upper()
-            except (TypeError, ValueError):
-                return None
+        if not (symbol and price is not None and amount is not None):
+            continue
+        asset = str(instrument.get("assetType") or "").upper()
+        if asset in {"CURRENCY", "FEE"}:      # never the fill, even if priced
+            continue
+        kind = "option" if asset == "OPTION" else "equity"
+        try:
+            return float(amount), float(price), str(symbol).upper(), kind
+        except (TypeError, ValueError):
+            return None
     return None
 
 

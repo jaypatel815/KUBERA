@@ -4,7 +4,7 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
-- I020 [OPEN — the Schwab API import would DROP most of the owner's trading] (2026-08-16)
+- I020 [FIXED 2026-08-16 in T105] the Schwab API import would have DROPPED most of the owner's trading
   FOUND by parsing his real confirmations (T102). His book is not what T016a
   assumed. Measured over 86 confirmations, Jan-Jun 2026:
     250 fills total — 147 OPTIONS (59%), 103 equity
@@ -27,10 +27,16 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   multiplier, T091b holding periods are measured in DAYS when 62% of his option
   trades live for HOURS, and T069's sizing drift compares notionals that would be
   100x wrong if a contract were counted as a share.
-  NEXT: T105 — extend the API mapper to options and give the analysis layer a
-  contract multiplier and an intraday holding bucket. Do NOT run T103 (the
-  autopsy) until this lands; its conclusions would be drawn from the 41% of his
-  trading that happens to be equities.
+  FIXED IN T105: `_equity_leg` became `_security_leg` — it accepts an OPTION
+  transferItem, falls back to `underlyingSymbol` when the OCC symbol is absent,
+  and explicitly skips CURRENCY and FEE legs (both of which can carry a price and
+  would otherwise be mistaken for the fill). Option fills are marked
+  `fill_type="option"`, which is what lets attribution apply the multiplier.
+  Analysis side: `contract_multiplier()` returns 100 for an option fill, and the
+  single "intraday" bucket became minutes / hours / same_day. That split is the
+  point — with 62% of his option trades expiring the same day, a 20-minute scalp
+  and a 7-hour hold were being reported as the same behaviour.
+  T103 is unblocked once T105 is reviewed.
 - I019 [SCHWAB-SIDE, CONFIRMED — waiting on Schwab review] (2026-08-16)
   SYMPTOM: `python scripts/schwab_auth.py` opens the browser fine, the owner logs
   in and accepts the terms, and Schwab then LOGS HIM OUT with "We are unable to

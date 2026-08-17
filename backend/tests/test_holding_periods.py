@@ -1,7 +1,15 @@
 """T091b holding-period distribution — hand-computed from fixed timestamps.
 
 Hand cases:
-- buy 2026-01-05T14:00Z, sell 2026-01-05T20:00Z -> 6h = 0.25 days -> "intraday"
+- buy 2026-01-05T14:00Z, sell 2026-01-05T20:00Z -> 6h = 0.25 days -> "hours"
+
+T105/I020 split the old single "intraday" bucket into minutes / hours /
+same_day. The owner's real record is 91 same-day option expiries out of 147
+option fills, so for this account the informative split is BELOW a day: a
+20-minute 0DTE scalp and a 7-hour hold are different behaviours, and the old
+bucket called them the same thing.
+Sub-day edges, hand-computed: 1/24 = 0.041666 (one hour),
+6.5/24 = 0.270833 (one trading session).
 - buy 2026-01-05, sell 2026-01-07                -> 2.0 days      -> "1-3d"
 - buy 2026-01-05, sell 2026-01-15                -> 10.0 days     -> "1-2wk"
 - buy 2026-01-05, sell 2026-03-05                -> 59.0 days     -> "over_1mo"
@@ -29,7 +37,9 @@ def sell(ts, qty=10, price=110.0):
 # --- bucket edges -------------------------------------------------------------
 
 @pytest.mark.parametrize("days,expected", [
-    (0.0, "intraday"), (0.25, "intraday"), (0.999, "intraday"),
+    (0.0, "minutes"), (0.04, "minutes"),          # under 1/24 = 0.041666
+    (1 / 24, "hours"), (0.25, "hours"),           # 0.25 d = 6h, inside the session
+    (6.5 / 24, "same_day"), (0.999, "same_day"),  # past a session, still same day
     (1.0, "1-3d"), (3.9, "1-3d"),
     (4.0, "1-2wk"), (14.9, "1-2wk"),
     (15.0, "2wk-1mo"), (30.9, "2wk-1mo"),
@@ -43,12 +53,22 @@ def test_bucket_boundaries_are_half_open(days, expected):
 # --- end-to-end through the FIFO engine --------------------------------------
 
 def test_intraday_round_trip_measured_in_hours():
+    """6 hours is 0.25 days — inside a session, so "hours", not "same_day"."""
     r = fifo_attribution([buy("2026-01-05T14:00:00Z"), sell("2026-01-05T20:00:00Z")])
     hp = r.holding_periods
-    assert hp["by_bucket"]["intraday"]["round_trips"] == 1
+    assert hp["by_bucket"]["hours"]["round_trips"] == 1
     assert hp["median_days"] == pytest.approx(0.25)
-    assert hp["by_bucket"]["intraday"]["win_rate"] == 1.0   # 100 -> 110
+    assert hp["by_bucket"]["hours"]["win_rate"] == 1.0   # 100 -> 110
     assert hp["n_undated_round_trips"] == 0
+
+
+def test_a_scalp_and_a_session_hold_are_no_longer_the_same_bucket():
+    """The reason T105 split the bucket: these are different behaviours, and the
+    old single 'intraday' label reported them identically."""
+    scalp = fifo_attribution([buy("2026-01-05T14:00:00Z"), sell("2026-01-05T14:20:00Z")])
+    held = fifo_attribution([buy("2026-01-05T09:30:00Z"), sell("2026-01-05T19:00:00Z")])
+    assert "minutes" in scalp.holding_periods["by_bucket"]
+    assert "same_day" in held.holding_periods["by_bucket"]
 
 
 def test_multi_day_hold_lands_in_the_right_bucket():
@@ -64,7 +84,7 @@ def test_distribution_across_buckets_with_median():
         buy("2026-03-01T00:00:00Z"), sell("2026-03-11T00:00:00Z"),   # 10d
     ]
     hp = fifo_attribution(fills).holding_periods
-    assert set(hp["by_bucket"]) == {"intraday", "1-3d", "1-2wk"}
+    assert set(hp["by_bucket"]) == {"hours", "1-3d", "1-2wk"}   # 0.25d = 6h
     assert hp["n_dated_round_trips"] == 3
     assert hp["median_days"] == pytest.approx(2.0)      # middle of 0.25, 2, 10
     assert hp["shortest_days"] == pytest.approx(0.25)

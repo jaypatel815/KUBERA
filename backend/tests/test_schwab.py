@@ -274,7 +274,7 @@ def test_unmappable_rows_are_reported_never_dropped():
     assert report.fills == [] and report.cash == []
     assert len(report.unmapped) == 4
     whys = " ".join(u["why"] for u in report.unmapped)
-    assert "no priced equity leg" in whys
+    assert "no priced security leg" in whys
     assert "unhandled type" in whys
     assert "not VALID" in whys
     assert "no activityId" in whys
@@ -365,3 +365,73 @@ def test_write_env_appends_when_the_key_is_absent(tmp_path, monkeypatch):
     monkeypatch.setattr(m, "ROOT", tmp_path)
     m.write_env("fresh")
     assert "SCHWAB_REFRESH_TOKEN=fresh" in env.read_text(encoding="utf-8")
+
+
+# --- T105 / I020: options are the majority of this account -------------------
+
+OPTION_ROW = {
+    "activityId": 5001,
+    "type": "TRADE",
+    "status": "VALID",
+    "time": "2026-03-13T14:31:00+0000",
+    "orderId": "ORD-OPT",
+    "transferItems": [
+        {"instrument": {"assetType": "CURRENCY"}, "amount": -89.0},
+        {"instrument": {"symbol": "NVDA  260313P00180000", "assetType": "OPTION",
+                        "underlyingSymbol": "NVDA", "putCall": "PUT",
+                        "strikePrice": 180.0, "expirationDate": "2026-03-13"},
+         "amount": 8, "price": 0.89},
+        {"instrument": {"assetType": "FEE"}, "amount": -0.01, "feeType": "OCC"},
+    ],
+}
+
+
+def test_option_trades_map_instead_of_being_discarded():
+    """I020: the first mapper reported options as unmapped BY DESIGN.
+
+    The owner's real confirmations are 147 option fills out of 250, and 62% of
+    those are 0DTE. Discarding them would have left every behavioural conclusion
+    describing the leftover 41% of his trading.
+    """
+    report = map_transactions([OPTION_ROW])
+    assert report.unmapped == []
+    assert len(report.fills) == 1
+    f = report.fills[0]
+    assert f.side == "buy" and f.qty == 8 and f.price == 0.89
+    assert f.fill_type == "option"          # what tells attribution to apply 100x
+
+
+def test_option_fill_is_marked_so_the_multiplier_can_be_applied():
+    """One contract at $0.89 is $89 of exposure. Counting it as one share
+    understates the position by 100x — across 147 fills."""
+    f = map_transactions([OPTION_ROW]).fills[0]
+    equity = map_transactions([TRADE_ROW]).fills[0]
+    assert f.fill_type == "option"
+    assert equity.fill_type == "fill"
+
+
+def test_cash_and_fee_legs_are_never_mistaken_for_the_fill():
+    """Both legs precede the security leg in this payload; a naive 'first priced
+    item' rule would pick the wrong one."""
+    row = {
+        **OPTION_ROW, "activityId": 5002,
+        "transferItems": [
+            {"instrument": {"assetType": "CURRENCY"}, "amount": -89.0, "price": 1.0},
+            {"instrument": {"assetType": "FEE"}, "amount": -0.01, "price": 0.01},
+            {"instrument": {"symbol": "SPY", "assetType": "OPTION"},
+             "amount": 1, "price": 7.15},
+        ],
+    }
+    f = map_transactions([row]).fills[0]
+    assert f.symbol == "SPY" and f.price == 7.15
+
+
+def test_underlying_symbol_is_used_when_the_occ_symbol_is_absent():
+    row = {
+        **OPTION_ROW, "activityId": 5003,
+        "transferItems": [
+            {"instrument": {"assetType": "OPTION", "underlyingSymbol": "AMD"},
+             "amount": 2, "price": 1.25},
+        ],
+    }
+    assert map_transactions([row]).fills[0].symbol == "AMD"
