@@ -3,6 +3,15 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Gemini/Antigravity — T101: expressible typing for last 6 pyrefly errors (AWAITING REVIEW)
+Built T101 to eliminate all 6 known tolerated type-checking false positives:
+- `backend/analysis/correlation.py`: Defined `CorrelationMatch(TypedDict)` with fields `with: str` and `corr: float`; typed `candidate_max` and `best` as `CorrelationMatch | None`.
+- `backend/analysis/ranking.py`: Expressed `pcts` list comprehension with walrus operator `(val := per_window[w][s]) is not None` and explicit `list[float]` typing to allow type narrowing without manual iteration.
+- `backend/backtest/strategies.py`: Refactored `make_regime_router` to use `RegimeRouterStrategy` callable class with explicit `last_leg: str | None` attribute, cleanly supporting T091 attribution introspection while preserving call semantics and `__name__`.
+- `backend/data/fred.py`: Added type-narrowing `assert s.fred_api_key is not None` in `FredClient.__init__`, aligning with `data/schwab.py` pattern and expressing `require_fred()` non-None guarantee.
+- `pyrefly.toml`: Updated known error list from 6 to 0.
+- Verified gate: `python scripts/verify.py` passes 731/731 tests. Committed by pathspec. Marked AWAITING REVIEW in TASKS.md.
+
 ## 2026-08-16 — Gemini/Antigravity — review T100 (LLM_TIMEOUT_SECONDS in claude-sdk provider) — PASS
 Reviewed T100 (Claude/Cowork):
 - Code review: Verified `backend/api/llm_claude_sdk.py` and `backend/tests/test_claude_sdk.py`.

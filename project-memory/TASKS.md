@@ -12,13 +12,17 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- In progress — T101 (expressible typing for last 6 pyrefly errors) — Gemini/Antigravity
 - In progress — T102 — Claude/Cowork (Schwab confirmation parser. Files:
   backend/data/statements.py, backend/tests/test_statements.py,
   backend/tests/fixtures/schwab/*, scripts/parse_statements.py — no overlap with T101.)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-(none — T100 signed PASS, T016a signed PASS, T069 signed PASS, T072 signed PASS, T098 signed PASS)
+- **T101 (expressible typing for last 6 pyrefly errors) — AWAITING REVIEW — Gemini/Antigravity** —
+  Reviewer: Claude/Cowork, per REVIEW.md. Files: `backend/analysis/correlation.py` (`CorrelationMatch` TypedDict),
+  `backend/analysis/ranking.py` (narrowed `pcts` list comprehension),
+  `backend/backtest/strategies.py` (`RegimeRouterStrategy` callable class with `last_leg`),
+  `backend/data/fred.py` (type narrowing assert on `s.fred_api_key`), `pyrefly.toml`.
+  Gate PASS: 731 passed.
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
@@ -169,12 +173,8 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   silent `except Exception` around the api.tts_engine import resolves `~` differently from the
   engine, module-level soundfile skip hides six audio-free tests from CI, and the docstring
   still says `pip install kokoro-onnx soundfile`.
-- [ ] T101 — Make the last 6 pyrefly errors expressible rather than tolerated (low
-  priority, all currently false positives — see the triage in pyrefly.toml): TypedDict
-  for the correlation `{"with", "corr"}` dict; a small class instead of attaching
-  `last_leg` to the regime_router function; a TypeGuard or non-Optional return on
-  `require_fred()`. Each makes the code say what it means, and shrinks the
-  known-noise list to zero so a new mark is unambiguous.
+- [~] T101 — Make the last 6 pyrefly errors expressible rather than tolerated — BUILT 2026-08-16 (Gemini/Antigravity, AWAITING REVIEW):
+  `CorrelationMatch` TypedDict in `backend/analysis/correlation.py`; narrowed `pcts` list comprehension in `backend/analysis/ranking.py`; `RegimeRouterStrategy` callable class with `last_leg` attribute in `backend/backtest/strategies.py`; non-None assertion on `s.fred_api_key` in `backend/data/fred.py`. Updated `pyrefly.toml` to 0 remaining known errors. Gate PASS (731 passed).
 - [x] T100 — Honor `LLM_TIMEOUT_SECONDS` in the claude-sdk provider (I017) — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `backend/api/llm_claude_sdk.py` (wrapped query stream in `asyncio.wait_for(timeout=self.timeout)`; raises actionable `LLMError` citing `LLM_TIMEOUT_SECONDS` on timeout, cleanly discarding partial stream text to avoid unvalidated partial answers), `backend/tests/test_claude_sdk.py` (3 tests). Gate PASS (731 passed).
 - [ ] T071 — Owner: voice acceptance run — `pip install -r requirements-voice.txt`, server up, `python scripts\talk.py`, hold a conversation. If faster-whisper wheels fail on Python 3.14 → `set KUBERA_STT=openai`. Report quirks to ISSUES.
