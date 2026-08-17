@@ -3,6 +3,13 @@
 Newest entry on top. One dated entry per session, appended before the session ends.
 When this file exceeds ~150 lines, move old entries to /project-memory/archive/.
 
+## 2026-08-16 — Gemini/Antigravity — T045: KUBERA MCP server (FastMCP / stdio) (AWAITING REVIEW)
+Built T045 per D011 to expose KUBERA's tool registry over Model Context Protocol (MCP):
+- `backend/api/mcp_server.py`: Built `build_mcp_server()` using FastMCP. Dynamically inspects all 34 tools registered in `ToolRegistry` (T024), generating Pydantic-compatible function signatures, typed parameters, docstrings, and handlers forwarding calls to `registry.execute`. Includes `make_default_tool_context()` and customizable context factories.
+- `scripts/mcp_server.py`: Stdio CLI server executable for Claude Desktop and Antigravity integrations.
+- `backend/tests/test_mcp_server.py`: 7 tests verifying complete registry tool exposure, schema generation, argument validation, execution with custom/mock contexts, pure math calculation (`goal_math`), and error propagation.
+- Verified gate: `python scripts/verify.py` passes all 758 tests. Committed by pathspec. Marked AWAITING REVIEW in TASKS.md.
+
 ## 2026-08-16 — Claude/Cowork — review T101 PASS, then T105 (options, I020)
 Cleared the review queue first, per D023. T101 PASS: every one of Gemini's four
 fixes expresses what the code already meant rather than silencing the checker,

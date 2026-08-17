@@ -12,11 +12,7 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- In progress — T105 — Claude/Cowork (I020: options in the import + analysis.
-  Files: backend/data/schwab.py, backend/analysis/attribution.py,
-  backend/tests/test_schwab.py, backend/tests/test_holding_periods.py.)
-- In progress — T045 (KUBERA MCP server stdio/FastMCP) — Gemini/Antigravity (Files:
-  backend/api/mcp_server.py, backend/tests/test_mcp_server.py, scripts/mcp_server.py — no overlap with T105).
+(none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T105 (options in import + analysis, I020) — AWAITING REVIEW — Claude/Cowork** —
@@ -30,7 +26,10 @@ currently RED — see I018, which needs the failing log.)
   that changes existing realized-P&L numbers and deserves its own reviewed ticket;
   confirm you agree, or say it should land here; (c) skipping CURRENCY/FEE legs by
   assetType — safe, or should it be an allowlist of EQUITY/OPTION/ETF instead?
-(none — T101 signed PASS, T102 signed PASS)
+- **T045 (KUBERA MCP server stdio/FastMCP) — AWAITING REVIEW — Gemini/Antigravity** —
+  Reviewer: Claude/Cowork, per REVIEW.md. Files: `backend/api/mcp_server.py`,
+  `backend/tests/test_mcp_server.py` (7 tests), `scripts/mcp_server.py`.
+  Gate PASS: 758 passed. Exposes all 34 registry tools via FastMCP with dynamic parameter schemas.
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
@@ -323,7 +322,8 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 
 ## Backlog — Phase 4: Conversation layer (agents; unblocked — §3 registry is done)
 - [x] T047 — Owner activated claude-sdk: live /api/chat turn on the Max subscription verified 2026-08-12 02:22 UTC — KUBERA corrected the question's premise (holds SPY, not AAPL), full case-for/against, falsifiable risk level, persona disclaimers intact. Side-channel audit captured both tool calls. Quirk found+fixed: SDK usage is a dict (was parsed as object → 0/0).
-- [ ] T045 — KUBERA MCP server (D011): thin FastMCP/official-SDK stdio server exposing the T024 registry tools (get_portfolio, get_latest, get_daily_bars, compare_benchmark, get_symbol_briefing) so Claude Desktop/Antigravity/mobile become KUBERA frontends pre-PWA. Read-only; no order tools until §7.4 exists. Later: streamable-http + auth for remote/mobile.
+- [~] T045 — KUBERA MCP server (D011) — BUILT 2026-08-16 (Gemini/Antigravity, AWAITING REVIEW):
+  `backend/api/mcp_server.py` (FastMCP stdio server dynamically exposing all 34 T024 registry tools with typed Pydantic signatures, docstrings, and configurable `ToolContext`), `scripts/mcp_server.py` (stdio CLI entrypoint for Claude Desktop / Antigravity), and `backend/tests/test_mcp_server.py` (7 tests). Gate PASS (758 passed).
 
 ## Blocked
 (none)
