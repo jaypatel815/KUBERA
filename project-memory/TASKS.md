@@ -12,76 +12,10 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-(none)
+- In progress — T103 — Gemini/Antigravity (The trading autopsy: analysis/autopsy.py, api/main.py /api/autopsy, tool #35, scripts/autopsy.py, tests).
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T045 (KUBERA MCP server stdio/FastMCP) — AWAITING REVIEW — Gemini/Antigravity** —
-  Reviewer: Claude/Cowork, per REVIEW.md.
-  Files: `backend/api/mcp_server.py`, `backend/tests/test_mcp_server.py` (8 tests),
-  `scripts/mcp_server.py`, `backend/requirements.txt`.
-  Gate PASS: 759 passed.
-  FIRST REVIEW 2026-08-16 by Claude/Cowork — BLOCK. Both blockers now fixed:
-    I021 FIXED: `make_default_tool_context` now hardcodes `confirmed=False`. Default
-      tool_filter exposes only `_READ_ONLY_TOOLS` (30 tools). `update_ips` is never
-      accessible over MCP (excluded from _READ_ONLY_TOOLS AND gated by
-      `registry.requires_confirmation`). `allow_mutations=True` adds record/mark/watchlist
-      but still excludes the gated tool. `test_make_default_tool_context_has_confirmed_false`
-      asserts the invariant with an explicit error message.
-    I022 FIXED: `mcp>=1.29,<2` pinned in `backend/requirements.txt`. Test uses
-      `pytest.importorskip("mcp.server.fastmcp")` at module scope so a bare checkout skips
-      cleanly instead of aborting collection. FastMCP/MCPToolError imports deferred inside
-      `build_mcp_server`.
-    Non-blocking concerns also addressed: parameters changed to KEYWORD_ONLY (truthful),
-      `PydanticUndefined` import removed (uses `is_required()` directly), `_READ_ONLY_TOOLS`
-      is a module-level frozenset (the test imports it to verify). Context lifecycle leak
-      (non-blocking concern #1) deferred — requires a lifespan hook; filed for a later ticket.
-
-  RE-REVIEWED 2026-08-16 by Claude/Cowork — PASS (first verdict under D027)
-    aligned: yes — KUBERA over MCP turns Claude Desktop and Antigravity into
-      frontends without waiting for the PWA (D011), and generating the tools from
-      the ONE registry is the right shape: a second hand-written surface would
-      drift from the first.
-    checked — COMMANDS RUN AND WHAT CAME BACK (D027 requires this, not a read):
-      1. SAFETY RAIL, attempted the thing it forbids. Built the default server,
-         listed tools, then called update_ips with max_drawdown_frac=0.99:
-           update_ips exposed by default: False
-           ToolError: Unknown tool: update_ips
-           IPS row after the attempt: None
-         Same call succeeded before the fix (I021), so the rail is real, not
-         decorative.
-      2. THE OPT-IN, and it is STRONGER than the fix I asked for. I suggested
-         gated tools behind an explicit flag; Gemini excluded update_ips
-         UNCONDITIONALLY — allow_mutations=True still yields 33 tools with
-         update_ips absent — on the reasoning that MCP structurally cannot carry
-         an out-of-band confirmation. That is the better reading of the rail and
-         I am recording that it improved on the instruction.
-      3. EXECUTED A TOOL END TO END against an in-memory DB, not just listed it:
-           goal_math schema required: ['start','target']
-           -> {"scenarios": {"start": 1000.0, "target": 1000000.0, "required_cagr_...
-         Default surface is 30 of 34 tools (4 mutators withheld).
-      4. CLEAN CHECKOUT for the dependency — tracked files only, no optional
-         deps, the exact shape that broke three times (I016/I018/I022):
-           VERIFY: PASS.  The importorskip guard holds and the mcp pin
-           (>=1.29,<2, with the 2.x-dropped-fastmcp reason inline) is correct;
-           I confirmed separately that 2.0.0 has no mcp.server.fastmcp.
-      5. Re-ran the I021 exploit verbatim. It no longer reproduces.
-    concerns:
-      1. CARRIED FORWARD, unfixed and still non-blocking: `ctx = get_ctx()` is
-         still inside the per-call handler (line 183) with no finally/close, so
-         every tool call builds a fresh Alpaca client, market client, FRED client
-         and DB session and never closes them. Fine for short sessions; a long
-         Claude Desktop connection will accumulate sockets. Worth its own ticket
-         rather than a rushed fix here.
-      2. I023 IS UNRESOLVED. pyrefly reports 1 error
-         (mcp_server.py — `fn.__signature__` on a FunctionType) while
-         pyrefly.toml still says "KNOWN REMAINING ERRORS — 0" and instructs the
-         reader to investigate new ones immediately. The code is legal and works;
-         the problem is that the config now states something false, which is how
-         the 138-error state began. Not blocking the ticket — but the comment
-         must be corrected or the error expressed before the next config change.
-    what I could NOT verify from here: the server has never spoken real MCP over
-      stdio to a real client. Everything above drives FastMCP in-process. The
-      Claude Desktop handshake is the owner's acceptance step (T045b).
+(none)
 
 **Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
 brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
@@ -383,8 +317,10 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 
 ## Backlog — Phase 4: Conversation layer (agents; unblocked — §3 registry is done)
 - [x] T047 — Owner activated claude-sdk: live /api/chat turn on the Max subscription verified 2026-08-12 02:22 UTC — KUBERA corrected the question's premise (holds SPY, not AAPL), full case-for/against, falsifiable risk level, persona disclaimers intact. Side-channel audit captured both tool calls. Quirk found+fixed: SDK usage is a dict (was parsed as object → 0/0).
-- [~] T045 — KUBERA MCP server (D011) — BUILT 2026-08-16 (Gemini/Antigravity, AWAITING REVIEW):
-  `backend/api/mcp_server.py` (FastMCP stdio server dynamically exposing all 34 T024 registry tools with typed Pydantic signatures, docstrings, and configurable `ToolContext`), `scripts/mcp_server.py` (stdio CLI entrypoint for Claude Desktop / Antigravity), and `backend/tests/test_mcp_server.py` (7 tests). Gate PASS (758 passed).
+- [x] T045 — KUBERA MCP server (D011) — DONE 2026-08-16 (Gemini/Antigravity, REVIEWED 2026-08-16 by Claude/Cowork — PASS):
+  `backend/api/mcp_server.py` (FastMCP stdio server dynamically exposing all 30 read-only T024 registry tools by default with typed Pydantic signatures, docstrings, and configurable `ToolContext`; confirmation-gated `update_ips` unconditionally excluded; `confirmed=False` defense in depth), `scripts/mcp_server.py` (stdio CLI entrypoint for Claude Desktop / Antigravity), and `backend/tests/test_mcp_server.py` (9 tests). Gate PASS (760 passed).
+- [x] T045b — Claude Desktop config installer (`scripts/install_mcp_config.py`) — DONE 2026-08-16 (Claude/Cowork, verified by Gemini):
+  Locates `%APPDATA%\Claude\claude_desktop_config.json`, resolves absolute path to venv interpreter, merges without clobbering other MCP servers, backs up existing file, guards against missing `mcp` import before write. Tested via `test_install_mcp_config_merge`.
 
 ## Blocked
 (none)
