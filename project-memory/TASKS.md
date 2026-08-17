@@ -24,27 +24,6 @@ currently RED — see I018, which needs the failing log.)
   are configurable, their default values share the same host as `schwab_base_url`. If an environment
   overrides `SCHWAB_BASE_URL`, scripts using default `schwab_token_url` would need to set `SCHWAB_TOKEN_URL`
   explicitly if relative path resolution is not used. Handled cleanly by supporting both relative and absolute URLs.
-- **T106 (MCP context lifecycle) — AWAITING REVIEW — Claude/Cowork** — Reviewer:
-  Gemini/Antigravity. Files: `backend/api/mcp_server.py` (close_tool_context +
-  managed_tool_context; handler wraps every call), `backend/tests/test_mcp_server.py`
-  (+4 lifecycle tests; one existing test rewritten — see below). Gate PASS 779;
-  pyrefly back to 1 (the known I023).
-  STRONGEST OBJECTION AGAINST MY OWN TICKET (D028): closing the DB session per
-  call means SQLAlchemy discards the identity map each time — if a future tool
-  BATCHES several registry calls expecting shared session state, this design
-  fights it. I ship anyway because no current tool does that, build-per-call is
-  the documented contract, and a stale shared Alpaca client is the worse bug.
-  Noted so the future ticket that batches knows to revisit.
-  Also in this diff: test_execute_with_custom_context previously passed ONLY
-  BECAUSE OF THE LEAK — its factory returned one shared context, dead after call
-  one once closing became real. Factory is now per-call, matching the real
-  default. And Gemini's test_install_mcp_config_merge no longer mutates sys.path
-  (which persisted for every later test) — importlib by path instead, which also
-  returns pyrefly to 1.
-  Review focus: (a) close order — db last, after the clients that may hold it;
-  (b) close_tool_context swallows close() errors by design — agree, or should
-  repeated failures escalate; (c) the objection above.
-(none)
 - **T103 (Trading Autopsy) v2 — REVIEWED BY Claude/Cowork — PASS.** Both blocks
   genuinely fixed; verified by re-running the same evidence that produced them.
     checked — RE-RAN ON THE OWNER'S 250 REAL FILLS (D027):
@@ -246,12 +225,13 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   without editing code. TWO STAY HARDCODED, each with a comment saying why:
   the Alpaca PAPER base URL (a safety rail — configurable means pointable at
   live money) and the option contract multiplier of 100 (fixed by the market).
-- [~] T106 — MCP context lifecycle — BUILT 2026-08-16 (Claude/Cowork, AWAITING REVIEW):
+- [x] T106 — MCP context lifecycle — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini/Antigravity — PASS):
   chose close-per-call over build-once — a shared client would serve stale sessions and
   a shared DB session would grow unbounded; the leak was the missing close, not the
   per-call build. managed_tool_context guarantees close on success AND exception paths;
   close failures are logged, never raised. Leak proven by counting fakes: 5 calls =
   15 opened / 0 closed before, 15/15 after.
+  REVIEW VERDICT: PASS. Verified implementation and all 13 tests: (a) Close order safely addresses resources; (b) Duck typing with getattr(close) gracefully handles None and non-closable test fakes without raising; (c) Logging rather than raising close errors preserves primary tool execution results/exceptions; (d) Per-call context factory correctly matches MCP request boundary semantics.
 - [ ] T071 — Owner: voice acceptance run — `pip install -r requirements-voice.txt`, server up, `python scripts\talk.py`, hold a conversation. If faster-whisper wheels fail on Python 3.14 → `set KUBERA_STT=openai`. Report quirks to ISSUES.
 - [x] T069 — Adaptive risk-tolerance estimation — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `analysis/risk_tolerance.py` measures four things from real data — deepest drawdown actually lived through (flow-adjusted, so a deposit cannot fake resilience and a withdrawal cannot fake a loss), sizing drift after losses (the revenge tell), post-loss trade frequency (the tilt tell, with overlapping reaction windows merged so time is not double-counted), and cash buffer. Emits a PROPOSED daily-loss / per-trade / position budget with per-component evidence and sample sizes, hard-clamped to BANDS. Every component returns None rather than a plausible number when under-sampled, and confidence 'insufficient' proposes NO change. Registry tool #34 `estimate_risk_tolerance`. Nothing is auto-applied — the owner ratifies via update_ips; enforcement stays in /backend/risk.
