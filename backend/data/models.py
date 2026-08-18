@@ -269,6 +269,13 @@ class Transaction(Base):
     # T091: the broker ORDER id — the join key from a fill back to the logged
     # decision (signal_log.order_external_id) that placed it
     order_id: Mapped[str | None] = mapped_column(String(64), default=None, index=True)
+    # T016c: Schwab real fills. fill_type "option" means qty is CONTRACTS and
+    # every consumer must apply the 100x multiplier; None/legacy = equity.
+    # commission/fees are the broker's own numbers, not estimates (contrast
+    # with the T091b spread ESTIMATE, which stays separate by design).
+    fill_type: Mapped[str | None] = mapped_column(String(16), default=None)
+    commission: Mapped[float | None] = mapped_column(Float, default=None)
+    fees: Mapped[float | None] = mapped_column(Float, default=None)
 
 
 class DecisionJournal(Base):

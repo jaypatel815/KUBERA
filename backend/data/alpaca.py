@@ -78,8 +78,12 @@ class Fill:
     price: float
     occurred_at: datetime
     order_id: str
-    fill_type: str  # "fill" | "partial_fill"
+    fill_type: str  # "fill" | "partial_fill" | "option" (Schwab, T016c)
     asof: datetime
+    # T016c: per-trade costs where the broker reports them (Schwab transferItems
+    # carry COMMISSION and regulatory-fee legs; Alpaca fills default to 0).
+    commission: float = 0.0
+    fees: float = 0.0
     source: str = SOURCE
 
 

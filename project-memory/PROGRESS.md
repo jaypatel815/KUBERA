@@ -5,6 +5,19 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Claude/Cowork — T016c: the owner's REAL fills land daily (AWAITING REVIEW)
+Built: fill_type/commission/fees on Transaction (alembic 7c3a91e0d5b2); mapper
+takes broker fee legs from transferItems; data/schwab_sync.py (30-day window,
+T036-style external_id dedupe for fills AND cash, hash_value account key);
+sync.py best-effort Schwab block (token lapse → "run schwab_auth.py --write",
+any SchwabError degrades to a note, Alpaca half never dies); attribution FIFO
+now carries contract_multiplier so DB option trips aren't 100x understated
+($39.00 not $0.39 — pinned in test). Evidence: 5 new tests incl. I029
+placeholder-tradeDate regression at the DB layer; 47/47 touched suites; alembic
+head applies on scratch DB; gate PASS; pyrefly exactly 1. Scope note: dedupe
+against STATEMENT-parsed history deferred to T016b (that diff IS the designed
+reconciliation between the two stores). Next: Gemini review; then T016b/T113.
+
 ## 2026-08-18 — Claude/Cowork — reciprocal review of Gemini's review-session code: PASS
 Gemini's three verdicts (T111, T023 v1, T112 — all PASS) cleared the queue;
 its T112 session also wrote code (pre-D032 by minutes), which under D023 is

@@ -12,9 +12,36 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T016c (Schwab fills into the daily sync + fee persistence) — Claude/Cowork** — claimed 2026-08-18.
-
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T016c (Schwab fills into the daily sync + fee persistence) — AWAITING REVIEW
+  2026-08-18 (Claude/Cowork)**. Built: (1) Transaction gains nullable
+  fill_type/commission/fees (alembic 7c3a91e0d5b2, revises 00c4e1efd5c4, single
+  head; legacy rows stay NULL = equity/no-cost-data, never guessed); (2) mapper
+  extracts fee legs from transferItems (COMMISSION → commission, every other
+  feeType → fees, abs(amount)); (3) data/schwab_sync.py sync_schwab_fills —
+  30-day trailing window, T036-style dedupe per external_id for Transactions AND
+  CashFlow, account keyed by Schwab's hash_value (non-PII), unmapped counted
+  never dropped; (4) scripts/sync.py best-effort block: no config → skip note,
+  ANY SchwabError → named note (token lapse gets "run schwab_auth.py --write"),
+  Alpaca half never dies for a Schwab failure; (5) attribution: AttributedFill
+  gains contract_multiplier, FIFO pnl and notional ×100 for option lots,
+  attributed_fills_from_rows maps fill_type via the existing contract_multiplier()
+  helper — DB option trips were 100x understated before this.
+  EVIDENCE (D027): test_schwab_sync.py 5 tests — fees split 0.65/0.01 on the
+  probe-shaped option row, I029 placeholder-tradeDate regression at the DB layer
+  (occurred_at 15:24 not 05:00), rerun idempotent (+0/3 known), lapsed token
+  raises the named weekly error, option round trip pnl $39.00 not $0.39
+  (notional $130 = 1×1.30×100). 47/47 across schwab+attribution suites; alembic
+  upgrade head on scratch DB → all 3 columns present; ruff clean; pyrefly
+  exactly 1 (I023 canary); full gate PASS.
+  D028 objections considered: (a) DB and file-based behavioural stack are now
+  TWO stores of the same fills — autopsy still reads files; T016b's diff is the
+  reconciliation, and get_attribution reading the DB now gets correct option
+  math; (b) catching ALL SchwabError in sync.py could mask a real mapping bug —
+  no: mapping bugs raise ValueError/KeyError which still propagate, SchwabError
+  is transport-only; (c) fees are recorded but not yet subtracted in FIFO pnl —
+  deliberate, matches T108's convention (costs decomposed separately, T090/T091b),
+  noted for the reviewer.
 - **T112 (memory budgets as a gate mechanism — D031) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   CODE ADDED DURING GEMINI'S REVIEW, REVIEWED 2026-08-18 by Claude/Cowork — **PASS**
   (bf730e0 + 1e992ba: test_archive_memory.py [4 tests], parallel_check utf-8
@@ -623,14 +650,10 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 
 ## Backlog — Trading coach pack (Gemini spec, D014; doctrine: docs/research/gemini-master-spec-review.md)
 - [ ] T066 — Trade coaching: pre-trade review (thesis, sizing, concentration, correlation, regime fit, IPS compliance) + post-trade review (expected vs actual, entry/exit quality, rule adherence, lesson) persisted per trade; PROCESS-not-outcome scoring. T016 dependency SATISFIED 2026-08-17 (live sync reconciled) — real fills available; chat-level v0 works today via conversation.
-- [ ] T016c — Schwab into the DAILY sync: the client is live and trusted, but
-  scripts/sync.py still pulls Alpaca paper only — nothing lands the owner's
-  REAL fills automatically. Wire SchwabClient.get_transactions into sync.py
-  (dedupe by activityId against prior imports AND against the statement-parsed
-  history by the T108b fill-signature; read-only; never fatal if the weekly
-  token has lapsed — say "token refresh failed, run schwab_auth.py" and carry
-  on). This is what turns the behavioural stack from
-  parse-statements-when-delivered into a living record.
+- [x] T016c — built 2026-08-18, see Awaiting review at top. (Note: dedupe
+  against the STATEMENT-parsed history by fill-signature was deferred to T016b
+  — the DB and the file-based stack are separate stores today, and T016b's
+  API-vs-parsed diff is the designed reconciliation between them.)
 - [ ] T067b — DQS v2 (after T036/T016/T063 land): score the OWNER's actual fills, add FOMO-into-late-RVOL-spike and cutting-winners-early patterns (need fill timestamps + intraday context), wire follow/override rate from the T063 journal, derive the risk budget from the IPS instead of RiskLimits defaults.
 - [x] T068 — Watchlist + opportunity ranking — DONE 2026-08-14 (Claude/Cowork):
   `watchlist` table (migration 620eeac1a7c9) + data/watchlist.py (idempotent

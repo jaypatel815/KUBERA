@@ -19,7 +19,31 @@ from data.alpaca import AlpacaClient, AlpacaError  # noqa: E402
 from data.db import make_engine, make_session_factory  # noqa: E402
 from data.fills import sync_fills  # noqa: E402
 from data.flows import sync_cash_flows  # noqa: E402
+from data.schwab import SchwabClient, SchwabError  # noqa: E402
+from data.schwab_sync import sync_schwab_fills  # noqa: E402
 from data.sync import sync_once  # noqa: E402
+from settings import ConfigError, get_settings  # noqa: E402
+
+
+def _sync_schwab(factory) -> str:
+    """T016c: the owner's REAL fills, best-effort. Two conditions are EXPECTED
+    and must never kill the sync: no Schwab config (skip with a note) and the
+    ~weekly token lapse (name the fix, carry on). Anything else raises."""
+    try:
+        get_settings().require_schwab()
+    except ConfigError:
+        return "schwab: not configured (optional)"
+    try:
+        with SchwabClient() as client, factory() as session:
+            s = sync_schwab_fills(session, client)
+        return s.summary()
+    except SchwabError as e:
+        # Best-effort: the Alpaca half already synced; a Schwab transport
+        # failure must not kill the run. Token lapse gets its named fix.
+        if "expire roughly weekly" in str(e):
+            return ("schwab: token refresh failed — the ~weekly token lapsed, "
+                    "run `python scripts\\schwab_auth.py --write` (not a bug)")
+        return f"schwab: skipped ({type(e).__name__}: {e})"
 
 
 def main() -> int:
@@ -43,6 +67,7 @@ def main() -> int:
             print(f"synced {r.positions} positions, equity {r.equity:.2f}, "
                   f"fills +{f.inserted}/{f.skipped} known, {flows_note}, "
                   f"asof {r.asof:%H:%M:%S}")
+        print(_sync_schwab(factory))
         if not args.loop:
             return 0
         time.sleep(args.loop)

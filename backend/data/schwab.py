@@ -308,6 +308,21 @@ def map_transactions(rows: list[dict]) -> ImportReport:
                                                "(multi-leg spread or corporate action)"})
                 continue
             qty, price, symbol, asset_type = leg
+            # T016c: the broker's own per-trade costs ride on CURRENCY legs with
+            # a feeType (observed shape, owner's March probe: COMMISSION,
+            # SEC_FEE, OPT_REG_FEE, TAF_FEE — amounts positive, cost negative).
+            commission = fees = 0.0
+            for item in row.get("transferItems", []) or []:
+                fee_type = str(item.get("feeType") or "")
+                if not fee_type:
+                    continue
+                amount = item.get("amount")
+                if not isinstance(amount, (int, float)):
+                    continue
+                if fee_type.upper() == "COMMISSION":
+                    commission += abs(float(amount))
+                else:
+                    fees += abs(float(amount))
             report.fills.append(Fill(
                 external_id=activity_id,
                 symbol=symbol,
@@ -321,6 +336,8 @@ def map_transactions(rows: list[dict]) -> ImportReport:
                 # one contract as one share (I020).
                 fill_type="option" if asset_type == "option" else "fill",
                 asof=now,
+                commission=round(commission, 4),
+                fees=round(fees, 4),
                 source=SOURCE,
             ))
         elif kind in {"ACH_RECEIPT", "ACH_DISBURSEMENT", "CASH_RECEIPT",

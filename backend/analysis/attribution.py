@@ -33,6 +33,10 @@ class AttributedFill:
     regime: str | None = None
     sub_strategy: str | None = None
     entry_bucket: str | None = None
+    # T016c: Schwab option fills are per CONTRACT — 100 shares each. Without
+    # this, a DB option round trip's P&L would be understated 100x (I020's
+    # lesson arriving at the attribution layer). Equity stays 1.
+    contract_multiplier: int = 1
 
 
 def _bucket_key(tag: str | None) -> str:
@@ -181,13 +185,14 @@ def fifo_attribution(fills: Sequence[AttributedFill]) -> AttributionReport:
         if f.side == "buy":
             queue.append({"qty": f.qty, "price": f.price, "regime": f.regime,
                           "sub_strategy": f.sub_strategy, "bucket": f.entry_bucket,
-                          "ts": f.ts_iso})  # T091b: entry clock for holding period
+                          "ts": f.ts_iso,  # T091b: entry clock for holding period
+                          "mult": f.contract_multiplier})  # T016c: options are 100x
             continue
         remaining = f.qty
         while remaining > 1e-9 and queue:
             lot = queue[0]
             take = min(remaining, lot["qty"])
-            pnl = take * (f.price - lot["price"])
+            pnl = take * (f.price - lot["price"]) * lot.get("mult", 1)
             total_pnl += pnl
             round_trips += 1
             _credit(by_regime, _bucket_key(lot["regime"]), pnl)
@@ -198,7 +203,8 @@ def fifo_attribution(fills: Sequence[AttributedFill]) -> AttributionReport:
                           "entry_ts": lot.get("ts"), "exit_ts": f.ts_iso,
                           # T091b costs: exit-side notional of this slice, the
                           # base the spread estimate is charged against
-                          "notional": round(take * f.price, 6)})
+                          # (T016c: contract multiplier included for options)
+                          "notional": round(take * f.price * lot.get("mult", 1), 6)})
             lot["qty"] -= take
             remaining -= take
             if lot["qty"] <= 1e-9:
@@ -246,10 +252,12 @@ def attributed_fills_from_rows(transactions, tags_by_order: dict) -> list[Attrib
     for f in transactions:
         tag = tags_by_order.get(getattr(f, "order_id", None) or "")
         regime, leg, bucket = tag if tag else (None, None, None)
+        # T016c: DB rows carry fill_type; "option" means qty is CONTRACTS.
         out.append(AttributedFill(
             symbol=f.symbol, side=f.side, qty=f.qty, price=f.price,
             ts_iso=f.occurred_at.isoformat(),
             regime=regime, sub_strategy=leg, entry_bucket=bucket,
+            contract_multiplier=contract_multiplier(getattr(f, "fill_type", None)),
         ))
     return out
 
