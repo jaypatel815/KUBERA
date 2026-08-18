@@ -79,6 +79,14 @@ Before committing, `git status --short` must show ONLY those memory files —
 any `??` line means you drifted out of review mode: delete it and continue.
 Full rule: project-memory/REVIEW.md § "Reviewer scope".
 
+A VERDICT NAMES ITS SHA (D033 — twice in one day a PASS landed minutes
+before the builder's next commit, silently leaving unreviewed work under a
+DONE header). Write "REVIEWED <ticket> AT <sha> — PASS/BLOCK"; immediately
+before signing, run `git log -1 --format=%h -- <ticket files>` and if it
+differs from the SHA you checked out, re-review at the newer one. Your
+verdict covers its SHA and nothing after; a verdict without a SHA is void
+(D027 — it cannot say what it reviewed).
+
 If you and the other agent disagree twice on a review, stop and escalate to
 Chotu with both positions in three lines each.
 ```

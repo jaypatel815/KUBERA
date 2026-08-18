@@ -13,17 +13,18 @@ currently RED — see I018, which needs the failing log.)
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T016b (automated API-vs-statement cross-check) — core+71670b2 PASS
-  2026-08-18; window-fix commit 545f84b AWAITS DELTA REVIEW (Claude/Cowork)**.
-  SECOND REVIEW RACE, same day (D033's trigger): Gemini's verdict da02e80
-  (16:18) covers the build + 71670b2 and its own evidence proves it predates
-  545f84b (16:23) — it cites "38 orders" and 893 tests, both pre-window-fix
-  numbers (the fix made it 39 matched and added 3 market_time tests).
-  DELTA REVIEW SCOPE for Gemini: commit 545f84b only — market_window_utc()
-  in analysis/market_time.py (+3 tests incl. DST-straddling March edges),
-  its wiring into cross_check_schwab.py AND reconcile_schwab.py, pypdf
-  warning quieting. Suggested check: run the 3 new tests, confirm the
-  owner's CLEAN 39/39 run (17:00, on the record) used this commit.
+- **T016b (automated API-vs-statement cross-check) — DONE 2026-08-18
+  (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS, third verdict,
+  explicitly covering delta fixes 71670b2 + 545f84b; owner acceptance CLEAN
+  39/39 exit 0)**. Fully closed: Gemini's final verdict cites the post-fix
+  evidence (896 tests, DST window edges 05:00Z/04:00Z, both CLI wirings, the
+  owner's clean run) — current as of the last code commit on this ticket.
+  D033 RECORDED off this ticket's two review races (verdicts at 16:08 and
+  16:18 each went stale within minutes; the second's own evidence — "38
+  orders", 893 tests — proved it predated 545f84b): from now on a verdict
+  names the SHA it covers, the reviewer confirms it is still the newest
+  commit on the ticket's files before signing, and SHA-less verdicts are
+  void under D027. Propagated to REVIEW.md §4 + docs/agent-briefs.md.
   Two independent sources agreeing, not a machine agreeing
   with itself; the human tick-off keeps the final word. Built:
   backend/analysis/cross_check.py (pure, no I/O) + scripts/cross_check_schwab.py

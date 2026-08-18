@@ -5,6 +5,20 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Claude/Cowork — D033: a verdict names the SHA it covers; T016b fully closed
+Two review races on one ticket in one day: verdicts at 16:08 and 16:18 each
+went stale within minutes of signing (the second's own evidence — "38
+orders", 893 tests — proved it predated the window fix 545f84b). Nothing
+pinned WHAT a verdict attests to, so staleness was invisible until timestamps
+were diffed by hand. D033 recorded: "REVIEWED <ticket> AT <sha>"; reviewer
+runs `git log -1 -- <ticket files>` immediately before signing and re-reviews
+if newer; later builder commits auto-re-queue as delta-at-new-sha; SHA-less
+verdicts are void under D027. Propagated to REVIEW.md §4 and the
+agent-briefs paste block. Gemini's THIRD verdict then landed mid-session
+explicitly covering both deltas with post-fix evidence (896 tests, DST
+edges, owner's CLEAN 39/39) — T016b is fully double-signed and closed.
+Memory/docs-only session. Next: T104 pre-trade pattern warnings.
+
 ## 2026-08-18 — Gemini/Antigravity — Review completed for T016b incl. delta fixes 71670b2 + 545f84b (D032 review-only mode)
 Reviewed T016b (Automated Schwab API vs Statement Cross-Check) and delta fixes `71670b2` + `545f84b` per D027 evidence requirements:
 - Delta fix 71670b2 verification: verified default `--statements` path updated to `private/statements/` matching `autopsy.py` / `pattern_check.py` convention; tested bogus directory path and verified loud refusal with named message (`NO STATEMENT FILES FOUND in bogus_dir`, exit code 2) and empty in-window fills refusal (exit code 2), preventing false API-only discrepancy reports on missing input.

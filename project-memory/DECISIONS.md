@@ -2,6 +2,29 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D033 — a verdict names the SHA it covers (2026-08-18)
+TWICE in one day, a Gemini PASS landed while the builder's next commit was
+minutes away, silently leaving unreviewed work under a DONE header: 501f083
+(16:08) passed T016b four minutes after the build while the owner's run had
+already found a live defect; da02e80 (16:18) passed "incl. delta fix" and was
+stale five minutes later — its own evidence (38 orders, 893 tests) proves it
+predated the window fix 545f84b. Builder and reviewer race on wall-clock time;
+nothing in the protocol pinned WHAT a verdict attests to.
+
+RULE. (1) Every review verdict MUST name the exact commit SHA it reviewed
+("REVIEWED <ticket> AT <sha> — PASS/BLOCK"), and it covers that SHA and
+nothing after it. (2) Before signing, the reviewer runs
+`git log -1 --format=%h -- <ticket files>` and confirms it equals the SHA
+they checked out; if not, re-review at the newer SHA. (3) Any builder commit
+touching the ticket's files AFTER the verdict SHA automatically re-queues the
+ticket as "delta awaiting review at <new sha>" — the builder records this,
+no relitigating the covered SHA. (4) A verdict without a SHA is void under
+D027 (it cannot say what it reviewed).
+Why not "reviewer locks the ticket": adds coordination the one-folder model
+can't enforce; naming the SHA costs one line and makes staleness DETECTABLE,
+which is the actual failure — both races were invisible until someone diffed
+timestamps by hand.
+
 ## D023 — Parallel agents: concurrent tickets + RECIPROCAL blocking review (2026-08-16)
 Owner asked whether two agents can work at once and how to keep them aligned.
 It had already happened safely once (Gemini shipped the T082 Orb frontend while

@@ -115,11 +115,20 @@ FOR and failed to find. A reviewer who never records a concern is not reviewing.
 ### 4. Write the verdict in `TASKS.md`, under the ticket
 
 ```
-REVIEWED <date> by <agent> — <PASS | BLOCK>
+REVIEWED <date> by <agent> AT <commit sha> — <PASS | BLOCK>
   aligned: <one line: which owner goal this serves>
   checked: <what you actually ran/read — be specific>
   concerns: <none | numbered list>
 ```
+
+**The SHA is mandatory (D033).** Your verdict covers that commit and NOTHING
+after it. Immediately before signing, run
+`git log -1 --format=%h -- <the ticket's files>` — if it is not the SHA you
+checked out, the builder moved while you were reviewing: re-review at the
+newer SHA instead of signing a stale one. Twice in one day (2026-08-18) a
+PASS landed minutes before the builder's next commit, silently leaving
+unreviewed work under a DONE header; a verdict without a SHA is void under
+D027 because it cannot say what it reviewed.
 
 A PASS with unlisted concerns is worthless. If something bothers you and you
 cannot justify blocking, write it as a concern anyway — the owner reads these.
