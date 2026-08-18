@@ -26,6 +26,21 @@ Implemented monthly brokerage statement transaction importing and deduplication 
   · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
 - Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
 
+## 2026-08-17 (eighth session) — Claude/Cowork — T023 unblocking: FMP tier answer + probe
+Owner answered the standing T023 question: FMP FREE tier, earnings-call
+transcripts NOT included. Recorded in T023; transcript features are out (D019
+called it). The remaining tier unknowns are testable now — built
+scripts/fmp_check.py: probes the eight T023-relevant endpoints (profile,
+earnings calendar on both API families, income + cash-flow statements,
+analyst estimates, stock news, and transcripts — which should mechanically
+confirm the owner's answer) from the owner's machine, printing statuses and
+row counts only, never the key; a 200-but-empty list is flagged as possible
+silent tier-limiting. FMP is sandbox-unreachable (proxy 403), so owner-side
+is the only place this can run. T023 integration stays parked until the probe
+table comes back — D026, verify before trusted. Docs/memory/script only;
+gate PASS.
+Owner action: run `python scripts\fmp_check.py`, paste the table to any agent.
+
 ## 2026-08-17 (seventh session) — Claude/Cowork — T091b closed out: the review knows where the money came from
 Gemini passed T077b. Then built T091b's three remaining halves:
 - WEEKLY REVIEW gains the investment-committee half it was missing: closed

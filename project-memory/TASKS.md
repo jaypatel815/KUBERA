@@ -563,6 +563,16 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 
 ## Backlog — Phase 2: Analysis & insight engine (agents)
 - [ ] T023 — Fundamentals + news ingestion: evaluate the owner's existing FMP/FRED keys (D009) vs Alpaca news; verify key validity + tier limits first (incl. whether the FMP tier covers earnings calendar, consensus estimates, and TRANSCRIPTS — commonly paid-tier; D019), then pick and integrate one source. Evaluation weighs (D017): earnings-surprise momentum, FCF yield/debt ratios, 13F ownership-change availability per tier; news is CONTEXT + event risk (feeds T076), never claimed as sentiment alpha. Unblocks T083 (needs earnings dates).
+  OWNER ANSWERED 2026-08-17: **FMP FREE tier — earnings-call transcripts NOT
+  included.** Transcript-dependent features are OUT (D019 anticipated exactly
+  this). The remaining unknowns (earnings calendar, statements depth, consensus
+  estimates, news — free tiers gate these differently and quietly) are now
+  TESTABLE, not guessable: `scripts/fmp_check.py` (NEW) probes all eight
+  T023-relevant endpoints from the owner's machine — statuses and row counts
+  only, the key never printed, an empty-but-200 response flagged as possible
+  silent tier-limiting. FMP is unreachable from the sandbox (proxy 403), so the
+  probe MUST run owner-side. Integration work stays parked until the probe
+  table is pasted back (D026: verify before trusted).
 - [x] T096 — Per-brain tool subsetting — DONE 2026-08-14 (Claude/Cowork):
   `api/tool_policy.py` — CORE_TOOLS (11: portfolio, briefing, latest, regime,
   exit plan, triage, size, brief, risk, record_decision, ips), is_small_brain
