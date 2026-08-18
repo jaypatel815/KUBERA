@@ -26,6 +26,23 @@ Implemented monthly brokerage statement transaction importing and deduplication 
   · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
 - Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
 
+## 2026-08-17 (twelfth session) — Claude/Cowork — T016 CLOSED by the owner's reconciliation
+The owner ran reconcile_schwab.py and confirmed the import matches his
+statement — the acceptance the whole D026 sequence was built toward, performed
+by its designed verifier. T016 is DONE: nine days from "could KUBERA study my
+past trading behavior?" to a reconciled, read-only, statement-verified live
+sync, through one blocked review, the I026 survivorship discovery, and
+Schwab's eleven-day approval clock. Recorded honestly: the printout's counts
+were not captured; pasting them stays welcome, and T016b automates the same
+diff under his final word. Unblocked downstream: T066 (coaching now has real
+fills) and the new T016c — wire SchwabClient into scripts/sync.py so real
+fills land DAILY (dedupe by activityId + T108b fill-signature; a lapsed weekly
+token degrades to a named note, never a crash). That ticket is what turns the
+behavioural stack into a living record instead of a
+parse-statements-when-delivered one. Memory-only session; gate PASS.
+Next: T016c is the top unblocked build ticket. Gemini still has T111 + T023 v1
+queued for review.
+
 ## 2026-08-17 (eleventh session) — Claude/Cowork — Schwab is LIVE: I019 closed
 The app reached "Ready For Use"; the owner ran schwab_auth.py (its built-in
 read-only probe verified the token before he walked away), wrote the refresh

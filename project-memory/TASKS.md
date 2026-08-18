@@ -558,7 +558,15 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [ ] T065 — Risk engine v2: sector-exposure caps (needs sector data from T023), cancel-all + disable-symbol controls, order-frequency limit (merge with T055 overtrading guard).
 
 ## Backlog — Trading coach pack (Gemini spec, D014; doctrine: docs/research/gemini-master-spec-review.md)
-- [ ] T066 — Trade coaching: pre-trade review (thesis, sizing, concentration, correlation, regime fit, IPS compliance) + post-trade review (expected vs actual, entry/exit quality, rule adherence, lesson) persisted per trade; PROCESS-not-outcome scoring. Depends on T016 for real fills; chat-level v0 works today via conversation.
+- [ ] T066 — Trade coaching: pre-trade review (thesis, sizing, concentration, correlation, regime fit, IPS compliance) + post-trade review (expected vs actual, entry/exit quality, rule adherence, lesson) persisted per trade; PROCESS-not-outcome scoring. T016 dependency SATISFIED 2026-08-17 (live sync reconciled) — real fills available; chat-level v0 works today via conversation.
+- [ ] T016c — Schwab into the DAILY sync: the client is live and trusted, but
+  scripts/sync.py still pulls Alpaca paper only — nothing lands the owner's
+  REAL fills automatically. Wire SchwabClient.get_transactions into sync.py
+  (dedupe by activityId against prior imports AND against the statement-parsed
+  history by the T108b fill-signature; read-only; never fatal if the weekly
+  token has lapsed — say "token refresh failed, run schwab_auth.py" and carry
+  on). This is what turns the behavioural stack from
+  parse-statements-when-delivered into a living record.
 - [ ] T067b — DQS v2 (after T036/T016/T063 land): score the OWNER's actual fills, add FOMO-into-late-RVOL-spike and cutting-winners-early patterns (need fill timestamps + intraday context), wire follow/override rate from the T063 journal, derive the risk budget from the IPS instead of RiskLimits defaults.
 - [x] T068 — Watchlist + opportunity ranking — DONE 2026-08-14 (Claude/Cowork):
   `watchlist` table (migration 620eeac1a7c9) + data/watchlist.py (idempotent
@@ -743,15 +751,19 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [x] T016a — Schwab read-only client + transaction mapping — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `backend/data/schwab.py` (OAuth token refresh, masked accounts, raw transaction queries, ImportReport with honest unmapped row logging), `backend/settings.py` (schwab_* settings and require_schwab), `.env.example`, `scripts/schwab_auth.py`, `scripts/reconcile_schwab.py`, `scripts/env_check.py`, and `backend/tests/test_schwab.py` (19 unit tests).
   REVIEW VERDICT: PASS. (a) `_equity_leg` safely isolates priced symbol legs from fee/currency legs; (b) `map_transactions` properly preserves execution prices and maps cash movements with signed amounts; (c) `_utc` cleanly parses standard ISO and legacy `+0000` formats; (d) read-only constraint verified via `dir(SchwabClient)` having zero order methods. Gate PASS (728 passed).
-  Remaining live acceptance UNPARKED 2026-08-17 — I019 resolved: app "Ready For
-  Use", refresh token obtained (verified by schwab_auth's built-in read-only
-  probe), SCHWAB_ACCOUNT_NUMBER set. OWNER RUNS NEXT (his machine; the sandbox
-  cannot reach api.schwabapi.com):
-    python scripts\reconcile_schwab.py --start 2026-03-01 --end 2026-03-31
-  then ticks the printed rows against the March statement (a month with BOTH
-  confirmations and a monthly statement in private/statements). Mapped+unmapped
-  must reconcile to the statement's trade count; report the verdict to any
-  agent and T016 closes.
+  LIVE ACCEPTANCE DONE 2026-08-17 (owner): I019 resolved same day (app "Ready
+  For Use", token obtained and probe-verified, SCHWAB_ACCOUNT_NUMBER set); the
+  owner ran scripts/reconcile_schwab.py and confirmed the import reconciles
+  against his statement — "T016 can officially be closed." He is the designed
+  verifier for this step (the script's whole philosophy: a machine agreeing
+  with itself is not verification), so his tick-off IS the acceptance. The
+  printout's mapped/unmapped counts were not captured in this record; pasting
+  them remains welcome and would upgrade the evidence, and T016b will make the
+  same check automatic under his final word. **T016 CLOSED — the full arc from
+  the owner's original question ("could KUBERA study my past trading
+  behavior?") to a reconciled, read-only, statement-verified live sync took
+  nine days and survived one blocked review, one survivorship-bias discovery,
+  and eleven days of Schwab's approval clock.**
 - [ ] T016b — Automated cross-check of the Schwab API import against the T108b
   statement-parsed fills: when reconcile_schwab.py was written, "the statement"
   existed only on paper, so the human was the only possible check. The parsed
