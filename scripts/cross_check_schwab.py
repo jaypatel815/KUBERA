@@ -40,8 +40,9 @@ def main() -> int:
         description="Diff Schwab API fills against statement-parsed fills (T016b).")
     ap.add_argument("--start", required=True, help="YYYY-MM-DD (inclusive)")
     ap.add_argument("--end", required=True, help="YYYY-MM-DD (inclusive)")
-    ap.add_argument("--statements", default=str(ROOT / "private"),
-                    help="folder with statement PDFs (default: private/)")
+    ap.add_argument("--statements", default=str(ROOT / "private" / "statements"),
+                    help="folder with statement PDFs (default: private/statements — "
+                         "same as autopsy.py/pattern_check.py; not recursive)")
     ap.add_argument("--price-tol", type=float, default=0.01,
                     help="max price difference in dollars (default 0.01)")
     ap.add_argument("--account", default=None, help="last 4 digits, if several")
@@ -72,8 +73,24 @@ def main() -> int:
     api_report = map_transactions(rows)
 
     stmt_report = parse_directory(args.statements)
+    if stmt_report.files_read == 0:
+        # Owner's first run caught this: an empty statement side must NOT be
+        # diffed — every API order would print as "API-only", 38 fake problems
+        # that are really one missing input. Refuse loudly instead.
+        print(f"NO STATEMENT FILES FOUND in {args.statements}\n"
+              f"  Nothing to diff against — that folder has no .pdf/.txt files "
+              f"(note: not searched recursively).\n"
+              f"  Point --statements at the folder that holds your monthly "
+              f"statements and daily confirmations.")
+        return 2
     window_fills = [f for f in stmt_report.fills
                     if start.date() <= f.trade_date <= end.date()]
+    if not window_fills:
+        print(f"Statements parsed ({stmt_report.summary()}) but NONE of their "
+              f"fills fall in {args.start} .. {args.end}.\n"
+              f"  Nothing to diff — check the window matches the statements "
+              f"you have on disk.")
+        return 2
 
     print(f"account {account.number_masked}   window {args.start} .. {args.end}")
     print(f"API: {len(api_report.fills)} executions "

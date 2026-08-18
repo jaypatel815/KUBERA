@@ -38,6 +38,17 @@ currently RED — see I018, which needs the failing log.)
   named degradation confirmed ("SCHWAB UNAVAILABLE", exit 2 — api.schwabapi.com
   unreachable here per I002; the full path needs the owner's machine). ruff
   clean; pyrefly exactly 1 (I023 canary); full gate PASS.
+  OWNER-RUN DEFECT, fixed same session (2026-08-18): his first live run
+  parsed "0 files" — my --statements default was private/ but the PDFs live
+  in private/statements/ (the path every other script already uses; I didn't
+  check the precedent). Worse, the empty side still diffed: 38 fake
+  "API-only" problems that were really one missing input. Fixed both: default
+  now private/statements, and files_read==0 (or zero fills in window) refuses
+  loudly with the path it searched, exit 2 — an unavailable input is not a
+  discrepancy report. His visible output also confirmed the API side end to
+  end: 51 executions → 38 order lines, the 100 @ 0.21 two-execution case and
+  an 11-execution 0.09 aggregation both printed correctly, OCC symbols
+  rendered, ET dates matching his verified reconcile.
   D028 objections: (a) my near-miss date branch initially didn't check price —
   would have labelled pairs "all else equal" that also disagreed on price;
   caught in self-review, fixed, pinned by test; (b) known limitation: a GTC

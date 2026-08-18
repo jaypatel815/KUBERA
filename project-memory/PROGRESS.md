@@ -22,8 +22,13 @@ MATCHED / API-ONLY / STATEMENT-ONLY printed in full; near-misses labelled but
 never absorbed; fee comparison informational only. 14 hand-computed tests;
 sandbox CLI run degrades to named "SCHWAB UNAVAILABLE" (I002); gate PASS;
 pyrefly exactly 1. D028 catch: near-miss date label initially skipped the
-price check — fixed and pinned. Owner acceptance: run it for March on his
-machine and hold it next to the reconcile he already ticked off.
+price check — fixed and pinned. OWNER'S FIRST RUN then caught a real defect:
+--statements defaulted to private/ but the PDFs live in private/statements/
+(the path autopsy/pattern_check already use), and the empty side diffed into
+38 fake API-only lines. Fixed same session: correct default + loud refusal
+(exit 2) when 0 files or 0 in-window fills — missing input is not a
+discrepancy report. His output DID verify the API side end to end (per-order
+aggregation, OCC rendering, ET dates). Awaiting his re-run + Gemini review.
 Next: Gemini reviews T016b. Remaining backlog headliners: T104, T067b, T023b.
 
 ## 2026-08-18 — Gemini/Antigravity — Review completed for T113 (D032 review-only mode)
