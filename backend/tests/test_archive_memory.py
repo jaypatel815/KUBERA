@@ -1,14 +1,12 @@
 """Unit tests for scripts/archive_memory.py (T112 / D031)."""
 
-import pytest
-from pathlib import Path
 import sys
+from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 import archive_memory  # noqa: E402
-
 
 SAMPLE_PROGRESS = """# PROGRESS
 
