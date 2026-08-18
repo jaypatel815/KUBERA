@@ -18,7 +18,7 @@ Voice-ready: ask the Orb "give me my morning brief" — the chat layer calls the
 get_brief tool and narrates this structure per VOICE_STYLE.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -42,7 +42,7 @@ from risk.persistence import restore_risk_state
 from risk.tiers import current_tier
 
 PENDING_NOTES = [
-    "earnings dates for held symbols arrive with T023/T076b",
+    "FOMC meeting dates arrive with T076b (needs a source decision)",
 ]
 
 
@@ -170,11 +170,38 @@ def _events_section(fred) -> dict:
         return {"upcoming": [], "note": f"event calendar unavailable: {e}"}
 
 
+def _earnings_section(fmp, held_symbols: set[str], horizon_days: int = 14) -> dict:
+    """T023: upcoming earnings for HELD symbols. No FMP client (or any failure)
+    degrades to a note — an earnings date the brief cannot fetch must never
+    become an earnings date the brief pretends does not exist silently."""
+    if fmp is None:
+        return {"upcoming": [],
+                "note": "earnings calendar off (add FMP_API_KEY to .env — free tier works)"}
+    import httpx
+
+    from data.fmp import FmpError
+    try:
+        today = datetime.now(timezone.utc).date()
+        cal = fmp.earnings_calendar(today, today + timedelta(days=horizon_days))
+        mine = [
+            {"symbol": e.symbol, "date": e.date.isoformat(),
+             "time_hint": e.time_hint, "eps_estimated": e.eps_estimated}
+            for e in cal.events if e.symbol in held_symbols
+        ]
+        note = None
+        if cal.unparsed:
+            note = f"{len(cal.unparsed)} calendar rows unparseable (reported, not dropped)"
+        return {"upcoming": mine, "horizon_days": horizon_days, "note": note}
+    except (FmpError, httpx.HTTPError) as e:
+        return {"upcoming": [], "note": f"earnings calendar unavailable: {e}"}
+
+
 def compose_morning_brief(db: Session, alpaca: AlpacaClient,
-                          market: MarketDataClient, fred=None) -> dict:
+                          market: MarketDataClient, fred=None, fmp=None) -> dict:
     acct = alpaca.get_account()
     positions = alpaca.get_positions()
-    symbols = sorted({p.symbol for p in positions} | {"SPY"})
+    held = {p.symbol for p in positions}
+    symbols = sorted(held | {"SPY"})
     return {
         "type": "morning",
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -183,6 +210,7 @@ def compose_morning_brief(db: Session, alpaca: AlpacaClient,
         "symbols": [_symbol_read(market, s) for s in symbols],
         "watchlist": _watchlist_section(db, market),
         "event_risk": _events_section(fred),
+        "earnings_risk": _earnings_section(fmp, held),
         "notes": PENDING_NOTES,
         "source": acct.source,
     }

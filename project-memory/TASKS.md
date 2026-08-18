@@ -12,9 +12,46 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T023 v1 (earnings calendar via FMP free tier) — Claude/Cowork** — claimed 2026-08-17.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T023 v1 (earnings calendar, FMP free tier — D030) — AWAITING REVIEW —
+  Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity.
+  The owner ran the probe; his table is recorded in D030 and decided the sources:
+  FMP /stable calendar for earnings dates, Alpaca for news, transcripts/estimate
+  FEATURES out, fundamentals deferred to T023b.
+  Files: `backend/settings.py` (fmp_api_key SecretStr + fmp_base_url, T107
+  convention), `backend/data/fmp.py` (NEW FmpClient: /stable family ONLY — the
+  v3 calendar is paywalled for him; fail-closed row parsing per the T102 rule
+  with REPORTED unparsed; named 429/paywall errors; never auto-retries; one
+  calendar call covers all symbols in a window — 250/day respected by design),
+  `backend/api/tools.py` (tool #37 get_earnings_calendar — dates are facts,
+  riding estimates attributed as third-party opinion; ToolContext gains
+  optional fmp), `backend/api/brief.py` (morning brief gains earnings_risk for
+  HELD symbols, 14-day horizon, degrades to a note without a key or on any
+  failure; stale PENDING_NOTES line replaced), `backend/api/mcp_server.py`
+  (read-only list + tool), `backend/api/main.py` (/api/brief constructs fmp
+  best-effort like fred), `scripts/fmp_check.py` (analyst-estimates 400 was MY
+  probe's parameter bug — params fixed so the next owner run reports that
+  endpoint honestly), tests (test_fmp.py NEW 9; guard bumps 36→37 in
+  test_tools/test_chat/test_claude_sdk).
+  EVIDENCE (D027): 46 passed across the five touched suites; full gate PASS;
+  ruff clean; pyrefly exactly 1 (known I023). Unparsed-reporting proven (rows
+  missing symbol/date land in `unparsed` with "refusing to guess"); degrade
+  paths tested three ways (no client / no key / HTTP 500).
+  HONESTY NOTE, stated the same way the Schwab tests state it: the fixture rows
+  follow FMP's DOCUMENTED calendar shape — the tests prove the parser does what
+  we believe the API returns. The owner-side proof is the probe (calendar OK,
+  77 rows) plus the first live morning brief with FMP_API_KEY present; if the
+  real field names differ, rows land loudly in unparsed, not silently wrong.
+  STRONGEST OBJECTIONS AGAINST MY OWN TICKET (D028):
+    1. The parser has not seen a REAL calendar row — only the documented shape.
+       Mitigated by fail-closed unparsed reporting, but the reviewer should ask
+       the owner to run one morning brief and check unparsed_rows == 0.
+    2. _earnings_section fetches the FULL window calendar and filters to held
+       symbols client-side — one request, but a big window response; fine at
+       250/day, worth a symbols-param server-side filter if FMP supports one.
+    3. The 14-day brief horizon is a chosen constant (commented); reasonable
+       people could want it configurable.
 - **T091b-rest (weekly attribution + EOD regime line + cost decomposition) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. Closes T091b.
   Files: `backend/analysis/attribution.py` (trips gain exit-side `notional`; NEW
   `attributed_fills_from_rows` — shared by tool and weekly review so the two can never
@@ -564,16 +601,14 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 
 ## Backlog — Phase 2: Analysis & insight engine (agents)
 - [ ] T023 — Fundamentals + news ingestion: evaluate the owner's existing FMP/FRED keys (D009) vs Alpaca news; verify key validity + tier limits first (incl. whether the FMP tier covers earnings calendar, consensus estimates, and TRANSCRIPTS — commonly paid-tier; D019), then pick and integrate one source. Evaluation weighs (D017): earnings-surprise momentum, FCF yield/debt ratios, 13F ownership-change availability per tier; news is CONTEXT + event risk (feeds T076), never claimed as sentiment alpha. Unblocks T083 (needs earnings dates).
-  OWNER ANSWERED 2026-08-17: **FMP FREE tier — earnings-call transcripts NOT
-  included.** Transcript-dependent features are OUT (D019 anticipated exactly
-  this). The remaining unknowns (earnings calendar, statements depth, consensus
-  estimates, news — free tiers gate these differently and quietly) are now
-  TESTABLE, not guessable: `scripts/fmp_check.py` (NEW) probes all eight
-  T023-relevant endpoints from the owner's machine — statuses and row counts
-  only, the key never printed, an empty-but-200 response flagged as possible
-  silent tier-limiting. FMP is unreachable from the sandbox (proxy 403), so the
-  probe MUST run owner-side. Integration work stays parked until the probe
-  table is pasted back (D026: verify before trusted).
+  RESOLVED 2026-08-17 (D030): owner ran the probe — calendar/statements answer
+  on the free tier, news/transcripts paywalled. v1 BUILT same day (see
+  "Awaiting review"): FmpClient + get_earnings_calendar (#37) + morning-brief
+  earnings_risk for held symbols. Follow-up split out:
+- [ ] T023b — Fundamental ratios from FMP statements (D030 #4): FCF yield and
+  debt ratios from the free tier's 5 annual periods (probe-verified),
+  deterministic in /backend/analysis with hand tests; surface in the symbol
+  briefing. Estimates/transcripts stay OUT (paywalled).
 - [x] T096 — Per-brain tool subsetting — DONE 2026-08-14 (Claude/Cowork):
   `api/tool_policy.py` — CORE_TOOLS (11: portfolio, briefing, latest, regime,
   exit plan, triage, size, brief, risk, record_decision, ips), is_small_brain

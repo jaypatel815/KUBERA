@@ -72,6 +72,7 @@ from backtest.stats import calmar, trade_stats
 from backtest.strategies import TEMPLATES, build_strategy
 from data.alpaca import AlpacaClient, AlpacaError
 from data.flows import flow_history
+from data.fmp import FmpClient, FmpError
 from data.fred import SERIES, FredClient, FredError
 from data.history import equity_history
 from data.ips import get_ips, ips_as_dict, upsert_ips
@@ -123,6 +124,7 @@ class ToolContext:
     alpaca: AlpacaClient | None = None
     market: MarketDataClient | None = None
     fred: "FredClient | None" = None
+    fmp: "FmpClient | None" = None
     db: Session | None = None
     confirmed: bool = False
 
@@ -651,9 +653,10 @@ def _get_brief(ctx: ToolContext, p: BriefArgs) -> dict:
     db = ctx.require("db")
     alpaca: AlpacaClient = ctx.require("alpaca")
     if p.type == "morning":
-        # fred is OPTIONAL for the brief: no key -> event section degrades to a note
+        # fred and fmp are OPTIONAL for the brief: missing keys degrade their
+        # sections to notes (T062b events, T023 earnings)
         return compose_morning_brief(db, alpaca, ctx.require("market"),
-                                     fred=ctx.fred)
+                                     fred=ctx.fred, fmp=ctx.fmp)
     if p.type == "eod":
         return compose_eod_report(db, alpaca)
     return compose_weekly_review(db, alpaca, ctx.require("market"))
@@ -690,6 +693,56 @@ def _get_macro_context(ctx: ToolContext, _: NoArgs) -> dict:
                   "upcoming_releases_note": events_note},
         "asof": obs["vix"].asof.isoformat(),
         "source": "fred",
+    }
+
+
+class EarningsCalendarArgs(LenientArgs):
+    days: int = Field(default=14, ge=1, le=90,
+                      description="Horizon in calendar days from today")
+    symbols: list[str] | str | None = Field(
+        default=None,
+        description="Tickers to filter by (list or single string); omit for the "
+                    "full calendar window",
+    )
+
+
+@registry.tool(
+    "get_earnings_calendar",
+    "Upcoming earnings DATES in a window (T023, FMP free tier — probe-verified). "
+    "An earnings date is scheduled event risk: check it before recommending "
+    "entries and say when a held symbol reports. Dates are facts; the eps/revenue "
+    "estimates riding along are third-party OPINIONS — attribute them as such, "
+    "never as KUBERA's forecast. Unparseable calendar rows are counted, not "
+    "hidden.",
+    EarningsCalendarArgs,
+)
+def _get_earnings_calendar(ctx: ToolContext, p: EarningsCalendarArgs) -> dict:
+    fmp: FmpClient = ctx.require("fmp")
+    today = datetime.now(timezone.utc).date()
+    try:
+        cal = fmp.earnings_calendar(today, today + timedelta(days=p.days))
+    except FmpError as e:
+        raise ToolError(str(e)) from e
+    wanted = None
+    if p.symbols:
+        raw = [p.symbols] if isinstance(p.symbols, str) else p.symbols
+        wanted = {s.strip().upper() for s in raw if s and s.strip()}
+    events = [e for e in cal.events if wanted is None or e.symbol in wanted]
+    return {
+        "from": cal.from_date,
+        "to": cal.to_date,
+        "events": [
+            {"symbol": e.symbol, "date": e.date.isoformat(),
+             "time_hint": e.time_hint, "eps_estimated": e.eps_estimated,
+             "revenue_estimated": e.revenue_estimated}
+            for e in events
+        ],
+        "count": len(events),
+        "unparsed_rows": len(cal.unparsed),
+        "asof": cal.asof,
+        "source": cal.source,
+        "note": ("estimates are third-party consensus figures passed through, "
+                 "not KUBERA's numbers"),
     }
 
 

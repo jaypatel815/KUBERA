@@ -364,10 +364,17 @@ def brief(
         fred = FredClient(settings=get_settings())  # optional: enriches morning brief
     except ConfigError:
         pass  # no FRED key: the event section degrades to a note (T062b)
+    fmp = None
+    try:
+        from data.fmp import FmpClient
+
+        fmp = FmpClient(settings=get_settings())  # optional: earnings section (T023)
+    except ConfigError:
+        pass  # no FMP key: the earnings section degrades to a note
     try:
         return registry.execute(
             "get_brief", {"type": type},
-            ToolContext(alpaca=alpaca, market=market, db=session, fred=fred),
+            ToolContext(alpaca=alpaca, market=market, db=session, fred=fred, fmp=fmp),
         )
     except (ToolArgumentError, ToolError) as e:
         raise HTTPException(status_code=422, detail=str(e))

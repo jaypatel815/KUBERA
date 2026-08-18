@@ -141,6 +141,18 @@ class KuberaSettings(BaseSettings):
         validation_alias=AliasChoices("FRED_BASE_URL", "KUBERA_FRED_BASE_URL"),
     )
 
+    # FMP (T023, D030) — FREE tier, probe-verified 2026-08-17: the /stable
+    # earnings calendar and 5-year statements answer; news/transcripts are
+    # paywalled (news comes from Alpaca instead). 250 requests/day.
+    fmp_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("FMP_API_KEY", "KUBERA_FMP_API_KEY"),
+    )
+    fmp_base_url: str = Field(
+        default="https://financialmodelingprep.com",
+        validation_alias=AliasChoices("FMP_BASE_URL", "KUBERA_FMP_BASE_URL"),
+    )
+
     # Schwab Trader API (T016, D026) — READ-ONLY. OAuth, not a key pair: the app
     # key/secret identify the APPLICATION, the refresh token identifies the LOGIN,
     # and the account number is neither — it only picks which account, and Schwab

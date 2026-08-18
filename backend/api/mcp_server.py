@@ -51,6 +51,7 @@ _READ_ONLY_TOOLS: frozenset[str] = frozenset({
     "get_confluence",
     "get_correlation",
     "get_daily_bars",
+    "get_earnings_calendar",
     "get_execution_quality",
     "get_exit_plan",
     "get_expected_move",

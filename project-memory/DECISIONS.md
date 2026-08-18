@@ -549,3 +549,26 @@ NOT adopted: LangChain Deep Agents / LangGraph / virtual filesystems / notebook
 orchestration / EODHD (reasons in the disposition doc — the repo IS our shared
 filesystem, and the audited-artifact trail already does what their framework
 simulates).
+
+## D030 — T023 sources decided by probe, not brochure (2026-08-17)
+
+The owner answered the standing tier question (FMP FREE, no transcripts), and
+scripts/fmp_check.py measured the rest FROM HIS MACHINE (sandbox cannot reach
+FMP). His table, verbatim evidence for this decision:
+  profile OK(1) · earnings-calendar /stable OK(77) · earnings-calendar /api/v3
+  PAYWALLED · income-statement OK(5) · cash-flow OK(5) · analyst-estimates
+  HTTP 400 (probe parameter bug, since fixed — tier still unknown) · stock-news
+  PAYWALLED · transcripts PAYWALLED.
+
+DECIDED:
+1. EARNINGS DATES come from FMP's /stable earnings-calendar — the free tier's
+   confirmed unlock. The /api/v3 family is never used (paywalled for him).
+2. NEWS stays with Alpaca (already integrated, D022). FMP news is paywalled;
+   no second news source.
+3. TRANSCRIPTS and consensus-estimate FEATURES are out of scope. Estimates
+   that ride along on calendar rows are passed through as third-party OPINION,
+   attributed as such, never as KUBERA's forecast.
+4. FUNDAMENTAL RATIOS (FCF yield, debt — D017) are FEASIBLE (statements answer
+   with 5 annual periods) and deferred to T023b as their own ticket.
+5. Free-tier budget respected in design: one calendar call covers every symbol
+   in a window; the client never auto-retries a 429.

@@ -26,6 +26,31 @@ Implemented monthly brokerage statement transaction importing and deduplication 
   · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
 - Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
 
+## 2026-08-17 (ninth session) — Claude/Cowork — T023 v1: earnings dates are in the brief
+The owner ran the probe and the table decided everything (D030): the /stable
+earnings calendar answers on his FREE tier (77 rows), statements give 5 annual
+periods, news/transcripts are paywalled — so earnings dates come from FMP,
+news stays with Alpaca, transcripts are out, fundamentals deferred to T023b.
+Built v1 the same session:
+- data/fmp.py: FmpClient, /stable family ONLY (v3 is paywalled for him),
+  fail-closed row parsing (missing symbol/date → REPORTED unparsed, never
+  guessed), named 429/paywall errors, no auto-retry — 250/day respected by
+  design (one calendar call covers every symbol in a window).
+- Tool #37 get_earnings_calendar (guards bumped ×3): dates are facts; the
+  eps/revenue estimates riding along are third-party OPINION and the payload
+  says so. Read-only MCP list updated.
+- Morning brief gains earnings_risk: upcoming earnings for HELD symbols,
+  14-day horizon, degrades to a note without a key or on any failure — the
+  stale "arrives with T023" pending note finally retired.
+- fmp_check.py's analyst-estimates HTTP 400 was MY parameter bug — fixed, so
+  the owner's next probe run reports that endpoint honestly.
+HONESTY NOTE: the parser is tested against FMP's documented shape, not yet a
+real row — same stance as the Schwab tests; unparsed-reporting is the net.
+Gate PASS; pyrefly 1 (known I023); 9 new tests (46 green across touched
+suites). Next: Gemini reviews T023 v1; owner adds FMP_API_KEY awareness — it
+is already in his .env, so the first morning brief just works; check
+unparsed_rows == 0 on it.
+
 ## 2026-08-17 (eighth session) — Claude/Cowork — T023 unblocking: FMP tier answer + probe
 Owner answered the standing T023 question: FMP FREE tier, earnings-call
 transcripts NOT included. Recorded in T023; transcript features are out (D019
