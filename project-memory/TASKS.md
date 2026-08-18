@@ -12,6 +12,8 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
+- **T067b (DQS v2 — score the OWNER's fills) — Claude/Cowork** — claimed 2026-08-18.
+
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T023b (fundamental ratios from FMP statements — D030 #4) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 8609e54)**. Built:
   (1) backend/analysis/fundamentals.py (NEW, pure, no I/O) — FCF per fiscal
