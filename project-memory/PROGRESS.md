@@ -5,6 +5,21 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Claude/Cowork — TASKS.md curation: 1,100 → ~590 lines (D031)
+The nag earned its keep the hard way: a stale "- [ ] T104" duplicate (T104 has
+been DONE since 08-16) misled two sessions' "next" pointers before this pass
+caught it. Moved verbatim to archive/TASKS-archive-2026-08-18.md with
+provenance: the pre-today "Awaiting review" DONE blocks (T111, T023 v1,
+T091b-rest, T077b, T109, T108b, T108, T104, T107, T103 — all double-signed)
+and the full early-phase "## Done" tail (T098 back to T001). Kept in place:
+today's arc (T016b/T016c/T113/T112), all 18 open tickets (verified by grep
+before/after), guidance, parallel-work rules. Fixed stale checkboxes: T104,
+T107, T023 → [x] pointers; T077b/T109/T091b [~] → [x]. Also verified
+parallel_check's clobber alarm on c722326f: Gemini replaced its OWN stale
+second verdict with the third — benign, nothing of anyone else's lost.
+Budgets now ALL within bounds. Next: T067b or T023b (T104 is done, despite
+what the old checkbox said).
+
 ## 2026-08-18 — Claude/Cowork — D033: a verdict names the SHA it covers; T016b fully closed
 Two review races on one ticket in one day: verdicts at 16:08 and 16:18 each
 went stale within minutes of signing (the second's own evidence — "38
