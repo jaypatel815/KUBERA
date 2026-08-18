@@ -27,18 +27,15 @@ Read-only: this script cannot place, modify or cancel anything (D026).
 import argparse
 import sys
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 BACKEND = Path(__file__).resolve().parents[1] / "backend"
 sys.path.insert(0, str(BACKEND))
 
+from analysis.market_time import market_window_utc  # noqa: E402
 from data.schwab import SchwabClient, map_transactions  # noqa: E402
 from settings import ConfigError, get_settings  # noqa: E402
-
-
-def _day(text: str) -> datetime:
-    return datetime.strptime(text, "%Y-%m-%d").replace(tzinfo=timezone.utc)
 
 
 def main() -> int:
@@ -54,7 +51,10 @@ def main() -> int:
         print(f"NOT CONFIGURED\n  {e}")
         return 2
 
-    start, end = _day(args.start), _day(args.end)
+    # Inclusive MARKET days (T016b owner-run fix): the old midnight-UTC end
+    # boundary excluded every trade executed during the final day's session.
+    start, end = market_window_utc(date.fromisoformat(args.start),
+                                   date.fromisoformat(args.end))
 
     with SchwabClient() as client:
         accounts = client.list_accounts()

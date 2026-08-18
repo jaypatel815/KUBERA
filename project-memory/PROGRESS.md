@@ -35,8 +35,16 @@ the original build only, and it missed the defect the owner's run had already
 shown live (no test covered the CLI default; the review's evidence was pytest
 + gate, not a CLI run). 71670b2 re-queued for delta review with a suggested
 check: CLI once against real private/statements, once against a bogus path
-(expect exit 2 + named message). Owner re-run still pending.
-Next: Gemini delta-reviews 71670b2. Backlog headliners: T104, T067b, T023b.
+(expect exit 2 + named message). OWNER RUN #2: 38/38 API orders matched
+their statement lines; the 1 statement-only was a second real defect —
+midnight-UTC --end excluded the final session (his 3/31 buy). Root fix:
+market_window_utc() (inclusive ET days, DST-straddling March edges pinned
+05:00Z/04:00Z), wired into cross_check AND reconcile_schwab (same class).
+pypdf rotation warnings quieted at the CLI. All 4 FEE NOTEs explained
+exactly: confirmation parser puts a day's total commission on one line
+(contract-count x 0.65 arithmetic checks out); API per-order fees are the
+granular truth. 24 tests green, gate PASS. Delta review now covers 71670b2
++ this window commit. Backlog headliners: T104, T067b, T023b.
 
 ## 2026-08-18 — Gemini/Antigravity — Review completed for T113 (D032 review-only mode)
 Reviewed T113 (utf-8 subprocess hardening + archiver tests) per D027 evidence requirements:

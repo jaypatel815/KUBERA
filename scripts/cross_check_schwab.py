@@ -18,21 +18,25 @@ Read-only (D026): this script cannot place, modify, or cancel anything.
 """
 
 import argparse
+import logging
 import sys
-from datetime import datetime, timezone
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
 from analysis.cross_check import cross_check  # noqa: E402
+from analysis.market_time import market_window_utc  # noqa: E402
 from data.schwab import SchwabClient, SchwabError, map_transactions  # noqa: E402
 from data.statements import parse_directory  # noqa: E402
 from settings import ConfigError, get_settings  # noqa: E402
 
-
-def _day(text: str) -> datetime:
-    return datetime.strptime(text, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+# The owner's statements carry rotated watermark text; pypdf logs a warning
+# per page ("Rotated text discovered") — 90+ lines of noise before the diff.
+# Quieted HERE at the CLI, not in the library: parse failures still surface
+# as unparsed entries in the report, which is the signal that matters.
+logging.getLogger("pypdf").setLevel(logging.ERROR)
 
 
 def main() -> int:
@@ -54,7 +58,11 @@ def main() -> int:
         print(f"NOT CONFIGURED\n  {e}")
         return 2
 
-    start, end = _day(args.start), _day(args.end)
+    # Inclusive MARKET days (T016b owner-run fix): midnight-UTC ends silently
+    # dropped the final session — his real 3/31 buy looked statement-only.
+    start_d = date.fromisoformat(args.start)
+    end_d = date.fromisoformat(args.end)
+    start, end = market_window_utc(start_d, end_d)
 
     try:
         with SchwabClient() as client:
@@ -84,7 +92,7 @@ def main() -> int:
               f"statements and daily confirmations.")
         return 2
     window_fills = [f for f in stmt_report.fills
-                    if start.date() <= f.trade_date <= end.date()]
+                    if start_d <= f.trade_date <= end_d]
     if not window_fills:
         print(f"Statements parsed ({stmt_report.summary()}) but NONE of their "
               f"fills fall in {args.start} .. {args.end}.\n"

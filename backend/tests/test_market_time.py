@@ -9,7 +9,12 @@ from datetime import date, datetime, timezone
 
 import pytest
 
-from analysis.market_time import MARKET_TZ, market_day_start_utc, market_today
+from analysis.market_time import (
+    MARKET_TZ,
+    market_day_start_utc,
+    market_today,
+    market_window_utc,
+)
 
 
 def test_the_owners_exact_instant():
@@ -58,3 +63,28 @@ def test_default_now_agrees_with_explicit_now():
     """The no-argument path uses the same conversion as the explicit path."""
     explicit = market_today(datetime.now(timezone.utc))
     assert market_today() in (explicit, explicit)  # same call, moments apart
+
+
+def test_window_covers_the_full_final_session():
+    """T016b owner-run regression: his real 3/31 15:00 ET buy fell outside
+    the old midnight-UTC window and printed as a fake statement-only line.
+    The window must include the WHOLE inclusive end day."""
+    start, end = market_window_utc(date(2026, 3, 1), date(2026, 3, 31))
+    trade_331 = datetime(2026, 3, 31, 19, 0, tzinfo=timezone.utc)  # 3 PM EDT
+    assert start <= trade_331 < end
+
+
+def test_window_edges_straddle_the_dst_flip():
+    """March 2026 contains the EST->EDT change (Mar 8): the start edge is
+    EST midnight (05:00Z), the end edge EDT midnight (04:00Z). Pinning both
+    proves the zone — not a fixed offset — computes the boundaries."""
+    start, end = market_window_utc(date(2026, 3, 1), date(2026, 3, 31))
+    assert start == datetime(2026, 3, 1, 5, 0, tzinfo=timezone.utc)
+    assert end == datetime(2026, 4, 1, 4, 0, tzinfo=timezone.utc)
+
+
+def test_window_single_day_and_bad_order():
+    start, end = market_window_utc(date(2026, 8, 17), date(2026, 8, 17))
+    assert (end - start).total_seconds() == 24 * 3600
+    with pytest.raises(ValueError, match="before"):
+        market_window_utc(date(2026, 8, 18), date(2026, 8, 17))

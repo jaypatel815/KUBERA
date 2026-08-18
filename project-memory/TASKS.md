@@ -39,6 +39,25 @@ currently RED — see I018, which needs the failing log.)
   named degradation confirmed ("SCHWAB UNAVAILABLE", exit 2 — api.schwabapi.com
   unreachable here per I002; the full path needs the owner's machine). ruff
   clean; pyrefly exactly 1 (I023 canary); full gate PASS.
+  OWNER RUN #2 (2026-08-18, after the folder fix): 38 of 38 API orders
+  MATCHED their statement lines — dates, symbols, sides, quantities, prices
+  agreeing across two independent sources, including the 11-execution and
+  2-execution aggregations. The 1 "statement-only" line was MY window bug:
+  --end as midnight UTC excluded the final session, so his real 3/31 SPY put
+  buy was never in the API pull. Fixed at the root: market_window_utc() in
+  analysis/market_time.py (inclusive ET days -> [start, day-after-end) UTC;
+  March-2026 DST-straddling edges pinned 05:00Z/04:00Z, his 3/31 15:00 ET
+  trade pinned inside), wired into BOTH cross_check_schwab.py and
+  reconcile_schwab.py (same defect class — reconcile had silently dropped
+  final-day trades too). Also quieted pypdf's per-page "Rotated text" warning
+  at the CLI (90+ noise lines; unparsed-count remains the real signal).
+  FEE NOTES explained (all 4, verified arithmetic): the confirmation parser
+  attributes a DOCUMENT's total commission to one line when several
+  same-instrument orders share a day — 3/09 stmt 6.50 = (2+2+6) contracts
+  x 0.65; 3/17 9.75 = 15 x 0.65; 3/20 62.40 = 96 x 0.65; 3/27 1.95 = 3 x
+  0.65. Sum-level the sources agree exactly; the API's per-order numbers
+  (T016c) are the granular truth. Informational-only design behaved
+  correctly (no match was blocked).
   OWNER-RUN DEFECT, fixed same session (2026-08-18): his first live run
   parsed "0 files" — my --statements default was private/ but the PDFs live
   in private/statements/ (the path every other script already uses; I didn't
