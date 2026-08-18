@@ -41,3 +41,7 @@ private/
 # be committed and mistaken for the real one. The template lives in
 # scripts/mcp_server.py's docstring.
 claude_desktop_config.json
+
+# I029 probe outputs — orderIds/positionIds are semi-sensitive; repo is public
+out_put.txt
+*_output.txt

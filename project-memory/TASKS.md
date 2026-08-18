@@ -761,9 +761,17 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   closed_by="expiry_observed", feeding T108 as observation, never a sale).
   My previous "T016 CLOSED" line was written on his initial go-ahead and is
   RETRACTED — closed-then-caught is precisely what the human-verifier step
-  exists to produce. NEXT: owner runs scripts/schwab_probe_shape.py (NEW),
-  pastes the shapes; mapper gets fixed against OBSERVED rows (T102 rule);
-  re-reconcile; THEN T016 closes on a clean tick.
+  exists to produce. PROBE RUN AND FIXES LANDED same day (I029 root causes —
+  which corrected BOTH of my hypotheses; see ISSUES): mapper prefers `time`
+  over the sometimes-placeholder `tradeDate` (regression test from observed
+  row ...468374); reconcile prints EASTERN times labeled as such; a new
+  EXPECTED EXPIRATIONS section lists open option lots past expiry as
+  "expired worthless, $0 — no Schwab transaction exists" so the tick-off
+  matches the statement's Expired rows. FINAL STEP: owner re-runs
+    python scripts\reconcile_schwab.py --start 2026-03-01 --end 2026-03-31
+  and ticks clean — times should now read as he remembers them, the two
+  05:00:00 phantoms become real morning times, and the three expired
+  contracts appear explicitly at $0. THEN T016 closes.
 - [ ] T016b — Automated cross-check of the Schwab API import against the T108b
   statement-parsed fills: when reconcile_schwab.py was written, "the statement"
   existed only on paper, so the human was the only possible check. The parsed

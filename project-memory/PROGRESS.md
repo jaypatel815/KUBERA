@@ -26,6 +26,28 @@ Implemented monthly brokerage statement transaction importing and deduplication 
   · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
 - Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
 
+## 2026-08-17 (fourteenth session) — Claude/Cowork — I029 root-caused: the probe corrected BOTH my hypotheses
+The owner pasted the March probe. What the observed rows actually showed:
+- DATES were right in the data; the defects were UTC DISPLAY (3:08 PM printed
+  as 19:08:01) and Schwab's `tradeDate` degrading to a midnight-ET
+  placeholder on two rows (...055213/...468374) while `time` held real
+  execution. NOT the settle-vs-trade class I hypothesised. Fixed: mapper
+  prefers `time` (regression test copied from the observed row); reconcile
+  prints Eastern, labeled.
+- EXPIRATIONS are simply ABSENT from the transactions endpoint (660P x10,
+  656C x3, 170C x3 — no rows at all). Nothing was fabricated, and my
+  "expiry_observed" idea was wrong for this feed: there is nothing to
+  observe. T108's $0 closing stays authoritative; reconcile now prints an
+  EXPECTED EXPIRATIONS section so the human tick-off matches the statement's
+  Expired rows explicitly.
+- Bonuses: NVDA 167.5P's sale of 2 @ 0.64 is in the API (old T108 puzzle
+  RESOLVED — the sale was real); transferItems carry real per-trade fees
+  (T016c should persist them). out_put.txt gitignored (repo is public).
+- Process note against myself (D028): the probe script shipped with 4
+  pyrefly errors last session — I ran ruff+gate but skipped pyrefly. Fixed;
+  count back to exactly 1 (known I023). Gate PASS; 2 new regression tests.
+Next: owner re-runs reconcile_schwab.py for March; a clean tick closes T016.
+
 ## 2026-08-17 (thirteenth session) — Claude/Cowork — T016 REOPENED by the owner's tick-off (I029)
 The reconciliation worked exactly as designed: reviewing March against the
 statement, the owner caught (1) imported dates that don't match when he

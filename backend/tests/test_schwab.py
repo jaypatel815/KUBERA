@@ -3,11 +3,14 @@
 No network: every test drives httpx.MockTransport. The live smoke test lives on
 the owner's machine (I002 — the sandbox cannot reach api.schwabapi.com).
 
-The mapping fixtures below are built from Schwab's published response shapes and
-have NOT been checked against a live pull. That is stated here rather than
-implied, because these tests can only prove the mapper does what we BELIEVE the
-API returns. Proving it does what the API actually returns is reconciliation
-against a statement, which is T016's real acceptance criterion (D026).
+The mapping fixtures below were originally built from Schwab's published
+response shapes. AS OF 2026-08-17 the key shapes are checked against a LIVE
+pull (the owner's March 2026 probe, I029): `time` is the real execution
+instant on every observed row, while `tradeDate` sometimes degrades to a
+date-only placeholder at midnight ET (05:00:00Z) — the placeholder fixture
+below is a faithful copy of that observed defect. Expirations produce NO
+transaction row at all in this endpoint; the reconcile script surfaces them
+as expected-expirations instead (T108 closes them at $0).
 """
 
 from datetime import datetime, timezone
@@ -435,3 +438,42 @@ def test_underlying_symbol_is_used_when_the_occ_symbol_is_absent():
         ],
     }
     assert map_transactions([row]).fills[0].symbol == "AMD"
+
+
+# ------------------------------------------------ I029: observed-row regressions
+
+PLACEHOLDER_DATE_ROW = {
+    # Faithful shape of observed row ...468374 (owner's March 2026 probe):
+    # real execution in `time`, date-only placeholder (midnight ET) in
+    # `tradeDate`. The mapper must trust `time`.
+    "activityId": 468374,
+    "time": "2026-03-06T15:24:20+0000",
+    "tradeDate": "2026-03-06T05:00:00+0000",
+    "type": "TRADE",
+    "status": "VALID",
+    "orderId": 1005629000000,
+    "netAmount": 1530.15,
+    "transferItems": [
+        {"instrument": {"assetType": "CURRENCY", "symbol": "CURRENCY_USD"},
+         "amount": 0.0, "cost": 0.0, "feeType": "SEC_FEE"},
+        {"instrument": {"symbol": "GDX", "assetType": "EQUITY"},
+         "amount": -15, "price": 102.01},
+    ],
+}
+
+
+def test_execution_time_beats_the_placeholder_trade_date():
+    """I029: the owner read '05:00:00' on his reconcile printout and correctly
+    said that is not when he traded. `time` carries 15:24:20Z (11:24 ET);
+    `tradeDate` carries the midnight placeholder. `time` wins."""
+    rep = map_transactions([PLACEHOLDER_DATE_ROW])
+    assert len(rep.fills) == 1
+    f = rep.fills[0]
+    assert f.occurred_at == datetime(2026, 3, 6, 15, 24, 20, tzinfo=timezone.utc)
+    assert f.side == "sell" and f.symbol == "GDX"
+
+
+def test_normal_rows_unchanged_by_the_preference_swap():
+    """Rows where time == tradeDate (50 of the 51 observed) map identically."""
+    rep = map_transactions([TRADE_ROW])
+    assert rep.fills[0].occurred_at == T0

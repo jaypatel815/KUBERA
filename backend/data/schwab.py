@@ -282,7 +282,12 @@ def map_transactions(rows: list[dict]) -> ImportReport:
     for row in rows:
         activity_id = str(row.get("activityId") or row.get("transactionId") or "")
         kind = str(row.get("type") or "").upper()
-        occurred = _utc(row.get("tradeDate") or row.get("time") or row.get("settlementDate"))
+        # I029, fixed against OBSERVED rows (owner's March 2026 probe): `time`
+        # is the real execution instant on every row; `tradeDate` is USUALLY
+        # identical but degrades to a date-only placeholder at midnight ET
+        # (05:00:00Z — activityIds ...055213 and ...468374) on some equity
+        # sells. Prefer the field that never lied.
+        occurred = _utc(row.get("time") or row.get("tradeDate") or row.get("settlementDate"))
 
         if not activity_id:
             report.unmapped.append({"row": _brief(row), "why": "no activityId"})

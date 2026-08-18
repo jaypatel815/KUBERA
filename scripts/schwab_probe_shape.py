@@ -45,6 +45,12 @@ def _strip_account(obj):
     return obj
 
 
+def _strip_account_row(row: dict) -> dict:
+    """Typed top-level wrapper: a transaction row is a dict in, a dict out."""
+    return {k: _strip_account(v) for k, v in row.items()
+            if "account" not in k.lower()}
+
+
 def _datey_fields(row: dict) -> dict:
     return {k: v for k, v in row.items()
             if any(t in k.lower() for t in ("date", "time", "expir"))}
@@ -82,7 +88,7 @@ def main() -> int:
         print(e)
         return 2
 
-    rows = [_strip_account(r) for r in rows]
+    rows = [_strip_account_row(r) for r in rows]
     print(f"{len(rows)} raw transactions {args.start}..{args.end}\n")
 
     by_type = defaultdict(list)

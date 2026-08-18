@@ -4,7 +4,33 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
-- I029 [SCHWAB API MAPPING — found by THE OWNER's reconciliation, 2026-08-17]
+- I029 [ROOT-CAUSED AND FIXED 2026-08-17 against the owner's March probe —
+  awaiting his clean re-reconcile to close. What the OBSERVED rows showed,
+  correcting both of my hypotheses:
+  1. DATES: the underlying dates were RIGHT. Two real defects instead:
+     (a) the reconcile printout displayed UTC, so a 3:08 PM trade read as
+     19:08:01 and two placeholder rows read as 05:00:00 "trades"; and (b) on
+     rows ...055213/...468374 Schwab's `tradeDate` degrades to a DATE-ONLY
+     placeholder (midnight ET) while `time` carries real execution — the
+     mapper preferred the wrong field. FIXED: mapper prefers `time`
+     (regression test from the observed row); reconcile prints Eastern with
+     the zone labeled.
+  2. EXPIRATIONS: the API emits NO transaction row at all for a worthless
+     expiry — nothing was fabricated; the events are simply ABSENT from this
+     endpoint (observed: 660P x10, 656C x3, 170C x3 all invisible). FIXED:
+     reconcile now prints an EXPECTED EXPIRATIONS section (open option lots
+     past expiry -> "expired worthless, $0, no Schwab transaction exists")
+     so the tick-off matches the statement's Expired rows; T108's $0 closing
+     REMAINS the authoritative treatment (there is nothing to "observe" in
+     this feed — my expiry_observed idea was wrong for this endpoint).
+  BONUS from the probe: the NVDA 167.5P sale of 2 @ 0.64 (13:55:05Z) is in
+  the API — the T108 "not_in_statements" puzzle is resolved; that sale was
+  real. ALSO: transferItems carry per-trade COMMISSION/OPT_REG_FEE/TAF_FEE —
+  the API has real fee data (statement-parity), which T016c should persist.
+  PROCESS NOTE (D028): the probe script itself shipped with 4 pyrefly errors
+  because I ran ruff+gate but skipped pyrefly that session; caught and fixed
+  this one. Original entry follows:]
+  I029 [SCHWAB API MAPPING — found by THE OWNER's reconciliation, 2026-08-17]
   He did the T016 tick-off against his March statement and caught two defects
   the unit tests could never catch, because (as test_schwab.py admits in its
   own docstring) the fixtures follow Schwab's PUBLISHED shapes and "have NOT
