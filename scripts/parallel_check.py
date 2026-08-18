@@ -48,8 +48,13 @@ APPEND_ONLY = {  # deletions here are almost always a clobber, not an edit
 
 
 def git(*args: str) -> str:
+    # T113: explicit utf-8 — Windows text=True defaults to cp1252, which
+    # mangles or crashes on the em-dashes/middle-dots all over the memory
+    # files this script exists to read. errors="replace" so a stray byte
+    # degrades one character, never the whole safety check.
     return subprocess.run(["git", "-C", str(REPO), *args],
-                          capture_output=True, text=True).stdout.strip()
+                          capture_output=True, text=True,
+                          encoding="utf-8", errors="replace").stdout.strip()
 
 
 def parse_claims(tasks_text: str) -> list[str]:
@@ -137,6 +142,7 @@ def main() -> int:
     heads = subprocess.run(
         [sys.executable, "-m", "alembic", "-c", "alembic.ini", "heads"],
         capture_output=True, text=True, cwd=str(REPO / "backend"),
+        encoding="utf-8", errors="replace",  # T113: same Windows cp1252 guard
     ).stdout.strip()
     head_lines = [h for h in heads.splitlines() if h.strip()]
     if len(head_lines) > 1:

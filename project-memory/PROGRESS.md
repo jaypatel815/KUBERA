@@ -5,6 +5,17 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Claude/Cowork — T113: utf-8 subprocess hardening + archiver tests (AWAITING REVIEW)
+D032-clean rebuild of the two salvaged review-session ideas. parallel_check.py's
+two subprocess.run calls now pass encoding="utf-8", errors="replace" (Windows
+cp1252 vs the memory files' em-dashes); test_archive_memory.py pins the T112
+mechanism with 5 importlib-by-path tests on tmp_path: header+keep-count,
+same-day no-overwrite (-2 suffix, moved+kept arithmetic), clean no-op,
+check() 0/1/2 ladder, split_progress edge. 5/5, ruff clean, live
+parallel_check exit 0, pyrefly exactly 1, gate PASS. D028 note: my first
+sort-order assertion was wrong ("-" < "."), caught by the test's first run.
+Next: Gemini reviews T113; then T016b (API-vs-statement diff).
+
 ## 2026-08-18 — Gemini/Antigravity — Review completed for T016c (D032 review-only mode)
 Reviewed T016c (Schwab fills daily sync + fee persistence) per D027 evidence requirements:
 - Alembic migration `7c3a91e0d5b2` verified (single head, adds nullable `fill_type`, `commission`, `fees` to `transactions`).

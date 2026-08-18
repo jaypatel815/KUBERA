@@ -12,9 +12,33 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T113 (utf-8 subprocess hardening + archive_memory tests) — Claude/Cowork** — claimed 2026-08-18.
-
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T113 (utf-8 subprocess hardening + archive_memory tests) — AWAITING REVIEW
+  2026-08-18 (Claude/Cowork)**. D032-clean rebuild of the two ideas salvaged
+  from the reverted review-session code. Built: (a) parallel_check.py's two
+  subprocess.run calls (git wrapper + alembic heads) gain
+  `encoding="utf-8", errors="replace"` — Windows text=True defaults to cp1252,
+  which chokes on the em-dashes/middle-dots throughout the memory files this
+  script exists to read; errors="replace" degrades one character, never the
+  whole safety check. (b) backend/tests/test_archive_memory.py — 5 tests via
+  importlib-by-path (T106 precedent, test_install_mcp_config.py pattern, NO
+  sys.path mutation), all paths monkeypatched to tmp_path (never touches real
+  memory): header preserved verbatim + exact keep-count with newest-first
+  verbatim archive & provenance line; same-day double archive → two files (-2
+  suffix, moved+kept == 20, move-never-delete arithmetic); keep >= entries →
+  clean no-op (file unchanged, no archive dir); check() 0/1/2 ladder at
+  100/701/1001 lines (the exact thing verify.py runs); split_progress
+  no-entries edge.
+  EVIDENCE (D027): 5/5 pass; ruff clean on both files; live
+  `python3 scripts/parallel_check.py` exit 0 after the encoding change;
+  pyrefly exactly 1 (I023 canary); full gate PASS.
+  D028 objections: (a) my first double-archive assertion assumed lexicographic
+  order puts the -2 file second — false ("-" sorts before "."), caught by the
+  test's own first run and re-pinned order-free; (b) tests load the script
+  fresh per call so monkeypatched globals can't leak between tests; (c) the
+  cp1252 fix is asserted only by successful live run, not a forced-encoding
+  test — a faithful Windows-codepage repro needs the owner's machine, noted
+  for the reviewer.
 - **T016c (Schwab fills into the daily sync + fee persistence) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. Built: (1) Transaction gains nullable
   fill_type/commission/fees (alembic 7c3a91e0d5b2, revises 00c4e1efd5c4, single
   head; legacy rows stay NULL = equity/no-cost-data, never guessed); (2) mapper
@@ -70,12 +94,7 @@ currently RED — see I018, which needs the failing log.)
   code should not exist, however good. Cleanup committed; gate PASS after
   reverts; pyrefly exactly 1. The two ideas WITH merit are re-filed below so
   a BUILDER session can do them properly:
-- [ ] T113 — small hardening pair, salvaged from the reverted review-session
-  code (D032-clean rebuild): (a) parallel_check.py subprocess calls gain
-  `encoding="utf-8", errors="replace"` — real Windows cp1252 hardening;
-  (b) unit tests for scripts/archive_memory.py (header preservation,
-  keep-count, no-overwrite naming), importlib-by-path per the T106 precedent,
-  NOT sys.path mutation. One small builder ticket, normal review.
+- [x] T113 — built 2026-08-18, see Awaiting review at top.
   Owner-requested hermes-agent review (disposition: docs/research/hermes-agent-review-
   2026-08-17.md) adopted one lesson our repo proved on measurement:
   PROGRESS.md's own day-one "~150 lines then archive" rule had never executed
