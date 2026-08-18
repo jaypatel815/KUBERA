@@ -596,6 +596,14 @@ DECIDED:
 5. Free-tier budget respected in design: one calendar call covers every symbol
    in a window; the client never auto-retries a 429.
 
+MEASUREMENT UPDATE 2026-08-18 (owner reran the probe after T023b added the
+balance-sheet row): balance-sheet-statement OK(1) — T023b's debt ratios are
+live on his tier. analyst-estimates OK(1) — the 08-17 "HTTP 400" was the
+probe's own parameter bug (owned in T023 v1); the ENDPOINT answers on the
+free tier. Decision #3 stands unchanged: estimate FEATURES remain out —
+availability ≠ adoption, and estimates are third-party opinion. news and
+transcripts re-confirmed paywalled; nothing else moves.
+
 ## D031 — memory bounds are mechanisms, not rules (2026-08-17)
 
 CONTEXT: the owner asked for a review of NousResearch/hermes-agent, a

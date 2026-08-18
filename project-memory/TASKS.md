@@ -46,8 +46,16 @@ currently RED — see I018, which needs the failing log.)
   option without paid TTM data, and the note says so in every payload; (c)
   no income-statement fetch = no margins/EPS — deliberate scope hold (ticket
   names FCF + debt), one request cheaper per briefing on a 250/day budget.
-  Owner check: next briefing with FMP_API_KEY should show fundamentals with
-  unparsed == [] and the balance-sheet question answered by fmp_check.
+  OWNER PROBE RUN 2026-08-18 (same session): **balance sheet OK (1 row)** —
+  debt ratios are LIVE on his tier, no code change needed (the briefing was
+  built to light up when the endpoint answers). Full table also corrects one
+  stale record: analyst estimates now reads OK (1 row) — the 08-17 "HTTP 400"
+  was MY probe's parameter bug, fixed in T023 v1; the endpoint answers on the
+  free tier. Estimate FEATURES stay out of KUBERA regardless until a ticket
+  argues them in — availability ≠ adoption; estimates are third-party
+  opinions (D019/D030 discipline). news/transcripts confirmed paywalled,
+  D030's source decisions unchanged. Remaining owner check: one briefing
+  with FMP_API_KEY set → fundamentals block, unparsed == [].
 - **T016b (automated API-vs-statement cross-check) — DONE 2026-08-18
   (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS, third verdict,
   explicitly covering delta fixes 71670b2 + 545f84b; owner acceptance CLEAN
