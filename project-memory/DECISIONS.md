@@ -572,3 +572,35 @@ DECIDED:
    with 5 annual periods) and deferred to T023b as their own ticket.
 5. Free-tier budget respected in design: one calendar call covers every symbol
    in a window; the client never auto-retries a 429.
+
+## D031 — memory bounds are mechanisms, not rules (2026-08-17)
+
+CONTEXT: the owner asked for a review of NousResearch/hermes-agent, a
+self-improving agent (disposition:
+docs/research/hermes-agent-review-2026-08-17.md). Most of its architecture is
+convergent evolution with ours — human write-gates, provenance, never-delete
+archival, multi-writer rules — usually with KUBERA's version stricter. Its one
+lesson we lacked was proven by our own repo the moment we measured: memory
+writes that exceed a bound must ERROR AND FORCE CONSOLIDATION, never grow
+silently. PROGRESS.md's day-one header said "~150 lines then archive"; it
+stood at 2,654 lines and the archive directory did not exist. A rule that is
+not a mechanism does not happen (D028's limit note, observed again).
+
+DECIDED:
+1. MEMORY BUDGETS ARE PART OF THE VERIFY GATE (T112, built same day):
+   scripts/archive_memory.py --check runs inside verify.py — soft budgets
+   WARN, hard budgets FAIL the gate, so overflow forces deliberate archiving
+   in-session. PROGRESS 700/1000, TASKS 900/1400, ISSUES 700/1100,
+   DECISIONS 900/1400.
+2. ARCHIVAL IS MOVE, NEVER DELETE: verbatim entries to
+   project-memory/archive/ with a provenance header; git history is the
+   snapshot; the move is an ordinary reviewable commit. First run archived
+   142 PROGRESS entries (2,654 -> 210 lines, newest 12 kept).
+3. CURATION TOUCHES ONLY CLOSED HISTORY (their provenance-scoped autonomy):
+   the newest entries and anything open stay in place; TASKS/ISSUES/DECISIONS
+   compaction needs judgment, so their budgets warn and a session curates
+   deliberately rather than a script guessing.
+NOT adopted, with reasons in the disposition: the background self-improvement
+review fork (its cheap-model variant is exactly what D027 forbids; its write
+gates default OPEN, ours never have), the skills/curator machinery, FTS5
+session search (git grep is ours), and the framework itself.

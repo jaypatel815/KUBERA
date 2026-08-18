@@ -14,6 +14,32 @@ currently RED — see I018, which needs the failing log.)
 ## In progress
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T112 (memory budgets as a gate mechanism — D031) — AWAITING REVIEW —
+  Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity. Owner-requested
+  hermes-agent review (disposition: docs/research/hermes-agent-review-
+  2026-08-17.md) adopted one lesson our repo proved on measurement:
+  PROGRESS.md's own day-one "~150 lines then archive" rule had never executed
+  — 2,654 lines, no archive dir. Files: `scripts/archive_memory.py` (NEW —
+  --check warns at soft budgets and FAILS the gate at hard caps [error-forces-
+  consolidation semantics]; archival is MOVE-never-delete to project-memory/
+  archive/ with provenance header, newest 12 PROGRESS entries kept, refuses
+  --keep < 5), `scripts/verify.py` (memory-budgets step added to STEPS),
+  `project-memory/archive/PROGRESS-archive-2026-08-18.md` (FIRST RUN: 142
+  entries moved verbatim, 2,654 -> 210 lines), D031 in DECISIONS.
+  EVIDENCE (D027): pre-run --check correctly FAILED (exit 2, named the file
+  and the fix); post-run passes with TASKS soft-warning at 901 (by design —
+  its compaction needs judgment, so it nags); full gate PASS end-to-end with
+  the new step live; ruff clean; pyrefly 1 (known I023).
+  STRONGEST OBJECTIONS AGAINST MY OWN TICKET (D028):
+    1. Budget numbers are chosen tunables (commented in BUDGETS) — reasonable
+       people could pick others; the mechanism matters more than the values.
+    2. The archiver only automates PROGRESS (dated, append-only = mechanical);
+       TASKS/ISSUES/DECISIONS warn-only, betting a session will curate when
+       nagged — the same bet the old header lost. The difference: the nag now
+       prints in every gate run, and the hard cap eventually refuses.
+    3. Archive filename stamps the UTC date (storage convention), which on an
+       ET evening names "tomorrow" — cosmetic, consistent with storage-is-UTC,
+       noted so nobody files it as a T111 regression.
 - **T111 (market-day boundaries in America/New_York — owner-reported) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   The owner asked why "today" was August 18th at 11:11 PM Eastern on the 17th.
   Storage was never wrong (UTC everywhere, unchanged); the "today" BOUNDARIES

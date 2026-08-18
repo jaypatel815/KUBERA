@@ -29,6 +29,11 @@ ROOT = Path(__file__).resolve().parents[1]
 STEPS = [
     ("lint (ruff)", [sys.executable, "-m", "ruff", "check", "backend", "scripts"]),
     ("tests (pytest)", [sys.executable, "-m", "pytest", "backend/tests", "-q"]),
+    # T112/D031: memory files have budgets; overflow past the hard cap FAILS
+    # the gate so a session must archive deliberately (move, never delete)
+    # instead of letting the shared memory grow unreadable. PROGRESS.md hit
+    # 2,654 lines against its own stated ~150 before this became mechanical.
+    ("memory budgets", [sys.executable, "scripts/archive_memory.py", "--check"]),
 ]
 
 # Things whose presence changes the result. Not a dependency list — a list of
