@@ -14,8 +14,7 @@ currently RED — see I018, which needs the failing log.)
 ## In progress
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T091b-rest (weekly attribution + EOD regime line + cost decomposition) — AWAITING
-  REVIEW — Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity. Closes T091b.
+- **T091b-rest (weekly attribution + EOD regime line + cost decomposition) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. Closes T091b.
   Files: `backend/analysis/attribution.py` (trips gain exit-side `notional`; NEW
   `attributed_fills_from_rows` — shared by tool and weekly review so the two can never
   disagree; NEW `decompose_costs` — per-symbol est. spread cost = exit notional x
@@ -43,6 +42,7 @@ currently RED — see I018, which needs the failing log.)
        weekly brief slow; a cap-or-cache is a reasonable future nit.
     3. compose_eod_report's dominant_regime is by DECISION COUNT, not P&L — P&L
        per regime needs closed trips (weekly's job); the note says so explicitly.
+  REVIEWED 2026-08-17 by Gemini/Antigravity — **PASS**: verified unified `attributed_fills_from_rows` preventing drift across tools & weekly reports, spread cost decomposition math ($10k notional @ 10 bps half = $20 round trip) with explicit unpriced symbol listings & ESTIMATE separation from realized P&L, EOD decision-time regime grouping & dominant regime labelling, and weekly review integration with dynamic `facts_for_lessons` generation. All graceful degradation paths tested. 851 tests passing, 0 lint errors, verify gate green.
 - **T077b (expected-move v2: seeded block bootstrap + loop wiring — D017) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   Files: `backend/analysis/expected_move.py` (NEW `bootstrap_paths`: block-bootstrap
   Monte Carlo — blocks of 5 contiguous daily returns resampled into 1000 synthetic
