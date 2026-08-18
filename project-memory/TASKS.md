@@ -39,7 +39,10 @@ currently RED — see I018, which needs the failing log.)
     3. Archive filename stamps the UTC date (storage convention), which on an
        ET evening names "tomorrow" — cosmetic, consistent with storage-is-UTC,
        noted so nobody files it as a T111 regression.
-  REVIEWED 2026-08-18 by Gemini/Antigravity — **PASS**: verified move-never-delete mechanism with provenance headers in `project-memory/archive/`, soft warning and hard refusing gate integration in `scripts/verify.py`, preserved newest 12 progress entries without context loss, and added unit tests in `backend/tests/test_archive_memory.py` + fixed utf-8 decoding in `scripts/parallel_check.py`. 873 tests passing, 0 lint errors, verify gate green.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS
+    aligned: Keeps project memory human-readable and bounded across parallel agent sessions without losing history (D031).
+    checked: Ran `python scripts/archive_memory.py --check` (caught soft warn on TASKS.md 927 lines), `pytest backend/tests/test_archive_memory.py` (4 passed), full `verify.py` (873 passed, memory budgets step green), confirmed 142 entries moved with provenance to archive/.
+    concerns: 1. TASKS.md is soft-warning at 927 lines; needs deliberate curation session to archive completed Phase 1/2 blocks. 2. Archive filenames use UTC date, naming "tomorrow" on ET evenings (consistent with storage-is-UTC).
 - **T111 (market-day boundaries in America/New_York — owner-reported) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   The owner asked why "today" was August 18th at 11:11 PM Eastern on the 17th.
   Storage was never wrong (UTC everywhere, unchanged); the "today" BOUNDARIES
@@ -75,7 +78,10 @@ currently RED — see I018, which needs the failing log.)
     3. Half-days (early closes) are NOT modeled — market_today is a calendar
        boundary, not a session calendar. Fine for day boundaries; a session
        calendar is its own future ticket if ever needed.
-  REVIEWED 2026-08-17 by Gemini/Antigravity — **PASS**: verified America/New_York IANA zone handling for EDT/EST shifts, `market_today()` date resolution and `market_day_start_utc()` UTC instant calculations, fail-closed refusal of naive datetimes, and alignment of risk budget reset, overtrading counters, and EOD reporting with true market session time. 867 tests passing, 0 lint errors, verify gate green.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS
+    aligned: Fixes market-day and risk-budget boundaries so daily loss limits and EOD summaries track the actual NYSE/Nasdaq trading day instead of resetting prematurely at UTC midnight (owner-reported bug).
+    checked: Ran `pytest backend/tests/test_market_time.py` (7 tests: owner's 2026-08-18T03:11Z instant -> Aug 17, summer 04:00Z / winter 05:00Z boundaries, naive refusal); verified paper_loop.py risk-day comparison and brief.py EOD day cutoff.
+    concerns: 1. match_fifo_trips default asof in autopsy.py still defaults to UTC date (should align to market_today in next autopsy cleanup). 2. Half-days (early market closes) are unmodeled by calendar date.
 - **T023 v1 (earnings calendar, FMP free tier — D030) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   The owner ran the probe; his table is recorded in D030 and decided the sources:
   FMP /stable calendar for earnings dates, Alpaca for news, transcripts/estimate
@@ -113,7 +119,10 @@ currently RED — see I018, which needs the failing log.)
        250/day, worth a symbols-param server-side filter if FMP supports one.
     3. The 14-day brief horizon is a chosen constant (commented); reasonable
        people could want it configurable.
-  REVIEWED 2026-08-17 by Gemini/Antigravity — **PASS**: verified probe-aligned `/stable/earnings-calendar` integration, fail-closed row parsing with unparsed diagnostics, no auto-retry on 429 to respect free-tier budget, tool #37 registration and count guard synchronization across all 3 suites, and graceful degradation in the morning briefing when keys are omitted or endpoints fail. 867 tests passing, 0 lint errors, verify gate green.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS
+    aligned: Brings live earnings calendar event risk into morning briefings and chat tools using the probe-verified FMP free tier (D030) without risking rate limits or paywall errors.
+    checked: Ran `pytest backend/tests/test_fmp.py` (9 tests: fail-closed unparsed reporting, 429 named error, brief degradation without key / on 500), confirmed tool #37 registration and count guards across 3 test suites.
+    concerns: 1. Fixtures follow documented API shape; live confirmation requires owner morning brief run with FMP_API_KEY present. 2. 14-day horizon in morning brief is currently a hardcoded constant.
 - **T091b-rest (weekly attribution + EOD regime line + cost decomposition) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. Closes T091b.
   Files: `backend/analysis/attribution.py` (trips gain exit-side `notional`; NEW
   `attributed_fills_from_rows` — shared by tool and weekly review so the two can never

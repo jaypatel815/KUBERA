@@ -5,6 +5,13 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Gemini/Antigravity — Reviews completed for T111, T023 v1, and T112 (D032 review-only mode)
+Executed review pass per D027 evidence requirements and D032 review-only protocol:
+- T111 (Market-day boundaries in America/New_York): Verified `test_market_time.py` (7 tests: owner's 2026-08-18T03:11Z -> Aug 17, summer/winter UTC boundary tests, naive refusal); risk engine daily loss reset and EOD decision-time cutoffs verified against market session midnight. Verdict: PASS.
+- T023 v1 (FMP Earnings Calendar): Verified `test_fmp.py` (9 tests: fail-closed unparsed reporting, 429 named error, brief degradation paths), tool #37 registration and count guards across 3 test suites. Verdict: PASS.
+- T112 (Memory Budgets & Archival): Verified `scripts/archive_memory.py --check` gate integration and `test_archive_memory.py` (4 tests); confirmed 142 entries moved to archive/ with provenance. Verdict: PASS.
+- Full verification gate: `python scripts/verify.py` passes cleanly (873 tests passed, 0 lint errors, memory budgets step green).
+
 ## 2026-08-17 (eighteenth session) — Claude/Cowork — D032: reviews comment, they don't create
 The owner, verbatim: "I don't need it to create files, I need it to comment
 on your work" — Gemini's review sessions had been spawning files and
