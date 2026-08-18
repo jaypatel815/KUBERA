@@ -5,6 +5,14 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Gemini/Antigravity — Review completed for T016c (D032 review-only mode)
+Reviewed T016c (Schwab fills daily sync + fee persistence) per D027 evidence requirements:
+- Alembic migration `7c3a91e0d5b2` verified (single head, adds nullable `fill_type`, `commission`, `fees` to `transactions`).
+- Fills & fee mapping: verified fee extraction from `transferItems` (`COMMISSION` -> commission, other fee types -> fees, positive amounts), idempotent deduplication on `(account_id, external_id)`.
+- Option attribution: verified 100x contract multiplier in FIFO pnl and notional calculations ($39.00 pnl, $130 notional).
+- Failure degradation: verified non-fatal token expiration handling in `scripts/sync.py`.
+- Gate: `alembic heads` (single head), 47/47 schwab/attribution tests pass, full `python scripts/verify.py` green (874 passed, 0 lint errors, memory budgets step green). Verdict: PASS.
+
 ## 2026-08-18 — Claude/Cowork — T016c: the owner's REAL fills land daily (AWAITING REVIEW)
 Built: fill_type/commission/fees on Transaction (alembic 7c3a91e0d5b2); mapper
 takes broker fee legs from transferItems; data/schwab_sync.py (30-day window,

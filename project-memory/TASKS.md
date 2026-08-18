@@ -13,8 +13,7 @@ currently RED — see I018, which needs the failing log.)
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T016c (Schwab fills into the daily sync + fee persistence) — AWAITING REVIEW
-  2026-08-18 (Claude/Cowork)**. Built: (1) Transaction gains nullable
+- **T016c (Schwab fills into the daily sync + fee persistence) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. Built: (1) Transaction gains nullable
   fill_type/commission/fees (alembic 7c3a91e0d5b2, revises 00c4e1efd5c4, single
   head; legacy rows stay NULL = equity/no-cost-data, never guessed); (2) mapper
   extracts fee legs from transferItems (COMMISSION → commission, every other
@@ -42,6 +41,10 @@ currently RED — see I018, which needs the failing log.)
   is transport-only; (c) fees are recorded but not yet subtracted in FIFO pnl —
   deliberate, matches T108's convention (costs decomposed separately, T090/T091b),
   noted for the reviewer.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS
+    aligned: Lands owner's real Schwab fills and broker fee legs (COMMISSION vs fees) directly into daily sync and DB without killing the Alpaca sync on token expiration (D026).
+    checked: Ran `alembic heads` (single head `7c3a91e0d5b2`), `pytest backend/tests/test_schwab_sync.py backend/tests/test_schwab.py backend/tests/test_attribution.py` (47 passed), full `verify.py` (874 passed, ruff clean, memory budgets green). Verified broker fee splitting (0.65 commission / 0.01 fees), 100x option contract multiplier in FIFO pnl ($39.00 pnl, $130 notional), idempotent deduplication, and non-fatal token lapse degradation.
+    concerns: 1. DB store and file-based behavioural stack remain separate until T016b reconciliation. 2. Fees are stored and decomposed separately per T108 convention (not subtracted inside raw FIFO trade pnl).
 - **T112 (memory budgets as a gate mechanism — D031) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   CODE ADDED DURING GEMINI'S REVIEW, REVIEWED 2026-08-18 by Claude/Cowork — **PASS**
   (bf730e0 + 1e992ba: test_archive_memory.py [4 tests], parallel_check utf-8
