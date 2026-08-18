@@ -48,13 +48,8 @@ APPEND_ONLY = {  # deletions here are almost always a clobber, not an edit
 
 
 def git(*args: str) -> str:
-    return subprocess.run(
-        ["git", "-C", str(REPO), *args],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    ).stdout.strip()
+    return subprocess.run(["git", "-C", str(REPO), *args],
+                          capture_output=True, text=True).stdout.strip()
 
 
 def parse_claims(tasks_text: str) -> list[str]:

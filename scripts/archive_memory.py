@@ -105,8 +105,7 @@ def archive_progress(keep: int) -> int:
         encoding="utf-8",
     )
     path.write_text(header + "".join(stay), encoding="utf-8")
-    out_label = out.relative_to(ROOT) if out.is_relative_to(ROOT) else out
-    print(f"archived {len(move)} PROGRESS entries -> {out_label}")
+    print(f"archived {len(move)} PROGRESS entries -> {out.relative_to(ROOT)}")
     print(f"PROGRESS.md now {len(path.read_text(encoding='utf-8').splitlines())} lines "
           f"({keep} newest entries kept)")
     return 0

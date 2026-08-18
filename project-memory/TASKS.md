@@ -30,6 +30,19 @@ currently RED — see I018, which needs the failing log.)
   Concern (stylistic, non-blocking): the test does module-level sys.path.insert
   — the pattern removed in T106 because it persists across the whole suite;
   works today, one-line importlib cleanup whenever the file is next touched.
+  SUPERSEDED 2026-08-18 BY THE OWNER: he removed ALL artifacts of Gemini's
+  review session from disk (test_archive_memory.py, its duplicate hermes
+  disposition doc, both script edits reverted) — enforcing D032 retroactively,
+  which is his call and consistent with the rule's spirit: reviewer-created
+  code should not exist, however good. Cleanup committed; gate PASS after
+  reverts; pyrefly exactly 1. The two ideas WITH merit are re-filed below so
+  a BUILDER session can do them properly:
+- [ ] T113 — small hardening pair, salvaged from the reverted review-session
+  code (D032-clean rebuild): (a) parallel_check.py subprocess calls gain
+  `encoding="utf-8", errors="replace"` — real Windows cp1252 hardening;
+  (b) unit tests for scripts/archive_memory.py (header preservation,
+  keep-count, no-overwrite naming), importlib-by-path per the T106 precedent,
+  NOT sys.path mutation. One small builder ticket, normal review.
   Owner-requested hermes-agent review (disposition: docs/research/hermes-agent-review-
   2026-08-17.md) adopted one lesson our repo proved on measurement:
   PROGRESS.md's own day-one "~150 lines then archive" rule had never executed

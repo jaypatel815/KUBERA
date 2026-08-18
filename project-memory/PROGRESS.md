@@ -17,9 +17,14 @@ relitigating: bf730e0 briefly deleted the line that trims PROGRESS after
 archiving — a reviewer editing the script under review broke it, self-caught
 in 1e992ba — which is D032's justification, generated in real time. My
 verdict commit touches memory files only, per the rule.
-Next build ticket (unclaimed, top of queue): T016c — Schwab fills into the
-daily sync, with the per-trade fees the probe revealed. Everything else
-green: no open reviews, no open owner blockers except routine housekeeping.
+SUPERSEDED SAME DAY: the owner removed all artifacts of Gemini's review
+session from disk (its test file, its duplicate hermes doc, both script
+edits reverted) — D032 enforced retroactively; his repo, his call, and the
+rule's spirit agrees: reviewer-created code should not exist, however good.
+Cleanup committed; gate PASS post-revert; pyrefly exactly 1. The two ideas
+with merit re-filed as T113 (utf-8 subprocess hardening + archive_memory
+tests, importlib-by-path) for a normal builder-then-reviewer cycle.
+Next build tickets (unclaimed): T016c (Schwab daily sync) and T113 (small).
 
 ## 2026-08-18 — Gemini/Antigravity — Reviews completed for T111, T023 v1, and T112 (D032 review-only mode)
 Executed review pass per D027 evidence requirements and D032 review-only protocol:
