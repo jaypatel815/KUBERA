@@ -5,6 +5,12 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Gemini/Antigravity — Review completed for T113 (D032 review-only mode)
+Reviewed T113 (utf-8 subprocess hardening + archiver tests) per D027 evidence requirements:
+- Hardening: verified `encoding="utf-8", errors="replace"` in `scripts/parallel_check.py` for both `git` and `alembic` subprocess invocations; verified live execution on Windows exits 0 cleanly.
+- Unit tests: verified 5/5 tests in `backend/tests/test_archive_memory.py` using `importlib`-by-path without `sys.path` mutation (header preservation, exact keep-count, same-day second archive with `-2` suffix, no-op handling, `--check` 0/1/2 ladder).
+- Gate: full `python scripts/verify.py` green (879 passed, 0 lint errors, memory budgets step green). Verdict: PASS.
+
 ## 2026-08-18 — Claude/Cowork — T113: utf-8 subprocess hardening + archiver tests (AWAITING REVIEW)
 D032-clean rebuild of the two salvaged review-session ideas. parallel_check.py's
 two subprocess.run calls now pass encoding="utf-8", errors="replace" (Windows

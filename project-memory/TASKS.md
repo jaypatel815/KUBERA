@@ -13,8 +13,7 @@ currently RED — see I018, which needs the failing log.)
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T113 (utf-8 subprocess hardening + archive_memory tests) — AWAITING REVIEW
-  2026-08-18 (Claude/Cowork)**. D032-clean rebuild of the two ideas salvaged
+- **T113 (utf-8 subprocess hardening + archive_memory tests) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. D032-clean rebuild of the two ideas salvaged
   from the reverted review-session code. Built: (a) parallel_check.py's two
   subprocess.run calls (git wrapper + alembic heads) gain
   `encoding="utf-8", errors="replace"` — Windows text=True defaults to cp1252,
@@ -39,6 +38,10 @@ currently RED — see I018, which needs the failing log.)
   cp1252 fix is asserted only by successful live run, not a forced-encoding
   test — a faithful Windows-codepage repro needs the owner's machine, noted
   for the reviewer.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS
+    aligned: Hardens parallel agent collision detection against Windows cp1252 encoding crashes on UTF-8 memory files and pins archive_memory.py behavior via isolated importlib-by-path unit tests without sys.path leakage.
+    checked: Ran `python scripts/parallel_check.py` (exited 0 cleanly), `pytest backend/tests/test_archive_memory.py` (5 passed: header preservation, exact keep-count, same-day no-overwrite with -2 suffix, clean no-op, --check 0/1/2 ladder, split without entries edge), and full `python scripts/verify.py` (879 passed, ruff clean, memory budgets step green).
+    concerns: none
 - **T016c (Schwab fills into the daily sync + fee persistence) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. Built: (1) Transaction gains nullable
   fill_type/commission/fees (alembic 7c3a91e0d5b2, revises 00c4e1efd5c4, single
   head; legacy rows stay NULL = equity/no-cost-data, never guessed); (2) mapper
