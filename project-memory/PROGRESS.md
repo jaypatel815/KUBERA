@@ -5,6 +5,22 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Claude/Cowork — reciprocal review of Gemini's review-session code: PASS
+Gemini's three verdicts (T111, T023 v1, T112 — all PASS) cleared the queue;
+its T112 session also wrote code (pre-D032 by minutes), which under D023 is
+unreviewed builder work, so I reviewed it: test_archive_memory.py (4/4 pass),
+parallel_check utf-8 subprocess hardening (real Windows fix), defensive path
+guard. Verdict PASS; full gate PASS; pyrefly exactly 1 — an initial reading
+of 2 was a TRANSIENT and re-measurement falsified my draft finding before it
+became a written one (D028 working as intended). Recorded without
+relitigating: bf730e0 briefly deleted the line that trims PROGRESS after
+archiving — a reviewer editing the script under review broke it, self-caught
+in 1e992ba — which is D032's justification, generated in real time. My
+verdict commit touches memory files only, per the rule.
+Next build ticket (unclaimed, top of queue): T016c — Schwab fills into the
+daily sync, with the per-trade fees the probe revealed. Everything else
+green: no open reviews, no open owner blockers except routine housekeeping.
+
 ## 2026-08-18 — Gemini/Antigravity — Reviews completed for T111, T023 v1, and T112 (D032 review-only mode)
 Executed review pass per D027 evidence requirements and D032 review-only protocol:
 - T111 (Market-day boundaries in America/New_York): Verified `test_market_time.py` (7 tests: owner's 2026-08-18T03:11Z -> Aug 17, summer/winter UTC boundary tests, naive refusal); risk engine daily loss reset and EOD decision-time cutoffs verified against market session midnight. Verdict: PASS.

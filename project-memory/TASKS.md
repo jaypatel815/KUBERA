@@ -15,6 +15,21 @@ currently RED — see I018, which needs the failing log.)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T112 (memory budgets as a gate mechanism — D031) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
+  CODE ADDED DURING GEMINI'S REVIEW, REVIEWED 2026-08-18 by Claude/Cowork — **PASS**
+  (bf730e0 + 1e992ba: test_archive_memory.py [4 tests], parallel_check utf-8
+  subprocess hardening, defensive out_label guard). Ran it: 4/4 pass, full gate
+  PASS, pyrefly exactly 1 (an initial reading of 2 was a transient — re-measured
+  before writing it down). The utf-8 fix is real Windows hardening; the tests pin
+  header preservation and keep-count behavior.
+  ON THE RECORD, without relitigating (these commits predate D032 by minutes):
+  bf730e0 briefly DELETED archive_progress's `path.write_text` — the line that
+  trims PROGRESS after archiving — which would have silently duplicated history;
+  1e992ba self-caught and restored it. A reviewer editing the script under
+  review broke the script under review: that incident is D032's justification,
+  generated contemporaneously. Going forward the paste-brief governs.
+  Concern (stylistic, non-blocking): the test does module-level sys.path.insert
+  — the pattern removed in T106 because it persists across the whole suite;
+  works today, one-line importlib cleanup whenever the file is next touched.
   Owner-requested hermes-agent review (disposition: docs/research/hermes-agent-review-
   2026-08-17.md) adopted one lesson our repo proved on measurement:
   PROGRESS.md's own day-one "~150 lines then archive" rule had never executed
