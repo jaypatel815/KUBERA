@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 
 from analysis.events import entry_guard
 from analysis.expected_move import expected_move
+from analysis.market_time import market_day_start_utc, market_today
 from analysis.metrics import atr
 from analysis.regime import classify_regime
 from backtest.engine import Strategy
@@ -148,7 +149,11 @@ def run_paper_cycle(
     # 3. risk engine: restore persisted state (a restart must never forget a trip),
     #    then day management + breaker feed, then persist the updated state.
     restore_risk_state(db, risk)
-    today = datetime.now(timezone.utc).date().isoformat()
+    # T111: the trading day is a MARKET day (America/New_York), not a UTC day.
+    # With the UTC date here, the daily loss budget reset at 8 PM ET every
+    # evening — a hole in the rail the owner found by asking why "today" was
+    # tomorrow.
+    today = market_today().isoformat()
     if risk.day != today:
         risk.start_day(acct.equity, today)
     risk.record_equity(acct.equity, acct.asof)
@@ -237,8 +242,7 @@ def run_paper_cycle(
                 f"entry delay: inside the first {entry_delay_minutes} minutes after "
                 "the open — never the open print (doctrine); sells unaffected"
             )
-        today_start = datetime.now(timezone.utc).replace(
-            hour=0, minute=0, second=0, microsecond=0)
+        today_start = market_day_start_utc()  # T111: market day, not UTC day
         ordered_today = db.execute(
             select(func.count()).select_from(SignalLog).where(
                 SignalLog.action == "ordered", SignalLog.ts >= today_start)
@@ -249,7 +253,7 @@ def run_paper_cycle(
                 f"(max {max_trades_per_day}) — the biggest enemy is overtrading"
             )
         if event_dates:
-            for r in entry_guard(event_dates, datetime.now(timezone.utc).date(),
+            for r in entry_guard(event_dates, market_today(),
                                  window_before=event_window_days):
                 no_trade.append(
                     r + " — new entries paused into scheduled event risk (T076)")

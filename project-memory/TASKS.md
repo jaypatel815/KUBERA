@@ -12,9 +12,44 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T111 (market-day boundaries in America/New_York — owner-reported) — Claude/Cowork** — claimed 2026-08-17.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T111 (market-day boundaries in America/New_York — owner-reported) — AWAITING
+  REVIEW — Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity.
+  The owner asked why "today" was August 18th at 11:11 PM Eastern on the 17th.
+  Storage was never wrong (UTC everywhere, unchanged); the "today" BOUNDARIES
+  were UTC dates. The worst instance was not cosmetic: THE RISK ENGINE'S DAILY
+  LOSS BUDGET RESET AT UTC MIDNIGHT — 8 PM ET, 7 PM in winter. A hole in a
+  safety rail, found because the owner asked one calendar question.
+  Files: `backend/analysis/market_time.py` (NEW — MARKET_TZ pinned to
+  America/New_York as a VENUE fact [D028 external-spec constant; pinning "EDT"
+  or -4 would be wrong half the year — the IANA zone flips itself];
+  market_today() and market_day_start_utc(); naive datetimes REFUSED),
+  `backend/backtest/paper_loop.py` (risk-day boundary ✦, overtrading-guard
+  window, event-guard date), `backend/api/brief.py` (EOD day window — an
+  evening EOD run used to report an EMPTY day; earnings + events sections),
+  `backend/api/tools.py` (earnings tool + macro events), `analysis/intraday.py`
+  (its private ET now aliases MARKET_TZ — one venue-clock definition),
+  `backend/requirements.txt` (tzdata already present from T052 ✓), tests
+  (test_market_time.py NEW 7 — the owner's exact instant 2026-08-18T03:11Z →
+  Aug 17 is the headline hand test, plus EST/EDT boundaries at 05:00Z/04:00Z;
+  3 test seeds that used UTC dates now seed market_today, which the sandbox's
+  own clock — currently ET-evening — immediately exercised).
+  EVIDENCE (D027): the failing-then-fixed test run IS the demonstration — the
+  sandbox sits in the divergence window right now, so the old seeds broke the
+  moment the boundary moved, exactly as the owner's machine did. 50 passed
+  across touched suites; full gate PASS; ruff clean; pyrefly exactly 1 (I023).
+  STRONGEST OBJECTIONS AGAINST MY OWN TICKET (D028):
+    1. autopsy/match_fifo_trips' DEFAULT asof still uses the UTC date — in the
+       ET evening an option expiring today is treated as expired a few hours
+       early. Conservative direction, every test passes asof explicitly, and I
+       chose not to widen this diff; reviewer may reasonably want it switched
+       to market_today for consistency.
+    2. weekly review's week_ago boundary (unused for filtering today) still
+       UTC — inert, noted for the next brief ticket.
+    3. Half-days (early closes) are NOT modeled — market_today is a calendar
+       boundary, not a session calendar. Fine for day boundaries; a session
+       calendar is its own future ticket if ever needed.
 - **T023 v1 (earnings calendar, FMP free tier — D030) — AWAITING REVIEW —
   Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity.
   The owner ran the probe; his table is recorded in D030 and decided the sources:

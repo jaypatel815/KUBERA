@@ -11,6 +11,7 @@ from sqlalchemy import select
 from test_alpaca import paper_settings
 from test_paper_loop import BARS_JSON, FakeBroker, account_json, db, position_json  # noqa: F401
 
+from analysis.market_time import market_today
 from api.main import app
 from api.tools import ToolContext, registry
 from backtest.paper_loop import run_paper_cycle
@@ -116,7 +117,7 @@ def test_dqs_window_excludes_old_rows_and_counts_restraint():
 
 def _seed_day(db, start_equity=100_000.0):  # noqa: F811
     risk = RiskEngine()
-    today = datetime.now(timezone.utc).date().isoformat()
+    today = market_today().isoformat()  # T111: seed the same day the loop uses
     risk.start_day(start_equity, today)
     persist_risk_state(db, risk)
     return risk

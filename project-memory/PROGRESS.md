@@ -26,6 +26,27 @@ Implemented monthly brokerage statement transaction importing and deduplication 
   · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
 - Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
 
+## 2026-08-17 (tenth session) — Claude/Cowork — T111: "today" now means the market's today
+The owner asked why KUBERA said August 18th at 11:11 PM Eastern on the 17th.
+Storage was right all along (UTC, unchanged); the "today" boundaries were UTC
+dates — and pulling that thread exposed a real safety hole: the RISK ENGINE'S
+DAILY LOSS BUDGET RESET AT UTC MIDNIGHT, 8 PM ET every evening (7 PM winter).
+Built analysis/market_time.py — MARKET_TZ = America/New_York pinned as a venue
+fact (the IANA zone flips EDT/EST itself; pinning an offset would be wrong
+half the year), market_today(), market_day_start_utc(), naive datetimes
+refused — and swept every boundary onto it: the risk day ✦, the overtrading
+window, the event guard, the EOD report's day cutoff (an evening EOD run used
+to report an EMPTY day), the earnings/events sections, both tools. intraday's
+private ET now aliases the one definition. The owner's exact instant is the
+headline hand test (2026-08-18T03:11Z -> Aug 17), with EST/EDT boundary tests
+at 05:00Z/04:00Z. The sandbox's own clock sits in the divergence window, so
+three old UTC-seeded tests broke immediately and were re-seeded with
+market_today — the failure itself was the demonstration.
+Gate PASS; pyrefly 1 (known I023); 7 new tests, 50 green across touched
+suites. Objections in the handoff: autopsy's default asof stays UTC-date
+(conservative; explicit in tests), half-day session calendar out of scope.
+Next: Gemini reviews T111 (and T023 v1, still queued).
+
 ## 2026-08-17 (ninth session) — Claude/Cowork — T023 v1: earnings dates are in the brief
 The owner ran the probe and the table decided everything (D030): the /stable
 earnings calendar answers on his FREE tier (77 rows), statements give 5 annual

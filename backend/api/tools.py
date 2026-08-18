@@ -47,6 +47,7 @@ from analysis.liquidity import (
     spread_bps,
 )
 from analysis.macro import compose_macro_context
+from analysis.market_time import market_today
 from analysis.metrics import atr, volatility
 from analysis.pattern_warning import ProposedTrade, evaluate_pattern_warnings
 from analysis.portfolio import summarize, win_loss
@@ -684,7 +685,7 @@ def _get_macro_context(ctx: ToolContext, _: NoArgs) -> dict:
     # Calendar failure degrades to a note; the core macro reads still deliver.
     try:
         events = [asdict(e) for e in upcoming_events(
-            fred.release_calendar(), datetime.now(timezone.utc).date())]
+            fred.release_calendar(), market_today())]  # T111
         events_note = None
     except (FredError, httpx.HTTPError) as e:
         events, events_note = [], f"release calendar unavailable: {e}"
@@ -718,7 +719,7 @@ class EarningsCalendarArgs(LenientArgs):
 )
 def _get_earnings_calendar(ctx: ToolContext, p: EarningsCalendarArgs) -> dict:
     fmp: FmpClient = ctx.require("fmp")
-    today = datetime.now(timezone.utc).date()
+    today = market_today()  # T111: market day, not UTC day
     try:
         cal = fmp.earnings_calendar(today, today + timedelta(days=p.days))
     except FmpError as e:

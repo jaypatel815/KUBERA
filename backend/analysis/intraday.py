@@ -29,9 +29,10 @@ from dataclasses import dataclass
 from datetime import time
 from statistics import mean
 from typing import Sequence
-from zoneinfo import ZoneInfo
 
-ET = ZoneInfo("America/New_York")
+from analysis.market_time import MARKET_TZ
+
+ET = MARKET_TZ  # T111: one venue-clock definition for the whole codebase
 RTH_START = time(9, 30)
 RTH_END = time(16, 0)
 

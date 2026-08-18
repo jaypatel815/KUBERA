@@ -11,6 +11,7 @@ from sqlalchemy.pool import StaticPool
 from test_alpaca import paper_settings
 from test_paper_loop import BARS_JSON, account_json, position_json
 
+from analysis.market_time import market_today
 from api.brief import compose_eod_report, compose_morning_brief, compose_weekly_review
 from api.main import app
 from api.tools import ToolArgumentError, ToolContext, registry
@@ -59,7 +60,7 @@ def clients(handler):
 
 def _seed_day(db, start=100_000.0):
     risk = RiskEngine()
-    risk.start_day(start, datetime.now(timezone.utc).date().isoformat())
+    risk.start_day(start, market_today().isoformat())  # T111
     persist_risk_state(db, risk)
 
 
@@ -100,8 +101,8 @@ def test_morning_brief_watchlist_and_events(db):
     from data.watchlist import add_symbol
     _seed_day(db)
     add_symbol(db, "SPY", "core index thesis")
-    # the composer judges "today" in UTC — the fixture must too (local date can lag)
-    utc_today = datetime.now(timezone.utc).date().isoformat()
+    # T111: the composer judges "today" at the MARKET — the fixture must too
+    utc_today = market_today().isoformat()
 
     def fred_handler(request: httpx.Request) -> httpx.Response:
         assert "/fred/release/dates" in request.url.path

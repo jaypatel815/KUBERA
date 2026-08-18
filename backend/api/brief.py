@@ -31,6 +31,7 @@ from analysis.attribution import (
 from analysis.expected_move import expected_move
 from analysis.levels import find_levels
 from analysis.liquidity import spread_bps
+from analysis.market_time import market_day_start_utc, market_today
 from analysis.regime import classify_regime
 from data.alpaca import AlpacaClient
 from data.history import equity_history
@@ -164,7 +165,7 @@ def _events_section(fred) -> dict:
     from data.fred import FredError
     try:
         events = upcoming_events(fred.release_calendar(),
-                                 datetime.now(timezone.utc).date())
+                                 market_today())  # T111: market day
         return {"upcoming": [_asdict(e) for e in events], "note": None}
     except (FredError, httpx.HTTPError) as e:
         return {"upcoming": [], "note": f"event calendar unavailable: {e}"}
@@ -181,7 +182,7 @@ def _earnings_section(fmp, held_symbols: set[str], horizon_days: int = 14) -> di
 
     from data.fmp import FmpError
     try:
-        today = datetime.now(timezone.utc).date()
+        today = market_today()  # T111: at 11 PM ET, UTC is already tomorrow
         cal = fmp.earnings_calendar(today, today + timedelta(days=horizon_days))
         mine = [
             {"symbol": e.symbol, "date": e.date.isoformat(),
@@ -220,8 +221,10 @@ def compose_eod_report(db: Session, alpaca: AlpacaClient) -> dict:
     acct = alpaca.get_account()
     risk = _risk_section(db, acct.equity)
     day_start = risk["day_start_equity"]
-    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0,
-                                               microsecond=0)
+    # T111: the EOD report's day is the MARKET day. With a UTC boundary, an
+    # evening EOD run (after 8 PM ET) reported an empty day — every decision of
+    # the afternoon sat before UTC midnight.
+    today = market_day_start_utc()
     rows = db.execute(
         select(SignalLog).where(SignalLog.ts >= today).order_by(SignalLog.ts)
     ).scalars().all()
