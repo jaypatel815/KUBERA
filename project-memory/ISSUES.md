@@ -4,6 +4,31 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I029 [SCHWAB API MAPPING — found by THE OWNER's reconciliation, 2026-08-17]
+  He did the T016 tick-off against his March statement and caught two defects
+  the unit tests could never catch, because (as test_schwab.py admits in its
+  own docstring) the fixtures follow Schwab's PUBLISHED shapes and "have NOT
+  been checked against a live pull":
+  1. DATES OFF: imported transaction dates do not match when he actually
+     traded. The mapper prefers row["tradeDate"] and falls back to row["time"]
+     then settlementDate — the live rows likely carry a posting/settlement
+     timestamp where we expect execution time (the same settle-vs-trade class
+     as T102's statements and T108b's first cut). RTH trades print the same
+     date in UTC and ET, so this is the SOURCE FIELD, not a timezone artifact
+     (distinct from T111).
+  2. EXPIRATIONS PRESENTED AS SALES: expired contracts appeared in the output
+     as if sold — "yes they were 'sold' but I didn't make anything off of it."
+     Either Schwab emits expirations as TRADE rows (which _security_leg maps
+     as sells, or rejects on a 0/absent price into unmapped), or as an
+     unhandled type. Correct target state: an API expiration row becomes an
+     EXPIRY event — qty removed at price 0, feeding the T108 pipeline as
+     closed_by="expiry_OBSERVED" (stronger than expiry_assumed — the broker
+     told us). Never a sale with invented proceeds.
+  FIX PATH (T102 discipline — observed rows, not guesses): the owner runs
+  scripts/schwab_probe_shape.py (NEW) and pastes the row shapes; the mapper
+  is then fixed against reality and re-reconciled. T016's acceptance is
+  REOPENED until that re-run ticks clean — which is the reconciliation
+  process WORKING, not failing.
 - I028 [FIXED 2026-08-17 by T108 dedupe + T108b statement importer (e15a785,
   reviewed BLOCK→PASS) — reconciliation now 13/13 clean, option balance 36/36,
   imported fills carry derived T+1 trade dates with a date_source flag.

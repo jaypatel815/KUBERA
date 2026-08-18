@@ -26,6 +26,24 @@ Implemented monthly brokerage statement transaction importing and deduplication 
   · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
 - Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
 
+## 2026-08-17 (thirteenth session) — Claude/Cowork — T016 REOPENED by the owner's tick-off (I029)
+The reconciliation worked exactly as designed: reviewing March against the
+statement, the owner caught (1) imported dates that don't match when he
+actually traded — the settle-vs-execution field class for the THIRD time
+(T102 statements, T108b importer, now the live API) — and (2) expirations
+presented as sales when his real proceeds were $0. My twelfth-session "T016
+CLOSED" is retracted in place; closed-then-caught is what the human-verifier
+step exists to produce. Filed I029 with both findings and the target state
+for expirations: an API expiration row becomes closed_by="expiry_OBSERVED"
+at price 0 feeding the T108 pipeline — the broker TELLING us beats assuming.
+Built scripts/schwab_probe_shape.py: prints the REAL row shapes (every
+date/time field per row, full transferItems for TRADE and expiration-shaped
+rows, account fields stripped recursively) because the T102 rule stands —
+mappers get fixed against observed rows, never guesses, and the fixtures'
+own docstring admitted they had never seen a live pull. Gate PASS.
+Next: owner runs the probe and pastes; then the mapper fix + re-reconcile
+closes T016 on a clean tick. Gemini still has T111 + T023 v1 queued.
+
 ## 2026-08-17 (twelfth session) — Claude/Cowork — T016 CLOSED by the owner's reconciliation
 The owner ran reconcile_schwab.py and confirmed the import matches his
 statement — the acceptance the whole D026 sequence was built toward, performed

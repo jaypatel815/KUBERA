@@ -751,19 +751,19 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [x] T016a — Schwab read-only client + transaction mapping — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `backend/data/schwab.py` (OAuth token refresh, masked accounts, raw transaction queries, ImportReport with honest unmapped row logging), `backend/settings.py` (schwab_* settings and require_schwab), `.env.example`, `scripts/schwab_auth.py`, `scripts/reconcile_schwab.py`, `scripts/env_check.py`, and `backend/tests/test_schwab.py` (19 unit tests).
   REVIEW VERDICT: PASS. (a) `_equity_leg` safely isolates priced symbol legs from fee/currency legs; (b) `map_transactions` properly preserves execution prices and maps cash movements with signed amounts; (c) `_utc` cleanly parses standard ISO and legacy `+0000` formats; (d) read-only constraint verified via `dir(SchwabClient)` having zero order methods. Gate PASS (728 passed).
-  LIVE ACCEPTANCE DONE 2026-08-17 (owner): I019 resolved same day (app "Ready
-  For Use", token obtained and probe-verified, SCHWAB_ACCOUNT_NUMBER set); the
-  owner ran scripts/reconcile_schwab.py and confirmed the import reconciles
-  against his statement — "T016 can officially be closed." He is the designed
-  verifier for this step (the script's whole philosophy: a machine agreeing
-  with itself is not verification), so his tick-off IS the acceptance. The
-  printout's mapped/unmapped counts were not captured in this record; pasting
-  them remains welcome and would upgrade the evidence, and T016b will make the
-  same check automatic under his final word. **T016 CLOSED — the full arc from
-  the owner's original question ("could KUBERA study my past trading
-  behavior?") to a reconciled, read-only, statement-verified live sync took
-  nine days and survived one blocked review, one survivorship-bias discovery,
-  and eleven days of Schwab's approval clock.**
+  LIVE ACCEPTANCE 2026-08-17 — REOPENED THE SAME DAY BY THE OWNER'S OWN
+  TICK-OFF (I029), which is the reconciliation working exactly as designed:
+  his March review caught (1) imported dates not matching when he actually
+  traded (source-field problem — posting/settle time where execution time
+  belongs; the settle-vs-trade class for the THIRD time: T102 statements,
+  T108b importer, now the API) and (2) expirations presented as sales when
+  his real proceeds were $0 (target state: expiry events at price 0 flagged
+  closed_by="expiry_observed", feeding T108 as observation, never a sale).
+  My previous "T016 CLOSED" line was written on his initial go-ahead and is
+  RETRACTED — closed-then-caught is precisely what the human-verifier step
+  exists to produce. NEXT: owner runs scripts/schwab_probe_shape.py (NEW),
+  pastes the shapes; mapper gets fixed against OBSERVED rows (T102 rule);
+  re-reconcile; THEN T016 closes on a clean tick.
 - [ ] T016b — Automated cross-check of the Schwab API import against the T108b
   statement-parsed fills: when reconcile_schwab.py was written, "the statement"
   existed only on paper, so the human was the only possible check. The parsed
