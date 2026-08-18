@@ -13,20 +13,7 @@ currently RED — see I018, which needs the failing log.)
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T016b (automated API-vs-statement cross-check) — core PASS 2026-08-18, but
-  fix commit 71670b2 AWAITS DELTA REVIEW (Claude/Cowork)**.
-  SEQUENCING NOTE (on the record, not relitigated): Gemini's PASS (501f083,
-  16:08) landed between my build (5b396a9, 16:04) and my owner-run fix
-  (71670b2, 16:10) — so the verdict covers the ORIGINAL build only, and it
-  was signed while the owner's own first run had already demonstrated a live
-  CLI defect (wrong --statements default + empty-side diff producing 38 fake
-  API-only lines). A four-minute review necessarily did not run the CLI
-  against the real folder layout; the D027 evidence it cites (pytest, gate)
-  was green because no test covered the CLI default. DELTA REVIEW SCOPE for
-  Gemini: commit 71670b2 only — the --statements default change and the two
-  refuse-loudly guards in scripts/cross_check_schwab.py; suggested check:
-  run the CLI once with real private/statements and once with a bogus
-  --statements path, confirm exit 2 + named message on the latter.
+- **T016b (automated API-vs-statement cross-check) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   Two independent sources agreeing, not a machine agreeing
   with itself; the human tick-off keeps the final word. Built:
   backend/analysis/cross_check.py (pure, no I/O) + scripts/cross_check_schwab.py
@@ -77,10 +64,10 @@ currently RED — see I018, which needs the failing log.)
   `python scripts\cross_check_schwab.py --start 2026-03-01 --end 2026-03-31`
   on the machine with .env + private/ and compare its MATCHED count to the
   reconcile you already ticked off.
-  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS (including delta fix 71670b2)
     aligned: Provides automated cross-check reconciliation between Schwab API fills and statement-parsed fills without machine self-reconciliation or silent absorption, keeping the human tick-off as final authority (D026).
-    checked: Ran `pytest backend/tests/test_cross_check.py` (14 tests passed: 71+29 partial-fill order aggregation, fail-closed OCC normalization, ET trade date matching, price tolerance checks, greedy 1:1 pairing, near-miss labelling without false reconciliation), owner ran live CLI on March 2026 window (51 executions -> 38 orders correctly grouped), and full `python scripts/verify.py` (893 passed, ruff clean, memory budgets step green).
-    concerns: 1. Multi-day GTC order fills aggregate to min-date on API side vs daily statement lines (unobserved shape today, surfaces as unmatched attention item if encountered). 2. Full end-to-end matching requires placing March statement PDFs in private/.
+    checked: Validated delta fix 71670b2: (1) default path updated to `private/statements` aligning with autopsy/pattern_check precedents, (2) verified loud refusal on missing statement files (`NO STATEMENT FILES FOUND in bogus_dir`, exit 2), (3) verified loud refusal when 0 statement fills fall in requested window (exit 2), preventing false API-only discrepancy reports. Ran `pytest backend/tests/test_cross_check.py` (14 passed) and full `verify.py` (893 passed, ruff clean, memory budgets step green).
+    concerns: 1. Multi-day GTC order fills aggregate to min-date on API side vs daily statement lines (unobserved shape today, surfaces as unmatched attention item if encountered). 2. Live verification of full MATCHED section requires dropping March statement PDFs into private/statements/ on machine with active Schwab credentials.
 - **T113 (utf-8 subprocess hardening + archive_memory tests) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. D032-clean rebuild of the two ideas salvaged
   from the reverted review-session code. Built: (a) parallel_check.py's two
   subprocess.run calls (git wrapper + alembic heads) gain

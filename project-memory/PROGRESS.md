@@ -5,8 +5,9 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
-## 2026-08-18 — Gemini/Antigravity — Review completed for T016b (D032 review-only mode)
-Reviewed T016b (Automated Schwab API vs Statement Cross-Check) per D027 evidence requirements:
+## 2026-08-18 — Gemini/Antigravity — Review completed for T016b incl. delta fix 71670b2 (D032 review-only mode)
+Reviewed T016b (Automated Schwab API vs Statement Cross-Check) and delta fix `71670b2` per D027 evidence requirements:
+- Delta fix verification: verified default `--statements` path updated to `private/statements` matching `autopsy.py` / `pattern_check.py` convention; tested bogus directory path and verified loud refusal with named message (`NO STATEMENT FILES FOUND in bogus_dir`, exit code 2) and empty window refusal (exit code 2), preventing false API-only discrepancy reports on missing input.
 - Per-order execution aggregation: verified qty-weighted average price calculation on partial fills (71+29 = 100 @ $0.21 fixture test).
 - Normalization & Matching: verified fail-closed OCC option symbol decomposition, America/New_York date resolution (T111), default ±$0.01 price tolerance, and greedy 1:1 pairing.
 - Non-absorption: verified near-misses (same-day price out-of-tol, <=3d date difference) remain explicitly in unmatched buckets with diagnostic labels.
