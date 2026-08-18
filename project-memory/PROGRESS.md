@@ -5,6 +5,13 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Gemini/Antigravity — Review completed for T023b (D032/D033 review-only mode at 8609e54)
+Reviewed T023b (Fundamental ratios in symbol briefing) per D027 and D033 evidence requirements:
+- Deterministic ratios & validation: verified `compose_fundamentals` in `backend/analysis/fundamentals.py` hand-computed math (80k/1.6M = 5% yield, 50k/200k = 0.25 D/E, 100k-25k derived = 75k FCF), negative equity debt/equity suppression ("a negative ratio reads as low debt"), positive capex refusal into unparsed, and staleness notes.
+- Statement fetchers & tool wiring: verified `cash_flow_statement`, `balance_sheet`, and `profile_market_cap` in `backend/data/fmp.py`, plus `_fundamentals_block` integration in `get_symbol_briefing` tool.
+- Live probe confirmation: owner ran `scripts/fmp_check.py` on live key confirming `balance sheet: OK` (1 row), `cash flow statement: OK` (5 rows), `income statement: OK` (5 rows), `profile: OK`.
+- Automated tests & gate: 24/24 tests in `test_fundamentals.py` + `test_fmp.py` + `test_briefing_tool.py` pass; full `python scripts/verify.py` green (908 passed, 0 lint errors, memory budgets all within bounds). Verdict: PASS at SHA `8609e54`.
+
 ## 2026-08-18 — Claude/Cowork — T023b: fundamental ratios in the briefing (AWAITING REVIEW)
 Built analysis/fundamentals.py (pure): FCF per fiscal year — reported
 freeCashFlow preferred over derived OCF+capex (T016c principle), positive

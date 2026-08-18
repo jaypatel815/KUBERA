@@ -13,8 +13,7 @@ currently RED — see I018, which needs the failing log.)
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T023b (fundamental ratios from FMP statements — D030 #4) — AWAITING REVIEW
-  2026-08-18 AT the session's build commit (Claude/Cowork)**. Built:
+- **T023b (fundamental ratios from FMP statements — D030 #4) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 8609e54)**. Built:
   (1) backend/analysis/fundamentals.py (NEW, pure, no I/O) — FCF per fiscal
   year with the T016c principle applied to statements: the statement's OWN
   freeCashFlow is preferred ("reported"), else derived OCF + capex where FMP's
@@ -56,6 +55,10 @@ currently RED — see I018, which needs the failing log.)
   opinions (D019/D030 discipline). news/transcripts confirmed paywalled,
   D030's source decisions unchanged. Remaining owner check: one briefing
   with FMP_API_KEY set → fundamentals block, unparsed == [].
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS (covering commit 8609e54 per D033)
+    aligned: Brings deterministic FCF yield and debt ratios from annual statements into the symbol briefing with fail-closed sign validation and explicit staleness labeling, keeping within the 250 req/day free budget (D030).
+    checked: Validated commit 8609e54: (1) `compose_fundamentals` in `backend/analysis/fundamentals.py` hand-computed math (80k/1.6M = 5% yield, 50k/200k = 0.25 D/E, 100k-25k derived = 75k FCF), negative equity debt/equity suppression ("a negative ratio reads as low debt"), and positive-capex unparsed reporting; (2) `data/fmp.py` statement fetchers and profile market cap; (3) briefing tool fundamentals block and paywall/error graceful degradation paths; (4) owner ran `python scripts/fmp_check.py` on live key confirming balance sheet OK (1 row), cash flow OK (5 rows), income statement OK (5 rows), profile OK. Ran `pytest backend/tests/test_fundamentals.py backend/tests/test_fmp.py backend/tests/test_briefing_tool.py` (24 passed) and full `verify.py` (908 passed, ruff clean, memory budgets all within bounds).
+    concerns: none
 - **T016b (automated API-vs-statement cross-check) — DONE 2026-08-18
   (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS, third verdict,
   explicitly covering delta fixes 71670b2 + 545f84b; owner acceptance CLEAN
