@@ -12,6 +12,8 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
+- **T016b (automated API-vs-statement cross-check) — Claude/Cowork** — claimed 2026-08-18.
+
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T113 (utf-8 subprocess hardening + archive_memory tests) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. D032-clean rebuild of the two ideas salvaged
   from the reverted review-session code. Built: (a) parallel_check.py's two
