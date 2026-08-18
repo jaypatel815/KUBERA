@@ -26,6 +26,20 @@ Implemented monthly brokerage statement transaction importing and deduplication 
   · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
 - Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
 
+## 2026-08-17 (fifteenth session) — Claude/Cowork — reconcile gains the statement's own view
+Owner's tick-off question: statement showed ONE line (100 NVDA 180P @ 0.21,
+posted 03/16) where reconcile showed many (71+29 one second apart, 03/13).
+Decoded, everything ties to the penny: statements print ONE SETTLE-DATED LINE
+PER ORDER (T+1, weekend-skipping) while the API reports each partial
+EXECUTION trade-dated — 71+29=100, gross $2,100 − $66.52 fees = $2,033.48
+exactly as the statement prints. reconcile_schwab.py now adds a BY ORDER
+section (fills rolled up by orderId, qty-weighted avg price, "-> statement
+dates it MM/DD" via a weekend/holiday-aware next-business-day) so the
+statement comparison is a scan. Hand checks are the owner's own cases:
+03/12->03/13 and 03/13->03/16. Also locked in his EXP-token clarification in
+expiry_reconcile's docstring earlier this session-block. Gate PASS; pyrefly 1.
+Next: owner's clean re-run of reconcile closes T016.
+
 ## 2026-08-17 (fourteenth session) — Claude/Cowork — I029 root-caused: the probe corrected BOTH my hypotheses
 The owner pasted the March probe. What the observed rows actually showed:
 - DATES were right in the data; the defects were UTC DISPLAY (3:08 PM printed

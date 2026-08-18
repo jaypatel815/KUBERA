@@ -27,7 +27,7 @@ Read-only: this script cannot place, modify or cancel anything (D026).
 import argparse
 import sys
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 BACKEND = Path(__file__).resolve().parents[1] / "backend"
@@ -143,6 +143,34 @@ def main() -> int:
         print("  a plain equity trade is NOT, and means the mapper needs work.")
         for u in report.unmapped:
             print(f"    {u}")
+
+    # THE STATEMENT'S VIEW (owner question, 2026-08-17): monthly statements
+    # print ONE settle-dated line per ORDER, while this feed reports each
+    # partial EXECUTION trade-dated — his 100-lot sale appeared as 71+29 one
+    # second apart, posted three days later across a weekend. Rolling fills up
+    # by orderId reproduces the statement's lines so the tick-off is a scan.
+    from data.statements import is_us_market_holiday
+
+    def next_business_day(d):
+        d = d + timedelta(days=1)
+        while d.weekday() >= 5 or is_us_market_holiday(d):
+            d = d + timedelta(days=1)
+        return d
+
+    by_order: dict[tuple, list] = defaultdict(list)
+    for f in report.fills:
+        by_order[(f.order_id or f.external_id, f.symbol, f.side)].append(f)
+    print("\nBY ORDER — the statement's own granularity (posts next business day)")
+    print("-" * 66)
+    for (oid, symbol, side), fills in sorted(
+            by_order.items(), key=lambda kv: min(x.occurred_at for x in kv[1])):
+        qty = sum(f.qty for f in fills)
+        avg = sum(f.qty * f.price for f in fills) / qty
+        traded = local(min(f.occurred_at for f in fills)).date()
+        posts = next_business_day(traded)
+        pieces = f" ({len(fills)} executions)" if len(fills) > 1 else ""
+        print(f"  {traded}  {side.upper():4} {qty:>10,.4f}  {symbol:<21} "
+              f"@ {avg:>10,.4f}{pieces}  -> statement dates it {posts}")
 
     total_buy = sum(f.qty * f.price for f in report.fills if f.side == "buy")
     total_sell = sum(f.qty * f.price for f in report.fills if f.side == "sell")
