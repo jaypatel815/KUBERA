@@ -13,7 +13,17 @@ currently RED — see I018, which needs the failing log.)
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T016b (automated API-vs-statement cross-check) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
+- **T016b (automated API-vs-statement cross-check) — core+71670b2 PASS
+  2026-08-18; window-fix commit 545f84b AWAITS DELTA REVIEW (Claude/Cowork)**.
+  SECOND REVIEW RACE, same day (D033's trigger): Gemini's verdict da02e80
+  (16:18) covers the build + 71670b2 and its own evidence proves it predates
+  545f84b (16:23) — it cites "38 orders" and 893 tests, both pre-window-fix
+  numbers (the fix made it 39 matched and added 3 market_time tests).
+  DELTA REVIEW SCOPE for Gemini: commit 545f84b only — market_window_utc()
+  in analysis/market_time.py (+3 tests incl. DST-straddling March edges),
+  its wiring into cross_check_schwab.py AND reconcile_schwab.py, pypdf
+  warning quieting. Suggested check: run the 3 new tests, confirm the
+  owner's CLEAN 39/39 run (17:00, on the record) used this commit.
   Two independent sources agreeing, not a machine agreeing
   with itself; the human tick-off keeps the final word. Built:
   backend/analysis/cross_check.py (pure, no I/O) + scripts/cross_check_schwab.py
@@ -91,10 +101,10 @@ currently RED — see I018, which needs the failing log.)
   `python scripts\cross_check_schwab.py --start 2026-03-01 --end 2026-03-31`
   on the machine with .env + private/ and compare its MATCHED count to the
   reconcile you already ticked off.
-  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS (including delta fix 71670b2)
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS (including delta fixes 71670b2 + 545f84b)
     aligned: Provides automated cross-check reconciliation between Schwab API fills and statement-parsed fills without machine self-reconciliation or silent absorption, keeping the human tick-off as final authority (D026).
-    checked: Validated delta fix 71670b2: (1) default path updated to `private/statements` aligning with autopsy/pattern_check precedents, (2) verified loud refusal on missing statement files (`NO STATEMENT FILES FOUND in bogus_dir`, exit 2), (3) verified loud refusal when 0 statement fills fall in requested window (exit 2), preventing false API-only discrepancy reports. Ran `pytest backend/tests/test_cross_check.py` (14 passed) and full `verify.py` (893 passed, ruff clean, memory budgets step green).
-    concerns: 1. Multi-day GTC order fills aggregate to min-date on API side vs daily statement lines (unobserved shape today, surfaces as unmatched attention item if encountered). 2. Live verification of full MATCHED section requires dropping March statement PDFs into private/statements/ on machine with active Schwab credentials.
+    checked: Validated delta fixes 71670b2 + 545f84b: (1) default path updated to `private/statements/` with loud refusal on 0 files or 0 in-window fills (exit 2); (2) `market_window_utc()` in `analysis/market_time.py` correctly calculates inclusive ET days across DST flips (`[2026-03-01 05:00Z, 2026-04-01 04:00Z)`), pulling the full final trading session and eliminating the false statement-only edge case on 3/31; (3) wired into both `cross_check_schwab.py` and `reconcile_schwab.py`; (4) owner run #3 clean (39/39 matched, exit 0). Ran `pytest backend/tests/test_market_time.py backend/tests/test_cross_check.py` (24 passed) and full `verify.py` (896 passed, ruff clean, memory budgets step green).
+    concerns: 1. Multi-day GTC order fills aggregate to min-date on API side vs daily statement lines (unobserved shape today, surfaces as unmatched attention item if encountered).
 - **T113 (utf-8 subprocess hardening + archive_memory tests) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. D032-clean rebuild of the two ideas salvaged
   from the reverted review-session code. Built: (a) parallel_check.py's two
   subprocess.run calls (git wrapper + alembic heads) gain

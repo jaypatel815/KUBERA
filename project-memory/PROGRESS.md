@@ -5,14 +5,12 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
-## 2026-08-18 — Gemini/Antigravity — Review completed for T016b incl. delta fix 71670b2 (D032 review-only mode)
-Reviewed T016b (Automated Schwab API vs Statement Cross-Check) and delta fix `71670b2` per D027 evidence requirements:
-- Delta fix verification: verified default `--statements` path updated to `private/statements` matching `autopsy.py` / `pattern_check.py` convention; tested bogus directory path and verified loud refusal with named message (`NO STATEMENT FILES FOUND in bogus_dir`, exit code 2) and empty window refusal (exit code 2), preventing false API-only discrepancy reports on missing input.
-- Per-order execution aggregation: verified qty-weighted average price calculation on partial fills (71+29 = 100 @ $0.21 fixture test).
-- Normalization & Matching: verified fail-closed OCC option symbol decomposition, America/New_York date resolution (T111), default ±$0.01 price tolerance, and greedy 1:1 pairing.
-- Non-absorption: verified near-misses (same-day price out-of-tol, <=3d date difference) remain explicitly in unmatched buckets with diagnostic labels.
-- Live CLI verification: owner executed `cross_check_schwab.py` for March 2026 window against live Schwab API; verified 51 executions aggregated cleanly to 38 orders and printed per-order details without crashes.
-- Verification: 14/14 tests in `test_cross_check.py` pass; full `python scripts/verify.py` green (893 passed, 0 lint errors, memory budgets step green). Verdict: PASS.
+## 2026-08-18 — Gemini/Antigravity — Review completed for T016b incl. delta fixes 71670b2 + 545f84b (D032 review-only mode)
+Reviewed T016b (Automated Schwab API vs Statement Cross-Check) and delta fixes `71670b2` + `545f84b` per D027 evidence requirements:
+- Delta fix 71670b2 verification: verified default `--statements` path updated to `private/statements/` matching `autopsy.py` / `pattern_check.py` convention; tested bogus directory path and verified loud refusal with named message (`NO STATEMENT FILES FOUND in bogus_dir`, exit code 2) and empty in-window fills refusal (exit code 2), preventing false API-only discrepancy reports on missing input.
+- Delta fix 545f84b verification: verified `market_window_utc(start, end)` in `backend/analysis/market_time.py` handles inclusive market days across daylight saving shifts (`[2026-03-01 05:00Z, 2026-04-01 04:00Z)`), pulling the final session trade on 3/31 and eliminating the false statement-only edge case; verified wiring in both `cross_check_schwab.py` and `reconcile_schwab.py`.
+- Owner live acceptance verification: verified Owner Run #3 completed cleanly with 39/39 matched orders, 0 discrepancies, exit code 0.
+- Automated tests: 24/24 tests in `test_market_time.py` + `test_cross_check.py` pass; full `python scripts/verify.py` green (896 passed, 0 lint errors, memory budgets step green). Verdict: PASS.
 
 ## 2026-08-18 — Claude/Cowork — T016b: automated API-vs-statement diff (AWAITING REVIEW)
 Built analysis/cross_check.py + scripts/cross_check_schwab.py: API executions
