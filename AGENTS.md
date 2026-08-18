@@ -51,6 +51,12 @@ builds, everyone reviews, nobody signs off on their own commit.
 2. **Review first, build second.** If another agent's ticket sits in "Awaiting
    review", review it BEFORE claiming your own new ticket. Reviewing is the price
    of admission to the next ticket — that's what stops a review backlog forming.
+   **A review is a COMMENT, not a construction site (D032):** in review mode you
+   write ONLY the verdict in TASKS.md, one PROGRESS entry, and (if you found a
+   new defect) an ISSUES entry. No new files or directories, no code or doc
+   edits, no fixes — defects get a BLOCK and the builder fixes them. Before the
+   verdict commit, `git status --short` must show only those memory files.
+   Full rule: project-memory/REVIEW.md § "Reviewer scope".
 3. Claim your ticket: add `In progress — <ticket> — <your agent name>` to
    TASKS.md and commit that line by itself, first, so the other agent sees it.
 4. Build it. Verify gate green.

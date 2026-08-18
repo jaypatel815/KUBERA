@@ -171,6 +171,47 @@ Because both agents edit ONE working directory, add these to every review:
       each half can pass alone and fail together. This is the check that a
       single-agent workflow never needs and a parallel one lives or dies by.
 
+## Reviewer scope — a review session writes a VERDICT, nothing else (D032)
+
+Added 2026-08-17 because the owner had to say it out loud: "I don't need it to
+create files, I need it to comment on the work." A review session that
+creates files, directories, reports, scratch analyses, or "improvements" has
+left review mode and produced unreviewed work — the exact thing D023 exists
+to prevent.
+
+THE WHITELIST. A review session may write to exactly these paths:
+1. `project-memory/TASKS.md` — the verdict block, appended UNDER the ticket
+   being reviewed (PASS/BLOCK, evidence of what you RAN per D027, concerns).
+2. `project-memory/PROGRESS.md` — one dated entry for the review session.
+3. `project-memory/ISSUES.md` — only if the review DISCOVERED a defect worth
+   its own I-number.
+Nothing else. No new files. No new directories. No source edits. No test
+edits. No docs. No READMEs. No review-notes-as-a-file — the verdict block IS
+the review notes.
+
+THE MECHANICAL CHECK (D031's lesson: rules that are not mechanisms do not
+happen). Before committing a review, run:
+
+    git status --short
+
+Every line must be ` M project-memory/TASKS.md`, ` M project-memory/
+PROGRESS.md`, or ` M project-memory/ISSUES.md`. Anything else — any `??`
+(created) path, any modified source file — means the session drifted; revert
+it (`git checkout -- <path>` / delete the created file) before committing.
+The verdict commit itself is BY PATHSPEC naming only memory files.
+
+WHAT TO DO WITH THE URGES:
+- Found a defect? The verdict is BLOCK with evidence. DO NOT FIX IT — a
+  reviewer-authored fix is unreviewed code and destroys the builder/reviewer
+  separation. The builder fixes; you re-review.
+- Had an idea while reading? ONE backlog ticket line in TASKS.md under the
+  backlog section (that is a TASKS.md write, inside the whitelist) — no
+  implementation, no design doc.
+- Needed to run things to gather evidence (you MUST — D027)? Running creates
+  no repo files. Scratch output goes to /tmp or your terminal, never into
+  the repo. If a probe script would genuinely help future sessions, file the
+  ticket for it; do not write it mid-review.
+
 ## When the reviewer and builder disagree twice
 Stop and escalate to the owner with both positions in three lines each. Do not
 ping-pong; his time is the scarce resource, but a deadlock costs him more.

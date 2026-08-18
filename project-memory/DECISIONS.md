@@ -604,3 +604,28 @@ NOT adopted, with reasons in the disposition: the background self-improvement
 review fork (its cheap-model variant is exactly what D027 forbids; its write
 gates default OPEN, ours never have), the skills/curator machinery, FTS5
 session search (git grep is ours), and the framework itself.
+
+## D032 — a review is a comment, not a construction site (2026-08-17)
+
+CONTEXT: the owner, in plain words: "Whenever I ask Gemini to review your
+work, it goes off on a tangent and starts creating new files/directories. I
+don't need it to create files, I need it to comment on your work." The D023
+protocol defined WHO reviews and D027 defined what EVIDENCE a review needs,
+but neither defined the review session's WRITE SCOPE — so the reviewer
+improvised one. The existing brief banned EDITING source in a review; the
+observed failure mode was CREATING files, which the ban did not name.
+
+DECIDED (full text: REVIEW.md § "Reviewer scope"; brief updated in
+docs/agent-briefs.md):
+1. A review session may write to exactly three paths: TASKS.md (the verdict,
+   appended under the ticket), PROGRESS.md (one session entry), ISSUES.md
+   (only for a newly discovered defect). Nothing else — no new files, no new
+   directories, no source or test edits, no reports or notes-as-files.
+2. Defects get a BLOCK verdict with evidence; the BUILDER fixes them. A
+   reviewer-authored fix is unreviewed code and dissolves the separation.
+3. Ideas found while reviewing become ONE backlog ticket line, not artifacts.
+4. Evidence must still be RUN (D027) — running writes nothing to the repo;
+   scratch goes to /tmp.
+5. THE MECHANISM (D031's lesson): before the verdict commit, `git status
+   --short` must show only the three memory files; any `??` path = drift —
+   delete it and continue. The verdict commit is by pathspec.

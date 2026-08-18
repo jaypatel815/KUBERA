@@ -5,6 +5,23 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-17 (eighteenth session) — Claude/Cowork — D032: reviews comment, they don't create
+The owner, verbatim: "I don't need it to create files, I need it to comment
+on your work" — Gemini's review sessions had been spawning files and
+directories. Root cause is a scope gap, not a Gemini quirk: D023 defined WHO
+reviews and D027 defined what EVIDENCE a review needs, but nothing defined a
+review session's WRITE SCOPE, and the old brief banned EDITING source while
+the observed failure was CREATING artifacts. D032 closes it with a whitelist
+(TASKS verdict + PROGRESS entry + ISSUES-if-new-defect; nothing else), the
+no-fixing rule (defects get BLOCK; the builder fixes), the one-backlog-line
+outlet for mid-review ideas, and the MECHANISM per D031: `git status --short`
+before the verdict commit must show only memory files — any ?? path is drift,
+delete it. Written into REVIEW.md (authoritative), AGENTS.md step 2, and the
+paste-in brief in docs/agent-briefs.md (the highest-leverage spot — it is
+what the owner pastes into Gemini). Docs/memory only; gate PASS.
+Next: the owner pastes the updated brief (or the one-liner below) into
+Gemini's review sessions; T111/T023/T112 are its queue.
+
 ## 2026-08-17 (seventeenth session) — Claude/Cowork — hermes-agent reconciled (D031): the 150-line rule finally has teeth
 Owner asked for a review of NousResearch/hermes-agent (self-improving agent).
 Disposition: docs/research/hermes-agent-review-2026-08-17.md. Verdict in one

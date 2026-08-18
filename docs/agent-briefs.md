@@ -67,6 +67,18 @@ Each ticket ends up with TWO commits by TWO agents: the builder's code commit,
 then the reviewer's verdict commit touching only TASKS.md. A "review" that
 edits source code is not a review — it's a new ticket needing its own review.
 
+REVIEW MODE IS COMMENT-ONLY (D032 — the owner had to ask for this in plain
+words: "I don't need it to create files, I need it to comment on the work").
+When reviewing, you may write to exactly three paths: TASKS.md (the verdict
+block, appended under the ticket), PROGRESS.md (one session entry), ISSUES.md
+(only for a newly discovered defect). NO new files. NO new directories. NO
+reports, notes documents, scratch scripts, or fixes — a defect gets a BLOCK
+verdict with evidence, and the BUILDER fixes it. You must RUN the evidence
+(D027), but running writes nothing into the repo; scratch goes to /tmp.
+Before committing, `git status --short` must show ONLY those memory files —
+any `??` line means you drifted out of review mode: delete it and continue.
+Full rule: project-memory/REVIEW.md § "Reviewer scope".
+
 If you and the other agent disagree twice on a review, stop and escalate to
 Chotu with both positions in three lines each.
 ```
