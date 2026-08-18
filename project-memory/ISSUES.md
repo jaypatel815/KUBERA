@@ -168,7 +168,15 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   point — with 62% of his option trades expiring the same day, a 20-minute scalp
   and a 7-hour hold were being reported as the same behaviour.
   T103 is unblocked once T105 is reviewed.
-- I019 [SCHWAB-SIDE, CONFIRMED — waiting on Schwab review] (2026-08-16)
+- I019 [RESOLVED 2026-08-17 — the app reached "Ready For Use"; the owner ran
+  schwab_auth.py successfully (the script's built-in read-only probe verified
+  the token before he walked away), wrote SCHWAB_REFRESH_TOKEN via --write and
+  set SCHWAB_ACCOUNT_NUMBER. Standing operational fact, not a bug: the refresh
+  token EXPIRES ROUGHLY WEEKLY — "token refresh failed" means rerun
+  schwab_auth.py, not a defect. T016 live acceptance unparked; owner runs
+  scripts/reconcile_schwab.py against a statement month next.]
+  Original record follows for the paper trail:
+  I019 [SCHWAB-SIDE, CONFIRMED — waiting on Schwab review] (2026-08-16)
   SYMPTOM: `python scripts/schwab_auth.py` opens the browser fine, the owner logs
   in and accepts the terms, and Schwab then LOGS HIM OUT with "We are unable to
   complete your request. Please contact customer support for further assistance."

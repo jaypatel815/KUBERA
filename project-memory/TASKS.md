@@ -14,8 +14,7 @@ currently RED — see I018, which needs the failing log.)
 ## In progress
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T111 (market-day boundaries in America/New_York — owner-reported) — AWAITING
-  REVIEW — Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity.
+- **T111 (market-day boundaries in America/New_York — owner-reported) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   The owner asked why "today" was August 18th at 11:11 PM Eastern on the 17th.
   Storage was never wrong (UTC everywhere, unchanged); the "today" BOUNDARIES
   were UTC dates. The worst instance was not cosmetic: THE RISK ENGINE'S DAILY
@@ -50,8 +49,8 @@ currently RED — see I018, which needs the failing log.)
     3. Half-days (early closes) are NOT modeled — market_today is a calendar
        boundary, not a session calendar. Fine for day boundaries; a session
        calendar is its own future ticket if ever needed.
-- **T023 v1 (earnings calendar, FMP free tier — D030) — AWAITING REVIEW —
-  Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity.
+  REVIEWED 2026-08-17 by Gemini/Antigravity — **PASS**: verified America/New_York IANA zone handling for EDT/EST shifts, `market_today()` date resolution and `market_day_start_utc()` UTC instant calculations, fail-closed refusal of naive datetimes, and alignment of risk budget reset, overtrading counters, and EOD reporting with true market session time. 867 tests passing, 0 lint errors, verify gate green.
+- **T023 v1 (earnings calendar, FMP free tier — D030) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   The owner ran the probe; his table is recorded in D030 and decided the sources:
   FMP /stable calendar for earnings dates, Alpaca for news, transcripts/estimate
   FEATURES out, fundamentals deferred to T023b.
@@ -88,6 +87,7 @@ currently RED — see I018, which needs the failing log.)
        250/day, worth a symbols-param server-side filter if FMP supports one.
     3. The 14-day brief horizon is a chosen constant (commented); reasonable
        people could want it configurable.
+  REVIEWED 2026-08-17 by Gemini/Antigravity — **PASS**: verified probe-aligned `/stable/earnings-calendar` integration, fail-closed row parsing with unparsed diagnostics, no auto-retry on 429 to respect free-tier budget, tool #37 registration and count guard synchronization across all 3 suites, and graceful degradation in the morning briefing when keys are omitted or endpoints fail. 867 tests passing, 0 lint errors, verify gate green.
 - **T091b-rest (weekly attribution + EOD regime line + cost decomposition) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. Closes T091b.
   Files: `backend/analysis/attribution.py` (trips gain exit-side `notional`; NEW
   `attributed_fills_from_rows` — shared by tool and weekly review so the two can never
@@ -743,7 +743,24 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [x] T016a — Schwab read-only client + transaction mapping — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `backend/data/schwab.py` (OAuth token refresh, masked accounts, raw transaction queries, ImportReport with honest unmapped row logging), `backend/settings.py` (schwab_* settings and require_schwab), `.env.example`, `scripts/schwab_auth.py`, `scripts/reconcile_schwab.py`, `scripts/env_check.py`, and `backend/tests/test_schwab.py` (19 unit tests).
   REVIEW VERDICT: PASS. (a) `_equity_leg` safely isolates priced symbol legs from fee/currency legs; (b) `map_transactions` properly preserves execution prices and maps cash movements with signed amounts; (c) `_utc` cleanly parses standard ISO and legacy `+0000` formats; (d) read-only constraint verified via `dir(SchwabClient)` having zero order methods. Gate PASS (728 passed).
-  Remaining live acceptance (T016 live reconciliation against actual account statements) is parked pending Schwab app approval (I019).
+  Remaining live acceptance UNPARKED 2026-08-17 — I019 resolved: app "Ready For
+  Use", refresh token obtained (verified by schwab_auth's built-in read-only
+  probe), SCHWAB_ACCOUNT_NUMBER set. OWNER RUNS NEXT (his machine; the sandbox
+  cannot reach api.schwabapi.com):
+    python scripts\reconcile_schwab.py --start 2026-03-01 --end 2026-03-31
+  then ticks the printed rows against the March statement (a month with BOTH
+  confirmations and a monthly statement in private/statements). Mapped+unmapped
+  must reconcile to the statement's trade count; report the verdict to any
+  agent and T016 closes.
+- [ ] T016b — Automated cross-check of the Schwab API import against the T108b
+  statement-parsed fills: when reconcile_schwab.py was written, "the statement"
+  existed only on paper, so the human was the only possible check. The parsed
+  fills have since been audited against explicit statement rows (T108/T108b,
+  13/13 clean), so an automated API-vs-parsed diff is now TWO independent
+  sources agreeing, not a machine agreeing with itself. Build: join by
+  (date, symbol, side, qty, price ± tolerance), report matches/API-only/
+  statement-only, never silently reconcile. Keeps the human tick-off as the
+  final word; the diff just does the bookkeeping.
 - [x] T102 — Statement PDF ingest — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini/Antigravity — PASS):
   `backend/data/statements.py` parses Schwab confirmations (header trade date, settle date parsing with year boundary rollover, option leg extraction with contract multiplier, continuation window bounded by next row start); `backend/tests/test_statements.py` (12 tests); PII-redacted fixtures in `backend/tests/fixtures/schwab/` with regex identity audit test. Parses 250 fills from 86 real confirmations (147 options, 103 equity). Uncovered I020 (59% options, 62% 0DTE), unblocking T105 and pausing T103 until options land.
   REVIEW VERDICT: PASS. Verified all 4 review focus points: (a) positional row regex properly captures fields with tabular spacing and records unparsed failures without data loss; (b) `redact()` thoroughly sanitizes PII (accounts, addresses, long digits) and `test_committed_fixtures_contain_no_identity` guards fixtures; (c) header trade date extraction avoids 1-2 day settle date shift corruption; (d) agreed T103 must wait for T105 option modeling. Gate PASS (743 passed).

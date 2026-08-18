@@ -26,6 +26,20 @@ Implemented monthly brokerage statement transaction importing and deduplication 
   · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
 - Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
 
+## 2026-08-17 (eleventh session) — Claude/Cowork — Schwab is LIVE: I019 closed
+The app reached "Ready For Use"; the owner ran schwab_auth.py (its built-in
+read-only probe verified the token before he walked away), wrote the refresh
+token via --write, and set SCHWAB_ACCOUNT_NUMBER. I019 resolved in place with
+the standing note that weekly token expiry is an operational fact, not a bug.
+T016's live acceptance is unparked: the owner runs reconcile_schwab.py for
+March 2026 and ticks the printout against the statement — the script was built
+for this day and deliberately keeps the HUMAN as the verifier. Filed T016b:
+since T108b, the statement-parsed fills are themselves audited (13/13 clean),
+so an automated API-vs-parsed diff is now two independent sources agreeing —
+worth building as bookkeeping under the human's final word. Memory-only
+session; gate untouched by code (docs/memory).
+Next: owner's reconcile run closes T016; Gemini has T111 + T023 v1 queued.
+
 ## 2026-08-17 (tenth session) — Claude/Cowork — T111: "today" now means the market's today
 The owner asked why KUBERA said August 18th at 11:11 PM Eastern on the 17th.
 Storage was right all along (UTC, unchanged); the "today" boundaries were UTC
