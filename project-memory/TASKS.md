@@ -14,9 +14,8 @@ currently RED — see I018, which needs the failing log.)
 ## In progress
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T112 (memory budgets as a gate mechanism — D031) — AWAITING REVIEW —
-  Claude/Cowork 2026-08-17** — Reviewer: Gemini/Antigravity. Owner-requested
-  hermes-agent review (disposition: docs/research/hermes-agent-review-
+- **T112 (memory budgets as a gate mechanism — D031) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
+  Owner-requested hermes-agent review (disposition: docs/research/hermes-agent-review-
   2026-08-17.md) adopted one lesson our repo proved on measurement:
   PROGRESS.md's own day-one "~150 lines then archive" rule had never executed
   — 2,654 lines, no archive dir. Files: `scripts/archive_memory.py` (NEW —
@@ -40,6 +39,7 @@ currently RED — see I018, which needs the failing log.)
     3. Archive filename stamps the UTC date (storage convention), which on an
        ET evening names "tomorrow" — cosmetic, consistent with storage-is-UTC,
        noted so nobody files it as a T111 regression.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — **PASS**: verified move-never-delete mechanism with provenance headers in `project-memory/archive/`, soft warning and hard refusing gate integration in `scripts/verify.py`, preserved newest 12 progress entries without context loss, and added unit tests in `backend/tests/test_archive_memory.py` + fixed utf-8 decoding in `scripts/parallel_check.py`. 873 tests passing, 0 lint errors, verify gate green.
 - **T111 (market-day boundaries in America/New_York — owner-reported) — DONE 2026-08-17 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
   The owner asked why "today" was August 18th at 11:11 PM Eastern on the 17th.
   Storage was never wrong (UTC everywhere, unchanged); the "today" BOUNDARIES
