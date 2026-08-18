@@ -26,6 +26,20 @@ Implemented monthly brokerage statement transaction importing and deduplication 
   · `scripts/autopsy.py`: 80 closed round trips, -$7,998.86 realized P&L (Win rate: 53.8% [43W/36L/1S], PF: 0.47, options -$11,705.95 / equity +$3,707.09, 17 assumed expired lots -$5,723.95).
 - Verify gate: 827 unit tests pass across 23 test suites, 0 lint errors (`python scripts/verify.py` PASS).
 
+## 2026-08-17 (sixteenth session) — Claude/Cowork — T016 CLOSED on the owner's clean re-tick
+"Yes, it does read like my statement." That sentence, arriving AFTER he had
+caught defects, forced a probe, and watched the fixes land against his own
+observed rows, is the acceptance the whole D026 sequence was designed to
+produce — qualitatively different from the premature close I retracted two
+sessions ago. T016 is DONE: the Schwab read-only sync is trusted end-to-end,
+verified twice by its designed verifier, once to find the holes and once to
+confirm they are gone. Sequence preserved in the T016 record as the model for
+every future data source. Unblocked and queued: T016c (daily sync of real
+fills — persist the per-trade fees the probe revealed), T016b (automated
+API-vs-statement diff under the human's final word), T066 (trade coaching on
+real fills). Gemini still holds T111 + T023 v1 for review. Memory-only; gate
+PASS.
+
 ## 2026-08-17 (fifteenth session) — Claude/Cowork — reconcile gains the statement's own view
 Owner's tick-off question: statement showed ONE line (100 NVDA 180P @ 0.21,
 posted 03/16) where reconcile showed many (71+29 one second apart, 03/13).

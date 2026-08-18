@@ -759,19 +759,21 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   T108b importer, now the API) and (2) expirations presented as sales when
   his real proceeds were $0 (target state: expiry events at price 0 flagged
   closed_by="expiry_observed", feeding T108 as observation, never a sale).
-  My previous "T016 CLOSED" line was written on his initial go-ahead and is
-  RETRACTED — closed-then-caught is precisely what the human-verifier step
-  exists to produce. PROBE RUN AND FIXES LANDED same day (I029 root causes —
-  which corrected BOTH of my hypotheses; see ISSUES): mapper prefers `time`
-  over the sometimes-placeholder `tradeDate` (regression test from observed
-  row ...468374); reconcile prints EASTERN times labeled as such; a new
-  EXPECTED EXPIRATIONS section lists open option lots past expiry as
-  "expired worthless, $0 — no Schwab transaction exists" so the tick-off
-  matches the statement's Expired rows. FINAL STEP: owner re-runs
-    python scripts\reconcile_schwab.py --start 2026-03-01 --end 2026-03-31
-  and ticks clean — times should now read as he remembers them, the two
-  05:00:00 phantoms become real morning times, and the three expired
-  contracts appear explicitly at $0. THEN T016 closes.
+  **T016 CLOSED 2026-08-17 (second close — the real one).** The full acceptance
+  cycle, recorded because it is the model for every future data source:
+  (1) owner reconciled March and CAUGHT discrepancies (I029) — my premature
+  first "closed" retracted; (2) his probe delivered OBSERVED rows that
+  corrected both of my hypotheses; (3) fixes landed against those rows only:
+  mapper prefers `time` over the sometimes-placeholder `tradeDate` (regression
+  test from observed row ...468374), reconcile prints EASTERN labeled, an
+  EXPECTED EXPIRATIONS section lists never-sold lots at $0 (the API emits no
+  row for them), and a BY ORDER section reproduces the statement's own
+  settle-dated per-order granularity (his 71+29=100 @ 0.21 -> $2,033.48 tied
+  to the penny); (4) owner RE-RAN and confirmed: "it does read like my
+  statement." That confirmation, after fixes he forced, is the acceptance.
+  The Schwab read-only sync is now trusted end-to-end. Unblocked: T016c
+  (daily sync — persist the per-trade fees the probe revealed), T016b
+  (automated diff under his final word), T066 (coaching on real fills).
 - [ ] T016b — Automated cross-check of the Schwab API import against the T108b
   statement-parsed fills: when reconcile_schwab.py was written, "the statement"
   existed only on paper, so the human was the only possible check. The parsed
