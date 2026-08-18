@@ -13,7 +13,21 @@ currently RED — see I018, which needs the failing log.)
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T016b (automated API-vs-statement cross-check) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. Two independent sources agreeing, not a machine agreeing
+- **T016b (automated API-vs-statement cross-check) — core PASS 2026-08-18, but
+  fix commit 71670b2 AWAITS DELTA REVIEW (Claude/Cowork)**.
+  SEQUENCING NOTE (on the record, not relitigated): Gemini's PASS (501f083,
+  16:08) landed between my build (5b396a9, 16:04) and my owner-run fix
+  (71670b2, 16:10) — so the verdict covers the ORIGINAL build only, and it
+  was signed while the owner's own first run had already demonstrated a live
+  CLI defect (wrong --statements default + empty-side diff producing 38 fake
+  API-only lines). A four-minute review necessarily did not run the CLI
+  against the real folder layout; the D027 evidence it cites (pytest, gate)
+  was green because no test covered the CLI default. DELTA REVIEW SCOPE for
+  Gemini: commit 71670b2 only — the --statements default change and the two
+  refuse-loudly guards in scripts/cross_check_schwab.py; suggested check:
+  run the CLI once with real private/statements and once with a bogus
+  --statements path, confirm exit 2 + named message on the latter.
+  Two independent sources agreeing, not a machine agreeing
   with itself; the human tick-off keeps the final word. Built:
   backend/analysis/cross_check.py (pure, no I/O) + scripts/cross_check_schwab.py
   (CLI: live pull + parse_directory(private/), prints MATCHED / API-ONLY /

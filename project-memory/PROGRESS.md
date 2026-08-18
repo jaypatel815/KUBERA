@@ -28,8 +28,14 @@ price check — fixed and pinned. OWNER'S FIRST RUN then caught a real defect:
 38 fake API-only lines. Fixed same session: correct default + loud refusal
 (exit 2) when 0 files or 0 in-window fills — missing input is not a
 discrepancy report. His output DID verify the API side end to end (per-order
-aggregation, OCC rendering, ET dates). Awaiting his re-run + Gemini review.
-Next: Gemini reviews T016b. Remaining backlog headliners: T104, T067b, T023b.
+aggregation, OCC rendering, ET dates). SEQUENCING: Gemini's PASS (501f083,
+16:08) landed BETWEEN build (16:04) and fix (71670b2, 16:10) — verdict covers
+the original build only, and it missed the defect the owner's run had already
+shown live (no test covered the CLI default; the review's evidence was pytest
++ gate, not a CLI run). 71670b2 re-queued for delta review with a suggested
+check: CLI once against real private/statements, once against a bogus path
+(expect exit 2 + named message). Owner re-run still pending.
+Next: Gemini delta-reviews 71670b2. Backlog headliners: T104, T067b, T023b.
 
 ## 2026-08-18 — Gemini/Antigravity — Review completed for T113 (D032 review-only mode)
 Reviewed T113 (utf-8 subprocess hardening + archiver tests) per D027 evidence requirements:
