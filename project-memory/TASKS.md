@@ -13,8 +13,7 @@ currently RED — see I018, which needs the failing log.)
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T016b (automated API-vs-statement cross-check) — AWAITING REVIEW 2026-08-18
-  (Claude/Cowork)**. Two independent sources agreeing, not a machine agreeing
+- **T016b (automated API-vs-statement cross-check) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. Two independent sources agreeing, not a machine agreeing
   with itself; the human tick-off keeps the final word. Built:
   backend/analysis/cross_check.py (pure, no I/O) + scripts/cross_check_schwab.py
   (CLI: live pull + parse_directory(private/), prints MATCHED / API-ONLY /
@@ -53,6 +52,10 @@ currently RED — see I018, which needs the failing log.)
   `python scripts\cross_check_schwab.py --start 2026-03-01 --end 2026-03-31`
   on the machine with .env + private/ and compare its MATCHED count to the
   reconcile you already ticked off.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS
+    aligned: Provides automated cross-check reconciliation between Schwab API fills and statement-parsed fills without machine self-reconciliation or silent absorption, keeping the human tick-off as final authority (D026).
+    checked: Ran `pytest backend/tests/test_cross_check.py` (14 tests passed: 71+29 partial-fill order aggregation, fail-closed OCC normalization, ET trade date matching, price tolerance checks, greedy 1:1 pairing, near-miss labelling without false reconciliation), owner ran live CLI on March 2026 window (51 executions -> 38 orders correctly grouped), and full `python scripts/verify.py` (893 passed, ruff clean, memory budgets step green).
+    concerns: 1. Multi-day GTC order fills aggregate to min-date on API side vs daily statement lines (unobserved shape today, surfaces as unmatched attention item if encountered). 2. Full end-to-end matching requires placing March statement PDFs in private/.
 - **T113 (utf-8 subprocess hardening + archive_memory tests) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. D032-clean rebuild of the two ideas salvaged
   from the reverted review-session code. Built: (a) parallel_check.py's two
   subprocess.run calls (git wrapper + alembic heads) gain
