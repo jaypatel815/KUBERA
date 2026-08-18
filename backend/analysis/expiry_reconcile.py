@@ -29,6 +29,15 @@ lines, and those continuation lines can belong to the NEXT transaction — so th
 window search refuses lines that start a new transaction rather than grabbing a
 neighbouring contract's date.
 
+DO NOT KEY ON THE "EXP" TOKEN (owner clarification, 2026-08-17): "EXP MM/DD/YY"
+is the label for the contract's EXPIRATION DATE and appears on EVERY option
+row — ordinary purchases and sales included. The signal for a worthless expiry
+is the ACTION word "Expired" (with a parenthesised removal quantity), which is
+exactly what _ACTION matches. Matching "EXP" instead would misread every option
+purchase as an expiration. Mechanical proof of the current reading: the T108
+reconciliation matched all 13 expired contracts against these action rows,
+quantity-exact.
+
 Anything unparseable is REPORTED, never guessed — the same rule as the
 confirmation parser, for the same reason.
 
