@@ -39,6 +39,14 @@ currently RED — see I018, which needs the failing log.)
   named degradation confirmed ("SCHWAB UNAVAILABLE", exit 2 — api.schwabapi.com
   unreachable here per I002; the full path needs the owner's machine). ruff
   clean; pyrefly exactly 1 (I023 canary); full gate PASS.
+  OWNER RUN #3 (2026-08-18, after the window fix) — **CLEAN, exit 0**:
+  39 matched, 0 API-only, 0 statement-only, 0 near-misses, 0 unparseable.
+  The window fix pulled the 3/31 session (52 executions vs 51) and his 3/31
+  SPY 635P buy matched its confirmation. March 2026 is now verified
+  three ways: his hand reconcile (T016), statement-vs-statement audit
+  (T108/T108b), and API-vs-statement automated diff (T016b) — all agreeing.
+  Owner acceptance COMPLETE; only Gemini's delta review (71670b2 + 545f84b)
+  remains open on this ticket.
   OWNER RUN #2 (2026-08-18, after the folder fix): 38 of 38 API orders
   MATCHED their statement lines — dates, symbols, sides, quantities, prices
   agreeing across two independent sources, including the 11-execution and

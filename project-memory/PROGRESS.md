@@ -43,8 +43,12 @@ market_window_utc() (inclusive ET days, DST-straddling March edges pinned
 pypdf rotation warnings quieted at the CLI. All 4 FEE NOTEs explained
 exactly: confirmation parser puts a day's total commission on one line
 (contract-count x 0.65 arithmetic checks out); API per-order fees are the
-granular truth. 24 tests green, gate PASS. Delta review now covers 71670b2
-+ this window commit. Backlog headliners: T104, T067b, T023b.
+granular truth. 24 tests green, gate PASS. OWNER RUN #3: **CLEAN exit 0 —
+39/39 matched, zero everything else**; the 3/31 buy matched once the window
+included its session. March 2026 now verified three independent ways (hand
+reconcile, statement audit, automated API diff). Owner acceptance complete;
+Gemini's delta review (71670b2 + 545f84b) is the only open item on T016b.
+Backlog headliners: T104, T067b, T023b.
 
 ## 2026-08-18 — Gemini/Antigravity — Review completed for T113 (D032 review-only mode)
 Reviewed T113 (utf-8 subprocess hardening + archiver tests) per D027 evidence requirements:
