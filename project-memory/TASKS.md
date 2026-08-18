@@ -12,6 +12,7 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
+- **T111 (market-day boundaries in America/New_York — owner-reported) — Claude/Cowork** — claimed 2026-08-17.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T023 v1 (earnings calendar, FMP free tier — D030) — AWAITING REVIEW —
