@@ -344,12 +344,45 @@ def position_context_for(client: AlpacaClient, symbol: str) -> PositionContext |
     )
 
 
+def _fundamentals_block(ctx: ToolContext, symbol: str) -> dict | None:
+    """T023b: FCF yield + debt ratios, best-effort. The briefing NEVER fails
+    for a fundamentals problem — no client, a paywall, or a network error all
+    degrade to a note (the T023 earnings_risk convention)."""
+    if ctx.fmp is None:
+        return None
+    from analysis.fundamentals import compose_fundamentals
+    from data.fmp import FmpError
+    try:
+        cash_rows = ctx.fmp.cash_flow_statement(symbol, limit=5)
+        market_cap = ctx.fmp.profile_market_cap(symbol)
+    except FmpError as e:
+        return {"available": False, "why": str(e)}
+    try:
+        balance_rows = ctx.fmp.balance_sheet(symbol, limit=1)
+    except FmpError as e:
+        # Balance sheet is the one endpoint the owner's probe has not yet
+        # verified — a paywall here must not cost us the FCF half.
+        balance_rows = None
+        note = f"balance sheet unavailable: {e}"
+    else:
+        note = None
+    reading = compose_fundamentals(symbol, cash_rows, balance_rows, market_cap)
+    out = asdict(reading)
+    if note:
+        out["notes"].append(note)
+    out["available"] = True
+    return out
+
+
 @registry.tool(
     "get_symbol_briefing",
     "Evidence pack for 'should I buy X': trailing returns (20/60/252 trading days), "
     "annualized volatility, max drawdown, distance from 52-week high/low, SMA50/200 trend "
-    "context, and the user's current exposure. Facts only, dated; fields degrade to null "
-    "when history is thin. Narration must state data recency and never present certainty.",
+    "context, the user's current exposure, and (when FMP is configured) fundamentals — "
+    "FCF by fiscal year, FCF yield vs today's market cap, debt ratios — always labeled "
+    "with their fiscal dates: annual statements are stale by nature. Facts only, dated; "
+    "fields degrade to null when history is thin. Narration must state data recency and "
+    "never present certainty.",
     BriefingArgs,
 )
 def _get_symbol_briefing(ctx: ToolContext, p: BriefingArgs) -> dict:
@@ -368,6 +401,7 @@ def _get_symbol_briefing(ctx: ToolContext, p: BriefingArgs) -> dict:
     )
     return {
         "briefing": asdict(briefing),
+        "fundamentals": _fundamentals_block(ctx, p.symbol.upper()),
         "asof": bars.asof.isoformat(),
         "source": bars.source,
     }

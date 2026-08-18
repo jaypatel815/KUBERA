@@ -5,6 +5,20 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Claude/Cowork — T023b: fundamental ratios in the briefing (AWAITING REVIEW)
+Built analysis/fundamentals.py (pure): FCF per fiscal year — reported
+freeCashFlow preferred over derived OCF+capex (T016c principle), positive
+capex refused into unparsed (T102); FCF yield vs TODAY's market cap with the
+stale-numerator note; debt/equity suppressed with why on non-positive equity
+(a negative ratio reads as LOW debt); debt/assets. fmp.py gains
+cash_flow_statement + profile_market_cap (probe-verified) and balance_sheet
+(NOT probed — named paywall error; fmp_check.py gains the probe row).
+Briefing tool carries the block, degrades three ways, and a paywalled
+balance sheet cannot cost the FCF half (pinned). 24 tests hand-computed;
+gate PASS; pyrefly exactly 1. Owner: next briefing shows fundamentals;
+next fmp_check run answers the balance-sheet question.
+Next: Gemini reviews T023b (verdict AT sha, per D033). Then T067b.
+
 ## 2026-08-18 — Claude/Cowork — TASKS.md curation: 1,100 → ~590 lines (D031)
 The nag earned its keep the hard way: a stale "- [ ] T104" duplicate (T104 has
 been DONE since 08-16) misled two sessions' "next" pointers before this pass

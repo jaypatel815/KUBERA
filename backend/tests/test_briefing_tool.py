@@ -90,3 +90,57 @@ def test_endpoint_wires_both_clients():
         assert body["briefing"]["position"]["qty"] == 10
     finally:
         app.dependency_overrides.clear()
+
+
+# ---------------------------------------------------------------- T023b
+
+def fmp_fake(balance_status=200):
+    from test_fmp import fmp_settings
+
+    from data.fmp import FmpClient
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if path.endswith("/stable/cash-flow-statement"):
+            return httpx.Response(200, json=[{"date": "2025-12-31",
+                                              "freeCashFlow": 80000.0}])
+        if path.endswith("/stable/balance-sheet-statement"):
+            return httpx.Response(balance_status, json=[{
+                "date": "2025-12-31", "totalDebt": 50000.0,
+                "totalStockholdersEquity": 200000.0, "totalAssets": 400000.0}])
+        if path.endswith("/stable/profile"):
+            return httpx.Response(200, json=[{"marketCap": 1600000.0}])
+        return httpx.Response(404, json={})
+
+    return FmpClient(settings=fmp_settings(), transport=httpx.MockTransport(handler))
+
+
+def test_briefing_without_fmp_has_null_fundamentals():
+    with market_fake() as m:
+        out = registry.execute("get_symbol_briefing", {"symbol": "AAPL"},
+                               ToolContext(market=m))
+    assert out["fundamentals"] is None
+
+
+def test_briefing_with_fmp_carries_hand_computed_ratios():
+    with market_fake() as m, fmp_fake() as f:
+        out = registry.execute("get_symbol_briefing", {"symbol": "AAPL"},
+                               ToolContext(market=m, fmp=f))
+    fund = out["fundamentals"]
+    assert fund["available"] is True
+    assert fund["fcf_yield"] == pytest.approx(0.05)      # 80k / 1.6M
+    assert fund["debt_to_equity"] == pytest.approx(0.25)
+    assert fund["debt_to_assets"] == pytest.approx(0.125)
+    assert any("fiscal year-end" in n for n in fund["notes"])
+
+
+def test_briefing_survives_paywalled_balance_sheet():
+    """The unprobed endpoint failing must not cost the FCF half (D030)."""
+    with market_fake() as m, fmp_fake(balance_status=403) as f:
+        out = registry.execute("get_symbol_briefing", {"symbol": "AAPL"},
+                               ToolContext(market=m, fmp=f))
+    fund = out["fundamentals"]
+    assert fund["available"] is True
+    assert fund["fcf_yield"] == pytest.approx(0.05)      # FCF half intact
+    assert fund["debt_to_equity"] is None
+    assert any("balance sheet unavailable" in n for n in fund["notes"])

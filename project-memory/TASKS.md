@@ -12,9 +12,42 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T023b (fundamental ratios from FMP statements) — Claude/Cowork** — claimed 2026-08-18.
-
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T023b (fundamental ratios from FMP statements — D030 #4) — AWAITING REVIEW
+  2026-08-18 AT the session's build commit (Claude/Cowork)**. Built:
+  (1) backend/analysis/fundamentals.py (NEW, pure, no I/O) — FCF per fiscal
+  year with the T016c principle applied to statements: the statement's OWN
+  freeCashFlow is preferred ("reported"), else derived OCF + capex where FMP's
+  capex is a NEGATIVE outflow; a POSITIVE capex is an unobserved sign
+  convention → the year lands in unparsed, never silently "fixed" (T102).
+  FCF yield = latest fiscal FCF / TODAY's market cap, with the backward-
+  numerator/live-denominator note; debt/equity SUPPRESSED (None + why) when
+  equity is non-positive — a negative ratio reads as "low debt", the exact
+  wrong conclusion; debt/assets separately; STALENESS_NOTE in every reading.
+  (2) data/fmp.py gains cash_flow_statement (probe-verified), balance_sheet
+  (NOT probe-verified — named FmpError on paywall), profile_market_cap
+  (probe-verified; None when payload lacks a usable number). (3) briefing
+  tool gains a fundamentals block: None without ctx.fmp; FmpError on the
+  cash-flow half → available:false with why; a paywalled balance sheet must
+  NOT cost the FCF half (pinned in test). (4) scripts/fmp_check.py gains the
+  balance-sheet probe row so the owner's next run answers the one endpoint
+  the 2026-08-17 probe missed.
+  EVIDENCE (D027): 24 tests across test_fundamentals (6, all hand-computed:
+  80k/1.6M = 5% yield, 50k/200k = 0.25 D/E, derived 100k−25k = 75k,
+  positive-capex refusal, negative-equity suppression, unparsed reporting) +
+  test_fmp (+3: fetchers, named paywall, non-list shape refusal, unusable
+  profile → None) + test_briefing_tool (+3: null without fmp, hand-computed
+  block with fmp, paywalled-balance-sheet survival). ruff clean; pyrefly
+  exactly 1 (I023 canary); full gate PASS.
+  D028 objections: (a) fixture rows follow FMP's DOCUMENTED statement shape —
+  same honesty note as T023 v1; fail-closed unparsed reporting is the
+  mitigation and the owner's next briefing run is the live proof; (b) FCF
+  yield mixes a fiscal-year numerator with a live denominator — the only
+  option without paid TTM data, and the note says so in every payload; (c)
+  no income-statement fetch = no margins/EPS — deliberate scope hold (ticket
+  names FCF + debt), one request cheaper per briefing on a 250/day budget.
+  Owner check: next briefing with FMP_API_KEY should show fundamentals with
+  unparsed == [] and the balance-sheet question answered by fmp_check.
 - **T016b (automated API-vs-statement cross-check) — DONE 2026-08-18
   (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS, third verdict,
   explicitly covering delta fixes 71670b2 + 545f84b; owner acceptance CLEAN
@@ -429,10 +462,7 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   get_earnings_calendar (#37), morning-brief earnings_risk. News stays Alpaca;
   transcripts/estimates OUT (paywalled). Full record in
   archive/TASKS-archive-2026-08-18.md. Follow-up split out:
-- [ ] T023b — Fundamental ratios from FMP statements (D030 #4): FCF yield and
-  debt ratios from the free tier's 5 annual periods (probe-verified),
-  deterministic in /backend/analysis with hand tests; surface in the symbol
-  briefing. Estimates/transcripts stay OUT (paywalled).
+- [x] T023b — built 2026-08-18, see Awaiting review at top.
 - [x] T096 — Per-brain tool subsetting — DONE 2026-08-14 (Claude/Cowork):
   `api/tool_policy.py` — CORE_TOOLS (11: portfolio, briefing, latest, regime,
   exit plan, triage, size, brief, risk, record_decision, ips), is_small_brain

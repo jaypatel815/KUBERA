@@ -38,6 +38,9 @@ PROBES = [
      "fundamentals: debt ratios half (D017)"),
     ("cash flow statement", "/stable/cash-flow-statement", {"symbol": "AAPL", "limit": 5},
      "fundamentals: FCF yield half (D017)"),
+    ("balance sheet", "/stable/balance-sheet-statement", {"symbol": "AAPL", "limit": 1},
+     "T023b debt ratios — the one statements endpoint the 2026-08-17 probe "
+     "missed; briefing degrades with a note until this row reads OK"),
     ("analyst estimates", "/stable/analyst-estimates",
      {"symbol": "AAPL", "period": "annual", "page": 0, "limit": 1},
      "consensus estimates — commonly paid-tier"),

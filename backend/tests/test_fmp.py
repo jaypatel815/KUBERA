@@ -116,3 +116,46 @@ def test_asof_rides_along():
         cal = c.earnings_calendar(date(2026, 8, 20), date(2026, 8, 21))
     assert cal.asof and datetime.fromisoformat(cal.asof)
     assert cal.source == "fmp-free"
+
+
+# ---------------------------------------------------------------- T023b
+
+def routed_client(routes: dict) -> FmpClient:
+    """MockTransport routing by path suffix: {'/stable/profile': (status, json)}."""
+    def handler(request: httpx.Request) -> httpx.Response:
+        for suffix, (status, body) in routes.items():
+            if request.url.path.endswith(suffix):
+                return httpx.Response(status, json=body)
+        return httpx.Response(404, json={})
+
+    return FmpClient(settings=fmp_settings(), transport=httpx.MockTransport(handler))
+
+
+def test_t023b_statement_fetchers_and_market_cap():
+    routes = {
+        "/stable/cash-flow-statement": (200, [{"date": "2025-12-31",
+                                               "freeCashFlow": 80000.0}]),
+        "/stable/balance-sheet-statement": (200, [{"date": "2025-12-31",
+                                                   "totalDebt": 50000.0,
+                                                   "totalStockholdersEquity": 200000.0,
+                                                   "totalAssets": 400000.0}]),
+        "/stable/profile": (200, [{"symbol": "AAPL", "marketCap": 1600000.0}]),
+    }
+    with routed_client(routes) as c:
+        assert c.cash_flow_statement("aapl")[0]["freeCashFlow"] == 80000.0
+        assert c.balance_sheet("aapl")[0]["totalDebt"] == 50000.0
+        assert c.profile_market_cap("aapl") == 1600000.0
+
+
+def test_t023b_paywalled_balance_sheet_is_named_and_shape_checked():
+    with routed_client({"/stable/balance-sheet-statement": (403, {})}) as c:
+        with pytest.raises(FmpError, match="paywalled"):
+            c.balance_sheet("AAPL")
+    with routed_client({"/stable/profile": (200, {"not": "a list"})}) as c:
+        with pytest.raises(FmpError, match="non-list"):
+            c.profile_market_cap("AAPL")
+
+
+def test_t023b_profile_without_usable_cap_returns_none():
+    with routed_client({"/stable/profile": (200, [{"symbol": "AAPL"}])}) as c:
+        assert c.profile_market_cap("AAPL") is None

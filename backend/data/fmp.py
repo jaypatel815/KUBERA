@@ -128,6 +128,38 @@ class FmpClient:
         except ValueError as e:
             raise FmpError(f"FMP {path} returned non-JSON") from e
 
+    def _get_list(self, path: str, params: dict, what: str) -> list:
+        data = self._get(path, params)
+        if not isinstance(data, list):
+            raise FmpError(f"{what} returned a non-list — the endpoint shape "
+                           "changed; refusing to guess at it")
+        return data
+
+    def cash_flow_statement(self, symbol: str, limit: int = 5) -> list:
+        """Annual cash-flow rows, newest first. Probe-verified on the free
+        tier (fmp_check 2026-08-17: 5 periods)."""
+        return self._get_list("/stable/cash-flow-statement",
+                              {"symbol": symbol.upper(), "limit": limit},
+                              "cash-flow-statement")
+
+    def balance_sheet(self, symbol: str, limit: int = 1) -> list:
+        """Annual balance-sheet rows, newest first. NOT yet probe-verified on
+        the owner's tier (T023b added the fmp_check row) — a paywall surfaces
+        as the named 402/403 FmpError, and callers degrade with a note."""
+        return self._get_list("/stable/balance-sheet-statement",
+                              {"symbol": symbol.upper(), "limit": limit},
+                              "balance-sheet-statement")
+
+    def profile_market_cap(self, symbol: str) -> float | None:
+        """Market cap from /stable/profile (probe-verified). None when the
+        payload lacks a usable number — reported by the caller, never guessed."""
+        data = self._get_list("/stable/profile", {"symbol": symbol.upper()},
+                              "profile")
+        if not data or not isinstance(data[0], dict):
+            return None
+        v = data[0].get("marketCap") or data[0].get("mktCap")
+        return float(v) if isinstance(v, (int, float)) and v > 0 else None
+
     def earnings_calendar(self, from_date: date, to_date: date) -> EarningsCalendar:
         """All symbols' earnings dates in [from_date, to_date] — one request."""
         if to_date < from_date:
