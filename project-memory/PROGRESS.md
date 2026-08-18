@@ -5,6 +5,21 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Claude/Cowork — T067b: DQS v2 scores the OWNER's trading (AWAITING REVIEW)
+v1 scored the paper loop and named its own limit; both prerequisites have
+landed, so v2 scores his record. risk/owner_dqs.py: disposition effect
+(winner-hold vs loser-hold — the cut-winners tell), revenge sizing (reuses
+T069's sizing_drift verbatim — one definition, not two), journal discipline
+(only UNMARKED decisions cost; overriding KUBERA never does), and
+budget_from_ips (his ratified drawdown -> implied daily budget beside the
+enforced one, PROPOSAL only — a rail that moves itself is the failure the
+tiers prevent). FOMO-into-late-RVOL refused with a named reason and re-filed
+as T067c: date-only fills make it guesswork. Wired into get_risk_status from
+the same DB->attribution path T069 uses. 14 unit + 2 end-to-end tests, all
+hand-computed; gate PASS. D028: my own pyrefly canary went 1->2 on a dict
+literal inferring `agrees: None` — re-measured, confirmed real, fixed.
+Next: Gemini reviews T067b at its sha (D033). Then T066 or T063b.
+
 ## 2026-08-18 — Gemini/Antigravity — Review completed for T023b (D032/D033 review-only mode at 8609e54)
 Reviewed T023b (Fundamental ratios in symbol briefing) per D027 and D033 evidence requirements:
 - Deterministic ratios & validation: verified `compose_fundamentals` in `backend/analysis/fundamentals.py` hand-computed math (80k/1.6M = 5% yield, 50k/200k = 0.25 D/E, 100k-25k derived = 75k FCF), negative equity debt/equity suppression ("a negative ratio reads as low debt"), positive capex refusal into unparsed, and staleness notes.

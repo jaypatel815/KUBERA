@@ -657,9 +657,53 @@ def _get_risk_status(ctx: ToolContext, _: NoArgs) -> dict:
                               if engine.lockout_until else None),
         },
         "dqs": asdict(dqs),
+        "owner_dqs": _owner_dqs_block(db, engine.limits.daily_loss_limit_frac),
         "asof": acct.asof.isoformat(),
         "source": acct.source,
     }
+
+
+def _owner_dqs_block(db, enforced_daily_loss_frac: float) -> dict:
+    """T067b: DQS v2 over the OWNER's real round trips (v1 above scores the
+    paper loop's signal_log).
+
+    Same source and shapes as T069's estimate_risk_tolerance — DB transactions
+    -> AttributedFill -> fifo_attribution — deliberately, so the two behavioural
+    reads can never disagree about what a round trip was. Since T016c the DB
+    carries the owner's real Schwab fills (option multiplier included), so this
+    scores HIS trading. An empty table degrades to a named note pointing at the
+    sync, never an error and never a fabricated score.
+    """
+    from data.ips import get_ips
+    from data.journal import summarize_decisions
+    from data.models import DecisionJournal
+    from risk.owner_dqs import score_owner_behavior
+
+    fills = db.execute(
+        select(Transaction).order_by(Transaction.occurred_at)).scalars().all()
+    if not fills:
+        return {"available": False,
+                "why": "no fills in the database yet — run scripts/sync.py "
+                       "(it now pulls your real Schwab fills, T016c)"}
+
+    attributed = attributed_fills_from_rows(fills, {})
+    trips = fifo_attribution(attributed).trips
+    simple_fills = [{"ts_iso": f.occurred_at.isoformat(), "side": f.side,
+                     "qty": f.qty, "price": f.price} for f in fills]
+
+    j = summarize_decisions(db.execute(select(DecisionJournal)).scalars().all())
+    ips = get_ips(db)
+
+    report = score_owner_behavior(
+        trips, simple_fills,
+        journal_total=j.total,
+        journal_unmarked=j.unmarked,
+        ips_max_drawdown_frac=(ips.max_drawdown_frac if ips else None),
+        enforced_daily_loss_frac=enforced_daily_loss_frac,
+    )
+    out = asdict(report)
+    out["available"] = True
+    return out
 
 
 class BriefArgs(BaseModel):

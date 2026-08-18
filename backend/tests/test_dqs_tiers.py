@@ -249,3 +249,77 @@ def test_risk_endpoint():
     body = r.json()
     assert body["tier"]["level"] == 0
     assert body["dqs"]["score"] == 100.0
+
+
+# --- T067b: DQS v2 over the OWNER's real fills, through the same tool --------
+
+def test_get_risk_status_carries_owner_dqs(db):  # noqa: F811
+    """End-to-end: seeded Transactions -> attribution trips -> owner DQS.
+    Five 1-day winners and five 4-day losers is the disposition signature:
+    ratio 0.25 -> penalty capped at 30 -> score 70."""
+    from data.models import BrokerAccount, InvestmentPolicy, Transaction
+
+    _seed_day(db)
+    acct = BrokerAccount(broker="test", external_id="acc-1", currency="USD")
+    db.add(acct)
+    db.flush()
+
+    base = datetime(2026, 3, 2, 14, 30, tzinfo=timezone.utc)
+    n = 0
+    for i in range(5):          # winners: bought, sold 1 day later, +$100
+        entry = base + timedelta(days=10 * i)
+        for side, price, when in (("buy", 100.0, entry),
+                                  ("sell", 110.0, entry + timedelta(days=1))):
+            n += 1
+            db.add(Transaction(account_id=acct.id, external_id=f"w{n}",
+                               symbol=f"WIN{i}", side=side, qty=10.0, price=price,
+                               occurred_at=when, source="test"))
+    for i in range(5):          # losers: held 4 days, -$100
+        entry = base + timedelta(days=200 + 10 * i)
+        for side, price, when in (("buy", 100.0, entry),
+                                  ("sell", 90.0, entry + timedelta(days=4))):
+            n += 1
+            db.add(Transaction(account_id=acct.id, external_id=f"l{n}",
+                               symbol=f"LOSS{i}", side=side, qty=10.0, price=price,
+                               occurred_at=when, source="test"))
+    db.add(InvestmentPolicy(id=1, max_drawdown_frac=0.15))
+    db.commit()
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "/v2/account" in request.url.path:
+            return httpx.Response(200, json=account_json(100_000.0))
+        return httpx.Response(200, json=[])
+
+    with AlpacaClient(settings=paper_settings(),
+                      transport=httpx.MockTransport(handler)) as alpaca:
+        out = registry.execute("get_risk_status", {},
+                               ToolContext(alpaca=alpaca, db=db))
+
+    owner = out["owner_dqs"]
+    assert owner["available"] is True
+    assert owner["trips_scored"] == 10
+    disp = owner["components"]["disposition_effect"]
+    assert disp["ratio"] == pytest.approx(0.25)
+    assert disp["penalty"] == 30.0
+    assert owner["score"] == pytest.approx(70.0)
+    # IPS 15% / 3 = 5% implied daily vs the engine's enforced default
+    assert owner["ips_budget"]["implied_daily_loss_frac"] == pytest.approx(0.05)
+    assert owner["ips_budget"]["agrees"] is False
+    assert "PROPOSAL ONLY" in owner["ips_budget"]["note"]
+    assert "date-only" in owner["fomo_note"]
+
+
+def test_owner_dqs_degrades_without_fills(db):  # noqa: F811
+    _seed_day(db)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "/v2/account" in request.url.path:
+            return httpx.Response(200, json=account_json(100_000.0))
+        return httpx.Response(200, json=[])
+
+    with AlpacaClient(settings=paper_settings(),
+                      transport=httpx.MockTransport(handler)) as alpaca:
+        out = registry.execute("get_risk_status", {},
+                               ToolContext(alpaca=alpaca, db=db))
+    assert out["owner_dqs"]["available"] is False
+    assert "sync.py" in out["owner_dqs"]["why"]

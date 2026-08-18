@@ -12,9 +12,50 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T067b (DQS v2 — score the OWNER's fills) — Claude/Cowork** — claimed 2026-08-18.
-
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T067b (DQS v2 — score the OWNER's own trading) — AWAITING REVIEW
+  2026-08-18 (Claude/Cowork)**. v1 scored the paper loop and said so; both of
+  its stated prerequisites (broker-fill sync, decision journal) have landed,
+  so v2 scores HIS record. Built backend/risk/owner_dqs.py (pure):
+  (1) disposition_effect (≤30) — median winner hold vs median loser hold;
+  ratio < 1 = cutting winners while riding losers; refuses under 5 trips on
+  EITHER side, and a zero loser-median (all same-session) yields no verdict
+  rather than a divide-by-zero opinion; (2) revenge_sizing (≤30) — reuses
+  T069's sizing_drift VERBATIM so the codebase has one definition of the
+  revenge pattern, not two that drift; (3) journal_discipline (≤20) — only
+  the UNMARKED share costs; overriding KUBERA is explicitly not penalised
+  (his judgement is why the journal exists); (4) budget_from_ips() — converts
+  his ratified max-drawdown into an implied daily budget by T069's own
+  1/3 convention, prints it beside the ENFORCED limit and flags disagreement,
+  as a PROPOSAL that never applies itself (a safety rail that moved on its
+  own would be the "talked out of the lockout" failure the tiers exist to
+  prevent). FOMO-into-late-RVOL is NOT built and says why in every report:
+  statement fills are date-only, so it would be guesswork (T102).
+  Wiring: get_risk_status gains an `owner_dqs` block sourced from DB
+  Transactions -> attributed_fills_from_rows -> fifo_attribution — the SAME
+  path T069 uses, so the two behavioural reads cannot disagree about what a
+  round trip was; empty table degrades to a note pointing at sync.py. No new
+  tool, so no guard-count bump.
+  EVIDENCE (D027): 14 unit tests hand-computed (0.25 ratio -> 45 capped to
+  30; 0.75 -> 15.0; winners-held-longer free; sample-floor refusal; undated/
+  negative/scratch trips skipped not defaulted; same-session no-verdict;
+  revenge ratio 2.0 -> capped 30; unmarked 5/10 -> 10.0; IPS 15%/3 = 5% vs
+  enforced 2% flagged looser) + 2 end-to-end through the tool on a seeded DB
+  (10 real Transactions -> 10 trips -> ratio 0.25 -> score 70.0; empty DB ->
+  available:false naming sync.py). 36 passed across both suites; ruff clean;
+  gate PASS.
+  D028 objections: (a) MY OWN CANARY CAUGHT ME — the pyrefly count went 1 -> 2
+  on a dict literal that inferred `agrees: None`; re-measured (a transient
+  fooled me once before), confirmed reproducible, fixed with an explicit
+  annotation, back to exactly 1; (b) T069's sizing_drift compares raw
+  qty x price, so option notionals are understated 100x — it cancels in the
+  RATIO unless the option/equity MIX differs between post-loss and post-win
+  buys; I did not change a shared T069 function inside this ticket, and the
+  reviewer may reasonably want that as its own; (c) the disposition penalty
+  slope (60x the gap) and the IPS 1/3 convention are chosen tunables, both
+  commented; (d) held_days comes from attribution, which reads date-only
+  statement-sourced rows as whole days — the metric is real but coarse until
+  time-stamped Schwab fills accumulate.
 - **T023b (fundamental ratios from FMP statements — D030 #4) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 8609e54)**. Built:
   (1) backend/analysis/fundamentals.py (NEW, pure, no I/O) — FCF per fiscal
   year with the T016c principle applied to statements: the statement's OWN
@@ -397,7 +438,15 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   against the STATEMENT-parsed history by fill-signature was deferred to T016b
   — the DB and the file-based stack are separate stores today, and T016b's
   API-vs-parsed diff is the designed reconciliation between them.)
-- [ ] T067b — DQS v2 (after T036/T016/T063 land): score the OWNER's actual fills, add FOMO-into-late-RVOL-spike and cutting-winners-early patterns (need fill timestamps + intraday context), wire follow/override rate from the T063 journal, derive the risk budget from the IPS instead of RiskLimits defaults.
+- [x] T067b — built 2026-08-18, see Awaiting review at top. (FOMO-into-late-
+  RVOL deliberately NOT built — needs an intraday clock on every fill; named
+  in every report and re-filed as T067c below.)
+- [ ] T067c — FOMO-into-late-RVOL-spike detection (split out of T067b): flag
+  entries made into a late-session volume spike. Needs BOTH an intraday
+  timestamp per fill (the T016c Schwab sync now records execution times — let
+  them accumulate) and that day's intraday volume profile (T052 provides it).
+  Build only when real time-stamped fills exist to test against; approximating
+  from date-only statement rows is exactly the guesswork T102 forbids.
 - [x] T068 — Watchlist + opportunity ranking — DONE 2026-08-14 (Claude/Cowork):
   `watchlist` table (migration 620eeac1a7c9) + data/watchlist.py (idempotent
   add updates note); `analysis/ranking.py` — cross-sectional scoring per D020:
