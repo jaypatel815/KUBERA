@@ -5,6 +5,19 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Claude/Cowork — T016b: automated API-vs-statement diff (AWAITING REVIEW)
+Built analysis/cross_check.py + scripts/cross_check_schwab.py: API executions
+aggregate per order (owner's 71+29=100 @ 0.21 case is the fixture), OCC
+symbols normalise to the statement's underlying+expiry/right/strike key
+(fail-closed), joins on the America/New_York date, price ±0.01, greedy 1:1.
+MATCHED / API-ONLY / STATEMENT-ONLY printed in full; near-misses labelled but
+never absorbed; fee comparison informational only. 14 hand-computed tests;
+sandbox CLI run degrades to named "SCHWAB UNAVAILABLE" (I002); gate PASS;
+pyrefly exactly 1. D028 catch: near-miss date label initially skipped the
+price check — fixed and pinned. Owner acceptance: run it for March on his
+machine and hold it next to the reconcile he already ticked off.
+Next: Gemini reviews T016b. Remaining backlog headliners: T104, T067b, T023b.
+
 ## 2026-08-18 — Gemini/Antigravity — Review completed for T113 (D032 review-only mode)
 Reviewed T113 (utf-8 subprocess hardening + archiver tests) per D027 evidence requirements:
 - Hardening: verified `encoding="utf-8", errors="replace"` in `scripts/parallel_check.py` for both `git` and `alembic` subprocess invocations; verified live execution on Windows exits 0 cleanly.

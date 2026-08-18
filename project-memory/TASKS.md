@@ -12,9 +12,47 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T016b (automated API-vs-statement cross-check) — Claude/Cowork** — claimed 2026-08-18.
-
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T016b (automated API-vs-statement cross-check) — AWAITING REVIEW 2026-08-18
+  (Claude/Cowork)**. Two independent sources agreeing, not a machine agreeing
+  with itself; the human tick-off keeps the final word. Built:
+  backend/analysis/cross_check.py (pure, no I/O) + scripts/cross_check_schwab.py
+  (CLI: live pull + parse_directory(private/), prints MATCHED / API-ONLY /
+  STATEMENT-ONLY in full, exit 0 only when clean, SchwabError → named
+  "SCHWAB UNAVAILABLE" note, read-only). Join design from the owner's own
+  March verification: API executions aggregate BY (order_id, symbol, side)
+  with qty-weighted price (his 71+29=100 @ 0.21 to-the-penny case is THE
+  fixture); OCC symbols ("NVDA  260320C00177500") normalise to the statement's
+  underlying+expiry/right/strike key, fail-closed (unparseable OCC → reported,
+  never guessed into an equity match); API UTC times join on their
+  America/New_York date (T111). Match = same ET date + instrument key + side +
+  qty, price within ±0.01 default (weighted avg vs statement rounding). Greedy
+  1:1 within groups — two identical orders need two statement lines. NEVER
+  silently reconciles: near-misses (price-out-of-tol same day, or dates ≤3d
+  apart with price OK) are labelled notes; the lines stay unmatched. Fee
+  comparison (both sides carry broker numbers post-T016c/T108b) is
+  informational only, never affects matching.
+  EVIDENCE (D027): test_cross_check.py 14 tests, all hand-computed — the
+  71+29 case, weighted-avg 0.206 vs printed 0.21 inside tol, 23:30 UTC staying
+  on its ET day, both-only buckets, near-miss labels, greedy pairing,
+  fail-closed OCC, fee notes, qty/tol validation. Live CLI run in sandbox:
+  named degradation confirmed ("SCHWAB UNAVAILABLE", exit 2 — api.schwabapi.com
+  unreachable here per I002; the full path needs the owner's machine). ruff
+  clean; pyrefly exactly 1 (I023 canary); full gate PASS.
+  D028 objections: (a) my near-miss date branch initially didn't check price —
+  would have labelled pairs "all else equal" that also disagreed on price;
+  caught in self-review, fixed, pinned by test; (b) known limitation: a GTC
+  order filling across MULTIPLE days aggregates to one API line (min date) vs
+  per-day statement lines — would surface as unmatched buckets, correct
+  behaviour (attention, not absorption), but no observed case exists to build
+  against (T102 discipline: no code for unobserved shapes); (c) statement
+  trade_dates derived via T+1 (date_source="derived_settle_t1") are only as
+  good as T108b's calendar — but that calendar was verified against 83
+  explicit dates, and a systematic error would light up as date near-misses,
+  which is the tool telling on its own inputs. Owner acceptance path: run
+  `python scripts\cross_check_schwab.py --start 2026-03-01 --end 2026-03-31`
+  on the machine with .env + private/ and compare its MATCHED count to the
+  reconcile you already ticked off.
 - **T113 (utf-8 subprocess hardening + archive_memory tests) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. D032-clean rebuild of the two ideas salvaged
   from the reverted review-session code. Built: (a) parallel_check.py's two
   subprocess.run calls (git wrapper + alembic heads) gain
@@ -890,15 +928,7 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   The Schwab read-only sync is now trusted end-to-end. Unblocked: T016c
   (daily sync — persist the per-trade fees the probe revealed), T016b
   (automated diff under his final word), T066 (coaching on real fills).
-- [ ] T016b — Automated cross-check of the Schwab API import against the T108b
-  statement-parsed fills: when reconcile_schwab.py was written, "the statement"
-  existed only on paper, so the human was the only possible check. The parsed
-  fills have since been audited against explicit statement rows (T108/T108b,
-  13/13 clean), so an automated API-vs-parsed diff is now TWO independent
-  sources agreeing, not a machine agreeing with itself. Build: join by
-  (date, symbol, side, qty, price ± tolerance), report matches/API-only/
-  statement-only, never silently reconcile. Keeps the human tick-off as the
-  final word; the diff just does the bookkeeping.
+- [x] T016b — built 2026-08-18, see Awaiting review at top.
 - [x] T102 — Statement PDF ingest — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini/Antigravity — PASS):
   `backend/data/statements.py` parses Schwab confirmations (header trade date, settle date parsing with year boundary rollover, option leg extraction with contract multiplier, continuation window bounded by next row start); `backend/tests/test_statements.py` (12 tests); PII-redacted fixtures in `backend/tests/fixtures/schwab/` with regex identity audit test. Parses 250 fills from 86 real confirmations (147 options, 103 equity). Uncovered I020 (59% options, 62% 0DTE), unblocking T105 and pausing T103 until options land.
   REVIEW VERDICT: PASS. Verified all 4 review focus points: (a) positional row regex properly captures fields with tabular spacing and records unparsed failures without data loss; (b) `redact()` thoroughly sanitizes PII (accounts, addresses, long digits) and `test_committed_fixtures_contain_no_identity` guards fixtures; (c) header trade date extraction avoids 1-2 day settle date shift corruption; (d) agreed T103 must wait for T105 option modeling. Gate PASS (743 passed).
