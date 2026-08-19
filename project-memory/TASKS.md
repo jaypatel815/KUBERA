@@ -12,6 +12,8 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
+- **T083b probe (edgar_check.py) — Claude/Cowork** — claimed 2026-08-18.
+
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T083 (event reaction base rates — D019) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 531ea20)**. "Should I hold through earnings" answered from the
   symbol's own bars as BASE RATES — the note in every payload says
