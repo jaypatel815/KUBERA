@@ -12,6 +12,8 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
+- **T083c (base rates into the morning brief) — Claude/Cowork** — claimed 2026-08-18.
+
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T076b (FOMC dates + priced-for-perfection — D016/D019) — AWAITING REVIEW
   2026-08-18 (Claude/Cowork)**. All three halves resolved: (1) FOMC DATES —
