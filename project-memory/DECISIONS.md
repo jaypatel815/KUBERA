@@ -556,6 +556,18 @@ easy; are any inputs fabricated; is anything hardcoded that should be
 configurable; is it secure and fail-closed; is it cheaply future-proof; and
 would you sign it under D027 if another agent handed it to you.
 
+ADDENDUM 2026-08-18 — THE TWO-STRIKES LOOP RULE (owner: "I just don't want
+KUBERA to get stuck in a loop answering the same questions/errors").
+Self-questioning must terminate. The same identical attempt hitting the same
+identical error TWICE means STOP — no third identical attempt. Instead:
+change the approach, or file it (ISSUES.md with repro) and move on, or bring
+it to the owner. This generalises what the code already practices: clients
+never auto-retry rate limits, D033 forbids relitigating covered SHAs, D023
+caps agent-vs-agent disagreement at two rounds, DECISIONS exists so answered
+questions stay answered, and Phase 7's experiment budgets cap the research
+loop's attempts. An error hit once is information; twice is a pattern;
+a third identical try is a loop.
+
 ON HARDCODING, because the honest answer has exceptions worth naming: base URLs
 and tunables belong in settings.py, with TWO legitimate exceptions that must be
 commented — a value fixed as a SAFETY RAIL (the Alpaca paper base URL is
