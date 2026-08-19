@@ -13,8 +13,7 @@ currently RED — see I018, which needs the failing log.)
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T067b (DQS v2 — score the OWNER's own trading) — AWAITING REVIEW
-  2026-08-18 (Claude/Cowork)**. v1 scored the paper loop and said so; both of
+- **T067b (DQS v2 — score the OWNER's own trading) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at fdfe6e9)**. v1 scored the paper loop and said so; both of
   its stated prerequisites (broker-fill sync, decision journal) have landed,
   so v2 scores HIS record. Built backend/risk/owner_dqs.py (pure):
   (1) disposition_effect (≤30) — median winner hold vs median loser hold;
@@ -56,6 +55,10 @@ currently RED — see I018, which needs the failing log.)
   commented; (d) held_days comes from attribution, which reads date-only
   statement-sourced rows as whole days — the metric is real but coarse until
   time-stamped Schwab fills accumulate.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS (covering commit fdfe6e9 per D033)
+    aligned: Implements DQS v2 for the owner's real trading record across disposition effect, revenge sizing (reusing T069 definition), journal discipline (unmarked decisions penalized, overrides allowed), and IPS-implied budget proposal (pure advisory), while explicitly refusing guesswork on FOMO-into-late-RVOL until intraday timestamps accumulate (T067c).
+    checked: Validated commit fdfe6e9: (1) `backend/risk/owner_dqs.py` pure scoring functions with sample floor checks, median zero hold protection, and capped penalties; (2) `backend/api/tools.py` wiring `_owner_dqs_block` into `get_risk_status` using the verified DB -> attribution pipeline; (3) 14 hand-computed unit tests in `test_owner_dqs.py` and 2 tool integration tests in `test_dqs_tiers.py` pass; (4) full `scripts/verify.py` green (924 tests passed, 0 lint errors, memory budgets all within bounds).
+    concerns: none
 - **T023b (fundamental ratios from FMP statements — D030 #4) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 8609e54)**. Built:
   (1) backend/analysis/fundamentals.py (NEW, pure, no I/O) — FCF per fiscal
   year with the T016c principle applied to statements: the statement's OWN

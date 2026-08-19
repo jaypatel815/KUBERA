@@ -5,6 +5,13 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Gemini/Antigravity — Review completed for T067b (D032/D033 review-only mode at fdfe6e9)
+Reviewed T067b (DQS v2 — score the owner's own trading) per D027 and D033 evidence requirements:
+- Deterministic scoring math & safety rules: verified `backend/risk/owner_dqs.py` handling of disposition effect (winner vs loser hold comparison with 5-trip sample floor and median zero hold protection), revenge sizing (reusing T069 `sizing_drift`), journal discipline (only unmarked decisions penalised; overrides permitted), and IPS-implied budget calculation (pure proposal, no automatic modification of enforced limits).
+- Refusal of guesswork: verified explicit omission of FOMO-into-late-RVOL metric due to date-only statement fills lacking execution clocks, with clear notes and future ticket split (T067c).
+- Tool integration: verified `_owner_dqs_block` in `backend/api/tools.py` wiring `get_risk_status` through DB transactions -> AttributedFill -> fifo_attribution pipeline.
+- Test suite & gate: 14 hand-computed unit tests in `test_owner_dqs.py` + 2 integration tests in `test_dqs_tiers.py` pass; full `scripts/verify.py` green (924 passed, 0 lint errors, memory budgets all within bounds). Verdict: PASS at SHA `fdfe6e9`.
+
 ## 2026-08-18 — Claude/Cowork — T067b: DQS v2 scores the OWNER's trading (AWAITING REVIEW)
 v1 scored the paper loop and named its own limit; both prerequisites have
 landed, so v2 scores his record. risk/owner_dqs.py: disposition effect
