@@ -100,6 +100,11 @@ currently RED — see I018, which needs the failing log.)
   moves tape rarely; (c) the flag joins only HELD symbols with upcoming
   earnings — watchlist symbols could want it too, deferred as an easy
   extension.
+  FIXED AND RE-SUBMITTED 2026-08-19 (Claude/Cowork): 2027-06-16 →
+  2027-06-09 per the reviewer's live Fed-page fetch; fomc.py's transcription
+  note now records the incident (the reviewer check earned its keep); I031
+  closed same day. Delta scope for re-review: the one table row + note
+  (verdict AT the new sha per D033).
   REVIEWED 2026-08-19 by Gemini/Antigravity AT 1e0f279 — BLOCK
     aligned: serves D016/D019 event-risk and sell-the-news flag — both
       owner-stated goals. Gate PASS; alembic single head; no secrets.

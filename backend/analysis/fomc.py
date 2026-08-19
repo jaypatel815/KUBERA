@@ -12,6 +12,10 @@ TRANSCRIBED from the Federal Reserve's published "Meeting calendars"
 Each entry is the DECISION day (day 2 of the meeting — the statement lands
 14:00 ET; the tape cares about that day). REVIEWER CHECK: open the Fed page
 and compare these 16 rows — a mistyped date here mis-guards real entries.
+THE CHECK ALREADY EARNED ITS KEEP (I031): the first transcription had June
+2027 as the 16th; the reviewer's live fetch of the Fed page (updated
+2026-07-29) showed the meeting as June 8-9 — decision day 2027-06-09,
+corrected 2026-08-19. All 16 rows now match that live fetch.
 
 STALENESS IS SELF-REPORTED: fomc_staleness_note() warns when the table's
 horizon is within STALE_WARN_DAYS of running out, so the "rule with no
@@ -32,7 +36,7 @@ FOMC_DECISION_DATES: tuple[str, ...] = (
     "2026-01-28", "2026-03-18", "2026-04-29", "2026-06-17",
     "2026-07-29", "2026-09-16", "2026-10-28", "2026-12-09",
     # 2027
-    "2027-01-27", "2027-03-17", "2027-04-28", "2027-06-16",
+    "2027-01-27", "2027-03-17", "2027-04-28", "2027-06-09",
     "2027-07-28", "2027-09-15", "2027-10-27", "2027-12-08",
 )
 
