@@ -12,6 +12,8 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
+- **T066 (trade coaching: pre/post-trade reviews) — Claude/Cowork** — claimed 2026-08-18.
+
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T067b (DQS v2 — score the OWNER's own trading) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at fdfe6e9)**. v1 scored the paper loop and said so; both of
   its stated prerequisites (broker-fill sync, decision journal) have landed,
