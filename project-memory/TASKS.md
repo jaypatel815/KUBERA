@@ -12,6 +12,7 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
+- **T110a (holdout custody + experiment budgets) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T062c (scheduled brief CLI — closes T062b's last item) — AWAITING REVIEW
