@@ -2,6 +2,38 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D034 — free tier now, paid tiers at autonomy (owner policy, 2026-08-18)
+The owner stated it plainly: "once I have KUBERA downloaded and running
+autonomously, I will pay the monthly subscriptions for all the APIs that are
+paid to get more data. But for now, try to find/use the free tier."
+
+RULES this sets for every agent:
+1. FREE FIRST. Every data need is answered from free tiers until autonomy:
+   probe before building (D030), fail closed with NAMED paywall errors, and
+   prefer free alternatives (e.g. T083b's SEC EDGAR) over waiting on a paid
+   unlock. "This needs the paid tier" is never a reason to stall a ticket —
+   find the free path or build the accumulate-forward path (T083's
+   earnings_observed is the model).
+2. DESIGN FOR THE UPGRADE. A tier upgrade must be a CONFIGURATION EVENT,
+   zero code changes: paywall failures stay named and non-fatal, so the day
+   a paid key lands, the same code simply starts receiving data. Never
+   hard-code around a paywall in a way that would ignore the paid data.
+3. SELF-ACCUMULATED STORES SURVIVE the upgrade. earnings_observed (and any
+   future accumulator) becomes a VERIFICATION source against the paid feed,
+   not dead code — two sources agreeing beats one source trusted.
+4. UPGRADE-DAY CHECKLIST (append here as sources are added):
+   - FMP paid: past calendar windows (instant T083 history — backfill
+     earnings_observed and cross-check accumulated rows), news (D022
+     revisit: FMP news vs Alpaca), transcripts (T084 unblocks), analyst
+     estimates as attributed opinion.
+   - Alpaca paid (SIP feed): full-market volume — the D006 volume_feed
+     caveat threading through regime/RVOL/breakouts finally resolves;
+     re-verify RVOL thresholds against SIP volume before trusting them.
+   - Schwab: free — no tier decision exists.
+   - FRED: free — no tier decision exists.
+   The upgrade itself happens at the owner's "running autonomously"
+   milestone, on his word — no agent pre-purchases or assumes it.
+
 ## D033 — a verdict names the SHA it covers (2026-08-18)
 TWICE in one day, a Gemini PASS landed while the builder's next commit was
 minutes away, silently leaving unreviewed work under a DONE header: 501f083

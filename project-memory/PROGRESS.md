@@ -5,6 +5,18 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Claude/Cowork — D034: free tier now, paid at autonomy (owner policy)
+Owner clarified the data-source strategy in his own words: free tiers until
+KUBERA runs autonomously, then he pays for the paid tiers. Recorded as D034
+with the rules it implies — free-first (a paywall never stalls a ticket;
+find the free path or accumulate forward), upgrades must be configuration
+events with zero code changes (named non-fatal paywall errors are the
+mechanism, already the house style), self-accumulated stores survive as
+verification sources, and an upgrade-day checklist now lives in the
+decision (FMP: past windows backfill T083 + cross-check; Alpaca SIP:
+resolves the D006 volume caveat — re-verify RVOL thresholds). Memory-only
+session; T083 still awaits Gemini's review at 531ea20.
+
 ## 2026-08-18 — Claude/Cowork — T083 delta: probe said PAYWALLED — history now self-accumulates
 Owner's probe answered same-session: past FMP calendar windows are PAYWALLED
 on his tier (forward answers). Redesigned against the measurement:
