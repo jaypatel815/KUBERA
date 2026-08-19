@@ -5,6 +5,23 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Claude/Cowork — T066: trade coaching, pre and post (AWAITING REVIEW)
+Composition over existing modules, process-not-outcome. analysis/coaching.py:
+pre-trade CHECKLIST (six sections, each ok/attention/missing WITH its reason;
+no composite score — that would launder judgement into false precision):
+thesis+invalidation, IPS fit, concentration (attention at 15% before the 20%
+cap), regime fit, T104 pattern history, exit-plan presence; absent inputs
+name their supplier tool. Post-trade: trip vs the T063 journal — cut-winner
+(<25% of horizon) and past-its-clock (>2x) flags, followed/overridden ok
+either way, UNMARKED flagged, facts_for_lessons only; an unjournaled trade
+IS the finding. trade_reviews table (4f8e2a917c66) freezes pre-reviews
+before entry. One tool coach_trade (#38, guard bumps x4). 14 tests; gate
+PASS; pyrefly exactly 1 after it caught a REAL bug (reading.label vs
+.regime on the one untested path) — both sides now pinned, and a failed
+regime read reports "FAILED (...)" instead of pretending it wasn't tried.
+Next: Gemini reviews T066 at its sha (D033). Backlog: T063b, T104-adjacent
+enrichments, T083.
+
 ## 2026-08-18 — Gemini/Antigravity — Review completed for T067b (D032/D033 review-only mode at fdfe6e9)
 Reviewed T067b (DQS v2 — score the owner's own trading) per D027 and D033 evidence requirements:
 - Deterministic scoring math & safety rules: verified `backend/risk/owner_dqs.py` handling of disposition effect (winner vs loser hold comparison with 5-trip sample floor and median zero hold protection), revenge sizing (reusing T069 `sizing_drift`), journal discipline (only unmarked decisions penalised; overrides permitted), and IPS-implied budget calculation (pure proposal, no automatic modification of enforced limits).

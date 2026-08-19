@@ -304,3 +304,22 @@ class DecisionJournal(Base):
     follow_note: Mapped[str | None] = mapped_column(String(500), default=None)
     conversation_id: Mapped[int | None] = mapped_column(Integer, default=None)
     source: Mapped[str] = mapped_column(String(24), default="chat")
+
+
+class TradeReview(Base):
+    """T066 — every coaching review persisted per trade: 'pre' captures the
+    checklist BEFORE entry (so hindsight can't rewrite it), 'post' captures
+    expected-vs-actual once a round trip closes. payload_json holds the full
+    composed review verbatim; the columns exist for listing and joining."""
+
+    __tablename__ = "trade_reviews"
+    __table_args__ = (Index("ix_trade_reviews_symbol_ts", "symbol", "ts"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ts: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    kind: Mapped[str] = mapped_column(String(8))          # "pre" | "post"
+    symbol: Mapped[str] = mapped_column(String(16))
+    journal_id: Mapped[int | None] = mapped_column(Integer, default=None)
+    attention_count: Mapped[int] = mapped_column(Integer, default=0)
+    payload_json: Mapped[str] = mapped_column(String(8000))
+    source: Mapped[str] = mapped_column(String(24), default="chat")

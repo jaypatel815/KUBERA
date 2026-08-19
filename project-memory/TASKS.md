@@ -12,9 +12,60 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T066 (trade coaching: pre/post-trade reviews) — Claude/Cowork** — claimed 2026-08-18.
-
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T066 (trade coaching: pre/post-trade reviews, persisted — D014) —
+  AWAITING REVIEW 2026-08-18 (Claude/Cowork)**. Composition, not new math —
+  the coaching layer judges a trade against modules that already exist.
+  Built: (1) analysis/coaching.py (pure) — compose_pre_trade_review: a
+  CHECKLIST (not a composite score — a single number would launder judgement
+  into false precision) over six sections, each ok/attention/missing WITH its
+  reason: thesis+invalidation ("without 'what proves me wrong', an exit is an
+  emotion"), IPS fit (restrictions are HIS written rules), concentration
+  (post-trade weight; attention at 15%, the engine's 20% cap named — friction
+  before the breaker, the T067 idea), regime fit (buying trending_down =
+  attention; breakout_watch = coil caution), pattern history (T104's verdict
+  passed through with sample sizes), exit-plan presence. Absent inputs land
+  MISSING naming their supplier tool — an unattempted check is surfaced,
+  never skipped (I026 generalised). compose_post_trade_review: trip vs the
+  T063 journal row — horizon adherence (winner exited <25% of horizon = the
+  cut-winners tell; loser held >2x = "a thesis past its clock"), levels on
+  record (qualitative — attribution trips carry no exit PRICE, stated
+  honestly), followed/overridden (marked = ok either way; UNMARKED =
+  attention), facts_for_lessons lines only. An unjournaled trade IS the
+  finding. (2) trade_reviews table (alembic 4f8e2a917c66, revises
+  7c3a91e0d5b2, single head) — 'pre' rows freeze the checklist BEFORE entry
+  so hindsight cannot rewrite it. (3) ONE tool coach_trade (#38, mode
+  pre|post; guard bumps 37→38 in test_tools x2 / test_chat / test_claude_sdk
+  + name-set): pre gathers best-effort (IPS, account+position, regime via
+  classify_regime, pattern via evaluate_pattern_warnings on DB fills) and
+  persists; post picks the most recent closed trip for the symbol from the
+  SAME DB->attribution path T069/T067b use, joins the latest journal row
+  at-or-before entry, persists with journal_id.
+  EVIDENCE (D027): 14 tests — all-ok full-input case (6 ok, weight 5%);
+  the dangerous-combination case (5 attention + 1 missing: no invalidation,
+  IPS-restricted, 25% cap breach, buying a downtrend, pattern warning, no
+  exit plan); concentration boundaries hand-computed (16% attention / 10% ok
+  incl. existing position); missing-inputs name their suppliers; post-trade
+  cut-winner (2 of 10 days) and loser-past-clock (25 vs 10) flagged;
+  unjournaled-is-the-finding; unmarked-flagged-override-free; end-to-end
+  tool runs persisting TradeReview rows (pnl +100 = 10x(110-100), journal_id
+  joined); regime path with VALID bars; failed regime read NAMES the error.
+  Migration applies on scratch DB (all columns). ruff clean; pyrefly exactly
+  1; full gate PASS.
+  D028 objections: (a) the canary caught a REAL bug my tests missed —
+  reading.label vs .regime, on the only path no test covered (market
+  present); fixed, then BOTH sides pinned: valid bars exercise the line,
+  and a crashing read now reports "FAILED (ValueError: ...)" instead of my
+  original broad-except pretending the check was never attempted; (b)
+  coach_trade WRITES TradeReview rows and is exposed via MCP like
+  record_decision — same class (no capital, no rails); reviewer should
+  confirm agreement with the T045 read-only philosophy; (c) correlation
+  (T079) is NOT a section — a full overlap check per review costs a quote
+  fetch per holding; the persona already orders get_correlation before
+  buys, noted rather than duplicated; (d) post-mode matches journal rows
+  by symbol+time only — a same-symbol re-entry within the window could
+  join the wrong row; deterministic rule documented, refinement cheap if
+  it ever misleads.
 - **T067b (DQS v2 — score the OWNER's own trading) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at fdfe6e9)**. v1 scored the paper loop and said so; both of
   its stated prerequisites (broker-fill sync, decision journal) have landed,
   so v2 scores HIS record. Built backend/risk/owner_dqs.py (pure):
@@ -438,7 +489,10 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [ ] T065 — Risk engine v2: sector-exposure caps (needs sector data from T023), cancel-all + disable-symbol controls, order-frequency limit (merge with T055 overtrading guard).
 
 ## Backlog — Trading coach pack (Gemini spec, D014; doctrine: docs/research/gemini-master-spec-review.md)
-- [ ] T066 — Trade coaching: pre-trade review (thesis, sizing, concentration, correlation, regime fit, IPS compliance) + post-trade review (expected vs actual, entry/exit quality, rule adherence, lesson) persisted per trade; PROCESS-not-outcome scoring. T016 dependency SATISFIED 2026-08-17 (live sync reconciled) — real fills available; chat-level v0 works today via conversation.
+- [x] T066 — built 2026-08-18, see Awaiting review at top. (Correlation
+  section deliberately not duplicated — persona already orders
+  get_correlation before buys; entry/exit PRICE quality needs exit prices
+  on attribution trips, a future enrichment.)
 - [x] T016c — built 2026-08-18, see Awaiting review at top. (Note: dedupe
   against the STATEMENT-parsed history by fill-signature was deferred to T016b
   — the DB and the file-based stack are separate stores today, and T016b's

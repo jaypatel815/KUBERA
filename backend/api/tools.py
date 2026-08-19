@@ -86,7 +86,7 @@ from data.journal import (
     summarize_decisions,
 )
 from data.market_data import MarketDataClient, MarketDataError
-from data.models import AccountSnapshot, SignalLog, Transaction
+from data.models import AccountSnapshot, DecisionJournal, SignalLog, Transaction
 from data.statements import parse_directory
 from data.watchlist import add_symbol, list_symbols, remove_symbol
 from risk.dqs import score_decisions
@@ -2092,3 +2092,161 @@ def _check_trade_pattern(ctx: ToolContext, args: CheckPatternArgs) -> dict:
         "asof": report.asof,
         "note": report.note,
     }
+
+
+class CoachTradeArgs(BaseModel):
+    mode: str = Field(pattern="^(pre|post)$",
+                      description="'pre' = checklist BEFORE an entry; "
+                                  "'post' = expected-vs-actual on the most "
+                                  "recent closed round trip for the symbol")
+    symbol: str = Field(min_length=1, max_length=32,
+                        description="Ticker; for post-mode options use the "
+                                    "symbol as shown in get_attribution trips")
+    side: str = Field(default="buy", pattern="^(buy|sell)$",
+                      description="pre-mode: the proposed side")
+    notional: float | None = Field(
+        default=None, ge=0,
+        description="pre-mode: proposed dollar size (size_position computes it)")
+    thesis: str | None = Field(default=None, max_length=1000,
+                               description="pre-mode: why THIS, why NOW")
+    invalidation: str | None = Field(
+        default=None, max_length=500,
+        description="pre-mode: what would prove the thesis wrong")
+    has_exit_plan: bool = Field(
+        default=False,
+        description="pre-mode: set true ONLY after get_exit_plan returned one "
+                    "for this symbol — the checklist takes your word and says so")
+    is_0dte: bool = Field(default=False,
+                          description="pre-mode: 0DTE option proposal")
+
+
+@registry.tool(
+    "coach_trade",
+    "Trade coaching (process, not prediction). mode='pre': a BEFORE-entry "
+    "checklist — thesis+invalidation, IPS fit, concentration after the trade, "
+    "regime fit, this setup vs his own historical record (check_trade_pattern's "
+    "read), exit-plan presence — each check lands ok/attention/missing with its "
+    "reason, and the review is PERSISTED so hindsight cannot rewrite it. "
+    "mode='post': the most recent closed round trip vs what the T063 journal "
+    "recorded at decision time (horizon adherence, levels on record, "
+    "followed/overridden); an unjournaled trade is itself the finding. "
+    "Narrate lessons ONLY from facts_for_lessons. A disciplined loss beats a "
+    "lucky rule-break.",
+    CoachTradeArgs,
+)
+def _coach_trade(ctx: ToolContext, a: CoachTradeArgs) -> dict:
+    import json
+
+    from analysis.coaching import (
+        compose_post_trade_review,
+        compose_pre_trade_review,
+    )
+    from data.models import TradeReview
+
+    db = ctx.require("db")
+    symbol = a.symbol.upper()
+
+    if a.mode == "pre":
+        # Gather best-effort; every absent input becomes a MISSING section.
+        ips_row = get_ips(db)
+        ips = ips_as_dict(ips_row) if ips_row else None
+
+        equity = position_value = None
+        if ctx.alpaca is not None:
+            try:
+                equity = ctx.alpaca.get_account().equity
+                match = next((p for p in ctx.alpaca.get_positions()
+                              if p.symbol.upper() == symbol), None)
+                position_value = match.market_value if match else 0.0
+            except AlpacaError:
+                pass  # sections degrade to MISSING with the pointer
+
+        regime_label = regime_conf = None
+        regime_failure = None
+        if ctx.market is not None:
+            try:
+                bars = ctx.market.get_daily_bars(symbol, days=250)
+                if len(bars.bars) >= 21:
+                    reading = classify_regime(
+                        [b.high for b in bars.bars], [b.low for b in bars.bars],
+                        [b.close for b in bars.bars],
+                        [b.volume for b in bars.bars],
+                        [b.date for b in bars.bars], volume_feed=bars.source)
+                    regime_label = reading.regime
+                    regime_conf = reading.confidence
+            except Exception as e:
+                # Market failure = MISSING section, never a tool error — but the
+                # section must say WHAT failed, not pretend nothing was tried.
+                regime_failure = f"{type(e).__name__}: {e}"[:160]
+
+        pattern_verdict = None
+        pattern_warnings: list[dict] = []
+        fills: list[Any] = list(db.execute(
+            select(Transaction).order_by(Transaction.occurred_at)).scalars().all())
+        if fills:
+            proposed = ProposedTrade(
+                symbol=symbol, action=a.side,
+                asset_type="option" if a.is_0dte else "equity",
+                notional=a.notional, dte=0 if a.is_0dte else None)
+            rep = evaluate_pattern_warnings(fills, proposed)
+            pattern_verdict = rep.verdict
+            pattern_warnings = [
+                {"category": w.category, "severity": w.severity,
+                 "headline": w.headline, "sample_size": w.sample_size}
+                for w in rep.warnings]
+
+        review = compose_pre_trade_review(
+            symbol, a.side,
+            thesis=a.thesis, invalidation=a.invalidation,
+            proposed_notional=a.notional, equity=equity,
+            current_position_value=position_value, ips=ips,
+            regime_label=regime_label, regime_confidence=regime_conf,
+            regime_failure=regime_failure,
+            pattern_verdict=pattern_verdict, pattern_warnings=pattern_warnings,
+            exit_plan_present=a.has_exit_plan,
+        )
+        payload: dict[str, Any] = asdict(review)
+        db.add(TradeReview(kind="pre", symbol=symbol,
+                           attention_count=review.attention_count,
+                           payload_json=json.dumps(payload)[:8000]))
+        db.commit()
+        payload["persisted"] = True
+        return payload
+
+    # mode == "post"
+    rows = db.execute(
+        select(Transaction).order_by(Transaction.occurred_at)).scalars().all()
+    if not rows:
+        raise ToolError("no fills in the database — run scripts/sync.py first")
+    trips = fifo_attribution(attributed_fills_from_rows(rows, {})).trips
+    mine = [t for t in trips if str(t.get("symbol", "")).upper() == symbol]
+    if not mine:
+        known = sorted({str(t.get("symbol", "")) for t in trips})[:12]
+        raise ToolError(
+            f"no closed round trip found for '{symbol}'. Closed symbols "
+            f"include: {', '.join(known) if known else '(none yet)'}")
+    trip = max(mine, key=lambda t: str(t.get("exit_ts") or ""))
+
+    journal = None
+    j_rows = db.execute(
+        select(DecisionJournal).where(DecisionJournal.symbol == symbol)
+        .order_by(DecisionJournal.ts.desc())).scalars().all()
+    entry_ts = str(trip.get("entry_ts") or "")
+    for r in j_rows:  # newest first: latest entry at-or-before the trip's entry
+        if not entry_ts or r.ts.isoformat() <= entry_ts:
+            journal = decision_as_dict(r)
+            break
+
+    review = compose_post_trade_review(trip, journal)
+    payload2: dict[str, Any] = asdict(review)
+    payload2["trip"] = {k: trip.get(k) for k in
+                       ("symbol", "pnl", "held_days", "entry_ts", "exit_ts")}
+    db.add(TradeReview(kind="post", symbol=symbol,
+                       journal_id=(journal or {}).get("id"),
+                       attention_count=sum(
+                           1 for v in review.sections.values()
+                           if v.get("status") == "attention"),
+                       payload_json=json.dumps(payload2)[:8000]))
+    db.commit()
+    payload2["persisted"] = True
+    return payload2
