@@ -12,9 +12,31 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T074a (realtime-voice framework research) — Claude/Cowork** — claimed 2026-08-19.
+(none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T074a (realtime-voice framework research) — AWAITING REVIEW 2026-08-19
+  (Claude/Cowork)**. docs/research/realtime-voice-2026-08-19.md — August-
+  2026 landscape for T074, sourced (14 links in the doc). Findings:
+  OpenAI Realtime rejected on ARCHITECTURE (speech-to-speech model
+  replaces the brain — KUBERA's persona/rails/tool gates bypassed; cost
+  $0.05–0.46/min recorded only as the D034 comparison point); no Anthropic
+  speech-to-speech API exists (Claude Code voice = dictation, claude.ai-
+  auth only); LiveKit Agents capable but wrong-shaped (room/media-server
+  design center, weeks of self-host infra, for ONE user on ONE desktop);
+  **Pipecat adopted pending spike** — LocalAudioTransport (PyAudio, zero
+  servers) or SmallWebRTC (serverless P2P for the Orb), KokoroTTSService
+  documented (D024's voice drops in), LLM-agnostic, proven fully-local
+  sub-second stacks, $0/min. The honest catch is NAMED: Pipecat expects a
+  streaming LLM service and KUBERA's brain is /api/chat (context, tool
+  loop, rails) — the T074b spike's core question is a custom processor
+  calling OUR endpoint, with an audio-half-only fallback if it fights the
+  framework. T074 backlog entry updated to the decision; T074b/T074c
+  seeded with exit criteria. No code built (research ticket; D030 —
+  the spike observes the real framework before anything ships).
+  D028: this is a DOCUMENT — the reviewer checks reasoning and that no
+  claim exceeds the sources, not a test suite. Latency numbers are from
+  the wild, EXPLICITLY not ours; the spike measures ours.
 - **T084a (EDGAR filing-document probe step) — AWAITING REVIEW 2026-08-19
   (Claude/Cowork)**. edgar_check.py gains step 5: fetch ONE earnings-8-K
   accession's index.json (+1 request, politeness sleep kept) and report
@@ -459,7 +481,9 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   error; owner's thesis note rides along) + GET/POST/DELETE /api/watchlist.
   Cross-sectional momentum TEMPLATE (long top decile) remains future work
   behind the T064 gate; short half still awaits the D021 revisit.
-- [ ] T074 — Realtime conversation pipeline (the Zoey-latency upgrade): streaming STT + start-TTS-before-reply-completes + barge-in (interrupt while speaking), via LiveKit Agents / Pipecat or OpenAI Realtime API with our registry as functions; target sub-second first-audio; verify current framework landscape + costs at build time. The Orb (T073) is the UI shell this plugs into.
+- [ ] T074 — Realtime conversation pipeline (the Zoey-latency upgrade): streaming STT + start-TTS-before-reply-completes + barge-in. FRAMEWORK DECIDED by T074a research (2026-08-19, docs/research/realtime-voice-2026-08-19.md): **Pipecat** — LocalAudioTransport/SmallWebRTC need NO media server (LiveKit's room/media-server design is wrong-shaped for one user on one desktop), KokoroTTSService is a documented service so D024's voice drops in, fully-local stacks hit sub-second in the wild, $0/min. OpenAI Realtime REJECTED on architecture (a speech-to-speech model replaces the brain — persona/rails/tool gates bypassed), not just cost ($0.05–0.46/min measured). No Anthropic speech-to-speech API exists (re-check at build). Build via T074b→T074c below.
+- [ ] T074b — Pipecat spike (probe-first, D030): LocalAudioTransport + faster-whisper (or whisper.cpp) STT + CUSTOM processor that calls OUR /api/chat (the hard part — voice-KUBERA must be the same KUBERA: context assembly, tool loop, rails) + existing kokoro TTS. Measure round-trip latency + interruption. Exit: a working persona conversation, or a written finding that the chat-endpoint processor fights the framework (then audio-half-only fallback gets its own ticket).
+- [ ] T074c — (after T074b) VAD/interruption tuning, latency vs push-to-talk, Orb mode switch (SmallWebRTCTransport if browser audio beats PyAudio). Push-to-talk stays as a permanent fallback mode.
 - [x] T072 — Human-grade TTS backends — DONE 2026-08-16 (Gemini/Antigravity; reviewed PASS by Claude/Cowork after one BLOCK round, fd1c10c + 483c522):
   `scripts/talk.py` `make_speaker()` now supports `KUBERA_TTS=openai` (OpenAI TTS API
   `tts-1` / `tts-1-hd` with voice choice via `KUBERA_VOICE`, default `alloy`, `OPENAI_API_KEY`

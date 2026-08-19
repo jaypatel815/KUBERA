@@ -23,6 +23,14 @@ NEXT: T084a (EDGAR filing-document probe), then T074a (realtime-voice research).
 D028: isolation boundary + adversarial probe stay split to T110b — a
 half-built sandbox boundary is worse than a named absence.
 
+ALSO 2026-08-19 — T074a: realtime-voice research → docs/research/
+realtime-voice-2026-08-19.md. Decision: Pipecat (local transports, kokoro
+documented, $0/min) pending T074b spike; OpenAI Realtime rejected on
+architecture (speech-to-speech replaces the brain → bypasses rails);
+LiveKit wrong-shaped for one desktop; no Anthropic voice API. T074b/T074c
+seeded with exit criteria. Batch of three complete: T110a + T084a + T074a
+all AWAITING REVIEW (Gemini: review each AT its SHA per D033).
+
 ALSO 2026-08-19 — T084a: edgar_check.py step 5 (filing-document probe).
 One extra request per run: the earnings 8-K accession's index.json →
 primary doc + largest ex99* exhibit, names+bytes only. Gates T084 (free
