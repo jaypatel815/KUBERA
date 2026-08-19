@@ -4,6 +4,18 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I032 [FOUND AND FIXED 2026-08-19] CI red since the 2026-08-17 uv-scaffold
+  cleanup: commit a65c360 deleted `.python-version` as scaffold, but CI's
+  setup-python reads it (`python-version-file:` in ci.yml, by D025 design) —
+  every push since failed AT SETUP, before a single test ran. The old I018
+  fix was fine; this is a NEW red with a different root cause. Repro: the
+  suite passes locally WITHOUT .env (967 passed — CI-condition clean), so
+  the failure had to be workflow-level; the missing file was found by reading
+  ci.yml against the tree. FIX: `.python-version` restored (3.14.7, matching
+  pyrefly.toml + README), and verify.py gains a "python pins" step
+  (scripts/check_python_pins.py) so a missing/mismatched pin fails the gate
+  LOCALLY from now on — the file's purpose is documented in that script
+  since the format allows no comments. Owner: next push should go green.
 - I031 [FIXED 2026-08-19, same day] `analysis/fomc.py` transcribed the June
   2027 FOMC decision date as `2027-06-16`; the Fed's published calendar
   (fomccalendars.htm anchor #45694, page updated 2026-07-29) shows June 8-9*

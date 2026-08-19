@@ -9,12 +9,31 @@ T054's router, never after) → T077 expected-move → T067 DQS / T062 briefs.
 Owner actions that unlock the most: T007 finale. (T005 is DONE — the owner has
 been pushing all along; origin/main == local main, 7 Actions runs. Any agent
 still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
-currently RED — see I018, which needs the failing log.)
+was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **I018 (CI red — reproduce without .env, fix) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **I032 (CI red since the uv cleanup — found and fixed) — AWAITING REVIEW
+  2026-08-19 (Claude/Cowork)**. Took the standing "CI is RED, see I018" nag:
+  reproduced CI conditions locally (.env hidden → 967 passed, suite clean),
+  which PROVED the red was workflow-level, then read ci.yml against the
+  tree: `python-version-file: .python-version` — a file the 08-17
+  uv-scaffold cleanup (a65c360) deleted as scaffold. Every push since
+  failed AT SETUP, zero tests run. The old I018 fix was and is fine.
+  FIX: .python-version restored (3.14.7 = pyrefly.toml = README, D025);
+  verify.py gains a "python pins" step (scripts/check_python_pins.py:
+  file must exist and match pyrefly.toml — named fixes on both failure
+  modes) so this class fails the LOCAL gate from now on; the file's
+  purpose is documented in the check script since the format allows no
+  comments. I032 filed with full chain. TASKS header's stale "CI is
+  currently RED — see I018" guidance updated to point at I032-fixed.
+  EVIDENCE (D027): no-.env suite run 967 passed/3 skipped; pin-check runs
+  green in the gate; ruff clean; full gate PASS. Owner: next push should
+  go green — that is the live confirmation.
+  D028: the deletion was owner-executed and agent-committed as cleanup with
+  BOTH of us missing the CI dependency — the new gate step is the mechanism
+  answer, not blame.
 - **T072b (voice hygiene trio, carried from the T072 review) — AWAITING
   REVIEW 2026-08-18 (Claude/Cowork)**. Honest disposition: 2 of 3 items were
   ALREADY FIXED by prior work and are closed on evidence, not redone

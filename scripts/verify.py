@@ -34,6 +34,7 @@ STEPS = [
     # instead of letting the shared memory grow unreadable. PROGRESS.md hit
     # 2,654 lines against its own stated ~150 before this became mechanical.
     ("memory budgets", [sys.executable, "scripts/archive_memory.py", "--check"]),
+    ("python pins (I032)", [sys.executable, "scripts/check_python_pins.py"]),
 ]
 
 # Things whose presence changes the result. Not a dependency list — a list of
