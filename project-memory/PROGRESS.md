@@ -5,6 +5,13 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Gemini/Antigravity — Review completed for T083 (D032/D033 review-only mode at 531ea20)
+Reviewed T083 (Event reaction base rates — D019) and delta redesign per D027 and D033 evidence requirements:
+- Deterministic base rate math: verified `backend/analysis/event_rates.py` event-day and next-day returns, 5-bar runup, beat/miss/inline classification strictly from EPS actual vs estimate, amc/bmo timing convention with `timing_assumed` tracking, and MIN_EVENTS=4 threshold.
+- Self-accumulated store (D034 paywall adaptation): verified `backend/data/earnings_store.py` recording forward calendar dates into `earnings_observed` table (Alembic `9d1c5b3fa284`) and backfilling actuals, with graceful degradation and clean errors on empty store.
+- Tool registration: verified `get_event_base_rates` tool #39 wiring, string-to-date bar conversion, and tool count guard bumps (38->39) across 4 guard test suites.
+- Automated tests & gate: 15 tests in `test_event_rates.py` and `test_earnings_store.py` pass; full `scripts/verify.py` green (953 passed, 0 lint errors, memory budgets within bounds). Verdict: PASS at SHA `531ea20`.
+
 ## 2026-08-18 — Claude/Cowork — D034: free tier now, paid at autonomy (owner policy)
 Owner clarified the data-source strategy in his own words: free tiers until
 KUBERA runs autonomously, then he pays for the paid tiers. Recorded as D034

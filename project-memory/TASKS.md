@@ -13,8 +13,7 @@ currently RED — see I018, which needs the failing log.)
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T083 (event reaction base rates — D019) — AWAITING REVIEW 2026-08-18
-  (Claude/Cowork)**. "Should I hold through earnings" answered from the
+- **T083 (event reaction base rates — D019) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 531ea20)**. "Should I hold through earnings" answered from the
   symbol's own bars as BASE RATES — the note in every payload says
   "description of the past, not a prediction". Built:
   (1) analysis/event_rates.py (pure) — per past earnings date: event-day
@@ -84,6 +83,10 @@ currently RED — see I018, which needs the failing log.)
   conversion commented. Follow-up filed as T083b (below): SEC EDGAR 8-K
   dates as the fast-history option — free, no key, authoritative — gated
   on its own probe per D030.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS (covering commit 531ea20 per D033)
+    aligned: Provides deterministic event reaction base rates from bars (event-day move with amc/bmo timing convention, next-day follow-through, 5-bar runup, beat/miss/inline splits from eps_actual vs estimate without circular price inference); adapts gracefully to FMP free tier paywall on past calendar windows by accumulating forward events into `earnings_observed` table (Alembic 9d1c5b3fa284) across briefing and tool calls.
+    checked: Validated commits 8e8b00d + 531ea20: (1) `backend/analysis/event_rates.py` pure computation with MIN_EVENTS=4 floor and unmeasured event logging; (2) `backend/data/earnings_store.py` best-effort upsert and backfill logic with `earnings_observed` model; (3) `get_event_base_rates` tool #39 wiring with DailyBar date string conversion and tool count guards (38->39); (4) 9 tests in `test_event_rates.py` and 6 tests in `test_earnings_store.py` pass; (5) single Alembic head `9d1c5b3fa284`; (6) full `scripts/verify.py` green (953 passed, ruff clean, memory budgets within bounds).
+    concerns: none
 - **T066 (trade coaching: pre/post-trade reviews, persisted — D014) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 1f6014c)**. Composition, not new math —
   the coaching layer judges a trade against modules that already exist.
   Built: (1) analysis/coaching.py (pure) — compose_pre_trade_review: a
