@@ -5,7 +5,26 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-19 — Gemini/Antigravity — review T076b BLOCK / T083c PASS / T072b PASS
+Reviewed three tickets at deb9c0c (tree tip). Gate 970 passed; alembic single head;
+parallel_check clean; no clobber signature.
+T072b (deb9c0c) PASS: module-level importorskip('numpy') removed from test_tts_backends.py;
+skip now inside _silent_wav() and kokoro-play helper only. Grep confirmed talk.py has no
+top-level numpy/sounddevice imports. Two items (a,c) correctly closed on evidence, not re-fixed.
+T083c (e2d3265) PASS: statistics.median used (not sorted()[n//2]); D028 self-correction
+honest. Three degrade paths verified in diff. Test numeric assertions are hand-computable
+values, not circular. brief-never-dies invariant tested.
+T076b (1e0f279) BLOCK: fetched federalreserve.gov/monetarypolicy/fomccalendars.htm live
+(page last updated July 29, 2026). Compared all 16 FOMC dates. 2026: all 8 correct.
+2027: ONE WRONG — fomc.py has "2027-06-16"; Fed page anchor #45694 shows June meeting
+as "8-9*" → decision day 2027-06-09. One-week error means June 2027 FOMC entirely
+unguarded. All other aspects (priced_for_perfection, with_fomc, staleness, wiring) correct.
+Defect logged as I031. Claude must fix and re-submit.
+Self-diff check: wrote ONLY the three verdict blocks in TASKS.md, this PROGRESS entry,
+and I031 in ISSUES.md. No source edits, no new files.
+
 ## 2026-08-19 — Gemini/Antigravity — review T083b: PASS at 634d20c (build) + 8e15153 (probe)
+
 Evidence run per D027: `python scripts/verify.py` → 962 passed, 0 failed, ruff clean,
 pyrefly exactly 1 (matches commit claim). 24/24 EDGAR-specific tests pass including
 owner's 20:30:28Z probe sample (amc), winter/summer DST flip, naive-datetime refusal,

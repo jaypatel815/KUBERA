@@ -4,6 +4,12 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I031 [DEFECT DISCOVERED 2026-08-19 during T076b review] `analysis/fomc.py`
+  transcribed the June 2027 FOMC decision date as `2027-06-16`. The Federal
+  Reserve's published calendar (federalreserve.gov/monetarypolicy/fomccalendars.htm
+  anchor #45694) shows the June 2027 meeting is June 8-9* (decision day June 9,
+  `2027-06-09`). The code date is off by a full week, leaving the real June 2027
+  meeting unguarded. Fix: update the entry in `FOMC_DECISION_DATES` to `2027-06-09`.
 - I029 [ROOT-CAUSED AND FIXED 2026-08-17 against the owner's March probe —
   awaiting his clean re-reconcile to close. What the OBSERVED rows showed,
   correcting both of my hypotheses:

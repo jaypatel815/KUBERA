@@ -32,6 +32,17 @@ currently RED — see I018, which needs the failing log.)
   ARTIFACTS of the hack (it poisons mid-test imports with numpy installed)
   and are NOT claimed as evidence; the per-test importorskip is pytest's
   documented skip path and stands on that.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT deb9c0c — PASS
+    aligned: owner's voice loop must never die from audio issues; CI must
+      not silently skip non-audio tests when numpy is absent.
+    checked: read test_tts_backends.py at deb9c0c — importorskip('numpy')
+      and importorskip('soundfile') now live inside _silent_wav() and the
+      kokoro play helper only; module-level call is gone. Verified talk.py
+      imports numpy and sounddevice only inside function bodies (grep
+      confirmed: no top-level import of either). Gate 970 passed on this
+      machine. parallel_check.py: single head, no clobber.
+    concerns: none found. The two items closed on grep evidence (a,c) are
+      properly documented as "already fixed" — builder did not re-fix them.
 - **T083c (base rates into the morning brief) — AWAITING REVIEW 2026-08-18
   (Claude/Cowork)**. Each held symbol with upcoming earnings now carries a
   COMPACT base-rates block in the morning brief: events measured, median
@@ -44,6 +55,19 @@ currently RED — see I018, which needs the failing log.)
   18 passed across store+brief suites; ruff clean; pyrefly exactly 1; gate
   PASS. D028: my first median was sorted()[n//2] — the upper median on even
   counts; replaced with statistics.median before commit.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT e2d3265 — PASS
+    aligned: each morning brief should carry a compact base-rates block
+      per held symbol with upcoming earnings, degrading gracefully.
+    checked: git show e2d3265 confirms statistics.median (not sorted()[n//2])
+      is the shipped code. Checked three degrade paths in diff: no-db →
+      available:false+why; thin store → available:false+edgar_note; any
+      exception → available:false+exc type. Gate 970 passed. money-math
+      check: statistics.median([1,2,3,4]) = 2.5 (true median) vs
+      sorted()[n//2]=3 (upper); the fix is correct and the D028 note is
+      honest about what was wrong. Tests in test_earnings_store.py
+      assert specific numeric values (0.5 closed-down, specific median),
+      not just "code returns what code returns".
+    concerns: none. The brief-never-dies invariant is properly tested.
 - **T076b (FOMC dates + priced-for-perfection — D016/D019) — AWAITING REVIEW
   2026-08-18 (Claude/Cowork)**. All three halves resolved: (1) FOMC DATES —
   source decision made per D034 free-first: the Fed's PUBLISHED calendar as
@@ -76,6 +100,32 @@ currently RED — see I018, which needs the failing log.)
   moves tape rarely; (c) the flag joins only HELD symbols with upcoming
   earnings — watchlist symbols could want it too, deferred as an easy
   extension.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT 1e0f279 — BLOCK
+    aligned: serves D016/D019 event-risk and sell-the-news flag — both
+      owner-stated goals. Gate PASS; alembic single head; no secrets.
+    checked: fetched federalreserve.gov/monetarypolicy/fomccalendars.htm
+      live (July 29, 2026 update) and compared all 16 dates row by row.
+      2026: all 8 correct. 2027: 7 of 8 correct. ONE DATE IS WRONG:
+        fomc.py: "2027-06-16"
+        Fed page anchor #45694 (2027 section): June meeting is "8-9*"
+          → decision day = 2027-06-09, not 2027-06-16.
+      The June 2027 meeting would go completely unguarded. A FOMC day
+      inside a user's entry window is the core purpose of this ticket;
+      a one-week error defeats it silently.
+    concerns:
+      1. BLOCK: 2027-06-16 must be corrected to 2027-06-09 in
+         analysis/fomc.py. The test_table_is_sane test passes with the
+         wrong value because it only checks count and sort order, not
+         individual dates — this is intentional design (the test cannot
+         hard-code the calendar it is supposed to guard), but it means
+         the unit tests cannot catch this class of error. The reviewer
+         check is the only mechanism, and it found the defect.
+      2. Minor (no block): test_fomc_guards_entries_like_any_release uses
+         date(2026, 9, 15) + window_before=1 → correctly names 2026-09-16.
+         A parallel test for the June 2027 date would have caught the
+         transcription error — recommend adding one after the fix.
+      Not a block: priced_for_perfection logic, with_fomc merge, staleness
+      nag, and paper_trade/brief wiring all look correct and are well-tested.
 - Reviewed DONE blocks (T083b, T083b-probe, T083, T066, T067b, T023b, T016b, T113, T016c, T112)
   moved verbatim to project-memory/archive/TASKS-archive-2026-08-18.md (curation 2026-08-19).
 
