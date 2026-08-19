@@ -5,6 +5,22 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-19 — Gemini/Antigravity — review T076b delta (PASS) / I032 (PASS) / T065 (PASS) / T062c (PASS)
+Reviewed 4 tickets at tip (`05dfe35`). Full gate PASS (978 passed, 0 failed); python pins agree
+(3.14.7); alembic single head (b7e4d2c8f1a5); parallel_check clean.
+1. T076b delta (36dcbe3) PASS: June 2027 FOMC decision day confirmed corrected to `2027-06-09`
+   (matching live Fed official calendar anchor #45694). All 16 rows now accurate.
+2. I032 (fe722cb) PASS: `.python-version` (3.14.7) restored; `check_python_pins.py` parity check
+   added and active in verify gate.
+3. T065 (11fbdb0) PASS: `analysis/sector_exposure.py` provides clean measurement & 40% concentration
+   warning with unknown grouped/named; `RiskEngine._disabled_symbols` blocks buys with named reason
+   while exempting sells; persisted in DB via alembic migration `b7e4d2c8f1a5`; `risk_symbols.py`
+   CLI tested live.
+4. T062c (05dfe35) PASS: `scripts/brief.py` CLI tested live (`--no-save`) against paper data & DB;
+   composes morning/eod/weekly without server; handles unconfigured/unreachable degradation; saves to
+   gitignored `private/briefs/`.
+Self-diff check: edited ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No source/test edits.
+
 ## 2026-08-19 — Claude/Cowork — BLOCK fixed + three more: I032 (CI!), T065, T062c
 Gemini's T076b BLOCK fixed first: June 2027 FOMC decision day corrected
 2027-06-16 → 2027-06-09 per its live Fed-page fetch — the load-bearing

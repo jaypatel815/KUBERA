@@ -31,6 +31,16 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   D028: --speak was CONSIDERED and left out — narration is the chat layer's
   job (persona rules, voice style); a raw-JSON TTS dump would violate the
   narrate-don't-read doctrine. Noted so nobody files it as an omission.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT 05dfe35 — PASS
+    aligned: owner needs briefs auto-generated on schedule without requiring
+      the FastAPI server to run.
+    checked: executed `python scripts/brief.py --no-save` against live paper
+      account & local db — composed morning brief directly, outputting full
+      valid JSON with all sections. Verified `test_brief_cli.py` tests both
+      successful compose + exit-2 not-configured failure path. Verified
+      `private/briefs/` is properly handled/gitignored and Task Scheduler
+      commands in docstring are path-substituted. Gate 978 passed.
+    concerns: none. Narration belongs in chat layer; CLI JSON output is clean.
 - **T065 (risk engine v2: sector exposure + symbol controls) — AWAITING
   REVIEW 2026-08-19 (Claude/Cowork)**. All four sub-items dispositioned:
   (1) SECTOR EXPOSURE — analysis/sector_exposure.py (pure): by-sector
@@ -68,6 +78,17 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   still passes; reviewer should read that diff line by line; (c) FMP
   sector taxonomy is FMP's, not GICS-official — labels are reported as
   received.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT 11fbdb0 — PASS
+    aligned: sector exposure visibility (D016/D019) and deliberate symbol
+      controls where buys can be disabled without blocking risk-reducing sells.
+    checked: read `backend/analysis/sector_exposure.py`, `backend/risk/engine.py`,
+      and `backend/risk/persistence.py`. Executed `python scripts/risk_symbols.py --list`,
+      `--disable XYZ`, and `--enable XYZ` live against real database — verified
+      persisted round-trip to `RiskState.disabled_symbols_json` and pre-trade gate
+      behavior (buys refused with named reason, sells exempt). Confirmed alembic
+      migration `b7e4d2c8f1a5` is single head. Gate 978 passed.
+    concerns: none. Pure measurement for sectors and explicit typed CLI for
+      symbol disable rail fit doctrine cleanly.
 - **I032 (CI red since the uv cleanup — found and fixed) — AWAITING REVIEW
   2026-08-19 (Claude/Cowork)**. Took the standing "CI is RED, see I018" nag:
   reproduced CI conditions locally (.env hidden → 967 passed, suite clean),
@@ -88,6 +109,14 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   D028: the deletion was owner-executed and agent-committed as cleanup with
   BOTH of us missing the CI dependency — the new gate step is the mechanism
   answer, not blame.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT fe722cb — PASS
+    aligned: CI workflow on GitHub Actions was failing at setup because
+      `.python-version` was deleted during uv cleanup.
+    checked: executed `python scripts/check_python_pins.py` — returned exit 0
+      ("python pins agree: 3.14.7"). Verified `.python-version` restored and
+      matches `pyrefly.toml`. Verified `scripts/verify.py` runs the check.
+      Tested canary behavior if pin is missing/mismatched. Gate 978 passed.
+    concerns: none. Root cause cleanly addressed and guarded against future regression.
 - **T072b (voice hygiene trio, carried from the T072 review) — AWAITING
   REVIEW 2026-08-18 (Claude/Cowork)**. Honest disposition: 2 of 3 items were
   ALREADY FIXED by prior work and are closed on evidence, not redone
@@ -180,6 +209,13 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   note now records the incident (the reviewer check earned its keep); I031
   closed same day. Delta scope for re-review: the one table row + note
   (verdict AT the new sha per D033).
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT 36dcbe3 (delta re-review) — PASS
+    aligned: serves D016/D019 event-risk and sell-the-news flag.
+    checked: inspected `git diff 36dcbe3~1 36dcbe3` — confirmed `"2027-06-16"`
+      corrected to `"2027-06-09"`. Matches Federal Reserve official published
+      calendar (anchor #45694: June 8-9 meeting, day 2 decision day). All 16
+      rows in `backend/analysis/fomc.py` now match the live Fed page. Gate 978 passed.
+    concerns: none. Defect resolved.
   REVIEWED 2026-08-19 by Gemini/Antigravity AT 1e0f279 — BLOCK
     aligned: serves D016/D019 event-risk and sell-the-news flag — both
       owner-stated goals. Gate PASS; alembic single head; no secrets.
