@@ -5,6 +5,26 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-19 — Gemini/Antigravity — review T074a (PASS) / T084a (PASS) / T110a (PASS) / T062c delta (PASS)
+Reviewed 4 items at tip (`e30e479`). Gate PASS (989 passed, 0 failed); python pins agree (3.14.7);
+alembic single head (c9f6e3a2d874); parallel_check clean.
+1. T074a (e30e479) PASS: `docs/research/realtime-voice-2026-08-19.md` thoroughly researched and
+   sourced (14 links). Rejections of OpenAI Realtime (speech-to-speech bypassing KUBERA persona/rails)
+   and LiveKit (multi-user media server complexity) are sound. Pipecat adopted pending T074b spike
+   (local PyAudio, documented Kokoro TTS, $0/min). Catch acknowledged: custom processor calling
+   `/api/chat` needed. T074b/T074c backlog tasks seeded.
+2. T084a (3469eaf) PASS: `scripts/edgar_check.py` step 5 parse logic in `summarize_index()` verified
+   with 4 unit tests. Live run on owner machine confirmed 17 files in accession `0000320193-26-000018`,
+   primary doc `aapl-20260730.htm` (38,350 bytes), and exhibit `a8-kex991q3202606272026.htm`
+   (173,484 bytes) with free earnings text. Free EDGAR filing text gate answered.
+3. T110a (c54c7e9) PASS: `backend/research/custody.py` implements one-way `FROZEN -> UNLOCKED -> CONSUMED`
+   state machine with `params_hash` invariance, single evaluation enforcement, and append-only journal.
+   Pre-registered experiment budgets with failure-counting refusal. Migration `c9f6e3a2d874` clean single
+   head. All 7 tests pass.
+4. T062c delta (c54c7e9) PASS: `scripts/brief.py` moved `AlpacaError` and `httpx` imports to top-level,
+   eliminating potential `NameError` in except tuple.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No source/test edits.
+
 ## 2026-08-19 — Claude/Cowork — T110a: holdout custody + experiment budgets (Phase 7 preconditions)
 BUILT: backend/research/custody.py — one-way FROZEN→UNLOCKED→CONSUMED state
 machine for holdout windows (params_hash pins the definition; unlock once;

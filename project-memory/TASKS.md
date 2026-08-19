@@ -37,6 +37,17 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   D028: this is a DOCUMENT — the reviewer checks reasoning and that no
   claim exceeds the sources, not a test suite. Latency numbers are from
   the wild, EXPLICITLY not ours; the spike measures ours.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT e30e479 — PASS
+    aligned: realtime voice pipeline architecture (T074/spec §10) — sub-second
+      full-duplex conversation.
+    checked: read `docs/research/realtime-voice-2026-08-19.md`. Sourced claims
+      (14 links) verified. Architectural rejection of OpenAI Realtime
+      (speech-to-speech bypassing KUBERA persona, tools, rails) and LiveKit
+      (multi-user media server tax) is sound. Pipecat adoption rationale (local
+      PyAudio, documented Kokoro TTS, $0/min) is solid. Catch identified and
+      addressed honestly: custom processor required to route through `/api/chat`
+      to keep persona/rails intact. Backlog updated with T074b spike and T074c tuning.
+    concerns: none.
 - **T084a (EDGAR filing-document probe step) — AWAITING REVIEW 2026-08-19
   (Claude/Cowork)**. edgar_check.py gains step 5: fetch ONE earnings-8-K
   accession's index.json (+1 request, politeness sleep kept) and report
@@ -66,6 +77,15 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   — free earnings TEXT confirmed from the owner's machine**. The T084
   backlog entry now carries the answered gate + the ex99.1-is-not-call-Q&A
   scope note. Step 5's parse rule met reality and held (D030 closed loop).
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT 3469eaf — PASS
+    aligned: free SEC EDGAR filing text to substitute for paywalled transcripts (D030/D034).
+    checked: read `scripts/edgar_check.py` and `backend/tests/test_edgar_check.py`.
+      Step 5 pure `summarize_index()` parser correctly identifies primary doc and
+      largest ex99* exhibit. 4 unit tests pass. Live owner run on Windows host
+      confirmed 17 files in accession `0000320193-26-000018`, primary doc
+      `aapl-20260730.htm` (38,350 bytes), and exhibit `a8-kex991q3202606272026.htm`
+      (173,484 bytes) with earnings text. Gate 989 passed.
+    concerns: none. Free press release text confirmed available on SEC EDGAR.
 - **T110a (holdout custody + experiment budgets — Phase 7 preconditions) —
   AWAITING REVIEW 2026-08-19 (Claude/Cowork)**. backend/research/ (new
   package, nothing reachable from chat/loop): custody.py one-way state
@@ -102,6 +122,17 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   (import failure would NameError and mask the original error); imports
   moved to module level. That file was already REVIEWED at 05dfe35, so the
   fix re-queues T062c as a DELTA under D033 — noted on its entry.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT c54c7e9 — PASS
+    aligned: learning loop integrity (D029) — one-way holdout custody and bounded
+      experiment budgets.
+    checked: read `backend/research/custody.py`, `backend/data/models.py`,
+      `backend/tests/test_custody.py`. Verified `FROZEN -> UNLOCKED -> CONSUMED`
+      state machine, `params_hash` invariance, single evaluation enforcement
+      (`evaluated_hash == params_hash`), append-only `journal_json`, and
+      `guarded_symbols()` query. Verified `open_budget` pre-registration and
+      `record_attempt` failure-counting refusal. Migration `c9f6e3a2d874` is
+      clean single head. Gate 989 passed.
+    concerns: none. Preconditions built cleanly ahead of Phase 7.
 - **T062c (scheduled brief CLI — closes T062b's last item) — AWAITING REVIEW
   2026-08-19 (Claude/Cowork)**. scripts/brief.py: composes morning/eod/weekly
   DIRECTLY via api/brief.py (server not required), prints full JSON, saves to
@@ -134,6 +165,12 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   _httpx) — an import failure would NameError and mask the original error.
   Imports moved to module level; behavior identical on the happy path.
   Reviewer: `git log -1 -- scripts/brief.py` and re-sign at that SHA.
+  DELTA REVIEWED 2026-08-19 by Gemini/Antigravity AT c54c7e9 — PASS
+    aligned: scheduled brief CLI reliability.
+    checked: inspected `git diff c54c7e9~1 c54c7e9 -- scripts/brief.py` — confirmed
+      `AlpacaError` and `httpx` moved to module-level imports, eliminating potential
+      `NameError` in except block.
+    concerns: none.
 - **T065 (risk engine v2: sector exposure + symbol controls) — AWAITING
   REVIEW 2026-08-19 (Claude/Cowork)**. All four sub-items dispositioned:
   (1) SECTOR EXPOSURE — analysis/sector_exposure.py (pure): by-sector
