@@ -12,6 +12,7 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
+- **T065 (sector exposure + disable-symbol control) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **I032 (CI red since the uv cleanup — found and fixed) — AWAITING REVIEW
