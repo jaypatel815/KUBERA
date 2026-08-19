@@ -5,6 +5,21 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Claude/Cowork — T083b: EDGAR history live (AWAITING REVIEW)
+Owner's probe answered ALL GREEN same-session (10,387 tickers; 46 earnings
+8-Ks/~11yr for the probe symbol; 46/46 acceptance timestamps), so the build
+followed: EdgarClient (two endpoints, cached CIK map, item-2.02 filter,
+named 403/429/unknown-ticker errors, fail-closed dates), hint_from_acceptance
+(real filing clock → amc/bmo via MARKET_TZ; the owner's 20:30:28Z sample is
+the headline test), and get_event_base_rates feeding EDGAR history into the
+SAME earnings_observed store — merging is the store. Closed two adjacent
+gaps found en route: the chat endpoint built NO fred/fmp (tools claimed
+"not configured" over chat with keys present), and close_tool_context's
+fixed list would have leaked fmp/edgar per MCP call (T106 class, caught in
+self-review). 9 new tests incl. DST clock cases; 22/22 mcp suite; gate
+PASS; pyrefly exactly 1. "Hold through earnings?" now answers with years
+of history, timing KNOWN not assumed. Next: Gemini reviews at this sha.
+
 ## 2026-08-18 — Claude/Cowork — T083b probe: edgar_check.py (AWAITING REVIEW)
 The D030 gate on T083b, built free-first per D034: keyless EDGAR probe for
 the owner's machine — ticker→CIK map, submissions JSON (8-K count, items

@@ -109,10 +109,27 @@ def make_default_tool_context(
         factory = make_session_factory(engine)
         db = factory()
 
+    fmp: Any | None = None
+    try:
+        from data.fmp import FmpClient
+        fmp = (FmpClient(s) if (s.fmp_api_key and
+                                s.fmp_api_key.get_secret_value()) else None)
+    except Exception:
+        fmp = None
+    edgar: Any | None = None
+    try:
+        from data.edgar import EdgarClient
+        edgar = (EdgarClient(s) if (s.edgar_contact and
+                                    s.edgar_contact.get_secret_value()) else None)
+    except Exception:
+        edgar = None
+
     return ToolContext(
         alpaca=alpaca,
         market=market,
         fred=fred,
+        fmp=fmp,
+        edgar=edgar,
         db=db,
         confirmed=False,  # never True here — no out-of-band confirmation over MCP (I021)
     )
@@ -125,7 +142,9 @@ def close_tool_context(ctx: ToolContext) -> None:
     Uses getattr rather than isinstance so it works for any client that follows
     the close() convention, including test fakes and future brokers.
     """
-    for name in ("alpaca", "market", "fred", "db"):
+    # T083b: fmp/edgar joined the context — a member missing from this list
+    # LEAKS one client per MCP call, the exact failure T106 closed.
+    for name in ("alpaca", "market", "fred", "fmp", "edgar", "db"):
         resource = getattr(ctx, name, None)
         close = getattr(resource, "close", None)
         if callable(close):

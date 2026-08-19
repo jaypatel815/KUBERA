@@ -153,6 +153,24 @@ class KuberaSettings(BaseSettings):
         validation_alias=AliasChoices("FMP_BASE_URL", "KUBERA_FMP_BASE_URL"),
     )
 
+    # SEC EDGAR (T083b, D030/D034) — free and keyless, probe-verified
+    # 2026-08-18 (46 earnings 8-Ks for the probe symbol, 46/46 with
+    # acceptance timestamps). The SEC requires a CONTACT ADDRESS in the
+    # User-Agent and blocks anonymous clients; the contact is the owner's —
+    # SecretStr so it is never logged, and never committed (repo is public).
+    edgar_contact: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("EDGAR_CONTACT", "KUBERA_EDGAR_CONTACT"),
+    )
+    edgar_base_url: str = Field(
+        default="https://data.sec.gov",
+        validation_alias=AliasChoices("EDGAR_BASE_URL", "KUBERA_EDGAR_BASE_URL"),
+    )
+    edgar_www_url: str = Field(
+        default="https://www.sec.gov",
+        validation_alias=AliasChoices("EDGAR_WWW_URL", "KUBERA_EDGAR_WWW_URL"),
+    )
+
     # Schwab Trader API (T016, D026) — READ-ONLY. OAuth, not a key pair: the app
     # key/secret identify the APPLICATION, the refresh token identifies the LOGIN,
     # and the account number is neither — it only picks which account, and Schwab

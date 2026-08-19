@@ -24,12 +24,32 @@ Conventions, chosen and written down:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime, time
 from statistics import median
 from typing import Sequence
 
+from analysis.market_time import MARKET_TZ
+
 MIN_EVENTS = 4        # below this, base rates are anecdotes — refuse
 RUNUP_BARS = 5        # ~one trading week into the event
+
+MARKET_CLOSE_ET = time(16, 0)   # regular-session close; the venue's fact
+
+
+def hint_from_acceptance(accepted_utc: datetime) -> str:
+    """T083b — a REAL filing clock replaces the bmo/amc guess.
+
+    EDGAR's acceptanceDateTime says exactly when the 8-K landed. Converted to
+    the venue's clock (America/New_York, T111): at or after the 16:00 ET
+    close -> "amc" (the reaction is the NEXT bar); anything earlier -> "bmo"
+    (the reaction is that day's bar — pre-open filings obviously, and a rare
+    mid-session filing moves the tape it lands in). Naive datetimes are
+    refused: every KUBERA timestamp is tz-aware (AGENTS.md).
+    """
+    if accepted_utc.tzinfo is None:
+        raise ValueError("naive datetime — acceptance clocks are tz-aware")
+    et = accepted_utc.astimezone(MARKET_TZ)
+    return "amc" if et.timetz().replace(tzinfo=None) >= MARKET_CLOSE_ET else "bmo"
 
 
 @dataclass(frozen=True)

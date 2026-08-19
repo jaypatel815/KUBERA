@@ -12,11 +12,53 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T083b build (EDGAR history client + integration) — Claude/Cowork** —
-  claimed 2026-08-18. Owner's probe: ALL GREEN (10,387 tickers; AAPL 46
-  earnings 8-Ks back to 2015; 46/46 acceptanceDateTime).
-
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T083b (EDGAR earnings history — free, keyless, probed) — AWAITING REVIEW
+  2026-08-18 (Claude/Cowork)**. Owner's probe: ALL GREEN — 10,387 tickers in
+  the CIK map, 46 earnings 8-Ks (~11yr) for the probe symbol back to 2015,
+  46/46 with acceptance timestamps. Built against exactly that shape:
+  (1) settings: edgar_contact (SecretStr — the SEC-required UA contact,
+  never logged; repo is public) + edgar_base_url/edgar_www_url (T107
+  convention). (2) data/edgar.py EdgarClient — two endpoints only:
+  company_tickers.json (fetched once per client, cached) and submissions
+  JSON (columnar arrays, item-2.02 filter, zero-padded CIK path pinned in
+  test); named errors for 403 (UA problem), 429 (do not retry), unknown
+  ticker (ETFs have no CIK); unparseable filingDate → reported, never
+  guessed (T102). (3) hint_from_acceptance in analysis/event_rates.py — the
+  REAL filing clock replaces bmo/amc guesses: ≥16:00 ET = amc (next bar),
+  else bmo; zone via MARKET_TZ so EDT/EST flips itself; naive datetimes
+  refused. (4) get_event_base_rates: EDGAR history feeds the SAME
+  earnings_observed store (source=sec-edgar; dedupe + enrichment already
+  built in T083) — merging IS the store; any EdgarError degrades to a named
+  note and the store still answers. (5) ToolContext gains edgar; wired
+  best-effort in main.py chat AND mcp_server — which CLOSED A PRE-EXISTING
+  GAP: the chat endpoint built NO fred/fmp at all, so calendar/macro tools
+  claimed "not configured" over chat even with keys present. (6) T106
+  audit: close_tool_context's fixed member list would have LEAKED fmp/edgar
+  per MCP call — caught in self-review, list extended with the why comment.
+  EVIDENCE (D027): 9 tests in test_edgar.py — probe-faithful columnar
+  fixture (the owner's real 20:30:28Z sample asserted amc), item-2.02
+  filtering (10-Q and 5.02 8-K excluded), UA-carries-contact asserted on
+  every request, zero-padded CIK path, named 403/unknown-ticker refusals,
+  fail-closed bad dates, DST clock cases (20:30Z July=amc / January=bmo),
+  naive refusal, end-to-end tool run (4 8-Ks → store rows source=sec-edgar,
+  hints amc, timing_assumed all False, rates computed) + EDGAR-500 degrade;
+  15/15 with store suite; 22/22 with mcp_server; ruff clean; pyrefly
+  exactly 1; full gate PASS.
+  D028 objections: (a) recent-window only — paged archive files for >11yr
+  history are an UNOBSERVED shape, deliberately not fetched (noted in
+  docstring); (b) EDGAR dates carry no estimates so beat/miss stays
+  "unknown" for EDGAR-only rows — the MOVES are the core of the question
+  and need none; FMP-stored estimates enrich rows where dates coincide;
+  (c) company_tickers.json has no ETFs — get_event_base_rates on SPY will
+  say so via the named unknown-ticker error path; index-fund earnings
+  don't exist, so this is correct, but the message is worth the reviewer's
+  read; (d) chat context now constructs up to 3 extra clients per request —
+  each is lazy/cheap (no network until used), matching the brief endpoint's
+  established pattern.
+  Owner: nothing to do — EDGAR_CONTACT is already in your .env from the
+  probe. Ask KUBERA "should I hold NVDA through earnings" and years of
+  history answer immediately.
 - **T083b probe (scripts/edgar_check.py) — AWAITING REVIEW 2026-08-18
   (Claude/Cowork)**. The gate on T083b, built per D030/D034: a keyless probe
   the owner runs where KUBERA lives (sandbox cannot reach sec.gov —
@@ -782,16 +824,9 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   redesign: past FMP windows are PAYWALLED on the owner's tier, so history
   self-accumulates in earnings_observed from the working forward window
   (three feed paths: base-rates tool, calendar tool, morning brief).
-- [ ] T083b — Fast earnings history via SEC EDGAR (D030-gated): 8-K filing
-  dates (item 2.02) are free, keyless, and authoritative — they would give
-  T083 years of past dates immediately instead of accumulating quarter by
-  quarter. Requires its OWN probe first (a small edgar_check.py: fetch one
-  company's 8-K index, measure shape + rate limits + terms) — no code
-  against an unobserved API (T102/D030). Note: EDGAR gives DATES (and
-  precise acceptance TIMES — better than bmo/amc hints); beat/miss still
-  needs estimates, so splits stay "unknown" for EDGAR-sourced dates unless
-  paired with stored estimates. The moves themselves — the core of "should
-  I hold through earnings" — need no estimates at all.
+- [x] T083b — built 2026-08-18 (probe ALL GREEN same day), see Awaiting
+  review at top. Years of earnings history now arrive instantly; real
+  acceptance clocks replace bmo/amc guesses.
 - [ ] T084 — Transcripts & filings as labeled CONTEXT (D019; gated on T023 tier check): fetch earnings-call transcripts, summarize via the EXISTING LLM layer (tone/guidance as narration of a document, clearly labeled qualitative context — never a priced signal); 10-K/10-Q YoY textual-change ("Lazy Prices") recorded as a Phase 7 research-agent candidate via SEC EDGAR through §7.7, human-gated. No FinBERT now.
 - [x] T016a — Schwab read-only client + transaction mapping — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `backend/data/schwab.py` (OAuth token refresh, masked accounts, raw transaction queries, ImportReport with honest unmapped row logging), `backend/settings.py` (schwab_* settings and require_schwab), `.env.example`, `scripts/schwab_auth.py`, `scripts/reconcile_schwab.py`, `scripts/env_check.py`, and `backend/tests/test_schwab.py` (19 unit tests).

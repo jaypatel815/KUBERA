@@ -743,7 +743,26 @@ def chat(
     provider=Depends(get_llm_provider),
 ) -> dict:
     """Talk to KUBERA. Every message and tool call is persisted (spec §2.7)."""
-    ctx = ToolContext(alpaca=alpaca, market=market, db=session, confirmed=body.confirm)
+    # Optional clients, best-effort (T083b closed the gap: chat previously
+    # built NO fred/fmp, so calendar/macro tools claimed "not configured"
+    # over chat even with keys present — the brief endpoint had them).
+    fred = fmp = edgar = None
+    try:
+        fred = FredClient(settings=get_settings())
+    except ConfigError:
+        pass
+    try:
+        from data.fmp import FmpClient as _Fmp
+        fmp = _Fmp(settings=get_settings())
+    except ConfigError:
+        pass
+    try:
+        from data.edgar import EdgarClient as _Edgar
+        edgar = _Edgar(settings=get_settings())
+    except ConfigError:
+        pass
+    ctx = ToolContext(alpaca=alpaca, market=market, db=session, fred=fred,
+                      fmp=fmp, edgar=edgar, confirmed=body.confirm)
     # Swagger's default example for optional ints is 0 — treat it as "new conversation".
     conversation_id = body.conversation_id or None
     try:

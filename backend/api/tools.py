@@ -73,6 +73,7 @@ from backtest.ledger import (
 from backtest.stats import calmar, trade_stats
 from backtest.strategies import TEMPLATES, build_strategy
 from data.alpaca import AlpacaClient, AlpacaError
+from data.edgar import EdgarClient, EdgarError
 from data.flows import flow_history
 from data.fmp import FmpClient, FmpError
 from data.fred import SERIES, FredClient, FredError
@@ -127,6 +128,7 @@ class ToolContext:
     market: MarketDataClient | None = None
     fred: "FredClient | None" = None
     fmp: "FmpClient | None" = None
+    edgar: "EdgarClient | None" = None
     db: Session | None = None
     confirmed: bool = False
 
@@ -2301,6 +2303,31 @@ def _get_event_base_rates(ctx: ToolContext, a: EventRatesArgs) -> dict:
     else:
         fetch_note = "FMP not configured — stored history only, store not refreshed"
 
+    # T083b: EDGAR supplies YEARS of past dates instantly (probe: all green,
+    # 46 earnings 8-Ks / ~11yr for the probe symbol). Real acceptance clocks
+    # replace bmo/amc guesses via hint_from_acceptance. Best-effort: any
+    # EdgarError degrades to a note; the store still answers.
+    edgar_note = None
+    if ctx.edgar is not None:
+        from analysis.event_rates import hint_from_acceptance
+        from data.earnings_store import record_events
+        try:
+            hist = ctx.edgar.earnings_history(symbol)
+            edgar_events = [SimpleNamespace(
+                symbol=symbol, date=f.filing_date,
+                time_hint=(hint_from_acceptance(f.acceptance_utc)
+                           if f.acceptance_utc else None),
+                eps_estimated=None, eps_actual=None,
+            ) for f in hist.filings]
+            added = record_events(db, edgar_events, source="sec-edgar")
+            edgar_note = (f"EDGAR: {len(hist.filings)} earnings 8-Ks "
+                          f"({added} new/enriched; {len(hist.unparsed)} unparsed)")
+        except EdgarError as e:
+            edgar_note = f"EDGAR unavailable ({e}) — stored history still used"
+    else:
+        edgar_note = ("EDGAR not configured (EDGAR_CONTACT in .env unlocks "
+                      "years of past dates instantly)")
+
     past = [SimpleNamespace(date=_dt_date.fromisoformat(r.event_date),
                             time_hint=r.time_hint,
                             eps_actual=r.eps_actual,
@@ -2311,11 +2338,11 @@ def _get_event_base_rates(ctx: ToolContext, a: EventRatesArgs) -> dict:
 
     if not events:
         raise ToolError(
-            f"no OBSERVED past earnings dates for '{symbol}' yet. His tier's "
-            "past calendar is paywalled (probe 2026-08-18), so history "
-            "accumulates from the forward window as quarters pass — dates "
-            "recorded so far are in earnings_observed. "
-            + (fetch_note or "The store was refreshed on this call."))
+            f"no observed past earnings dates for '{symbol}'. "
+            + (edgar_note or "") + " "
+            + (fetch_note or "The store was refreshed on this call.")
+            + " If EDGAR is configured and still empty, the symbol may have "
+              "no CIK (ETFs) — its earnings history does not exist as 8-Ks.")
 
     bars = market.get_daily_bars(symbol, days=365 * a.years + 40)
     if len(bars.bars) < 30:
@@ -2330,6 +2357,7 @@ def _get_event_base_rates(ctx: ToolContext, a: EventRatesArgs) -> dict:
         [b.close for b in bars.bars])
     out: dict[str, Any] = asdict(rates)
     out["fetch_note"] = fetch_note
+    out["edgar_note"] = edgar_note
     out["history_source"] = ("earnings_observed store (self-accumulated — "
                              "past FMP windows are paywalled on this tier)")
     out["asof"] = bars.asof.isoformat()

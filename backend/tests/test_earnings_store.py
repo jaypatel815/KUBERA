@@ -104,7 +104,7 @@ def test_tool_computes_rates_from_stored_history_without_fmp(db):  # noqa: F811
 
 def test_tool_empty_store_names_the_paywall_reality(db):  # noqa: F811
     with bars_market() as m:
-        with pytest.raises(ToolError, match="paywalled"):
+        with pytest.raises(ToolError, match="no observed past earnings dates"):
             registry.execute("get_event_base_rates", {"symbol": "AAPL"},
                              ToolContext(db=db, market=m))
 
