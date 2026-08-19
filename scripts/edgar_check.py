@@ -18,6 +18,10 @@ that will run it:
      close), which upgrades T083's timing convention from assumed to known
   4. the etiquette EDGAR requires: a declared User-Agent with contact info
      (SEC blocks anonymous UAs), ~10 requests/second documented ceiling
+  5. (T084a) ONE accession's filing index: the 8-K body is usually a two-
+     page cover letter — the earnings TEXT lives in exhibit 99.1, the press
+     release. Names + sizes only, no bodies. This line gates T084: whether
+     free EDGAR text can stand in for the PAYWALLED transcript endpoints.
 
 Prints STATUSES, COUNTS, and THREE sample rows (dates+times only — filings
 are public documents, but the probe stays terse by policy). Paste the table
@@ -57,7 +61,37 @@ def build_user_agent() -> str | None:
 
 TICKER_MAP_URL = "https://www.sec.gov/files/company_tickers.json"
 SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:0>10}.json"
+INDEX_URL = ("https://www.sec.gov/Archives/edgar/data/"
+             "{cik}/{accession}/index.json")
 PROBE_TICKER = "AAPL"          # any large filer works; AAPL files everything
+
+
+def summarize_index(index_json: object, primary_doc: str) -> dict:
+    """Names + sizes from an accession's index.json. Documented shape:
+    {"directory": {"item": [{"name": ..., "size": ...}, ...]}} — pure so the
+    parse rule is testable without touching sec.gov; the probe prints SHAPE?
+    if reality disagrees (D030: the probe is the observation instrument).
+    Exhibit match: collapse the filename to alphanumerics and look for
+    "ex99" — catches ex991.htm, ex-99_1.htm, d12dex991.htm and friends."""
+    if not isinstance(index_json, dict):
+        raise ValueError("index.json root is not an object")
+    items = index_json.get("directory", {}).get("item", [])
+    if not isinstance(items, list):
+        raise ValueError("directory.item is not a list")
+
+    def _size(v: object) -> int:
+        try:
+            return int(str(v).strip() or 0)
+        except ValueError:
+            return 0
+
+    files = [(str(it["name"]), _size(it.get("size")))
+             for it in items if isinstance(it, dict) and it.get("name")]
+    primary = next((f for f in files if primary_doc and f[0] == primary_doc),
+                   None)
+    exhibits = [f for f in files
+                if "ex99" in "".join(c for c in f[0].lower() if c.isalnum())]
+    return {"count": len(files), "primary": primary, "exhibits": exhibits}
 
 
 def line(label: str, verdict: str, extra: str = "") -> None:
@@ -72,7 +106,7 @@ def main() -> int:
         print("    EDGAR_CONTACT=you@example.com")
         print("It stays on your machine — never committed (the repo is public).")
         return 2
-    print("Probing SEC EDGAR (keyless, ~3 requests, declared User-Agent)")
+    print("Probing SEC EDGAR (keyless, ~4 requests, declared User-Agent)")
     print("UA: KUBERA personal-research <contact from .env — not echoed>")
     print("-" * 78)
     headers = {"User-Agent": ua, "Accept-Encoding": "gzip, deflate"}
@@ -148,6 +182,47 @@ def main() -> int:
             d = dates[i] if i < len(dates) else "?"
             a = accept[i] if i < len(accept) else "?"
             print(f"  {d}  accepted {a}")
+        print()
+
+        # 5. (T084a) one accession's filing index — is the earnings TEXT
+        # free? Names + sizes only; failure here degrades THIS step, not
+        # the verdict above it.
+        try:
+            accession = recent.get("accessionNumber", [])
+            primary = recent.get("primaryDocument", [])
+            pick = with_202[0] if with_202 else None
+            if pick is None or pick >= len(accession) or not accession[pick]:
+                line("filing index (T084a)", "SKIPPED",
+                     "no earnings 8-K accession number")
+            else:
+                time.sleep(0.2)
+                acc = str(accession[pick]).replace("-", "")
+                prim = str(primary[pick]) if pick < len(primary) else ""
+                r = client.get(INDEX_URL.format(cik=cik, accession=acc))
+                if r.status_code != 200:
+                    line("filing index (T084a)", f"HTTP {r.status_code}")
+                else:
+                    s = summarize_index(r.json(), prim)
+                    line("filing index (T084a)", "OK",
+                         f"{s['count']} files in accession {accession[pick]}")
+                    if s["primary"]:
+                        nm, sz = s["primary"]
+                        line("primary document", "OK", f"{nm}  {sz:,} bytes")
+                    else:
+                        line("primary document", "UNLISTED",
+                             prim or "(none named in submissions)")
+                    if s["exhibits"]:
+                        nm, sz = max(s["exhibits"], key=lambda f: f[1])
+                        line("press-release exhibit", "OK",
+                             f"{nm}  {sz:,} bytes — free earnings TEXT")
+                    else:
+                        line("press-release exhibit", "ABSENT",
+                             "no ex99* file in this accession")
+        except httpx.HTTPError as e:
+            line("filing index (T084a)", "UNREACHABLE", type(e).__name__)
+        except (ValueError, KeyError, TypeError) as e:
+            line("filing index (T084a)", "SHAPE?",
+                 f"{type(e).__name__}: {e}")
     except httpx.HTTPError as e:
         line("submissions JSON", "UNREACHABLE", type(e).__name__)
         return 1
@@ -164,6 +239,8 @@ def main() -> int:
     print("  - acceptanceDateTime: real clocks beat bmo/amc hints — T083's")
     print("    timing convention upgrades from assumed to KNOWN")
     print("  - history depth: how many past quarters arrive instantly")
+    print("  - press-release exhibit: is the earnings TEXT free (ex99*)? The")
+    print("    T084 transcripts-substitute decision reads THIS line.")
     print("Paste this table into any KUBERA agent session — the T083b build")
     print("decision reads directly from it (D030: probe, not brochure).")
     return 0

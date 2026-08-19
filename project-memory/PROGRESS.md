@@ -23,6 +23,13 @@ NEXT: T084a (EDGAR filing-document probe), then T074a (realtime-voice research).
 D028: isolation boundary + adversarial probe stay split to T110b — a
 half-built sandbox boundary is worse than a named absence.
 
+ALSO 2026-08-19 — T084a: edgar_check.py step 5 (filing-document probe).
+One extra request per run: the earnings 8-K accession's index.json →
+primary doc + largest ex99* exhibit, names+bytes only. Gates T084 (free
+8-K press-release text vs paywalled transcripts). Pure summarize_index()
+pinned by 4 tests; sandbox run shows named degradation; 986 passed.
+OWNER: rerun edgar_check.py and paste the table.
+
 ## 2026-08-19 — Gemini/Antigravity — review T076b delta (PASS) / I032 (PASS) / T065 (PASS) / T062c (PASS)
 Reviewed 4 tickets at tip (`05dfe35`). Full gate PASS (978 passed, 0 failed); python pins agree
 (3.14.7); alembic single head (b7e4d2c8f1a5); parallel_check clean.

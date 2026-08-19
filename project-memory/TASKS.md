@@ -12,9 +12,33 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T084a (EDGAR filing-document probe) — Claude/Cowork** — claimed 2026-08-19.
+- **T074a (realtime-voice framework research) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T084a (EDGAR filing-document probe step) — AWAITING REVIEW 2026-08-19
+  (Claude/Cowork)**. edgar_check.py gains step 5: fetch ONE earnings-8-K
+  accession's index.json (+1 request, politeness sleep kept) and report
+  names + sizes ONLY — the 8-K body is usually a two-page cover; the
+  earnings TEXT lives in exhibit 99.1 (press release). New lines: filing
+  index (file count), primary document (name+bytes or UNLISTED), press-
+  release exhibit (largest ex99* match + bytes, or ABSENT). Parse rule
+  lives in pure summarize_index() — exhibit match collapses the filename to
+  alphanumerics and looks for "ex99" (catches ex991/ex-99_1/d12dex991);
+  malformed shapes RAISE and the step prints a named SHAPE? line; step
+  failure degrades step 5 only, never the verdict above it. This line is
+  the T084 gate: whether free EDGAR text substitutes for PAYWALLED
+  transcript endpoints (D034 free-first).
+  EVIDENCE (D027): test_edgar_check.py 4 tests (importlib-by-path, T106
+  precedent) — documented shape names primary + both exhibit spellings with
+  empty-size→0; name-variant collapse incl. ex98/press99 NON-matches;
+  missing primary → UNLISTED not guessed; malformed roots raise by name and
+  junk rows/sizes degrade without crashing. Live sandbox run: named
+  UNREACHABLE/SKIPPED table, exit 1, no traceback. 986 passed; gate PASS.
+  D028: the probe still cannot OBSERVE sec.gov from the sandbox — step 5's
+  real answer arrives when the owner reruns edgar_check.py; the unit tests
+  pin the parse rule, not the network truth. NEXT after owner paste: T084
+  build decision reads the press-release-exhibit line.
+  OWNER ACTION: rerun `python scripts\edgar_check.py` and paste the table.
 - **T110a (holdout custody + experiment budgets — Phase 7 preconditions) —
   AWAITING REVIEW 2026-08-19 (Claude/Cowork)**. backend/research/ (new
   package, nothing reachable from chat/loop): custody.py one-way state
