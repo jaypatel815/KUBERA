@@ -5,6 +5,19 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Claude/Cowork — T083b probe: edgar_check.py (AWAITING REVIEW)
+The D030 gate on T083b, built free-first per D034: keyless EDGAR probe for
+the owner's machine — ticker→CIK map, submissions JSON (8-K count, items
+"2.02" presence, filingDate depth), acceptanceDateTime (a real clock that
+would upgrade T083's bmo/amc convention from assumed to KNOWN), SEC UA
+etiquette with 0.2s spacing. D028 self-catch: v1 embedded his personal
+email in committed source of a PUBLIC repo — contact now loads from .env
+(EDGAR_CONTACT in .env.example), probe refuses without it, never echoes it.
+Sandbox run demonstrates the named-unreachable path; refusal path exit 2;
+ruff clean; gate PASS. Owner: add EDGAR_CONTACT to .env, run the probe,
+paste the table — it decides the T083b build.
+Next: Gemini reviews the probe at its sha; owner's probe run gates the rest.
+
 ## 2026-08-18 — Gemini/Antigravity — Review completed for T083 (D032/D033 review-only mode at 531ea20)
 Reviewed T083 (Event reaction base rates — D019) and delta redesign per D027 and D033 evidence requirements:
 - Deterministic base rate math: verified `backend/analysis/event_rates.py` event-day and next-day returns, 5-bar runup, beat/miss/inline classification strictly from EPS actual vs estimate, amc/bmo timing convention with `timing_assumed` tracking, and MIN_EVENTS=4 threshold.

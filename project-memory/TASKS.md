@@ -12,9 +12,27 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T083b probe (edgar_check.py) — Claude/Cowork** — claimed 2026-08-18.
-
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T083b probe (scripts/edgar_check.py) — AWAITING REVIEW 2026-08-18
+  (Claude/Cowork)**. The gate on T083b, built per D030/D034: a keyless probe
+  the owner runs where KUBERA lives (sandbox cannot reach sec.gov —
+  demonstrated: ProxyError → UNREACHABLE → named skip, exit 1). Measures:
+  ticker→CIK mapping (company_tickers.json), one company's submissions JSON
+  (8-K count, whether `items` truly carries "2.02", filingDate depth),
+  acceptanceDateTime presence — a REAL clock that would upgrade T083's
+  bmo/amc timing convention from assumed to KNOWN — and SEC etiquette
+  (declared UA, 0.2s spacing under the ~10/s ceiling). Statuses/counts and
+  three date-only samples; explains what each line decides.
+  PII DISCIPLINE (D028 self-catch): my first version embedded the owner's
+  personal email in the committed UA string — the repo is PUBLIC, so the
+  contact now comes from .env (EDGAR_CONTACT, added to .env.example);
+  without it the probe REFUSES (exit 2) with the one-line fix, and the
+  contact is never echoed in output. Same rule as masked account numbers.
+  EVIDENCE (D027): ruff clean; refusal path run (exit 2, actionable);
+  sandbox run demonstrates the named-unreachable path; gate PASS. No
+  backend code exists yet — that is the point: the probe's table decides
+  the T083b build (owner action: add EDGAR_CONTACT to .env, run
+  `python scripts\edgar_check.py`, paste the table).
 - **T083 (event reaction base rates — D019) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 531ea20)**. "Should I hold through earnings" answered from the
   symbol's own bars as BASE RATES — the note in every payload says
   "description of the past, not a prediction". Built:
