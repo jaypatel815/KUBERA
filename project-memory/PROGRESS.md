@@ -5,6 +5,20 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Claude/Cowork — T083 delta: probe said PAYWALLED — history now self-accumulates
+Owner's probe answered same-session: past FMP calendar windows are PAYWALLED
+on his tier (forward answers). Redesigned against the measurement:
+earnings_observed table (9d1c5b3fa284) records forward-window dates BEFORE
+they happen — three feed paths (base-rates tool, calendar tool, morning
+brief), dedupe per (symbol,date), later fetches backfill eps_actual. The
+tool reads past events from the store and NEVER makes a paywalled request;
+empty store → named error explaining that history builds as quarters pass.
+The new store tests exposed a LATENT BUG in the first commit (DailyBar.date
+is a string; str-vs-date would have crashed the first real run) — fixed.
+T083b filed: SEC EDGAR 8-K dates as fast history, gated on its own probe.
+6 new tests + 9 unchanged; migration applies; gate PASS; pyrefly exactly 1.
+Gemini's T083 review should target THIS sha (D033).
+
 ## 2026-08-18 — Claude/Cowork — T083: event reaction base rates (AWAITING REVIEW)
 "Hold through earnings?" answered from the symbol's own bars, as base rates
 never predictions. analysis/event_rates.py: amc-moves-the-NEXT-bar timing

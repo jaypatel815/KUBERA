@@ -323,3 +323,25 @@ class TradeReview(Base):
     attention_count: Mapped[int] = mapped_column(Integer, default=0)
     payload_json: Mapped[str] = mapped_column(String(8000))
     source: Mapped[str] = mapped_column(String(24), default="chat")
+
+
+class EarningsObserved(Base):
+    """T083 (post-probe): the owner's tier answers only the FORWARD earnings
+    calendar (past windows PAYWALLED, measured 2026-08-18). So KUBERA keeps
+    its own history: every date the working forward window shows is recorded
+    here BEFORE it happens, and base rates accumulate from observations —
+    the same discipline as the rest of the project, applied to a paywall."""
+
+    __tablename__ = "earnings_observed"
+    __table_args__ = (
+        UniqueConstraint("symbol", "event_date", name="uq_earnings_symbol_date"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    symbol: Mapped[str] = mapped_column(String(16))
+    event_date: Mapped[str] = mapped_column(String(10))   # ISO date
+    time_hint: Mapped[str | None] = mapped_column(String(16), default=None)
+    eps_estimated: Mapped[float | None] = mapped_column(Float, default=None)
+    eps_actual: Mapped[float | None] = mapped_column(Float, default=None)
+    first_seen: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    source: Mapped[str] = mapped_column(String(24), default="fmp-free")

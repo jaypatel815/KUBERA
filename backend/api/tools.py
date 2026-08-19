@@ -10,6 +10,7 @@ LLM function-calling APIs consume (Anthropic/OpenAI/Gemini formats derive direct
 """
 
 from dataclasses import asdict, dataclass, field
+from datetime import date as _dt_date
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -802,6 +803,10 @@ def _get_earnings_calendar(ctx: ToolContext, p: EarningsCalendarArgs) -> dict:
         cal = fmp.earnings_calendar(today, today + timedelta(days=p.days))
     except FmpError as e:
         raise ToolError(str(e)) from e
+    # T083: every fetched calendar feeds the observed-history store (past FMP
+    # windows are paywalled on this tier, so the past assembles itself here).
+    from data.earnings_store import record_calendar
+    record_calendar(ctx.db, cal)
     wanted = None
     if p.symbols:
         raw = [p.symbols] if isinstance(p.symbols, str) else p.symbols
@@ -2270,27 +2275,47 @@ class EventRatesArgs(SymbolArgs):
     EventRatesArgs,
 )
 def _get_event_base_rates(ctx: ToolContext, a: EventRatesArgs) -> dict:
+    """POST-PROBE DESIGN (owner's fmp_check, 2026-08-18): past calendar
+    windows are PAYWALLED on his tier; the forward window answers. So past
+    events come from the earnings_observed store — dates KUBERA recorded
+    BEFORE they happened — and every call here also fetches the forward
+    window to keep that store growing. No paywalled request is ever made."""
     from datetime import timedelta as _td
+    from types import SimpleNamespace
 
     from analysis.event_rates import compute_event_base_rates
+    from data.earnings_store import record_calendar, stored_events
 
-    if ctx.fmp is None:
-        raise ToolError(
-            "earnings history needs FMP (FMP_API_KEY in .env) — the probe-"
-            "verified free tier answers the calendar; run scripts/fmp_check.py")
+    db = ctx.require("db")
     market: MarketDataClient = ctx.require("market")
     symbol = a.symbol.upper()
-
     today = market_today()
-    cal = ctx.fmp.earnings_calendar(today - _td(days=365 * a.years), today)
-    events = [e for e in cal.events if e.symbol == symbol and e.date <= today]
+
+    fetch_note = None
+    if ctx.fmp is not None:
+        try:  # forward window: the shape the probe verified — and feed the store
+            cal = ctx.fmp.earnings_calendar(today, today + _td(days=90))
+            record_calendar(db, cal)
+        except FmpError as e:
+            fetch_note = f"forward calendar fetch failed ({e}) — stored history still used"
+    else:
+        fetch_note = "FMP not configured — stored history only, store not refreshed"
+
+    past = [SimpleNamespace(date=_dt_date.fromisoformat(r.event_date),
+                            time_hint=r.time_hint,
+                            eps_actual=r.eps_actual,
+                            eps_estimated=r.eps_estimated)
+            for r in stored_events(db, symbol)
+            if _dt_date.fromisoformat(r.event_date) <= today]
+    events = [e for e in past if e.date >= today - _td(days=365 * a.years)]
+
     if not events:
         raise ToolError(
-            f"no past earnings dates for '{symbol}' in the last {a.years} "
-            f"year(s) of the FMP calendar ({len(cal.events)} rows total; "
-            f"{len(cal.unparsed)} unparsed). If this symbol clearly reports "
-            "earnings, the calendar window may be the issue — see "
-            "scripts/fmp_check.py's past-window probe.")
+            f"no OBSERVED past earnings dates for '{symbol}' yet. His tier's "
+            "past calendar is paywalled (probe 2026-08-18), so history "
+            "accumulates from the forward window as quarters pass — dates "
+            "recorded so far are in earnings_observed. "
+            + (fetch_note or "The store was refreshed on this call."))
 
     bars = market.get_daily_bars(symbol, days=365 * a.years + 40)
     if len(bars.bars) < 30:
@@ -2299,10 +2324,14 @@ def _get_event_base_rates(ctx: ToolContext, a: EventRatesArgs) -> dict:
 
     rates = compute_event_base_rates(
         symbol, events,
-        [b.date.date() if hasattr(b.date, "date") else b.date for b in bars.bars],
+        # DailyBar.date is a "YYYY-MM-DD" STRING (market_data contract) —
+        # the store tests caught the unconverted version comparing str to date.
+        [_dt_date.fromisoformat(str(b.date)[:10]) for b in bars.bars],
         [b.close for b in bars.bars])
-    out = asdict(rates)
-    out["calendar_unparsed"] = len(cal.unparsed)
+    out: dict[str, Any] = asdict(rates)
+    out["fetch_note"] = fetch_note
+    out["history_source"] = ("earnings_observed store (self-accumulated — "
+                             "past FMP windows are paywalled on this tier)")
     out["asof"] = bars.asof.isoformat()
-    out["source"] = f"fmp-free calendar + {bars.source} bars"
+    out["source"] = f"earnings_observed + {bars.source} bars"
     return out

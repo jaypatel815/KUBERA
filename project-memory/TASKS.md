@@ -55,9 +55,35 @@ currently RED — see I018, which needs the failing log.)
   ignores the OPEN gap — gap-and-fade days read as small moves; daily bars
   cannot separate the gap without opens threaded through, noted as a
   future enrichment, not silently approximated.
-  Owner check: run the updated scripts/fmp_check.py once — the
-  "earnings calendar (past)" row decides whether beat/miss lights up or
-  stays "unknown"-only.
+  OWNER PROBE ANSWERED (2026-08-18, same session): **past calendar windows
+  PAYWALLED** on his tier — the forward window answers, history does not.
+  REDESIGNED against the measurement (build delta, new SHA):
+  (1) earnings_observed table (alembic 9d1c5b3fa284, revises 4f8e2a917c66,
+  single head) — every forward-window fetch RECORDS what it saw BEFORE it
+  happens; dedupe per (symbol, event_date); a later fetch carrying
+  eps_actual/hint BACKFILLS the row (reports linger in the visible window
+  briefly after they land). (2) data/earnings_store.py: record_events /
+  record_calendar (best-effort BY CONTRACT — returns 0 on any failure,
+  never breaks a brief) / stored_events. (3) get_event_base_rates now reads
+  PAST events from the store, fetches ONLY the forward window (the probe-
+  verified shape — no paywalled request is ever made), and feeds the store
+  on every call; empty store → named error explaining the paywall reality
+  and that history accumulates as quarters pass. (4) morning brief's
+  earnings section + get_earnings_calendar tool also feed the store — three
+  growth paths. The past assembles itself; base rates go live once 4+
+  observed dates for a symbol have passed.
+  DELTA EVIDENCE: 6 new tests in test_earnings_store.py (dedupe +
+  actual-backfill, best-effort never raises, ordering, tool-from-store
+  without FMP, empty-store paywall-naming error, forward fetch feeding the
+  store with future dates) + the 9 event_rates tests unchanged; migration
+  applies on scratch DB; ruff clean; pyrefly exactly 1 after annotating
+  fetch_note (canary caught the dict-literal inference again); gate PASS.
+  DELTA D028: the store tests EXPOSED A LATENT BUG in the first commit —
+  DailyBar.date is a "YYYY-MM-DD" STRING and my str-vs-date comparison
+  would have crashed the tool on its first real run; fixed and the
+  conversion commented. Follow-up filed as T083b (below): SEC EDGAR 8-K
+  dates as the fast-history option — free, no key, authoritative — gated
+  on its own probe per D030.
 - **T066 (trade coaching: pre/post-trade reviews, persisted — D014) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 1f6014c)**. Composition, not new math —
   the coaching layer judges a trade against modules that already exist.
   Built: (1) analysis/coaching.py (pure) — compose_pre_trade_review: a
@@ -725,10 +751,20 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   --notify toast get it for free. 3 tests (drift/quiet/cannot-judge).
 - [ ] T087 — Open-trade monitor (owner Q&A; deps T074/T082/T036): watch held positions during RTH — alert when session RVOL collapses under a breakout thesis, VWAP churn rises, exit-plan invalidation approaches/hits, or the event guard window opens; Windows toast + Orb surface v1, voice barge-in with T074. Advisory only — execution stays in the loop's rails.
 - [ ] (advisory note for T077b/T085) Fractional-Kelly sizing VIEW from T077 win-rate/payoff — advisory-only, capped, never autopilot; single-trade "probability of profit" remains rejected per D017.
-- [x] T083 — built 2026-08-18, see Awaiting review at top. (Briefing-side
-  surfacing deferred: the chat tool answers the question directly; wiring a
-  base-rates line into the morning brief's earnings_risk section is a small
-  follow-up once the past-window probe confirms the data shape.)
+- [x] T083 — built 2026-08-18, see Awaiting review at top. Post-probe
+  redesign: past FMP windows are PAYWALLED on the owner's tier, so history
+  self-accumulates in earnings_observed from the working forward window
+  (three feed paths: base-rates tool, calendar tool, morning brief).
+- [ ] T083b — Fast earnings history via SEC EDGAR (D030-gated): 8-K filing
+  dates (item 2.02) are free, keyless, and authoritative — they would give
+  T083 years of past dates immediately instead of accumulating quarter by
+  quarter. Requires its OWN probe first (a small edgar_check.py: fetch one
+  company's 8-K index, measure shape + rate limits + terms) — no code
+  against an unobserved API (T102/D030). Note: EDGAR gives DATES (and
+  precise acceptance TIMES — better than bmo/amc hints); beat/miss still
+  needs estimates, so splits stay "unknown" for EDGAR-sourced dates unless
+  paired with stored estimates. The moves themselves — the core of "should
+  I hold through earnings" — need no estimates at all.
 - [ ] T084 — Transcripts & filings as labeled CONTEXT (D019; gated on T023 tier check): fetch earnings-call transcripts, summarize via the EXISTING LLM layer (tone/guidance as narration of a document, clearly labeled qualitative context — never a priced signal); 10-K/10-Q YoY textual-change ("Lazy Prices") recorded as a Phase 7 research-agent candidate via SEC EDGAR through §7.7, human-gated. No FinBERT now.
 - [x] T016a — Schwab read-only client + transaction mapping — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `backend/data/schwab.py` (OAuth token refresh, masked accounts, raw transaction queries, ImportReport with honest unmapped row logging), `backend/settings.py` (schwab_* settings and require_schwab), `.env.example`, `scripts/schwab_auth.py`, `scripts/reconcile_schwab.py`, `scripts/env_check.py`, and `backend/tests/test_schwab.py` (19 unit tests).

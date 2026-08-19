@@ -171,7 +171,7 @@ def _events_section(fred) -> dict:
         return {"upcoming": [], "note": f"event calendar unavailable: {e}"}
 
 
-def _earnings_section(fmp, held_symbols: set[str], horizon_days: int = 14) -> dict:
+def _earnings_section(fmp, held_symbols: set[str], horizon_days: int = 14, db=None) -> dict:
     """T023: upcoming earnings for HELD symbols. No FMP client (or any failure)
     degrades to a note — an earnings date the brief cannot fetch must never
     become an earnings date the brief pretends does not exist silently."""
@@ -184,6 +184,10 @@ def _earnings_section(fmp, held_symbols: set[str], horizon_days: int = 14) -> di
     try:
         today = market_today()  # T111: at 11 PM ET, UTC is already tomorrow
         cal = fmp.earnings_calendar(today, today + timedelta(days=horizon_days))
+        # T083: feed the observed-history store — every morning brief grows
+        # the past that the paywalled FMP windows cannot supply.
+        from data.earnings_store import record_calendar
+        record_calendar(db, cal)
         mine = [
             {"symbol": e.symbol, "date": e.date.isoformat(),
              "time_hint": e.time_hint, "eps_estimated": e.eps_estimated}
@@ -211,7 +215,7 @@ def compose_morning_brief(db: Session, alpaca: AlpacaClient,
         "symbols": [_symbol_read(market, s) for s in symbols],
         "watchlist": _watchlist_section(db, market),
         "event_risk": _events_section(fred),
-        "earnings_risk": _earnings_section(fmp, held),
+        "earnings_risk": _earnings_section(fmp, held, db=db),
         "notes": PENDING_NOTES,
         "source": acct.source,
     }
