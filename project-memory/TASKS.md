@@ -60,7 +60,12 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   real answer arrives when the owner reruns edgar_check.py; the unit tests
   pin the parse rule, not the network truth. NEXT after owner paste: T084
   build decision reads the press-release-exhibit line.
-  OWNER ACTION: rerun `python scripts\edgar_check.py` and paste the table.
+  OWNER RAN IT 2026-08-19 — ALL GREEN, same session: filing index OK (17
+  files, accession 0000320193-26-000018), primary aapl-20260730.htm 38,350
+  bytes, press-release exhibit a8-kex991q3202606272026.htm **173,484 bytes
+  — free earnings TEXT confirmed from the owner's machine**. The T084
+  backlog entry now carries the answered gate + the ex99.1-is-not-call-Q&A
+  scope note. Step 5's parse rule met reality and held (D030 closed loop).
 - **T110a (holdout custody + experiment budgets — Phase 7 preconditions) —
   AWAITING REVIEW 2026-08-19 (Claude/Cowork)**. backend/research/ (new
   package, nothing reachable from chat/loop): custody.py one-way state
@@ -649,7 +654,7 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [x] T083b — built 2026-08-18 (probe ALL GREEN same day), see Awaiting
   review at top. Years of earnings history now arrive instantly; real
   acceptance clocks replace bmo/amc guesses.
-- [ ] T084 — Transcripts & filings as labeled CONTEXT (D019; gated on T023 tier check): fetch earnings-call transcripts, summarize via the EXISTING LLM layer (tone/guidance as narration of a document, clearly labeled qualitative context — never a priced signal); 10-K/10-Q YoY textual-change ("Lazy Prices") recorded as a Phase 7 research-agent candidate via SEC EDGAR through §7.7, human-gated. No FinBERT now.
+- [ ] T084 — Earnings TEXT as labeled CONTEXT (D019/D034; GATE ANSWERED by owner probe 2026-08-19): FMP transcripts are PAYWALLED, but the owner-run T084a probe measured the free substitute — exhibit 99.1 (the press release) in the earnings 8-K accession: AAPL 2026-07-30 → 173,484 bytes of free HTML (primary doc 38,350 bytes; 17 files in the accession). SCOPE HONESTY: ex99.1 is the COMPANY'S release (results, guidance language, management quotes) — it is NOT the call Q&A; "what management answered analysts" stays unavailable until a paid tier (D034 upgrade-day item). v1 design: EdgarClient gains fetch of the ex99.1 doc for a symbol's latest earnings 8-K, summarize via the EXISTING LLM layer, clearly labeled qualitative context — never a priced signal. 10-K/10-Q YoY textual-change ("Lazy Prices") stays a Phase 7 research-agent candidate via §7.7, human-gated. No FinBERT.
 - [x] T016a — Schwab read-only client + transaction mapping — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `backend/data/schwab.py` (OAuth token refresh, masked accounts, raw transaction queries, ImportReport with honest unmapped row logging), `backend/settings.py` (schwab_* settings and require_schwab), `.env.example`, `scripts/schwab_auth.py`, `scripts/reconcile_schwab.py`, `scripts/env_check.py`, and `backend/tests/test_schwab.py` (19 unit tests).
   REVIEW VERDICT: PASS. (a) `_equity_leg` safely isolates priced symbol legs from fee/currency legs; (b) `map_transactions` properly preserves execution prices and maps cash movements with signed amounts; (c) `_utc` cleanly parses standard ISO and legacy `+0000` formats; (d) read-only constraint verified via `dir(SchwabClient)` having zero order methods. Gate PASS (728 passed).

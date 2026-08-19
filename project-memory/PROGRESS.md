@@ -23,6 +23,12 @@ NEXT: T084a (EDGAR filing-document probe), then T074a (realtime-voice research).
 D028: isolation boundary + adversarial probe stay split to T110b — a
 half-built sandbox boundary is worse than a named absence.
 
+ALSO 2026-08-19 — OWNER RAN edgar_check.py (with T084a's step 5): ALL
+GREEN. Press-release exhibit ex99.1 = 173,484 bytes FREE (AAPL 2026-07-30,
+accession 0000320193-26-000018). T084 gate ANSWERED: earnings release text
+comes free from EDGAR; call Q&A stays paywalled (D034 upgrade item). T084
+backlog entry updated with the v1 design + scope honesty.
+
 ALSO 2026-08-19 — T074a: realtime-voice research → docs/research/
 realtime-voice-2026-08-19.md. Decision: Pipecat (local transports, kokoro
 documented, $0/min) pending T074b spike; OpenAI Realtime rejected on
