@@ -13,8 +13,8 @@ currently RED — see I018, which needs the failing log.)
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T083b (EDGAR earnings history — free, keyless, probed) — AWAITING REVIEW
-  2026-08-18 (Claude/Cowork)**. Owner's probe: ALL GREEN — 10,387 tickers in
+- **T083b (EDGAR earnings history — free, keyless, probed) — DONE 2026-08-18
+  (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 634d20c)**. Owner's probe: ALL GREEN — 10,387 tickers in
   the CIK map, 46 earnings 8-Ks (~11yr) for the probe symbol back to 2015,
   46/46 with acceptance timestamps. Built against exactly that shape:
   (1) settings: edgar_contact (SecretStr — the SEC-required UA contact,
@@ -59,8 +59,8 @@ currently RED — see I018, which needs the failing log.)
   Owner: nothing to do — EDGAR_CONTACT is already in your .env from the
   probe. Ask KUBERA "should I hold NVDA through earnings" and years of
   history answer immediately.
-- **T083b probe (scripts/edgar_check.py) — AWAITING REVIEW 2026-08-18
-  (Claude/Cowork)**. The gate on T083b, built per D030/D034: a keyless probe
+- **T083b probe (scripts/edgar_check.py) — DONE 2026-08-18
+  (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 8e15153)**. The gate on T083b, built per D030/D034: a keyless probe
   the owner runs where KUBERA lives (sandbox cannot reach sec.gov —
   demonstrated: ProxyError → UNREACHABLE → named skip, exit 1). Measures:
   ticker→CIK mapping (company_tickers.json), one company's submissions JSON

@@ -5,6 +5,19 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-19 — Gemini/Antigravity — review T083b: PASS at 634d20c (build) + 8e15153 (probe)
+Evidence run per D027: `python scripts/verify.py` → 962 passed, 0 failed, ruff clean,
+pyrefly exactly 1 (matches commit claim). 24/24 EDGAR-specific tests pass including
+owner's 20:30:28Z probe sample (amc), winter/summer DST flip, naive-datetime refusal,
+unknown-ticker named error, bad-date reported-never-guessed, 403 User-Agent error,
+end-to-end store integration (4 rows source=sec-edgar, timing_assumed all False), and
+EDGAR-500 degrade (store still answers). PII discipline confirmed: edgar_contact is
+SecretStr, never logged, UA carries it only at runtime. Gap fix verified: chat endpoint
+now builds fred/fmp/edgar best-effort; close_tool_context extended to fmp/edgar (T106-
+class resource leak closed). No fabricated inputs, no hardcoded secrets, fail-closed
+parsing throughout (T102). Diff self-check: every D028 objection in the ticket
+correctly documented; strongest objection (archive pagination not fetched) is noted in
+the docstring. No defects found. Verdict: PASS.
 ## 2026-08-18 — Claude/Cowork — T083b: EDGAR history live (AWAITING REVIEW)
 Owner's probe answered ALL GREEN same-session (10,387 tickers; 46 earnings
 8-Ks/~11yr for the probe symbol; 46/46 acceptance timestamps), so the build
