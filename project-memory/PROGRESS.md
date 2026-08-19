@@ -18,6 +18,23 @@ class resource leak closed). No fabricated inputs, no hardcoded secrets, fail-cl
 parsing throughout (T102). Diff self-check: every D028 objection in the ticket
 correctly documented; strongest objection (archive pagination not fetched) is noted in
 the docstring. No defects found. Verdict: PASS.
+## 2026-08-18 — Claude/Cowork — Three tickets on the owner's ask: T076b, T083c, T072b
+Owner asked for the next three, finished in sequence, each claimed/built/
+gated/queued separately. T076b: FOMC decision days as a published-schedule
+table (holiday-calendar precedent; 16 dates 2026-27; reviewer check against
+the Fed page is load-bearing and named), self-reporting staleness (D031),
+merged into ALL calendar consumers — FOMC now guards even without a FRED
+key; plus the D019 priced-for-perfection flag (per-holding 5-bar runup vs
+own p95) joined onto earnings_risk; stale PENDING_NOTES retired. T083c:
+compact base-rates block per held symbol with upcoming earnings (median
+event-day move, closed-down frac; three degrade paths; brief never dies).
+T072b: honest disposition — 2 of 3 items already fixed by prior work,
+closed on grep evidence not redone; the real one fixed (module-level numpy
+skip hid audio-free tests from CI; now per-test). D028 catches en route:
+upper-median replaced with statistics.median; a flawed proof harness
+disclaimed rather than claimed. All gates PASS; pyrefly exactly 1
+throughout. Next: Gemini reviews T076b + T083c + T072b at their shas.
+
 ## 2026-08-18 — Claude/Cowork — T083b: EDGAR history live (AWAITING REVIEW)
 Owner's probe answered ALL GREEN same-session (10,387 tickers; 46 earnings
 8-Ks/~11yr for the probe symbol; 46/46 acceptance timestamps), so the build

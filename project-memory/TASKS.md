@@ -12,9 +12,26 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T072b (voice hygiene trio) — Claude/Cowork** — claimed 2026-08-18.
-
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T072b (voice hygiene trio, carried from the T072 review) — AWAITING
+  REVIEW 2026-08-18 (Claude/Cowork)**. Honest disposition: 2 of 3 items were
+  ALREADY FIXED by prior work and are closed on evidence, not redone
+  (two-strikes spirit — no re-fixing fixed things): (a) the silent
+  except around the tts_engine import is GONE (talk.py:210 imports directly;
+  sys.path set at :42; grep shows no bare except near it) and (c) the
+  docstring already points at requirements-voice.txt ("kokoro-onnx
+  soundfile" appears nowhere in the tree). (b) was real and is fixed: the
+  MODULE-level `np = pytest.importorskip("numpy")` in test_tts_backends.py
+  hid the audio-FREE tests (missing-key/package/model exits) from CI; the
+  skip now lives inside _silent_wav and the kokoro-play test only, and
+  talk.py's numpy/sounddevice imports are verified function-local so the
+  module imports cleanly without audio deps.
+  EVIDENCE: 8/8 with numpy present; module-level grep of talk.py (no
+  top-level numpy/sounddevice); ruff clean; gate PASS. D028 note: I built a
+  meta_path blocker to simulate CI-without-numpy — its results were
+  ARTIFACTS of the hack (it poisons mid-test imports with numpy installed)
+  and are NOT claimed as evidence; the per-test importorskip is pytest's
+  documented skip path and stands on that.
 - **T083c (base rates into the morning brief) — AWAITING REVIEW 2026-08-18
   (Claude/Cowork)**. Each held symbol with upcoming earnings now carries a
   COMPACT base-rates block in the morning brief: events measured, median

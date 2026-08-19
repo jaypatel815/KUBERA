@@ -12,7 +12,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-np = pytest.importorskip("numpy")
+# numpy is skipped INSIDE the tests that synthesize audio (T072b): a
+# module-level importorskip hid the audio-FREE tests (missing-key /
+# missing-package / missing-model exits) from CI, where numpy is absent.
 
 # talk.py lives in scripts/ and is not a package — import it by path.
 SCRIPTS_DIR = Path(__file__).resolve().parents[2] / "scripts"
@@ -32,6 +34,7 @@ def _import_talk(extra_mods: dict | None = None):
 
 def _silent_wav(duration_samples: int = 800, rate: int = 16_000) -> bytes:
     """Return a minimal silent WAV that soundfile can round-trip."""
+    np = pytest.importorskip("numpy")
     sf = pytest.importorskip("soundfile")
     samples = np.zeros(duration_samples, dtype=np.float32)
     buf = io.BytesIO()
@@ -127,6 +130,7 @@ def test_openai_speaker_playback_error_does_not_raise(monkeypatch):
 
 def _fake_kokoro_module() -> tuple[types.ModuleType, MagicMock]:
     """Return (kokoro_onnx module, the Kokoro instance mock)."""
+    np = pytest.importorskip("numpy")
     samples = np.zeros(800, dtype=np.float32)
     instance = MagicMock()
     instance.create.return_value = (samples, 24_000)
