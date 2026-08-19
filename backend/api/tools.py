@@ -1581,8 +1581,26 @@ def _get_portfolio_risk(ctx: ToolContext, p: PortfolioRiskArgs) -> dict:
             c = pearson(rets[a][-n:], rets[b][-n:])
             corr[i][j] = corr[j][i] = c
     risk = portfolio_risk(symbols, weights, vols, corr)
+
+    # T065: sector exposure — measurement only, best-effort (FMP profile,
+    # probe-verified). No fmp client or any failure degrades to a note.
+    sector_block: dict | None = None
+    if ctx.fmp is not None:
+        from analysis.sector_exposure import sector_exposure
+        try:
+            positions = [(v.symbol, v.market_value) for v in held.positions]
+            sectors = {sym: ctx.fmp.profile_sector(sym)
+                       for sym, _ in positions}
+            sector_block = asdict(sector_exposure(positions, sectors))
+        except FmpError as e:
+            sector_block = {"available": False, "why": str(e)}
+    else:
+        sector_block = {"available": False,
+                        "why": "FMP not configured — sector data needs it"}
+
     return {
         **asdict(risk),
+        "sector_exposure": sector_block,
         "warnings": risk.warnings + warnings,
         "window_days_requested": p.days,
         "asof": datetime.now(timezone.utc).isoformat(),

@@ -91,6 +91,9 @@ class RiskEngine:
     _tripped: bool = False
     _trip_reason: str | None = None
     _lockout_until: datetime | None = None
+    # T065: owner-disabled symbols — BUYS refused, sells always allowed
+    # (reducing risk is never blocked). Persisted with the rest of the state.
+    _disabled_symbols: frozenset[str] = frozenset()
 
     # -- state ---------------------------------------------------------------
 
@@ -113,6 +116,16 @@ class RiskEngine:
     @property
     def day_start_equity(self) -> float | None:
         return self._day_start_equity
+
+    @property
+    def disabled_symbols(self) -> frozenset[str]:
+        return self._disabled_symbols
+
+    def set_disabled_symbols(self, symbols) -> None:
+        """T065: replace the disabled set (upper-cased). The CLI and
+        persistence layer are the only intended callers — chat cannot reach
+        this (no tool exposes it; changing a rail stays a deliberate act)."""
+        self._disabled_symbols = frozenset(str(s).upper() for s in symbols if s)
 
     def restore(
         self,
@@ -202,6 +215,13 @@ class RiskEngine:
             reasons.append(f"est_price must be > 0, got {order.est_price}")
         if portfolio_equity <= 0:
             reasons.append(f"portfolio equity must be > 0, got {portfolio_equity}")
+
+        if not reasons and order.side == "buy" and \
+                order.symbol.upper() in self._disabled_symbols:
+            reasons.append(
+                f"{order.symbol.upper()} is DISABLED for new buys "
+                "(scripts/risk_symbols.py --enable to lift; sells were never "
+                "blocked — reducing risk is always allowed)")
 
         if not reasons and order.side == "buy":
             projected = current_position_value + order.notional

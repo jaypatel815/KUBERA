@@ -155,6 +155,16 @@ class FmpClient:
                               {"symbol": symbol.upper(), "limit": limit},
                               "balance-sheet-statement")
 
+    def profile_sector(self, symbol: str) -> str | None:
+        """Sector from /stable/profile (probe-verified). None when absent —
+        the caller groups it as 'unknown', never guesses (T065)."""
+        data = self._get_list("/stable/profile", {"symbol": symbol.upper()},
+                              "profile")
+        if not data or not isinstance(data[0], dict):
+            return None
+        sector = data[0].get("sector")
+        return str(sector).strip() if sector and str(sector).strip() else None
+
     def profile_market_cap(self, symbol: str) -> float | None:
         """Market cap from /stable/profile (probe-verified). None when the
         payload lacks a usable number — reported by the caller, never guessed."""

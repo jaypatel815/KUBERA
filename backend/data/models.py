@@ -216,6 +216,8 @@ class RiskState(Base):
     tripped: Mapped[bool] = mapped_column(Boolean, default=False)
     trip_reason: Mapped[str | None] = mapped_column(String(512), default=None)
     lockout_until: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
+    # T065: owner-disabled symbols (JSON list) — buys refused, sells exempt.
+    disabled_symbols_json: Mapped[str] = mapped_column(String(2000), default="[]")
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 

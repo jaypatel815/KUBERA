@@ -4,6 +4,8 @@ One logical row (id=1). The paper loop restores before acting and persists after
 equity mark, so the database always reflects the latest engine state.
 """
 
+import json
+
 from sqlalchemy.orm import Session
 
 from data.models import RiskState, utcnow
@@ -24,6 +26,10 @@ def restore_risk_state(session: Session, engine: RiskEngine) -> bool:
         trip_reason=row.trip_reason,
         lockout_until=row.lockout_until,
     )
+    try:  # T065: disabled symbols ride the same row; a corrupt list is empty, loudly
+        engine.set_disabled_symbols(json.loads(row.disabled_symbols_json or "[]"))
+    except (ValueError, TypeError):
+        engine.set_disabled_symbols([])
     return True
 
 
@@ -37,5 +43,6 @@ def persist_risk_state(session: Session, engine: RiskEngine) -> None:
     row.tripped = engine.tripped
     row.trip_reason = engine.trip_reason
     row.lockout_until = engine.lockout_until
+    row.disabled_symbols_json = json.dumps(sorted(engine.disabled_symbols))
     row.updated_at = utcnow()
     session.commit()

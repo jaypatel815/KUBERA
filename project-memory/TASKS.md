@@ -12,9 +12,45 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T065 (sector exposure + disable-symbol control) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T065 (risk engine v2: sector exposure + symbol controls) — AWAITING
+  REVIEW 2026-08-19 (Claude/Cowork)**. All four sub-items dispositioned:
+  (1) SECTOR EXPOSURE — analysis/sector_exposure.py (pure): by-sector
+  weights, warning at 40% (tunable, commented), unknown-sector symbols
+  GROUPED AND NAMED never guessed, and an unknown top sector can never fire
+  the concentration warning (a data gap is not a measured concentration);
+  MEASUREMENT ONLY by design — hard sector caps are safety rails and arrive
+  only as owner-ratified limits (T061), stated in the payload note.
+  fmp.profile_sector (probe-verified endpoint) feeds it; get_portfolio_risk
+  gains sector_exposure best-effort (no fmp/failed fmp → available:false).
+  (2) DISABLE-SYMBOL CONTROL — RiskEngine gains _disabled_symbols; pre-trade
+  gate refuses BUYS for disabled symbols with a named reason, SELLS EXEMPT
+  (reducing risk is never blocked); persisted in risk_state
+  (disabled_symbols_json, alembic b7e4d2c8f1a5, single head) so a restart
+  cannot forget it (the T035 property extended, pinned in test); corrupt
+  JSON degrades to empty, never a crash; scripts/risk_symbols.py CLI
+  (--list/--disable/--enable) — deliberate typed act, NO chat tool exposes
+  it (a rail changed by conversation is the failure the tiers prevent).
+  (3) ORDER-FREQUENCY LIMIT — resolved-by-T055: max_trades_per_day already
+  enforces it in the loop; noted, not rebuilt. (4) CANCEL-ALL — deferred
+  WITH REASON: the paper loop places market orders only, nothing rests to
+  cancel; the control gets built the day resting orders exist (recorded in
+  the CLI docstring so the next reader knows why it is absent).
+  EVIDENCE (D027): 6 tests — 60/30/10 hand-computed weights with the 40%
+  warning and MYSTERY named; below-line quiet + unknown-top never warns;
+  empty book; buy-refused/sell-exempt/other-symbol-unaffected; restart
+  persistence round trip with a blocked buy on the fresh engine; corrupt
+  JSON → empty. 58 passed across all risk suites + paper loop (breaker
+  precedence intact); migration applies on scratch DB; ruff clean; pyrefly
+  exactly 1; full gate PASS.
+  D028 objections: (a) sector fetch is one FMP request per holding per call
+  — fine at his book size against 250/day, a cache is the obvious upgrade
+  if the book grows; (b) engine change is safety-critical — the diff is
+  eight lines in pre_trade_check, buys-only, and every existing risk test
+  still passes; reviewer should read that diff line by line; (c) FMP
+  sector taxonomy is FMP's, not GICS-official — labels are reported as
+  received.
 - **I032 (CI red since the uv cleanup — found and fixed) — AWAITING REVIEW
   2026-08-19 (Claude/Cowork)**. Took the standing "CI is RED, see I018" nag:
   reproduced CI conditions locally (.env hidden → 967 passed, suite clean),
