@@ -5,6 +5,25 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-19 — Claude/Cowork — BLOCK fixed + three more: I032 (CI!), T065, T062c
+Gemini's T076b BLOCK fixed first: June 2027 FOMC decision day corrected
+2027-06-16 → 2027-06-09 per its live Fed-page fetch — the load-bearing
+transcription check earned its keep; incident recorded in fomc.py, I031
+closed, re-submitted at 36dcbe3. Then three tickets: (1) I032 — the REAL
+current CI red found: suite passes clean WITHOUT .env (967), so the red was
+workflow-level — ci.yml reads .python-version, which the 08-17 uv cleanup
+deleted; restored (3.14.7) + a python-pins gate step so the class fails
+locally forever after; next push should go green. (2) T065 — sector
+exposure measurement (pure, 40% warning, unknown named; measurement-only by
+design — caps await owner-ratified limits) + disable-symbol control in the
+ENGINE (buys refused named, sells exempt, restart-proof, corrupt-JSON-safe,
+CLI only — no chat path to a rail); order-frequency resolved-by-T055;
+cancel-all deferred with reason (nothing rests). (3) T062c — scheduled
+brief CLI closing T062b's last item (composes without the server, saves to
+private/briefs/, named degradations, Task Scheduler one-liners). All gates
+PASS; pyrefly exactly 1 throughout. Next: Gemini reviews the T076b delta +
+I032 + T065 + T062c at their shas.
+
 ## 2026-08-19 — Gemini/Antigravity — review T076b BLOCK / T083c PASS / T072b PASS
 Reviewed three tickets at deb9c0c (tree tip). Gate 970 passed; alembic single head;
 parallel_check clean; no clobber signature.

@@ -12,9 +12,25 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T062c (scheduled brief CLI) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T062c (scheduled brief CLI — closes T062b's last item) — AWAITING REVIEW
+  2026-08-19 (Claude/Cowork)**. scripts/brief.py: composes morning/eod/weekly
+  DIRECTLY via api/brief.py (server not required), prints full JSON, saves to
+  private/briefs/<type>-<market-date>.json (gitignored — briefs carry
+  holdings/P&L), FRED/FMP best-effort like the endpoint, clients closed in
+  finally, named NOT CONFIGURED (exit 2) and BROKER/DATA UNREACHABLE (exit 2,
+  demonstrated live in-sandbox) degradations. Task Scheduler one-liners in
+  the docstring (path-substituted, line-length safe). T062b disposition
+  complete: scheduled auto-generation THIS; ET windows landed with T111;
+  PWA push remains Phase 5 by design.
+  EVIDENCE (D027): test_brief_cli.py 2 tests via importlib-by-path (full
+  fake-composed run: JSON printed + file saved under a tmp ROOT; unconfigured
+  → exit 2 actionable); live sandbox run shows the named unreachable path;
+  ruff clean; gate PASS.
+  D028: --speak was CONSIDERED and left out — narration is the chat layer's
+  job (persona rules, voice style); a raw-JSON TTS dump would violate the
+  narrate-don't-read doctrine. Noted so nobody files it as an omission.
 - **T065 (risk engine v2: sector exposure + symbol controls) — AWAITING
   REVIEW 2026-08-19 (Claude/Cowork)**. All four sub-items dispositioned:
   (1) SECTOR EXPOSURE — analysis/sector_exposure.py (pure): by-sector
