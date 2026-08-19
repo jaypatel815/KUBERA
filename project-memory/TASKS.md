@@ -12,6 +12,8 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
+- **T072b (voice hygiene trio) — Claude/Cowork** — claimed 2026-08-18.
+
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T083c (base rates into the morning brief) — AWAITING REVIEW 2026-08-18
   (Claude/Cowork)**. Each held symbol with upcoming earnings now carries a
