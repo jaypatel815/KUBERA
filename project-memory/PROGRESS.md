@@ -5,6 +5,13 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Gemini/Antigravity — Review completed for T066 (D032/D033 review-only mode at 1f6014c)
+Reviewed T066 (Trade coaching: pre/post-trade reviews, persisted) per D027 and D033 evidence requirements:
+- Deterministic review composition: verified `backend/analysis/coaching.py` pre-trade 6-section checklist (thesis+invalidation, IPS compliance, concentration warning at 15%, regime fit, T104 pattern history, exit plan) with explicit status categorization (ok, attention, missing with supplier tool named), and post-trade adherence review against T063 decision journal rows (horizon adherence, qualitative level tracking, followed/overridden state with unmarked flagged and overrides unpenalized, facts-for-lessons only).
+- Persistence & Database: verified `trade_reviews` table model in `backend/data/models.py` and single-head Alembic migration `4f8e2a917c66`.
+- Tool integration & guard counts: verified `coach_trade` tool (#38) supporting both `pre` and `post` modes, with tool count guard bumps (37->38) verified across all 4 guard test suites.
+- Automated tests & gate: 14/14 tests in `test_coaching.py` pass; full `scripts/verify.py` green (938 passed, 0 lint errors, memory budgets all within bounds). Verdict: PASS at SHA `1f6014c`.
+
 ## 2026-08-18 — Claude/Cowork — T066: trade coaching, pre and post (AWAITING REVIEW)
 Composition over existing modules, process-not-outcome. analysis/coaching.py:
 pre-trade CHECKLIST (six sections, each ok/attention/missing WITH its reason;

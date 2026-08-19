@@ -13,8 +13,7 @@ currently RED — see I018, which needs the failing log.)
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T066 (trade coaching: pre/post-trade reviews, persisted — D014) —
-  AWAITING REVIEW 2026-08-18 (Claude/Cowork)**. Composition, not new math —
+- **T066 (trade coaching: pre/post-trade reviews, persisted — D014) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 1f6014c)**. Composition, not new math —
   the coaching layer judges a trade against modules that already exist.
   Built: (1) analysis/coaching.py (pure) — compose_pre_trade_review: a
   CHECKLIST (not a composite score — a single number would launder judgement
@@ -66,6 +65,10 @@ currently RED — see I018, which needs the failing log.)
   by symbol+time only — a same-symbol re-entry within the window could
   join the wrong row; deterministic rule documented, refinement cheap if
   it ever misleads.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS (covering commit 1f6014c per D033)
+    aligned: Implements pre/post trade coaching with a 6-section checklist (thesis+invalidation, IPS fit, concentration friction at 15%, regime fit, T104 pattern history, exit-plan presence) and post-trade adherence checks against T063 decision journal rows; persists to `trade_reviews` table via single-head migration 4f8e2a917c66 and exposes coach_trade tool #38 with proper guard bumps.
+    checked: Validated commit 1f6014c: (1) `backend/analysis/coaching.py` pure composition for pre and post-trade reviews with explicit section statuses and supplier naming on missing inputs; (2) `trade_reviews` table model and Alembic migration `4f8e2a917c66` (single head verified); (3) `coach_trade` tool registration (#38) and guard count bumps in `test_tools.py`, `test_chat.py`, `test_claude_sdk.py`; (4) 14 unit and tool integration tests in `test_coaching.py` pass; (5) full verify gate `scripts/verify.py` green (938 passed, ruff clean, memory budgets within bounds).
+    concerns: none
 - **T067b (DQS v2 — score the OWNER's own trading) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at fdfe6e9)**. v1 scored the paper loop and said so; both of
   its stated prerequisites (broker-fill sync, decision journal) have landed,
   so v2 scores HIS record. Built backend/risk/owner_dqs.py (pure):
