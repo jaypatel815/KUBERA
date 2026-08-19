@@ -12,6 +12,10 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
+- **T083b build (EDGAR history client + integration) — Claude/Cowork** —
+  claimed 2026-08-18. Owner's probe: ALL GREEN (10,387 tickers; AAPL 46
+  earnings 8-Ks back to 2015; 46/46 acceptanceDateTime).
+
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T083b probe (scripts/edgar_check.py) — AWAITING REVIEW 2026-08-18
   (Claude/Cowork)**. The gate on T083b, built per D030/D034: a keyless probe
