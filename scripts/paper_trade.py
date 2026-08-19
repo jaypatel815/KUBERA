@@ -58,18 +58,27 @@ def main() -> int:
     risk = RiskEngine()  # per-process; trip state persistence is future work (see T032 notes)
 
     # T076: fetch the release calendar once at startup (dates don't move intraday).
+    # T076b: FOMC decision days come from the published table — no key needed,
+    # so the guard is NEVER fully off unless --no-event-guard says so.
     event_dates = None
     if not args.no_event_guard:
+        from analysis.fomc import fomc_staleness_note, with_fomc
+        from analysis.market_time import market_today
         try:
             from data.fred import FredClient  # noqa: PLC0415
             with FredClient() as fred:
-                event_dates = fred.release_calendar()
+                event_dates = with_fomc(fred.release_calendar())
             n = sum(len(v) for v in event_dates.values())
-            print(f"event guard armed: {n} release dates loaded "
-                  f"(window {args.event_window}d before CPI/NFP)")
+            print(f"event guard armed: {n} dates loaded "
+                  f"(window {args.event_window}d before CPI/NFP/FOMC)")
         except Exception as e:  # noqa: BLE001 — guard is optional, never fatal
-            print(f"event guard OFF ({type(e).__name__}: add FRED_API_KEY to "
-                  ".env to enable) — continuing without it")
+            event_dates = with_fomc(None)
+            print(f"CPI/NFP calendar OFF ({type(e).__name__}: add FRED_API_KEY "
+                  "to .env) — FOMC decision days still guard from the "
+                  "published table")
+        stale = fomc_staleness_note(market_today())
+        if stale:
+            print(f"NOTE: {stale}")
 
     while True:
         with AlpacaClient() as alpaca, MarketDataClient() as market, factory() as db:

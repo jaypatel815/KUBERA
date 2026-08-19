@@ -42,9 +42,7 @@ from risk.engine import RiskEngine
 from risk.persistence import restore_risk_state
 from risk.tiers import current_tier
 
-PENDING_NOTES = [
-    "FOMC meeting dates arrive with T076b (needs a source decision)",
-]
+PENDING_NOTES: list[str] = []  # T076b delivered the last standing note
 
 
 def _risk_section(db: Session, equity: float) -> dict:
@@ -103,6 +101,9 @@ def _symbol_read(market: MarketDataClient, symbol: str) -> dict:
             if levels.nearest_resistance else None)
     else:
         out["regime"] = None
+    # T076b: the 5-bar runup INTO today — the priced-for-perfection input.
+    out["runup_5d_frac"] = (closes[-1] / closes[-6] - 1.0
+                            if len(closes) >= 6 else None)
     try:
         em = expected_move(closes, dates, horizon_days=5)
         out["expected_move_5d"] = {
@@ -154,21 +155,31 @@ def _watchlist_section(db: Session, market: MarketDataClient) -> dict:
 def _events_section(fred) -> dict:
     """T062b/T076: upcoming scheduled releases. No FRED client or a calendar
     failure degrades to a note — the rest of the brief still delivers."""
-    if fred is None:
-        return {"upcoming": [],
-                "note": "event calendar off (add FRED_API_KEY to .env)"}
     from dataclasses import asdict as _asdict
 
     import httpx
 
     from analysis.events import upcoming_events
+    from analysis.fomc import fomc_staleness_note, with_fomc
     from data.fred import FredError
+
+    today = market_today()  # T111: market day
+    stale = fomc_staleness_note(today)
+    if fred is None:
+        # T076b: the FOMC table needs no key — decision days still guard.
+        events = upcoming_events(with_fomc(None), today)
+        return {"upcoming": [_asdict(e) for e in events],
+                "note": "CPI/NFP calendar off (add FRED_API_KEY to .env); "
+                        "FOMC dates from the published table" +
+                        (f" | {stale}" if stale else "")}
     try:
-        events = upcoming_events(fred.release_calendar(),
-                                 market_today())  # T111: market day
-        return {"upcoming": [_asdict(e) for e in events], "note": None}
+        events = upcoming_events(with_fomc(fred.release_calendar()), today)
+        return {"upcoming": [_asdict(e) for e in events], "note": stale}
     except (FredError, httpx.HTTPError) as e:
-        return {"upcoming": [], "note": f"event calendar unavailable: {e}"}
+        events = upcoming_events(with_fomc(None), today)
+        return {"upcoming": [_asdict(e) for e in events],
+                "note": f"CPI/NFP calendar unavailable: {e}; FOMC dates from "
+                        "the published table" + (f" | {stale}" if stale else "")}
 
 
 def _earnings_section(fmp, held_symbols: set[str], horizon_days: int = 14, db=None) -> dict:
@@ -207,15 +218,31 @@ def compose_morning_brief(db: Session, alpaca: AlpacaClient,
     positions = alpaca.get_positions()
     held = {p.symbol for p in positions}
     symbols = sorted(held | {"SPY"})
+    symbol_reads = [_symbol_read(market, s) for s in symbols]
+    earnings = _earnings_section(fmp, held, db=db)
+
+    # T076b: the priced-for-perfection join (D019). A held symbol reporting
+    # soon whose 5-bar runup already meets its own p95 expected 5-day move
+    # has paid for good news in advance — flagged, never predicted.
+    from analysis.fomc import priced_for_perfection
+    reads_by_symbol = {r["symbol"]: r for r in symbol_reads if r.get("available")}
+    for entry in earnings.get("upcoming", []):
+        read = reads_by_symbol.get(entry["symbol"])
+        if read is None:
+            continue
+        em = read.get("expected_move_5d") or {}
+        entry["priced_for_perfection"] = priced_for_perfection(
+            read.get("runup_5d_frac"), em.get("p95"))
+
     return {
         "type": "morning",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "account": {"equity": acct.equity, "cash": acct.cash, "asof": acct.asof.isoformat()},
         "risk": _risk_section(db, acct.equity),
-        "symbols": [_symbol_read(market, s) for s in symbols],
+        "symbols": symbol_reads,
         "watchlist": _watchlist_section(db, market),
         "event_risk": _events_section(fred),
-        "earnings_risk": _earnings_section(fmp, held, db=db),
+        "earnings_risk": earnings,
         "notes": PENDING_NOTES,
         "source": acct.source,
     }

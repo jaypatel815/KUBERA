@@ -37,6 +37,7 @@ from analysis.excursions_live import excursion_book, position_excursion
 from analysis.execution import ExecutionFill, execution_report
 from analysis.exit_plan import build_exit_plan
 from analysis.expected_move import bootstrap_paths, expected_move
+from analysis.fomc import with_fomc
 from analysis.goal_math import goal_scenarios
 from analysis.intraday import build_session_read
 from analysis.levels import find_levels
@@ -766,7 +767,7 @@ def _get_macro_context(ctx: ToolContext, _: NoArgs) -> dict:
     # Calendar failure degrades to a note; the core macro reads still deliver.
     try:
         events = [asdict(e) for e in upcoming_events(
-            fred.release_calendar(), market_today())]  # T111
+            with_fomc(fred.release_calendar()), market_today())]  # T111/T076b
         events_note = None
     except (FredError, httpx.HTTPError) as e:
         events, events_note = [], f"release calendar unavailable: {e}"
