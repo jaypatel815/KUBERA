@@ -347,3 +347,36 @@ class EarningsObserved(Base):
     eps_actual: Mapped[float | None] = mapped_column(Float, default=None)
     first_seen: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     source: Mapped[str] = mapped_column(String(24), default="fmp-free")
+
+
+class HoldoutWindow(Base):
+    """T110a — a reserved evaluation window under CUSTODY (D029): frozen at
+    definition (params_hash pins it), unlocked once by a deliberate act,
+    consumed by exactly one recorded evaluation. journal_json is append-only
+    history; nothing here is ever overwritten."""
+
+    __tablename__ = "holdout_windows"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), unique=True)
+    symbols_json: Mapped[str] = mapped_column(String(2000))
+    start: Mapped[str] = mapped_column(String(10))   # ISO date
+    end: Mapped[str] = mapped_column(String(10))
+    params_hash: Mapped[str] = mapped_column(String(16))
+    state: Mapped[str] = mapped_column(String(12), default="frozen")
+    result_summary: Mapped[str | None] = mapped_column(String(1000), default=None)
+    journal_json: Mapped[str] = mapped_column(String(4000), default="[]")
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
+class ExperimentBudget(Base):
+    """T110a — per-revision attempt budget (D029): set once BEFORE
+    experimenting, attempts append-only, failures included."""
+
+    __tablename__ = "experiment_budgets"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    revision: Mapped[str] = mapped_column(String(64), unique=True)
+    max_attempts: Mapped[int] = mapped_column(Integer)
+    attempts_json: Mapped[str] = mapped_column(String(8000), default="[]")
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)

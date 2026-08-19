@@ -31,13 +31,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
+import httpx  # noqa: E402
+
 from analysis.market_time import market_today  # noqa: E402
 from api.brief import (  # noqa: E402
     compose_eod_report,
     compose_morning_brief,
     compose_weekly_review,
 )
-from data.alpaca import AlpacaClient  # noqa: E402
+from data.alpaca import AlpacaClient, AlpacaError  # noqa: E402
 from data.db import make_engine, make_session_factory  # noqa: E402
 from data.market_data import MarketDataClient  # noqa: E402
 from settings import ConfigError, get_settings  # noqa: E402
@@ -77,9 +79,6 @@ def main() -> int:
     factory = make_session_factory(engine)
     fred, fmp = _optional_clients()
     try:
-        import httpx as _httpx
-
-        from data.alpaca import AlpacaError
         with AlpacaClient() as alpaca, factory() as session:
             if args.type == "morning":
                 with MarketDataClient() as market:
@@ -90,7 +89,7 @@ def main() -> int:
             else:
                 with MarketDataClient() as market:
                     payload = compose_weekly_review(session, alpaca, market)
-    except (AlpacaError, _httpx.HTTPError) as e:
+    except (AlpacaError, httpx.HTTPError) as e:
         print(f"BROKER/DATA UNREACHABLE — no brief composed\n  {type(e).__name__}: {e}")
         return 2
     finally:

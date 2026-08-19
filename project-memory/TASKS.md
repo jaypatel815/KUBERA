@@ -12,9 +12,45 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T110a (holdout custody + experiment budgets) — Claude/Cowork** — claimed 2026-08-19.
+- **T084a (EDGAR filing-document probe) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T110a (holdout custody + experiment budgets — Phase 7 preconditions) —
+  AWAITING REVIEW 2026-08-19 (Claude/Cowork)**. backend/research/ (new
+  package, nothing reachable from chat/loop): custody.py one-way state
+  machine FROZEN→UNLOCKED→CONSUMED for holdout_windows — freeze stamps
+  params_hash(symbols,start,end) so a redefined window is a NEW holdout;
+  unlock works ONCE on a frozen record ("no re-lock"); consume requires the
+  evaluated_hash to MATCH the frozen hash (proof the evaluation ran the
+  window as defined) and records the ONE result forever (second consume
+  refuses, citing the stored result); every transition appends to
+  journal_json (append-only history on the row). guarded_symbols() exposes
+  symbols under unconsumed custody — the enforcement hook T110b's isolation
+  boundary will consume. Budgets: open_budget once per revision BEFORE
+  experimenting (pre-registration; raise-mid-run refused by name),
+  record_attempt appends ok AND failed (failures count — the point), over-
+  budget refusal names the two-strikes rule. Models HoldoutWindow +
+  ExperimentBudget; migration c9f6e3a2d874 (upgrade/downgrade/re-upgrade
+  exercised on a scratch db).
+  EVIDENCE (D027): test_custody.py 7 tests — full lifecycle with journal
+  sequence asserted; EVERY refusal matched by name (re-freeze, consume-
+  while-frozen, double-unlock, wrong-hash, double-consume, ghost name,
+  empty symbols, inverted dates, budget re-open, zero budget, no-budget
+  attempt, over-budget); params_hash order/case-invariance + changed-window
+  inequality; guarded_symbols across freeze/unlock/consume. 982 passed;
+  pyrefly at the 1-error canary; gate PASS.
+  D028 notes: (1) the ticket's "build when Phase 7 opens" gate is READ as
+  "Phase 7 cannot START without these" — building the two pure-code
+  preconditions now means opening Phase 7 is never blocked on them; if the
+  reviewer reads the gate the other way, say so and this parks unreleased
+  (nothing imports it). (2) Isolation boundary + adversarial probe are
+  EXPLICITLY split to T110b — they need real sandboxing design, and a
+  half-built boundary would be worse than a named absence. (3) While at it:
+  pyrefly (3 errors vs canary 1) exposed MY T062c bug — brief.py imported
+  AlpacaError/_httpx INSIDE the try whose except tuple references them
+  (import failure would NameError and mask the original error); imports
+  moved to module level. That file was already REVIEWED at 05dfe35, so the
+  fix re-queues T062c as a DELTA under D033 — noted on its entry.
 - **T062c (scheduled brief CLI — closes T062b's last item) — AWAITING REVIEW
   2026-08-19 (Claude/Cowork)**. scripts/brief.py: composes morning/eod/weekly
   DIRECTLY via api/brief.py (server not required), prints full JSON, saves to
@@ -42,6 +78,11 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
       `private/briefs/` is properly handled/gitignored and Task Scheduler
       commands in docstring are path-substituted. Gate 978 passed.
     concerns: none. Narration belongs in chat layer; CLI JSON output is clean.
+  DELTA after that PASS (D033 — re-queued): pyrefly flagged brief.py's
+  except tuple referencing names imported INSIDE the same try (AlpacaError,
+  _httpx) — an import failure would NameError and mask the original error.
+  Imports moved to module level; behavior identical on the happy path.
+  Reviewer: `git log -1 -- scripts/brief.py` and re-sign at that SHA.
 - **T065 (risk engine v2: sector exposure + symbol controls) — AWAITING
   REVIEW 2026-08-19 (Claude/Cowork)**. All four sub-items dispositioned:
   (1) SECTOR EXPOSURE — analysis/sector_exposure.py (pure): by-sector

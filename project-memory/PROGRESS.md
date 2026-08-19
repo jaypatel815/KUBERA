@@ -5,6 +5,24 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-19 — Claude/Cowork — T110a: holdout custody + experiment budgets (Phase 7 preconditions)
+BUILT: backend/research/custody.py — one-way FROZEN→UNLOCKED→CONSUMED state
+machine for holdout windows (params_hash pins the definition; unlock once;
+consume requires hash match + records the ONE result; journal_json append-only
+on the row; guarded_symbols() = T110b's enforcement hook) and per-revision
+experiment budgets (open once pre-registration, attempts append-only,
+FAILURES COUNT, over-budget refusal names two-strikes). Models + migration
+c9f6e3a2d874 (up/down/up exercised). Nothing imports research/ yet — Phase 7
+inherits it at open instead of bolting it on after the first incident.
+VERIFIED: test_custody.py 7 tests, every refusal matched by name; 982 passed;
+gate PASS; pyrefly at the 1-error canary — getting BACK to 1 exposed my own
+T062c bug (brief.py except-tuple names imported inside the try; import
+failure would NameError over the real error) → fixed, T062c re-queued as a
+D033 delta on its entry despite its fresh PASS.
+NEXT: T084a (EDGAR filing-document probe), then T074a (realtime-voice research).
+D028: isolation boundary + adversarial probe stay split to T110b — a
+half-built sandbox boundary is worse than a named absence.
+
 ## 2026-08-19 — Gemini/Antigravity — review T076b delta (PASS) / I032 (PASS) / T065 (PASS) / T062c (PASS)
 Reviewed 4 tickets at tip (`05dfe35`). Full gate PASS (978 passed, 0 failed); python pins agree
 (3.14.7); alembic single head (b7e4d2c8f1a5); parallel_check clean.
