@@ -137,3 +137,43 @@ def test_tool_forward_fetch_feeds_the_store(db):  # noqa: F811
     assert out["fetch_note"] is None                        # fetch succeeded
     stored = stored_events(db, "AAPL")
     assert any(r.event_date == future for r in stored)      # store grew
+
+
+# ------------------------------------------- T083c: base rates in the brief
+
+def test_base_rates_summary_computes_and_degrades(db):  # noqa: F811
+    """4 stored past reactions -> compact summary (median, closed-down frac);
+    thin store -> available False with the EDGAR pointer."""
+    from api.brief import _base_rates_summary
+
+    today = date.today()
+    past = [today - timedelta(days=40 * (i + 1)) for i in range(4)]
+    record_events(db, [ev("AAPL", d, hint="bmo", actual=2.0, est=1.0)
+                       for d in past])
+    with bars_market() as m:
+        out = _base_rates_summary(db, m, "AAPL")
+    assert out["available"] is True
+    assert out["events_measured"] == 4
+    assert isinstance(out["median_event_day_move"], float)
+    assert 0.0 <= out["closed_down_frac"] <= 1.0
+    assert "not a prediction" in out["note"]
+
+    with bars_market() as m:
+        thin = _base_rates_summary(db, m, "MSFT")     # nothing stored
+    assert thin["available"] is False
+    assert "EDGAR backfills" in thin["why"]
+
+
+def test_base_rates_summary_never_raises(db):  # noqa: F811
+    """A broken market client degrades to a why — the brief must survive."""
+    from api.brief import _base_rates_summary
+
+    class Boom:
+        def get_daily_bars(self, *a, **k):
+            raise RuntimeError("feed down")
+
+    today = date.today()
+    record_events(db, [ev("AAPL", today - timedelta(days=40 * (i + 1)),
+                          hint="bmo") for i in range(4)])
+    out = _base_rates_summary(db, Boom(), "AAPL")
+    assert out["available"] is False and "RuntimeError" in out["why"]

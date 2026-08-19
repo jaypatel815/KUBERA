@@ -12,9 +12,19 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T083c (base rates into the morning brief) — Claude/Cowork** — claimed 2026-08-18.
-
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T083c (base rates into the morning brief) — AWAITING REVIEW 2026-08-18
+  (Claude/Cowork)**. Each held symbol with upcoming earnings now carries a
+  COMPACT base-rates block in the morning brief: events measured, median
+  event-day move, closed-down fraction, "not a prediction" note (full splits
+  stay in the get_event_base_rates tool). _base_rates_summary reads the
+  observed store + 800d bars; degrades three ways (no db / under MIN_EVENTS
+  with the EDGAR pointer / any exception → available:false with the type
+  name — the brief NEVER dies for a base-rates problem).
+  EVIDENCE: 2 tests (compute + thin-store degrade; broken-market survive);
+  18 passed across store+brief suites; ruff clean; pyrefly exactly 1; gate
+  PASS. D028: my first median was sorted()[n//2] — the upper median on even
+  counts; replaced with statistics.median before commit.
 - **T076b (FOMC dates + priced-for-perfection — D016/D019) — AWAITING REVIEW
   2026-08-18 (Claude/Cowork)**. All three halves resolved: (1) FOMC DATES —
   source decision made per D034 free-first: the Fed's PUBLISHED calendar as

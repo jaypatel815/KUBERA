@@ -212,6 +212,59 @@ def _earnings_section(fmp, held_symbols: set[str], horizon_days: int = 14, db=No
         return {"upcoming": [], "note": f"earnings calendar unavailable: {e}"}
 
 
+def _base_rates_summary(db: Session | None, market: MarketDataClient,
+                        symbol: str) -> dict:
+    """T083c — a COMPACT hold-through-earnings read for one held symbol.
+
+    Full detail lives in the get_event_base_rates tool; the brief carries the
+    headline: how many past reactions are on record, the median event-day
+    move, and how often the reaction day closed down. Degrades to a why —
+    a missing history is information, not an error (the T062 rule)."""
+    if db is None:
+        return {"available": False, "why": "no db in this brief context"}
+    from datetime import date as _date
+
+    from analysis.event_rates import MIN_EVENTS, compute_event_base_rates
+    from data.earnings_store import stored_events
+    try:
+        rows = stored_events(db, symbol)
+        today = market_today()
+        past = [type("E", (), {
+            "date": _date.fromisoformat(r.event_date),
+            "time_hint": r.time_hint,
+            "eps_actual": r.eps_actual,
+            "eps_estimated": r.eps_estimated,
+        })() for r in rows if _date.fromisoformat(r.event_date) <= today]
+        if len(past) < MIN_EVENTS:
+            return {"available": False,
+                    "why": f"{len(past)} observed past reaction(s) — base "
+                           f"rates need {MIN_EVENTS} (EDGAR backfills on the "
+                           "next get_event_base_rates call)"}
+        bars = market.get_daily_bars(symbol, days=800)
+        rates = compute_event_base_rates(
+            symbol, past,
+            [_date.fromisoformat(str(b.date)[:10]) for b in bars.bars],
+            [b.close for b in bars.bars])
+        if rates.verdict != "rates":
+            return {"available": False, "why": rates.note}
+        from statistics import median as _median
+        moves = [r.event_day_move for r in rates.reactions]
+        down = sum(1 for m in moves if m < 0)
+        mid = _median(moves)
+        return {
+            "available": True,
+            "events_measured": rates.events_measured,
+            "median_event_day_move": round(mid, 4),
+            "closed_down_frac": round(down / len(moves), 3),
+            "note": "base rates from this symbol's own history — description "
+                    "of the past, not a prediction (full split: "
+                    "get_event_base_rates)",
+        }
+    except Exception as e:  # the brief never dies for a base-rates problem
+        return {"available": False,
+                "why": f"base rates unavailable ({type(e).__name__})"}
+
+
 def compose_morning_brief(db: Session, alpaca: AlpacaClient,
                           market: MarketDataClient, fred=None, fmp=None) -> dict:
     acct = alpaca.get_account()
@@ -233,6 +286,9 @@ def compose_morning_brief(db: Session, alpaca: AlpacaClient,
         em = read.get("expected_move_5d") or {}
         entry["priced_for_perfection"] = priced_for_perfection(
             read.get("runup_5d_frac"), em.get("p95"))
+        # T083c: how THIS symbol historically reacted to earnings — base
+        # rates from the observed store (EDGAR + accumulated FMP dates).
+        entry["base_rates"] = _base_rates_summary(db, market, entry["symbol"])
 
     return {
         "type": "morning",
