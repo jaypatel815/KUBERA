@@ -38,6 +38,10 @@ class EarningsEvent:
     eps_estimated: float | None
     revenue_estimated: float | None
     fiscal_ending: str | None
+    # T083: PAST calendar rows may carry the reported figure. None on future
+    # rows and whenever the field is absent — beat/miss then reads "unknown",
+    # never guessed.
+    eps_actual: float | None = None
 
 
 @dataclass(frozen=True)
@@ -80,6 +84,7 @@ def _parse_event(row: Any) -> EarningsEvent | dict:
         revenue_estimated=num("revenueEstimated", "revenueEstimate"),
         fiscal_ending=(str(row["fiscalDateEnding"])
                        if row.get("fiscalDateEnding") else None),
+        eps_actual=num("epsActual", "eps"),
     )
 
 

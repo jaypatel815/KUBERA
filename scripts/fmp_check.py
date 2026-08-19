@@ -41,6 +41,10 @@ PROBES = [
     ("balance sheet", "/stable/balance-sheet-statement", {"symbol": "AAPL", "limit": 1},
      "T023b debt ratios — the one statements endpoint the 2026-08-17 probe "
      "missed; briefing degrades with a note until this row reads OK"),
+    ("earnings calendar (past)", "/stable/earnings-calendar",
+     {"from": "2025-01-01", "to": "2025-03-31"},
+     "T083 base rates need HISTORICAL earnings dates (+ epsActual for "
+     "beat/miss); the 08-17 probe only asked for a future window"),
     ("analyst estimates", "/stable/analyst-estimates",
      {"symbol": "AAPL", "period": "annual", "page": 0, "limit": 1},
      "consensus estimates — commonly paid-tier"),

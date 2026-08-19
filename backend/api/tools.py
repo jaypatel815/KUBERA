@@ -2250,3 +2250,59 @@ def _coach_trade(ctx: ToolContext, a: CoachTradeArgs) -> dict:
     db.commit()
     payload2["persisted"] = True
     return payload2
+
+
+class EventRatesArgs(SymbolArgs):
+    years: int = Field(default=2, ge=1, le=5,
+                       description="How many years of past earnings to measure")
+
+
+@registry.tool(
+    "get_event_base_rates",
+    "Answer 'should I hold through earnings' with BASE RATES from this symbol's "
+    "own history — never a prediction: for each past earnings date, the "
+    "event-day move (after-close reports shift to the next bar), next-day "
+    "follow-through, and the 5-bar pre-event runup, split by beat/miss/unknown "
+    "with sample sizes on every figure. Says insufficient_history under 4 "
+    "measurable events. Narrate as description of the past ('6 of the last 8 "
+    "beats still closed down'), state the as-of dates, and never round a base "
+    "rate into a forecast.",
+    EventRatesArgs,
+)
+def _get_event_base_rates(ctx: ToolContext, a: EventRatesArgs) -> dict:
+    from datetime import timedelta as _td
+
+    from analysis.event_rates import compute_event_base_rates
+
+    if ctx.fmp is None:
+        raise ToolError(
+            "earnings history needs FMP (FMP_API_KEY in .env) — the probe-"
+            "verified free tier answers the calendar; run scripts/fmp_check.py")
+    market: MarketDataClient = ctx.require("market")
+    symbol = a.symbol.upper()
+
+    today = market_today()
+    cal = ctx.fmp.earnings_calendar(today - _td(days=365 * a.years), today)
+    events = [e for e in cal.events if e.symbol == symbol and e.date <= today]
+    if not events:
+        raise ToolError(
+            f"no past earnings dates for '{symbol}' in the last {a.years} "
+            f"year(s) of the FMP calendar ({len(cal.events)} rows total; "
+            f"{len(cal.unparsed)} unparsed). If this symbol clearly reports "
+            "earnings, the calendar window may be the issue — see "
+            "scripts/fmp_check.py's past-window probe.")
+
+    bars = market.get_daily_bars(symbol, days=365 * a.years + 40)
+    if len(bars.bars) < 30:
+        raise ToolError(f"only {len(bars.bars)} daily bars for '{symbol}' — "
+                        "not enough history to measure reactions")
+
+    rates = compute_event_base_rates(
+        symbol, events,
+        [b.date.date() if hasattr(b.date, "date") else b.date for b in bars.bars],
+        [b.close for b in bars.bars])
+    out = asdict(rates)
+    out["calendar_unparsed"] = len(cal.unparsed)
+    out["asof"] = bars.asof.isoformat()
+    out["source"] = f"fmp-free calendar + {bars.source} bars"
+    return out

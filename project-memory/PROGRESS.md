@@ -5,6 +5,20 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-18 — Claude/Cowork — T083: event reaction base rates (AWAITING REVIEW)
+"Hold through earnings?" answered from the symbol's own bars, as base rates
+never predictions. analysis/event_rates.py: amc-moves-the-NEXT-bar timing
+convention (missing hints default bmo AND counted), event-day + next-day
+moves, 5-bar pre-event runup, beat/miss from eps_actual vs estimate ONLY
+(never inferred from price — circular), closed-down counts per split,
+MIN_EVENTS=4 refusal, unmeasured events reported. EarningsEvent gains
+eps_actual; tool #39 get_event_base_rates (guard bumps x4); fmp_check gains
+the PAST-window probe row (the unprobed shape — D030 pattern again). 9
+hand-computed tests; gate PASS; pyrefly exactly 1. D028: caught my own
+inverted ascending-dates guard before the first test run. Owner: one
+fmp_check run decides whether beat/miss lights up on his tier.
+Next: Gemini reviews T083 at its sha. Backlog: T063b (data-gated), T076b.
+
 ## 2026-08-18 — Gemini/Antigravity — Review completed for T066 (D032/D033 review-only mode at 1f6014c)
 Reviewed T066 (Trade coaching: pre/post-trade reviews, persisted) per D027 and D033 evidence requirements:
 - Deterministic review composition: verified `backend/analysis/coaching.py` pre-trade 6-section checklist (thesis+invalidation, IPS compliance, concentration warning at 15%, regime fit, T104 pattern history, exit plan) with explicit status categorization (ok, attention, missing with supplier tool named), and post-trade adherence review against T063 decision journal rows (horizon adherence, qualitative level tracking, followed/overridden state with unmarked flagged and overrides unpenalized, facts-for-lessons only).

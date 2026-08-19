@@ -12,9 +12,52 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 currently RED — see I018, which needs the failing log.)
 
 ## In progress
-- **T083 (event reaction base rates) — Claude/Cowork** — claimed 2026-08-18.
-
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T083 (event reaction base rates — D019) — AWAITING REVIEW 2026-08-18
+  (Claude/Cowork)**. "Should I hold through earnings" answered from the
+  symbol's own bars as BASE RATES — the note in every payload says
+  "description of the past, not a prediction". Built:
+  (1) analysis/event_rates.py (pure) — per past earnings date: event-day
+  move with the TIMING CONVENTION written down (amc reports move the NEXT
+  bar; bmo its own; missing hints default to bmo AND are counted in
+  timing_assumed — an invisible wrong-day booking would smear every number),
+  next-day follow-through, 5-bar pre-event runup (the D019
+  "priced-for-perfection" ingredient); beat/miss from eps_actual vs
+  eps_estimated ONLY — never inferred from the price move (circular);
+  splits carry n, median event move, closed-down count (the "6 of 8 beats
+  still closed down" shape), median next-day; <4 measurable events →
+  insufficient_history ("anecdotes are how superstitions start");
+  events outside bar history land in `unmeasured` with why, never dropped.
+  (2) fmp.py EarningsEvent gains eps_actual passthrough (None on future/
+  absent — unknown split, never guessed). (3) get_event_base_rates tool
+  #39 (guard bumps 38→39 x4 + name-set): one calendar request for the whole
+  window (250/day respected), market_today() bounds (T111), named errors
+  when FMP absent or the symbol has no past dates. (4) fmp_check.py gains a
+  PAST-window calendar probe row — historical dates + epsActual are the
+  unprobed shape here (the 08-17 probe asked only a future window); the
+  D030 pattern: fail-closed code now, owner's probe answers definitively.
+  EVIDENCE (D027): 9 tests, every move hand-computed on tiny tapes — bmo
+  110/109-1 with runup 109/104-1; amc shifting to the next bar; Saturday
+  event rolling to Monday with timing_assumed counted; the beats-that-
+  closed-down split (2 of 2 on a falling tape); MIN_EVENTS refusal;
+  out-of-history events reported; last-bar event has next_day None; short
+  history runup None; alignment/ascending validation. 39 tool-count tests
+  green; ruff clean; pyrefly exactly 1; full gate PASS.
+  D028 objections: (a) MY OWN BUILD BUGS, both caught before commit: the
+  ascending-dates guard was INVERTED (rejected every valid series — caught
+  reading my own diff before first test run), and two assertions needed
+  abs tolerance for the module's 6dp rounding; (b) the free tier's PAST
+  calendar + epsActual availability is fixture-believed, not probe-verified
+  — the tool fails with a NAMED error pointing at the new probe row if the
+  owner's tier answers differently; (c) "inline" (actual == estimate) is
+  its own split rather than a beat — a defensible alternative buckets it
+  with beats; chosen and documented; (d) reaction-day close-over-close
+  ignores the OPEN gap — gap-and-fade days read as small moves; daily bars
+  cannot separate the gap without opens threaded through, noted as a
+  future enrichment, not silently approximated.
+  Owner check: run the updated scripts/fmp_check.py once — the
+  "earnings calendar (past)" row decides whether beat/miss lights up or
+  stays "unknown"-only.
 - **T066 (trade coaching: pre/post-trade reviews, persisted — D014) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 1f6014c)**. Composition, not new math —
   the coaching layer judges a trade against modules that already exist.
   Built: (1) analysis/coaching.py (pure) — compose_pre_trade_review: a
@@ -682,7 +725,10 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   --notify toast get it for free. 3 tests (drift/quiet/cannot-judge).
 - [ ] T087 — Open-trade monitor (owner Q&A; deps T074/T082/T036): watch held positions during RTH — alert when session RVOL collapses under a breakout thesis, VWAP churn rises, exit-plan invalidation approaches/hits, or the event guard window opens; Windows toast + Orb surface v1, voice barge-in with T074. Advisory only — execution stays in the loop's rails.
 - [ ] (advisory note for T077b/T085) Fractional-Kelly sizing VIEW from T077 win-rate/payoff — advisory-only, capped, never autopilot; single-trade "probability of profit" remains rejected per D017.
-- [ ] T083 — Event reaction base rates (D019, dep T023 dates): for each historical earnings date, compute from our daily bars the event-day + next-day moves split by beat/miss, and the pre-event runup into each; surface in briefings/chat as BASE RATES ("6 of the last 8 beats still closed down") — the evidence-based answer to "should I hold through earnings", no prediction claimed. Deterministic, hand-computed tests.
+- [x] T083 — built 2026-08-18, see Awaiting review at top. (Briefing-side
+  surfacing deferred: the chat tool answers the question directly; wiring a
+  base-rates line into the morning brief's earnings_risk section is a small
+  follow-up once the past-window probe confirms the data shape.)
 - [ ] T084 — Transcripts & filings as labeled CONTEXT (D019; gated on T023 tier check): fetch earnings-call transcripts, summarize via the EXISTING LLM layer (tone/guidance as narration of a document, clearly labeled qualitative context — never a priced signal); 10-K/10-Q YoY textual-change ("Lazy Prices") recorded as a Phase 7 research-agent candidate via SEC EDGAR through §7.7, human-gated. No FinBERT now.
 - [x] T016a — Schwab read-only client + transaction mapping — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `backend/data/schwab.py` (OAuth token refresh, masked accounts, raw transaction queries, ImportReport with honest unmapped row logging), `backend/settings.py` (schwab_* settings and require_schwab), `.env.example`, `scripts/schwab_auth.py`, `scripts/reconcile_schwab.py`, `scripts/env_check.py`, and `backend/tests/test_schwab.py` (19 unit tests).
