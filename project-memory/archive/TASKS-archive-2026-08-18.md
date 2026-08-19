@@ -517,3 +517,507 @@
 - [x] T003 — Backend skeleton: FastAPI /health, analysis.returns + 7 tests, ruff, verify.py — 2026-08-11
 - [x] T002 — project-memory working files (TASKS, DECISIONS, ISSUES, PROGRESS) — 2026-08-11
 - [x] T001 — AGENTS.md + PROJECT_SPEC.md authored — 2026-08-10
+
+
+# Section added 2026-08-19 by curation session (D031)
+# Moved from TASKS.md 'Awaiting review': all REVIEWED DONE blocks
+# (T083b, T083b-probe, T083, T066, T067b, T023b, T016b, T113, T016c, T112)
+
+- **T083b (EDGAR earnings history — free, keyless, probed) — DONE 2026-08-18
+  (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 634d20c)**. Owner's probe: ALL GREEN — 10,387 tickers in
+  the CIK map, 46 earnings 8-Ks (~11yr) for the probe symbol back to 2015,
+  46/46 with acceptance timestamps. Built against exactly that shape:
+  (1) settings: edgar_contact (SecretStr — the SEC-required UA contact,
+  never logged; repo is public) + edgar_base_url/edgar_www_url (T107
+  convention). (2) data/edgar.py EdgarClient — two endpoints only:
+  company_tickers.json (fetched once per client, cached) and submissions
+  JSON (columnar arrays, item-2.02 filter, zero-padded CIK path pinned in
+  test); named errors for 403 (UA problem), 429 (do not retry), unknown
+  ticker (ETFs have no CIK); unparseable filingDate → reported, never
+  guessed (T102). (3) hint_from_acceptance in analysis/event_rates.py — the
+  REAL filing clock replaces bmo/amc guesses: ≥16:00 ET = amc (next bar),
+  else bmo; zone via MARKET_TZ so EDT/EST flips itself; naive datetimes
+  refused. (4) get_event_base_rates: EDGAR history feeds the SAME
+  earnings_observed store (source=sec-edgar; dedupe + enrichment already
+  built in T083) — merging IS the store; any EdgarError degrades to a named
+  note and the store still answers. (5) ToolContext gains edgar; wired
+  best-effort in main.py chat AND mcp_server — which CLOSED A PRE-EXISTING
+  GAP: the chat endpoint built NO fred/fmp at all, so calendar/macro tools
+  claimed "not configured" over chat even with keys present. (6) T106
+  audit: close_tool_context's fixed member list would have LEAKED fmp/edgar
+  per MCP call — caught in self-review, list extended with the why comment.
+  EVIDENCE (D027): 9 tests in test_edgar.py — probe-faithful columnar
+  fixture (the owner's real 20:30:28Z sample asserted amc), item-2.02
+  filtering (10-Q and 5.02 8-K excluded), UA-carries-contact asserted on
+  every request, zero-padded CIK path, named 403/unknown-ticker refusals,
+  fail-closed bad dates, DST clock cases (20:30Z July=amc / January=bmo),
+  naive refusal, end-to-end tool run (4 8-Ks → store rows source=sec-edgar,
+  hints amc, timing_assumed all False, rates computed) + EDGAR-500 degrade;
+  15/15 with store suite; 22/22 with mcp_server; ruff clean; pyrefly
+  exactly 1; full gate PASS.
+  D028 objections: (a) recent-window only — paged archive files for >11yr
+  history are an UNOBSERVED shape, deliberately not fetched (noted in
+  docstring); (b) EDGAR dates carry no estimates so beat/miss stays
+  "unknown" for EDGAR-only rows — the MOVES are the core of the question
+  and need none; FMP-stored estimates enrich rows where dates coincide;
+  (c) company_tickers.json has no ETFs — get_event_base_rates on SPY will
+  say so via the named unknown-ticker error path; index-fund earnings
+  don't exist, so this is correct, but the message is worth the reviewer's
+  read; (d) chat context now constructs up to 3 extra clients per request —
+  each is lazy/cheap (no network until used), matching the brief endpoint's
+  established pattern.
+  Owner: nothing to do — EDGAR_CONTACT is already in your .env from the
+  probe. Ask KUBERA "should I hold NVDA through earnings" and years of
+  history answer immediately.
+- **T083b probe (scripts/edgar_check.py) — DONE 2026-08-18
+  (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 8e15153)**. The gate on T083b, built per D030/D034: a keyless probe
+  the owner runs where KUBERA lives (sandbox cannot reach sec.gov —
+  demonstrated: ProxyError → UNREACHABLE → named skip, exit 1). Measures:
+  ticker→CIK mapping (company_tickers.json), one company's submissions JSON
+  (8-K count, whether `items` truly carries "2.02", filingDate depth),
+  acceptanceDateTime presence — a REAL clock that would upgrade T083's
+  bmo/amc timing convention from assumed to KNOWN — and SEC etiquette
+  (declared UA, 0.2s spacing under the ~10/s ceiling). Statuses/counts and
+  three date-only samples; explains what each line decides.
+  PII DISCIPLINE (D028 self-catch): my first version embedded the owner's
+  personal email in the committed UA string — the repo is PUBLIC, so the
+  contact now comes from .env (EDGAR_CONTACT, added to .env.example);
+  without it the probe REFUSES (exit 2) with the one-line fix, and the
+  contact is never echoed in output. Same rule as masked account numbers.
+  EVIDENCE (D027): ruff clean; refusal path run (exit 2, actionable);
+  sandbox run demonstrates the named-unreachable path; gate PASS. No
+  backend code exists yet — that is the point: the probe's table decides
+  the T083b build (owner action: add EDGAR_CONTACT to .env, run
+  `python scripts\edgar_check.py`, paste the table).
+- **T083 (event reaction base rates — D019) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 531ea20)**. "Should I hold through earnings" answered from the
+  symbol's own bars as BASE RATES — the note in every payload says
+  "description of the past, not a prediction". Built:
+  (1) analysis/event_rates.py (pure) — per past earnings date: event-day
+  move with the TIMING CONVENTION written down (amc reports move the NEXT
+  bar; bmo its own; missing hints default to bmo AND are counted in
+  timing_assumed — an invisible wrong-day booking would smear every number),
+  next-day follow-through, 5-bar pre-event runup (the D019
+  "priced-for-perfection" ingredient); beat/miss from eps_actual vs
+  eps_estimated ONLY — never inferred from the price move (circular);
+  splits carry n, median event move, closed-down count (the "6 of 8 beats
+  still closed down" shape), median next-day; <4 measurable events →
+  insufficient_history ("anecdotes are how superstitions start");
+  events outside bar history land in `unmeasured` with why, never dropped.
+  (2) fmp.py EarningsEvent gains eps_actual passthrough (None on future/
+  absent — unknown split, never guessed). (3) get_event_base_rates tool
+  #39 (guard bumps 38→39 x4 + name-set): one calendar request for the whole
+  window (250/day respected), market_today() bounds (T111), named errors
+  when FMP absent or the symbol has no past dates. (4) fmp_check.py gains a
+  PAST-window calendar probe row — historical dates + epsActual are the
+  unprobed shape here (the 08-17 probe asked only a future window); the
+  D030 pattern: fail-closed code now, owner's probe answers definitively.
+  EVIDENCE (D027): 9 tests, every move hand-computed on tiny tapes — bmo
+  110/109-1 with runup 109/104-1; amc shifting to the next bar; Saturday
+  event rolling to Monday with timing_assumed counted; the beats-that-
+  closed-down split (2 of 2 on a falling tape); MIN_EVENTS refusal;
+  out-of-history events reported; last-bar event has next_day None; short
+  history runup None; alignment/ascending validation. 39 tool-count tests
+  green; ruff clean; pyrefly exactly 1; full gate PASS.
+  D028 objections: (a) MY OWN BUILD BUGS, both caught before commit: the
+  ascending-dates guard was INVERTED (rejected every valid series — caught
+  reading my own diff before first test run), and two assertions needed
+  abs tolerance for the module's 6dp rounding; (b) the free tier's PAST
+  calendar + epsActual availability is fixture-believed, not probe-verified
+  — the tool fails with a NAMED error pointing at the new probe row if the
+  owner's tier answers differently; (c) "inline" (actual == estimate) is
+  its own split rather than a beat — a defensible alternative buckets it
+  with beats; chosen and documented; (d) reaction-day close-over-close
+  ignores the OPEN gap — gap-and-fade days read as small moves; daily bars
+  cannot separate the gap without opens threaded through, noted as a
+  future enrichment, not silently approximated.
+  OWNER PROBE ANSWERED (2026-08-18, same session): **past calendar windows
+  PAYWALLED** on his tier — the forward window answers, history does not.
+  REDESIGNED against the measurement (build delta, new SHA):
+  (1) earnings_observed table (alembic 9d1c5b3fa284, revises 4f8e2a917c66,
+  single head) — every forward-window fetch RECORDS what it saw BEFORE it
+  happens; dedupe per (symbol, event_date); a later fetch carrying
+  eps_actual/hint BACKFILLS the row (reports linger in the visible window
+  briefly after they land). (2) data/earnings_store.py: record_events /
+  record_calendar (best-effort BY CONTRACT — returns 0 on any failure,
+  never breaks a brief) / stored_events. (3) get_event_base_rates now reads
+  PAST events from the store, fetches ONLY the forward window (the probe-
+  verified shape — no paywalled request is ever made), and feeds the store
+  on every call; empty store → named error explaining the paywall reality
+  and that history accumulates as quarters pass. (4) morning brief's
+  earnings section + get_earnings_calendar tool also feed the store — three
+  growth paths. The past assembles itself; base rates go live once 4+
+  observed dates for a symbol have passed.
+  DELTA EVIDENCE: 6 new tests in test_earnings_store.py (dedupe +
+  actual-backfill, best-effort never raises, ordering, tool-from-store
+  without FMP, empty-store paywall-naming error, forward fetch feeding the
+  store with future dates) + the 9 event_rates tests unchanged; migration
+  applies on scratch DB; ruff clean; pyrefly exactly 1 after annotating
+  fetch_note (canary caught the dict-literal inference again); gate PASS.
+  DELTA D028: the store tests EXPOSED A LATENT BUG in the first commit —
+  DailyBar.date is a "YYYY-MM-DD" STRING and my str-vs-date comparison
+  would have crashed the tool on its first real run; fixed and the
+  conversion commented. Follow-up filed as T083b (below): SEC EDGAR 8-K
+  dates as the fast-history option — free, no key, authoritative — gated
+  on its own probe per D030.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS (covering commit 531ea20 per D033)
+    aligned: Provides deterministic event reaction base rates from bars (event-day move with amc/bmo timing convention, next-day follow-through, 5-bar runup, beat/miss/inline splits from eps_actual vs estimate without circular price inference); adapts gracefully to FMP free tier paywall on past calendar windows by accumulating forward events into `earnings_observed` table (Alembic 9d1c5b3fa284) across briefing and tool calls.
+    checked: Validated commits 8e8b00d + 531ea20: (1) `backend/analysis/event_rates.py` pure computation with MIN_EVENTS=4 floor and unmeasured event logging; (2) `backend/data/earnings_store.py` best-effort upsert and backfill logic with `earnings_observed` model; (3) `get_event_base_rates` tool #39 wiring with DailyBar date string conversion and tool count guards (38->39); (4) 9 tests in `test_event_rates.py` and 6 tests in `test_earnings_store.py` pass; (5) single Alembic head `9d1c5b3fa284`; (6) full `scripts/verify.py` green (953 passed, ruff clean, memory budgets within bounds).
+    concerns: none
+- **T066 (trade coaching: pre/post-trade reviews, persisted — D014) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 1f6014c)**. Composition, not new math —
+  the coaching layer judges a trade against modules that already exist.
+  Built: (1) analysis/coaching.py (pure) — compose_pre_trade_review: a
+  CHECKLIST (not a composite score — a single number would launder judgement
+  into false precision) over six sections, each ok/attention/missing WITH its
+  reason: thesis+invalidation ("without 'what proves me wrong', an exit is an
+  emotion"), IPS fit (restrictions are HIS written rules), concentration
+  (post-trade weight; attention at 15%, the engine's 20% cap named — friction
+  before the breaker, the T067 idea), regime fit (buying trending_down =
+  attention; breakout_watch = coil caution), pattern history (T104's verdict
+  passed through with sample sizes), exit-plan presence. Absent inputs land
+  MISSING naming their supplier tool — an unattempted check is surfaced,
+  never skipped (I026 generalised). compose_post_trade_review: trip vs the
+  T063 journal row — horizon adherence (winner exited <25% of horizon = the
+  cut-winners tell; loser held >2x = "a thesis past its clock"), levels on
+  record (qualitative — attribution trips carry no exit PRICE, stated
+  honestly), followed/overridden (marked = ok either way; UNMARKED =
+  attention), facts_for_lessons lines only. An unjournaled trade IS the
+  finding. (2) trade_reviews table (alembic 4f8e2a917c66, revises
+  7c3a91e0d5b2, single head) — 'pre' rows freeze the checklist BEFORE entry
+  so hindsight cannot rewrite it. (3) ONE tool coach_trade (#38, mode
+  pre|post; guard bumps 37→38 in test_tools x2 / test_chat / test_claude_sdk
+  + name-set): pre gathers best-effort (IPS, account+position, regime via
+  classify_regime, pattern via evaluate_pattern_warnings on DB fills) and
+  persists; post picks the most recent closed trip for the symbol from the
+  SAME DB->attribution path T069/T067b use, joins the latest journal row
+  at-or-before entry, persists with journal_id.
+  EVIDENCE (D027): 14 tests — all-ok full-input case (6 ok, weight 5%);
+  the dangerous-combination case (5 attention + 1 missing: no invalidation,
+  IPS-restricted, 25% cap breach, buying a downtrend, pattern warning, no
+  exit plan); concentration boundaries hand-computed (16% attention / 10% ok
+  incl. existing position); missing-inputs name their suppliers; post-trade
+  cut-winner (2 of 10 days) and loser-past-clock (25 vs 10) flagged;
+  unjournaled-is-the-finding; unmarked-flagged-override-free; end-to-end
+  tool runs persisting TradeReview rows (pnl +100 = 10x(110-100), journal_id
+  joined); regime path with VALID bars; failed regime read NAMES the error.
+  Migration applies on scratch DB (all columns). ruff clean; pyrefly exactly
+  1; full gate PASS.
+  D028 objections: (a) the canary caught a REAL bug my tests missed —
+  reading.label vs .regime, on the only path no test covered (market
+  present); fixed, then BOTH sides pinned: valid bars exercise the line,
+  and a crashing read now reports "FAILED (ValueError: ...)" instead of my
+  original broad-except pretending the check was never attempted; (b)
+  coach_trade WRITES TradeReview rows and is exposed via MCP like
+  record_decision — same class (no capital, no rails); reviewer should
+  confirm agreement with the T045 read-only philosophy; (c) correlation
+  (T079) is NOT a section — a full overlap check per review costs a quote
+  fetch per holding; the persona already orders get_correlation before
+  buys, noted rather than duplicated; (d) post-mode matches journal rows
+  by symbol+time only — a same-symbol re-entry within the window could
+  join the wrong row; deterministic rule documented, refinement cheap if
+  it ever misleads.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS (covering commit 1f6014c per D033)
+    aligned: Implements pre/post trade coaching with a 6-section checklist (thesis+invalidation, IPS fit, concentration friction at 15%, regime fit, T104 pattern history, exit-plan presence) and post-trade adherence checks against T063 decision journal rows; persists to `trade_reviews` table via single-head migration 4f8e2a917c66 and exposes coach_trade tool #38 with proper guard bumps.
+    checked: Validated commit 1f6014c: (1) `backend/analysis/coaching.py` pure composition for pre and post-trade reviews with explicit section statuses and supplier naming on missing inputs; (2) `trade_reviews` table model and Alembic migration `4f8e2a917c66` (single head verified); (3) `coach_trade` tool registration (#38) and guard count bumps in `test_tools.py`, `test_chat.py`, `test_claude_sdk.py`; (4) 14 unit and tool integration tests in `test_coaching.py` pass; (5) full verify gate `scripts/verify.py` green (938 passed, ruff clean, memory budgets within bounds).
+    concerns: none
+- **T067b (DQS v2 — score the OWNER's own trading) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at fdfe6e9)**. v1 scored the paper loop and said so; both of
+  its stated prerequisites (broker-fill sync, decision journal) have landed,
+  so v2 scores HIS record. Built backend/risk/owner_dqs.py (pure):
+  (1) disposition_effect (≤30) — median winner hold vs median loser hold;
+  ratio < 1 = cutting winners while riding losers; refuses under 5 trips on
+  EITHER side, and a zero loser-median (all same-session) yields no verdict
+  rather than a divide-by-zero opinion; (2) revenge_sizing (≤30) — reuses
+  T069's sizing_drift VERBATIM so the codebase has one definition of the
+  revenge pattern, not two that drift; (3) journal_discipline (≤20) — only
+  the UNMARKED share costs; overriding KUBERA is explicitly not penalised
+  (his judgement is why the journal exists); (4) budget_from_ips() — converts
+  his ratified max-drawdown into an implied daily budget by T069's own
+  1/3 convention, prints it beside the ENFORCED limit and flags disagreement,
+  as a PROPOSAL that never applies itself (a safety rail that moved on its
+  own would be the "talked out of the lockout" failure the tiers exist to
+  prevent). FOMO-into-late-RVOL is NOT built and says why in every report:
+  statement fills are date-only, so it would be guesswork (T102).
+  Wiring: get_risk_status gains an `owner_dqs` block sourced from DB
+  Transactions -> attributed_fills_from_rows -> fifo_attribution — the SAME
+  path T069 uses, so the two behavioural reads cannot disagree about what a
+  round trip was; empty table degrades to a note pointing at sync.py. No new
+  tool, so no guard-count bump.
+  EVIDENCE (D027): 14 unit tests hand-computed (0.25 ratio -> 45 capped to
+  30; 0.75 -> 15.0; winners-held-longer free; sample-floor refusal; undated/
+  negative/scratch trips skipped not defaulted; same-session no-verdict;
+  revenge ratio 2.0 -> capped 30; unmarked 5/10 -> 10.0; IPS 15%/3 = 5% vs
+  enforced 2% flagged looser) + 2 end-to-end through the tool on a seeded DB
+  (10 real Transactions -> 10 trips -> ratio 0.25 -> score 70.0; empty DB ->
+  available:false naming sync.py). 36 passed across both suites; ruff clean;
+  gate PASS.
+  D028 objections: (a) MY OWN CANARY CAUGHT ME — the pyrefly count went 1 -> 2
+  on a dict literal that inferred `agrees: None`; re-measured (a transient
+  fooled me once before), confirmed reproducible, fixed with an explicit
+  annotation, back to exactly 1; (b) T069's sizing_drift compares raw
+  qty x price, so option notionals are understated 100x — it cancels in the
+  RATIO unless the option/equity MIX differs between post-loss and post-win
+  buys; I did not change a shared T069 function inside this ticket, and the
+  reviewer may reasonably want that as its own; (c) the disposition penalty
+  slope (60x the gap) and the IPS 1/3 convention are chosen tunables, both
+  commented; (d) held_days comes from attribution, which reads date-only
+  statement-sourced rows as whole days — the metric is real but coarse until
+  time-stamped Schwab fills accumulate.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS (covering commit fdfe6e9 per D033)
+    aligned: Implements DQS v2 for the owner's real trading record across disposition effect, revenge sizing (reusing T069 definition), journal discipline (unmarked decisions penalized, overrides allowed), and IPS-implied budget proposal (pure advisory), while explicitly refusing guesswork on FOMO-into-late-RVOL until intraday timestamps accumulate (T067c).
+    checked: Validated commit fdfe6e9: (1) `backend/risk/owner_dqs.py` pure scoring functions with sample floor checks, median zero hold protection, and capped penalties; (2) `backend/api/tools.py` wiring `_owner_dqs_block` into `get_risk_status` using the verified DB -> attribution pipeline; (3) 14 hand-computed unit tests in `test_owner_dqs.py` and 2 tool integration tests in `test_dqs_tiers.py` pass; (4) full `scripts/verify.py` green (924 tests passed, 0 lint errors, memory budgets all within bounds).
+    concerns: none
+- **T023b (fundamental ratios from FMP statements — D030 #4) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS at 8609e54)**. Built:
+  (1) backend/analysis/fundamentals.py (NEW, pure, no I/O) — FCF per fiscal
+  year with the T016c principle applied to statements: the statement's OWN
+  freeCashFlow is preferred ("reported"), else derived OCF + capex where FMP's
+  capex is a NEGATIVE outflow; a POSITIVE capex is an unobserved sign
+  convention → the year lands in unparsed, never silently "fixed" (T102).
+  FCF yield = latest fiscal FCF / TODAY's market cap, with the backward-
+  numerator/live-denominator note; debt/equity SUPPRESSED (None + why) when
+  equity is non-positive — a negative ratio reads as "low debt", the exact
+  wrong conclusion; debt/assets separately; STALENESS_NOTE in every reading.
+  (2) data/fmp.py gains cash_flow_statement (probe-verified), balance_sheet
+  (NOT probe-verified — named FmpError on paywall), profile_market_cap
+  (probe-verified; None when payload lacks a usable number). (3) briefing
+  tool gains a fundamentals block: None without ctx.fmp; FmpError on the
+  cash-flow half → available:false with why; a paywalled balance sheet must
+  NOT cost the FCF half (pinned in test). (4) scripts/fmp_check.py gains the
+  balance-sheet probe row so the owner's next run answers the one endpoint
+  the 2026-08-17 probe missed.
+  EVIDENCE (D027): 24 tests across test_fundamentals (6, all hand-computed:
+  80k/1.6M = 5% yield, 50k/200k = 0.25 D/E, derived 100k−25k = 75k,
+  positive-capex refusal, negative-equity suppression, unparsed reporting) +
+  test_fmp (+3: fetchers, named paywall, non-list shape refusal, unusable
+  profile → None) + test_briefing_tool (+3: null without fmp, hand-computed
+  block with fmp, paywalled-balance-sheet survival). ruff clean; pyrefly
+  exactly 1 (I023 canary); full gate PASS.
+  D028 objections: (a) fixture rows follow FMP's DOCUMENTED statement shape —
+  same honesty note as T023 v1; fail-closed unparsed reporting is the
+  mitigation and the owner's next briefing run is the live proof; (b) FCF
+  yield mixes a fiscal-year numerator with a live denominator — the only
+  option without paid TTM data, and the note says so in every payload; (c)
+  no income-statement fetch = no margins/EPS — deliberate scope hold (ticket
+  names FCF + debt), one request cheaper per briefing on a 250/day budget.
+  OWNER PROBE RUN 2026-08-18 (same session): **balance sheet OK (1 row)** —
+  debt ratios are LIVE on his tier, no code change needed (the briefing was
+  built to light up when the endpoint answers). Full table also corrects one
+  stale record: analyst estimates now reads OK (1 row) — the 08-17 "HTTP 400"
+  was MY probe's parameter bug, fixed in T023 v1; the endpoint answers on the
+  free tier. Estimate FEATURES stay out of KUBERA regardless until a ticket
+  argues them in — availability ≠ adoption; estimates are third-party
+  opinions (D019/D030 discipline). news/transcripts confirmed paywalled,
+  D030's source decisions unchanged. Remaining owner check: one briefing
+  with FMP_API_KEY set → fundamentals block, unparsed == [].
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS (covering commit 8609e54 per D033)
+    aligned: Brings deterministic FCF yield and debt ratios from annual statements into the symbol briefing with fail-closed sign validation and explicit staleness labeling, keeping within the 250 req/day free budget (D030).
+    checked: Validated commit 8609e54: (1) `compose_fundamentals` in `backend/analysis/fundamentals.py` hand-computed math (80k/1.6M = 5% yield, 50k/200k = 0.25 D/E, 100k-25k derived = 75k FCF), negative equity debt/equity suppression ("a negative ratio reads as low debt"), and positive-capex unparsed reporting; (2) `data/fmp.py` statement fetchers and profile market cap; (3) briefing tool fundamentals block and paywall/error graceful degradation paths; (4) owner ran `python scripts/fmp_check.py` on live key confirming balance sheet OK (1 row), cash flow OK (5 rows), income statement OK (5 rows), profile OK. Ran `pytest backend/tests/test_fundamentals.py backend/tests/test_fmp.py backend/tests/test_briefing_tool.py` (24 passed) and full `verify.py` (908 passed, ruff clean, memory budgets all within bounds).
+    concerns: none
+- **T016b (automated API-vs-statement cross-check) — DONE 2026-08-18
+  (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS, third verdict,
+  explicitly covering delta fixes 71670b2 + 545f84b; owner acceptance CLEAN
+  39/39 exit 0)**. Fully closed: Gemini's final verdict cites the post-fix
+  evidence (896 tests, DST window edges 05:00Z/04:00Z, both CLI wirings, the
+  owner's clean run) — current as of the last code commit on this ticket.
+  D033 RECORDED off this ticket's two review races (verdicts at 16:08 and
+  16:18 each went stale within minutes; the second's own evidence — "38
+  orders", 893 tests — proved it predated 545f84b): from now on a verdict
+  names the SHA it covers, the reviewer confirms it is still the newest
+  commit on the ticket's files before signing, and SHA-less verdicts are
+  void under D027. Propagated to REVIEW.md §4 + docs/agent-briefs.md.
+  Two independent sources agreeing, not a machine agreeing
+  with itself; the human tick-off keeps the final word. Built:
+  backend/analysis/cross_check.py (pure, no I/O) + scripts/cross_check_schwab.py
+  (CLI: live pull + parse_directory(private/), prints MATCHED / API-ONLY /
+  STATEMENT-ONLY in full, exit 0 only when clean, SchwabError → named
+  "SCHWAB UNAVAILABLE" note, read-only). Join design from the owner's own
+  March verification: API executions aggregate BY (order_id, symbol, side)
+  with qty-weighted price (his 71+29=100 @ 0.21 to-the-penny case is THE
+  fixture); OCC symbols ("NVDA  260320C00177500") normalise to the statement's
+  underlying+expiry/right/strike key, fail-closed (unparseable OCC → reported,
+  never guessed into an equity match); API UTC times join on their
+  America/New_York date (T111). Match = same ET date + instrument key + side +
+  qty, price within ±0.01 default (weighted avg vs statement rounding). Greedy
+  1:1 within groups — two identical orders need two statement lines. NEVER
+  silently reconciles: near-misses (price-out-of-tol same day, or dates ≤3d
+  apart with price OK) are labelled notes; the lines stay unmatched. Fee
+  comparison (both sides carry broker numbers post-T016c/T108b) is
+  informational only, never affects matching.
+  EVIDENCE (D027): test_cross_check.py 14 tests, all hand-computed — the
+  71+29 case, weighted-avg 0.206 vs printed 0.21 inside tol, 23:30 UTC staying
+  on its ET day, both-only buckets, near-miss labels, greedy pairing,
+  fail-closed OCC, fee notes, qty/tol validation. Live CLI run in sandbox:
+  named degradation confirmed ("SCHWAB UNAVAILABLE", exit 2 — api.schwabapi.com
+  unreachable here per I002; the full path needs the owner's machine). ruff
+  clean; pyrefly exactly 1 (I023 canary); full gate PASS.
+  OWNER RUN #3 (2026-08-18, after the window fix) — **CLEAN, exit 0**:
+  39 matched, 0 API-only, 0 statement-only, 0 near-misses, 0 unparseable.
+  The window fix pulled the 3/31 session (52 executions vs 51) and his 3/31
+  SPY 635P buy matched its confirmation. March 2026 is now verified
+  three ways: his hand reconcile (T016), statement-vs-statement audit
+  (T108/T108b), and API-vs-statement automated diff (T016b) — all agreeing.
+  Owner acceptance COMPLETE; only Gemini's delta review (71670b2 + 545f84b)
+  remains open on this ticket.
+  OWNER RUN #2 (2026-08-18, after the folder fix): 38 of 38 API orders
+  MATCHED their statement lines — dates, symbols, sides, quantities, prices
+  agreeing across two independent sources, including the 11-execution and
+  2-execution aggregations. The 1 "statement-only" line was MY window bug:
+  --end as midnight UTC excluded the final session, so his real 3/31 SPY put
+  buy was never in the API pull. Fixed at the root: market_window_utc() in
+  analysis/market_time.py (inclusive ET days -> [start, day-after-end) UTC;
+  March-2026 DST-straddling edges pinned 05:00Z/04:00Z, his 3/31 15:00 ET
+  trade pinned inside), wired into BOTH cross_check_schwab.py and
+  reconcile_schwab.py (same defect class — reconcile had silently dropped
+  final-day trades too). Also quieted pypdf's per-page "Rotated text" warning
+  at the CLI (90+ noise lines; unparsed-count remains the real signal).
+  FEE NOTES explained (all 4, verified arithmetic): the confirmation parser
+  attributes a DOCUMENT's total commission to one line when several
+  same-instrument orders share a day — 3/09 stmt 6.50 = (2+2+6) contracts
+  x 0.65; 3/17 9.75 = 15 x 0.65; 3/20 62.40 = 96 x 0.65; 3/27 1.95 = 3 x
+  0.65. Sum-level the sources agree exactly; the API's per-order numbers
+  (T016c) are the granular truth. Informational-only design behaved
+  correctly (no match was blocked).
+  OWNER-RUN DEFECT, fixed same session (2026-08-18): his first live run
+  parsed "0 files" — my --statements default was private/ but the PDFs live
+  in private/statements/ (the path every other script already uses; I didn't
+  check the precedent). Worse, the empty side still diffed: 38 fake
+  "API-only" problems that were really one missing input. Fixed both: default
+  now private/statements, and files_read==0 (or zero fills in window) refuses
+  loudly with the path it searched, exit 2 — an unavailable input is not a
+  discrepancy report. His visible output also confirmed the API side end to
+  end: 51 executions → 38 order lines, the 100 @ 0.21 two-execution case and
+  an 11-execution 0.09 aggregation both printed correctly, OCC symbols
+  rendered, ET dates matching his verified reconcile.
+  D028 objections: (a) my near-miss date branch initially didn't check price —
+  would have labelled pairs "all else equal" that also disagreed on price;
+  caught in self-review, fixed, pinned by test; (b) known limitation: a GTC
+  order filling across MULTIPLE days aggregates to one API line (min date) vs
+  per-day statement lines — would surface as unmatched buckets, correct
+  behaviour (attention, not absorption), but no observed case exists to build
+  against (T102 discipline: no code for unobserved shapes); (c) statement
+  trade_dates derived via T+1 (date_source="derived_settle_t1") are only as
+  good as T108b's calendar — but that calendar was verified against 83
+  explicit dates, and a systematic error would light up as date near-misses,
+  which is the tool telling on its own inputs. Owner acceptance path: run
+  `python scripts\cross_check_schwab.py --start 2026-03-01 --end 2026-03-31`
+  on the machine with .env + private/ and compare its MATCHED count to the
+  reconcile you already ticked off.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS (including delta fixes 71670b2 + 545f84b)
+    aligned: Provides automated cross-check reconciliation between Schwab API fills and statement-parsed fills without machine self-reconciliation or silent absorption, keeping the human tick-off as final authority (D026).
+    checked: Validated delta fixes 71670b2 + 545f84b: (1) default path updated to `private/statements/` with loud refusal on 0 files or 0 in-window fills (exit 2); (2) `market_window_utc()` in `analysis/market_time.py` correctly calculates inclusive ET days across DST flips (`[2026-03-01 05:00Z, 2026-04-01 04:00Z)`), pulling the full final trading session and eliminating the false statement-only edge case on 3/31; (3) wired into both `cross_check_schwab.py` and `reconcile_schwab.py`; (4) owner run #3 clean (39/39 matched, exit 0). Ran `pytest backend/tests/test_market_time.py backend/tests/test_cross_check.py` (24 passed) and full `verify.py` (896 passed, ruff clean, memory budgets step green).
+    concerns: 1. Multi-day GTC order fills aggregate to min-date on API side vs daily statement lines (unobserved shape today, surfaces as unmatched attention item if encountered).
+- **T113 (utf-8 subprocess hardening + archive_memory tests) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. D032-clean rebuild of the two ideas salvaged
+  from the reverted review-session code. Built: (a) parallel_check.py's two
+  subprocess.run calls (git wrapper + alembic heads) gain
+  `encoding="utf-8", errors="replace"` — Windows text=True defaults to cp1252,
+  which chokes on the em-dashes/middle-dots throughout the memory files this
+  script exists to read; errors="replace" degrades one character, never the
+  whole safety check. (b) backend/tests/test_archive_memory.py — 5 tests via
+  importlib-by-path (T106 precedent, test_install_mcp_config.py pattern, NO
+  sys.path mutation), all paths monkeypatched to tmp_path (never touches real
+  memory): header preserved verbatim + exact keep-count with newest-first
+  verbatim archive & provenance line; same-day double archive → two files (-2
+  suffix, moved+kept == 20, move-never-delete arithmetic); keep >= entries →
+  clean no-op (file unchanged, no archive dir); check() 0/1/2 ladder at
+  100/701/1001 lines (the exact thing verify.py runs); split_progress
+  no-entries edge.
+  EVIDENCE (D027): 5/5 pass; ruff clean on both files; live
+  `python3 scripts/parallel_check.py` exit 0 after the encoding change;
+  pyrefly exactly 1 (I023 canary); full gate PASS.
+  D028 objections: (a) my first double-archive assertion assumed lexicographic
+  order puts the -2 file second — false ("-" sorts before "."), caught by the
+  test's own first run and re-pinned order-free; (b) tests load the script
+  fresh per call so monkeypatched globals can't leak between tests; (c) the
+  cp1252 fix is asserted only by successful live run, not a forced-encoding
+  test — a faithful Windows-codepage repro needs the owner's machine, noted
+  for the reviewer.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS
+    aligned: Hardens parallel agent collision detection against Windows cp1252 encoding crashes on UTF-8 memory files and pins archive_memory.py behavior via isolated importlib-by-path unit tests without sys.path leakage.
+    checked: Ran `python scripts/parallel_check.py` (exited 0 cleanly), `pytest backend/tests/test_archive_memory.py` (5 passed: header preservation, exact keep-count, same-day no-overwrite with -2 suffix, clean no-op, --check 0/1/2 ladder, split without entries edge), and full `python scripts/verify.py` (879 passed, ruff clean, memory budgets step green).
+    concerns: none
+- **T016c (Schwab fills into the daily sync + fee persistence) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**. Built: (1) Transaction gains nullable
+  fill_type/commission/fees (alembic 7c3a91e0d5b2, revises 00c4e1efd5c4, single
+  head; legacy rows stay NULL = equity/no-cost-data, never guessed); (2) mapper
+  extracts fee legs from transferItems (COMMISSION → commission, every other
+  feeType → fees, abs(amount)); (3) data/schwab_sync.py sync_schwab_fills —
+  30-day trailing window, T036-style dedupe per external_id for Transactions AND
+  CashFlow, account keyed by Schwab's hash_value (non-PII), unmapped counted
+  never dropped; (4) scripts/sync.py best-effort block: no config → skip note,
+  ANY SchwabError → named note (token lapse gets "run schwab_auth.py --write"),
+  Alpaca half never dies for a Schwab failure; (5) attribution: AttributedFill
+  gains contract_multiplier, FIFO pnl and notional ×100 for option lots,
+  attributed_fills_from_rows maps fill_type via the existing contract_multiplier()
+  helper — DB option trips were 100x understated before this.
+  EVIDENCE (D027): test_schwab_sync.py 5 tests — fees split 0.65/0.01 on the
+  probe-shaped option row, I029 placeholder-tradeDate regression at the DB layer
+  (occurred_at 15:24 not 05:00), rerun idempotent (+0/3 known), lapsed token
+  raises the named weekly error, option round trip pnl $39.00 not $0.39
+  (notional $130 = 1×1.30×100). 47/47 across schwab+attribution suites; alembic
+  upgrade head on scratch DB → all 3 columns present; ruff clean; pyrefly
+  exactly 1 (I023 canary); full gate PASS.
+  D028 objections considered: (a) DB and file-based behavioural stack are now
+  TWO stores of the same fills — autopsy still reads files; T016b's diff is the
+  reconciliation, and get_attribution reading the DB now gets correct option
+  math; (b) catching ALL SchwabError in sync.py could mask a real mapping bug —
+  no: mapping bugs raise ValueError/KeyError which still propagate, SchwabError
+  is transport-only; (c) fees are recorded but not yet subtracted in FIFO pnl —
+  deliberate, matches T108's convention (costs decomposed separately, T090/T091b),
+  noted for the reviewer.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS
+    aligned: Lands owner's real Schwab fills and broker fee legs (COMMISSION vs fees) directly into daily sync and DB without killing the Alpaca sync on token expiration (D026).
+    checked: Ran `alembic heads` (single head `7c3a91e0d5b2`), `pytest backend/tests/test_schwab_sync.py backend/tests/test_schwab.py backend/tests/test_attribution.py` (47 passed), full `verify.py` (874 passed, ruff clean, memory budgets green). Verified broker fee splitting (0.65 commission / 0.01 fees), 100x option contract multiplier in FIFO pnl ($39.00 pnl, $130 notional), idempotent deduplication, and non-fatal token lapse degradation.
+    concerns: 1. DB store and file-based behavioural stack remain separate until T016b reconciliation. 2. Fees are stored and decomposed separately per T108 convention (not subtracted inside raw FIFO trade pnl).
+- **T112 (memory budgets as a gate mechanism — D031) — DONE 2026-08-18 (Claude/Cowork; REVIEWED by Gemini/Antigravity — PASS)**.
+  CODE ADDED DURING GEMINI'S REVIEW, REVIEWED 2026-08-18 by Claude/Cowork — **PASS**
+  (bf730e0 + 1e992ba: test_archive_memory.py [4 tests], parallel_check utf-8
+  subprocess hardening, defensive out_label guard). Ran it: 4/4 pass, full gate
+  PASS, pyrefly exactly 1 (an initial reading of 2 was a transient — re-measured
+  before writing it down). The utf-8 fix is real Windows hardening; the tests pin
+  header preservation and keep-count behavior.
+  ON THE RECORD, without relitigating (these commits predate D032 by minutes):
+  bf730e0 briefly DELETED archive_progress's `path.write_text` — the line that
+  trims PROGRESS after archiving — which would have silently duplicated history;
+  1e992ba self-caught and restored it. A reviewer editing the script under
+  review broke the script under review: that incident is D032's justification,
+  generated contemporaneously. Going forward the paste-brief governs.
+  Concern (stylistic, non-blocking): the test does module-level sys.path.insert
+  — the pattern removed in T106 because it persists across the whole suite;
+  works today, one-line importlib cleanup whenever the file is next touched.
+  SUPERSEDED 2026-08-18 BY THE OWNER: he removed ALL artifacts of Gemini's
+  review session from disk (test_archive_memory.py, its duplicate hermes
+  disposition doc, both script edits reverted) — enforcing D032 retroactively,
+  which is his call and consistent with the rule's spirit: reviewer-created
+  code should not exist, however good. Cleanup committed; gate PASS after
+  reverts; pyrefly exactly 1. The two ideas WITH merit are re-filed below so
+  a BUILDER session can do them properly:
+- [x] T113 — built 2026-08-18, see Awaiting review at top.
+  Owner-requested hermes-agent review (disposition: docs/research/hermes-agent-review-
+  2026-08-17.md) adopted one lesson our repo proved on measurement:
+  PROGRESS.md's own day-one "~150 lines then archive" rule had never executed
+  — 2,654 lines, no archive dir. Files: `scripts/archive_memory.py` (NEW —
+  --check warns at soft budgets and FAILS the gate at hard caps [error-forces-
+  consolidation semantics]; archival is MOVE-never-delete to project-memory/
+  archive/ with provenance header, newest 12 PROGRESS entries kept, refuses
+  --keep < 5), `scripts/verify.py` (memory-budgets step added to STEPS),
+  `project-memory/archive/PROGRESS-archive-2026-08-18.md` (FIRST RUN: 142
+  entries moved verbatim, 2,654 -> 210 lines), D031 in DECISIONS.
+  EVIDENCE (D027): pre-run --check correctly FAILED (exit 2, named the file
+  and the fix); post-run passes with TASKS soft-warning at 901 (by design —
+  its compaction needs judgment, so it nags); full gate PASS end-to-end with
+  the new step live; ruff clean; pyrefly 1 (known I023).
+  STRONGEST OBJECTIONS AGAINST MY OWN TICKET (D028):
+    1. Budget numbers are chosen tunables (commented in BUDGETS) — reasonable
+       people could pick others; the mechanism matters more than the values.
+    2. The archiver only automates PROGRESS (dated, append-only = mechanical);
+       TASKS/ISSUES/DECISIONS warn-only, betting a session will curate when
+       nagged — the same bet the old header lost. The difference: the nag now
+       prints in every gate run, and the hard cap eventually refuses.
+    3. Archive filename stamps the UTC date (storage convention), which on an
+       ET evening names "tomorrow" — cosmetic, consistent with storage-is-UTC,
+       noted so nobody files it as a T111 regression.
+  REVIEWED 2026-08-18 by Gemini/Antigravity — PASS
+    aligned: Keeps project memory human-readable and bounded across parallel agent sessions without losing history (D031).
+    checked: Ran `python scripts/archive_memory.py --check` (caught soft warn on TASKS.md 927 lines), `pytest backend/tests/test_archive_memory.py` (4 passed), full `verify.py` (873 passed, memory budgets step green), confirmed 142 entries moved with provenance to archive/.
+    concerns: 1. TASKS.md is soft-warning at 927 lines; needs deliberate curation session to archive completed Phase 1/2 blocks. 2. Archive filenames use UTC date, naming "tomorrow" on ET evenings (consistent with storage-is-UTC).
+- Older double-signed DONE blocks (T111, T023 v1, T091b-rest, T077b, T109,
+  T108b, T108, T104, T107, T103) moved verbatim to
+  project-memory/archive/TASKS-archive-2026-08-18.md (curation 2026-08-18).
+
