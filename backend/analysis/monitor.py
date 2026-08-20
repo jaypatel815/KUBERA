@@ -35,6 +35,27 @@ CHURN_CROSSINGS = 4          # same line T052 uses for "churn, not trend"
 NEAR_INVALIDATION_ATR = 0.5  # within half an ATR of the level = eyes on it
 BREAKOUTISH_REGIMES = ("breakout_watch",)
 
+# I033 (owner's first live run, 2026-08-20): the monitor printed
+# "trending_up" beside a week SPY spent DOWN 1.58% — both true, different
+# LENSES, and the output never said which. A regime label without its
+# timeframe reads like a prediction it never was. Every label now carries
+# its lens, and the caller prints week-to-date beside it.
+_REGIME_LENS = {
+    "trending_up":    "daily structure - a weeks-to-months lens",
+    "trending_down":  "daily structure - a weeks-to-months lens",
+    "range_bound":    "daily structure - a weeks-to-months lens",
+    "breakout_watch": "daily structure at an edge - watch the SESSION lines below",
+}
+
+
+def describe_regime(regime: str | None) -> str:
+    """The label WITH its lens: 'trending_up (daily structure - a
+    weeks-to-months lens)'. A red week inside a structural uptrend is
+    normal; the session lines (RVOL, VWAP churn) are the today lens."""
+    if regime is None:
+        return "unknown (thin history - no structural read)"
+    return f"{regime} ({_REGIME_LENS.get(regime, 'daily structure')})"
+
 
 @dataclass(frozen=True)
 class MonitorAlert:
@@ -51,6 +72,8 @@ class PositionCheck:
     regime: str | None
     alerts: list[MonitorAlert] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)   # named blind spots
+    week_change_frac: float | None = None            # I033: the short lens,
+    #  printed BESIDE the structural label so they can never be confused
 
 
 def check_position(
@@ -65,6 +88,7 @@ def check_position(
     invalidation_reason: str,
     atr_value: float | None,
     open_event_windows: list[str],
+    week_change_frac: float | None = None,
 ) -> PositionCheck:
     """Judge one held position from prepared readings. Long-thesis v1 —
     the exit-plan module is long-oriented by doctrine; shorts arrive with
@@ -126,7 +150,8 @@ def check_position(
             "this is a surface, not an instruction"))
 
     return PositionCheck(symbol=symbol, price=price, regime=daily_regime,
-                         alerts=alerts, notes=notes)
+                         alerts=alerts, notes=notes,
+                         week_change_frac=week_change_frac)
 
 
 @dataclass(frozen=True)

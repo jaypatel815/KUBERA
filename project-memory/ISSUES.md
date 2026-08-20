@@ -4,6 +4,23 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I033 [FIXED same day, 2026-08-20 — found by the owner's FIRST live
+  monitor run] The monitor printed `regime: trending_up` beside a week SPY
+  spent DOWN 1.58%; the owner reasonably read the label as a wrong
+  prediction. Both readings were true — trending_up is a ~250-bar
+  STRUCTURAL lens (swing highs/lows, SMA slope), and the churn line
+  (VWAP crossed 7x) was the today lens agreeing the session was chop —
+  but the output never said which timeframe each line spoke for. An
+  unlabeled regime is indistinguishable from a forecast.
+  FIX: analysis/monitor.describe_regime() — every regime label now
+  carries its lens ("trending_up (daily structure - a weeks-to-months
+  lens)"); PositionCheck carries week_change_frac and the CLI prints
+  "this week: -1.58%" beside the structure line; in the exact confusion
+  case (structural uptrend + red week) it adds the one-line explainer at
+  the point of confusion. Pinned by test_regime_labels_carry_their_lens.
+  CLASS RISK: the same unlabeled-lens problem may exist in brief/chat
+  surfaces — swept under T116 (short-horizon-first surfacing).
+
 - I032 [FOUND AND FIXED 2026-08-19] CI red since the 2026-08-17 uv-scaffold
   cleanup: commit a65c360 deleted `.python-version` as scaffold, but CI's
   setup-python reads it (`python-version-file:` in ci.yml, by D025 design) —

@@ -36,6 +36,7 @@ from analysis.monitor import (  # noqa: E402
     MonitorAlert,
     PositionCheck,
     check_position,
+    describe_regime,
     summarize,
 )
 from analysis.regime import classify_regime  # noqa: E402
@@ -113,6 +114,9 @@ def _check_symbol(market: MarketDataClient, symbol: str,
     except (MarketDataError, ValueError, httpx.HTTPError):
         pass  # named inside check_position
 
+    # I033: the short lens, computed here so it prints BESIDE the label.
+    week_change = (closes[-1] / closes[-6] - 1.0) if len(closes) >= 6 else None
+
     return check_position(
         symbol, price,
         daily_regime=regime,
@@ -121,6 +125,7 @@ def _check_symbol(market: MarketDataClient, symbol: str,
         invalidation_level=plan_level, invalidation_reason=plan_reason,
         atr_value=atr_value,
         open_event_windows=windows,
+        week_change_frac=week_change,
     )
 
 
@@ -149,8 +154,19 @@ def run_once() -> int:
                       f"uP&L {pos.unrealized_plpc:+.2%}")
                 c = _check_symbol(market, pos.symbol, windows)
                 checks.append(c)
-                print(f"  regime: {c.regime or 'unknown (thin history)'}  "
-                      f"price: {c.price if c.price is not None else '?'}")
+                week = (f"{c.week_change_frac:+.2%}"
+                        if c.week_change_frac is not None else "?")
+                print(f"  structure: {describe_regime(c.regime)}")
+                line = (f"  this week: {week}   price: "
+                        f"{c.price if c.price is not None else '?'}")
+                if c.regime == "trending_up" and \
+                        (c.week_change_frac or 0.0) < 0:
+                    # I033: the exact case that confused the owner's first
+                    # run — say it right where the two lenses meet.
+                    line += ("   (a red week inside a structural uptrend is "
+                             "normal — the session lines below are the "
+                             "today lens)")
+                print(line)
                 for a in c.alerts:
                     _print_alert(a)
                 for n in c.notes:

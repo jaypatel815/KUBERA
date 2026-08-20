@@ -2,6 +2,29 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D035 — Timescale doctrine: days are odds, minutes are state, seconds are out (2026-08-20)
+Owner direction after his first live monitor run: "I want KUBERA to
+predict the move within days, minutes, seconds — not weeks/months/years."
+Disposition, recorded so no agent re-litigates it silently:
+- SECONDS: OUT. Sub-second direction is a colocation latency war; the
+  IEX free feed is a delayed SAMPLE of trades, and at the owner's size
+  spread+fees consume any edge before it exists. No honest build exists
+  on this data; saying so beats simulating one. Revisit ONLY as a D034
+  upgrade-day question (SIP feed) — and even then default skeptical.
+- MINUTES: STATE, NOT DIRECTION. KUBERA measures the session minute by
+  minute (T052 VWAP/RVOL, T087a alerts) and that stays first-class;
+  minute-scale DIRECTION from this data is noise mining (D029's exact
+  failure mode). The monitor's churn/RVOL lines ARE the minutes product.
+- DAYS: THE BUILDABLE ASK — and the default lens KUBERA should LEAD
+  with. T077 already computes next-1-to-5-day distributions conditioned
+  on the vol regime; T083 supplies day-scale event base rates. T116
+  re-orders every surface to lead short-horizon: "from HERE, the next
+  1-3 days usually range X..Y, up-odds Z" — then session state, then
+  structure WITH ITS LENS NAMED (I033).
+- LANGUAGE UNCHANGED (D017): odds and ranges, never point predictions.
+  "SPY at 770 tomorrow" is the confidence trick that loses money; the
+  distribution from here is information the owner can size against.
+
 ## D034 — free tier now, paid tiers at autonomy (owner policy, 2026-08-18)
 The owner stated it plainly: "once I have KUBERA downloaded and running
 autonomously, I will pay the monthly subscriptions for all the APIs that are

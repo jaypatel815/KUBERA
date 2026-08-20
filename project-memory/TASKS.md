@@ -14,6 +14,18 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
 ## In progress
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **I033 fix (regime labels carry their lens) — AWAITING REVIEW 2026-08-20
+  (Claude/Cowork)**. From the owner's FIRST live monitor run: trending_up
+  beside a −1.58% week read as a wrong prediction. describe_regime() puts
+  the timeframe ON the label; week_change_frac rides the PositionCheck
+  and prints beside the structure line; the one-line explainer appears
+  ONLY in the exact confusion case (structural uptrend + red week).
+  EVIDENCE (D027): test_regime_labels_carry_their_lens (label wording for
+  all cases incl. thin-history, breakout pointer to session lines,
+  week-change passthrough + honest None); 7 monitor tests green; full
+  gate PASS; pyrefly canary 1. D035 records the owner's timescale
+  direction; T116 seeded below to make short-horizon the LEADING lens on
+  every surface (the class fix; this ticket is the point fix).
 - **T087a (open-trade monitor v1 — advisory CLI) — AWAITING REVIEW
   2026-08-19 (Claude/Cowork)**. The owner's Q&A ticket, minus its voice/
   Orb halves (those stay with T074/T087 BY DESIGN — stated in module and
@@ -431,6 +443,15 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   stays quiet when server-down/no-snapshot — those belong to the existing
   checks. Wired into run_checks → the owner's every-5-min scheduled task and
   --notify toast get it for free. 3 tests (drift/quiet/cannot-judge).
+- [ ] T116 — Short-horizon FIRST (owner direction 2026-08-20, D035): every
+  surface leads with the days lens — monitor/symbol briefing/morning brief
+  open with "from HERE: next 1-3 day range p05..p95, up-odds, typical
+  |move|" (T077 conditioned distribution + T083 base rates when an event
+  is near), THEN session state (T052/T087a), THEN structure with its lens
+  named (I033 pattern). Persona: when the owner asks "which way will it
+  go", answer with the distribution + the honest sentence about why point
+  predictions are refused (D017/D035) — never a bare label. Sweep ALL
+  chat/brief surfaces for unlabeled-lens regime mentions (the I033 class).
 - [~] T087 — Open-trade monitor: the ANALYSIS + CLI half SHIPPED 2026-08-19 as T087a (see Awaiting review) — all four checks live via scripts/monitor.py with schedulable exit codes. REMAINING here: Windows toast wiring, Orb surface, and voice barge-in (dep T074) — the delivery surfaces, not the judgment.
 - [ ] (advisory note for T077b/T085) Fractional-Kelly sizing VIEW from T077 win-rate/payoff — advisory-only, capped, never autopilot; single-trade "probability of profit" remains rejected per D017.
 - [x] T083 — built 2026-08-18, see Awaiting review at top. Post-probe

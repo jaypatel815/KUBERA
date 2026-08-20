@@ -89,6 +89,21 @@ def test_blind_spots_are_named_never_crashes():
     assert len(c.notes) == 3
 
 
+def test_regime_labels_carry_their_lens_i033():
+    """Owner's first live run: 'trending_up' beside a -1.58% week read like
+    a wrong prediction. Labels now carry their timeframe, always."""
+    from analysis.monitor import describe_regime
+    assert describe_regime("trending_up") == \
+        "trending_up (daily structure - a weeks-to-months lens)"
+    assert "SESSION lines" in describe_regime("breakout_watch")
+    assert describe_regime(None) == \
+        "unknown (thin history - no structural read)"
+    # and the short lens rides on the check itself, next to the label
+    c = _check(week_change_frac=-0.0158)
+    assert c.week_change_frac == -0.0158
+    assert _check().week_change_frac is None          # absent stays honest
+
+
 def test_summary_exit_code_is_schedulable():
     burning = _check(price=94.0)                       # invalidation_hit
     watchy = _check(vwap_crossings=CHURN_CROSSINGS)    # watch only
