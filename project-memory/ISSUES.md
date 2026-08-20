@@ -4,6 +4,13 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I036 [FOUND 2026-08-20 — while reviewing Batch #7 / T122c] pyrefly reports
+  missing-import error on `scripts/kronos_adapter.py:50` (`import pandas as pd`)
+  because pandas is installed only in the owner's model venv, not KUBERA's root
+  venv. Unlike line 55 (`from model import ... # pyrefly: ignore`), line 50 lacks
+  the narrow ignore comment. REPRO: `python -m pyrefly check` from `backend/`
+  reports 1 error, failing the verify gate (`types (pyrefly = exactly 0)`).
+  FIX: add `# pyrefly: ignore` to line 50 with explanatory comment.
 - I035 [BEHAVIORAL, 2026-08-20 — three occurrences in ONE day, so it gets
   an entry, not another note] THE PIPE EATS THE EXIT CODE. Shell chains
   of the shape `checker | grep/tail/head ...; or && next-step` take the

@@ -29,6 +29,13 @@ Gemini on anything in Awaiting review.
   the real DB (guard refused, 1/3 intact). Gate PASS bare-exit (I035
   rule). Both of the owner's error outputs were rails working: the
   forecast refusal is paper-forward doing its job.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 89ca9cf — PASS
+    aligned: T122d (Accidental-restart guard) — protects attempt budget from unintentional re-runs of `start` subcommand.
+    checked:
+      - Read `scripts/kronos_run.py` & `backend/tests/test_kronos_runner.py`: verified that `start` refuses when attempts already spent unless explicit `--another-attempt` flag is supplied; refusal leaves budget count unchanged.
+      - Tested live: `kronos_run.py start --revision kronos-v1` refuses by name when attempt count is 1/3.
+    concerns: none.
+
 - **Batch #8: T134+T135 + hygiene#7 + briefs-refresh - AWAITING REVIEW
   2026-08-20 (Claude/Cowork; probe-sized at 3+1: the probe SPLIT a
   fourth ticket out of T134 when it found the evidence gap). SHAs per
@@ -78,8 +85,16 @@ Gemini on anything in Awaiting review.
   two-strikes stop worked as written. (3) The packet counts the FIRST
   tier row as an observation, not a change - stated in its output, but
   a reviewer should check the wording lands.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 4430e61 (SHAs: 3032c73, 49bb5c8, d6acfba, 4430e61) — PASS
+    aligned: Batch #8 (D021 revisit evidence machinery + doc refresh) — T135 (`risk_events` observation recording & table), T134 (`scripts/d021_evidence.py` packet), and hygiene #7 + briefs refresh.
+    checked:
+      - Read `backend/alembic/versions/c8e4f2a91d63_t135_risk_events.py`, `backend/data/models.py`, `backend/data/risk_events.py`: verified `risk_events` table and observation-based deduplicated recording in brief's `_risk_section`. Single alembic head `c8e4f2a91d63`.
+      - Read `scripts/d021_evidence.py` & `backend/tests/test_risk_events.py`: verified 3-metric packet (weekly DQS trend, override rate, risk-event history with start date stated). 5 unit tests pass.
+      - Read `agent-briefs.md` & `TASKS.md` header: verified doc sync with current doctrines.
+      - Tested live: ran `python scripts/d021_evidence.py` against live DB (exit 0).
+      - Note on I035: type annotation fix at 4430e61 verified.
+    concerns: none.
 
-## Backlog — Owner actions
 - **Batch #7: T122c + T133 + curation #8 - AWAITING REVIEW 2026-08-20
   (Claude/Cowork; honestly sized at 3 - the backlog held no more
   unblocked work, and D038 says size is a target never a quota).
@@ -132,6 +147,15 @@ Gemini on anything in Awaiting review.
   samples); acceptable for a first candidate whose bar is a WIDE
   calibration band, and raising it is a one-constant change the
   pre-registration does not pin.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 1731adf (SHAs: 1731adf, 7356c8b) — BLOCK (CRITICAL on T122c, PASS on T133 / Curation #8)
+    aligned: Batch #7 — T122c (Kronos adapter & shape check), T133 (campaign status CLI), Curation #8.
+    checked:
+      - T133 (PASS): Read `scripts/kronos_run.py` status subcommand; anti-peek invariant verified by test and live run.
+      - Curation #8 (PASS): Archive verified.
+      - T122c (BLOCK - CRITICAL): Read `scripts/kronos_adapter.py`. Line 50 has unsuppressed `import pandas as pd`. Because `pandas` is not in KUBERA's root venv, running `python scripts/verify.py` or `python -m pyrefly check` from `backend/` fails with 1 error (`ERROR Cannot find module pandas [missing-import]`), failing the verify gate (`types (pyrefly = exactly 0)`).
+    concerns:
+      1. CRITICAL: `scripts/kronos_adapter.py:50` requires narrow `# pyrefly: ignore` with an explanatory comment (like line 55) so the type checker gate stays at exactly zero. Tracked in ISSUES.md as I036.
+
 
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.

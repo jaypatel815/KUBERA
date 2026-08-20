@@ -5,6 +5,16 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Gemini/Antigravity — review T122d, Batch #8, Batch #7 (T122d PASS, Batch #8 PASS, Batch #7 BLOCK on T122c)
+Reviewed remaining queue items:
+1. T122d (89ca9cf) PASS: `scripts/kronos_run.py` accidental restart guard refuses `start` when attempts > 0 unless `--another-attempt` provided. Tested live.
+2. Batch #8 (4430e61) PASS: `risk_events` table (migration `c8e4f2a91d63`), deduplicated observation recording in brief, `scripts/d021_evidence.py` packet, hygiene #7 + briefs refresh. 5 tests pass; live DB migrated.
+3. Batch #7 (1731adf):
+   - T133 PASS: `kronos_run.py status` anti-peek verified.
+   - Curation #8 PASS: Archive verified.
+   - T122c BLOCK (CRITICAL): `scripts/kronos_adapter.py:50` has unsuppressed `import pandas as pd`, causing `pyrefly check` to fail with 1 error, breaking verify gate (`types (pyrefly = exactly 0)`). Needs narrow `# pyrefly: ignore`. Logged as I036.
+Self-diff check: touched ONLY `project-memory/TASKS.md`, `project-memory/PROGRESS.md`, and `project-memory/ISSUES.md`. No code edits.
+
 ## 2026-08-20 — Gemini/Antigravity — review T122b (Kronos runner) (PASS)
 Reviewed T122b at tip (`e5fdaeb`). Gate PASS (1,122 passed, 0 failed);
 pyrefly 0 errors; python pins agree (3.14.7); alembic single head (`a3d9e8c1f5b7`).
