@@ -35,6 +35,10 @@ STEPS = [
     # 2,654 lines against its own stated ~150 before this became mechanical.
     ("memory budgets", [sys.executable, "scripts/archive_memory.py", "--check"]),
     ("python pins (I032)", [sys.executable, "scripts/check_python_pins.py"]),
+    # T125/I023: the type checker's zero is a GATE, not a habit — it has
+    # caught four real bugs pre-commit; the wrapper parses the count so a
+    # format drift fails loud instead of passing silent.
+    ("types (pyrefly = exactly 0)", [sys.executable, "scripts/check_pyrefly.py"]),
 ]
 
 # Things whose presence changes the result. Not a dependency list — a list of
