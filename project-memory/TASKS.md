@@ -12,7 +12,11 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-(none)
+- **T121b (Finnhub news as second labeled source) - Claude/Cowork** - claimed 2026-08-20.
+- **T119 (thesis view composition) - Claude/Cowork** - claimed 2026-08-20.
+- **T120 (plugin packaging) - Claude/Cowork** - claimed 2026-08-20.
+- **T114b (docs delta: README for the new surface) - Claude/Cowork** - claimed 2026-08-20.
+- **TASKS curation #4 (D031) - Claude/Cowork** - claimed 2026-08-20.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T121 build (FinnhubClient + beat/miss enrichment) + I034 leak fix -
