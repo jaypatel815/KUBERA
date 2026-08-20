@@ -29,7 +29,7 @@ from __future__ import annotations
 import inspect
 import logging
 from contextlib import contextmanager
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Iterator, cast
 
 from api.tools import ToolContext, ToolError, registry
 from settings import KuberaSettings, get_settings
@@ -256,7 +256,16 @@ def build_mcp_server(
             return handler
 
         fn = _make_handler(tool_name)
-        fn.__signature__ = inspect.Signature(parameters, return_annotation=dict)
+        # I023: __signature__ is legal on functions (CPython honours it for
+        # introspection) but inexpressible on FunctionType for the checker.
+        # cast(Any, ...) states the expressibility gap EXPLICITLY instead of
+        # leaving a standing error; runtime is byte-for-byte identical. The
+        # callable-class alternative was considered and rejected: FastMCP's
+        # coroutine detection (iscoroutinefunction) does not see through
+        # instances, so "expressing it" that way risks silently breaking
+        # tool execution for zero runtime benefit.
+        cast(Any, fn).__signature__ = inspect.Signature(
+            parameters, return_annotation=dict)
         fn.__annotations__ = annotations
         fn.__name__ = tool_name
         fn.__doc__ = spec.description

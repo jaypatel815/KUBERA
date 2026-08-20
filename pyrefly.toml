@@ -85,11 +85,11 @@ missing-attribute = "warn"
 not-iterable = "warn"
 
 # ---------------------------------------------------------------------------
-# KNOWN REMAINING ERRORS — 0 (T101 resolved the remaining 6 expressibility gaps).
-#
-#   analysis/correlation.py  -> TypedDict CorrelationMatch
-#   analysis/ranking.py      -> typed list comprehension with walrus narrowing
-#   backtest/strategies.py   -> RegimeRouterStrategy callable class with last_leg
-#   data/fred.py             -> non-None assertion on s.fred_api_key after require_fred()
-#
-# If new errors appear, investigate immediately before suppressing.
+# KNOWN REMAINING ERRORS — 0, and TRUE again as of 2026-08-20 (I023 closed).
+# History: T101 drove the count to 0; T045's dynamic __signature__ assignment
+# broke the invariant the very next ticket (I023 recorded the drift instead of
+# letting the comment lie). Fixed by expressing the gap: cast(Any, fn) in
+# api/mcp_server.py — runtime identical, checker-legible, reason in-line.
+# THE RULE STANDS: if new errors appear, investigate immediately before
+# suppressing. A checker that cries wolf is worse than none; a config that
+# lies about the count is how the 138-error state started.
