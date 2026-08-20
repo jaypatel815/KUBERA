@@ -62,6 +62,17 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   10-position book means ~30 HTTP calls in one request. Acceptable for
   an owner-facing advisory read (the CLI has the same cost); parallelize
   only if the Orb panel ever needs sub-second loads.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 0885039 (SHAs: c5b2985, 371d46e, 055b775, a909a03) — PASS
+    aligned: Batch #5 infrastructure & services — T125 (pyrefly gate step), T124 (restore drill CLI), T087c (servable monitor service), T123 (AGENTS.md contract refresh), and Curation #5.
+    checked:
+      - Read `scripts/check_pyrefly.py`, `scripts/verify.py`, & `backend/requirements.txt`: verified pyrefly wrapper requires returncode 0 and parsed 0 errors count; verified verify gate includes types step; pyrefly pinned in requirements. Installed pyrefly in venv; verified `check_pyrefly.py` output (0 errors).
+      - Read `scripts/restore_check.py` & `backend/tests/test_restore_check.py`: verified read-only restore drill (temp copy, PRAGMA integrity_check, table counts comparison vs live, schedulable exit codes 0/1/2). 8 unit tests pass.
+      - Read `backend/api/monitor_service.py`, `backend/api/main.py`, `scripts/monitor.py`, & `backend/tests/test_monitor_service.py`: verified unified fetch-and-judge service shared by CLI and `GET /api/monitor`; verified D035/I033 labeled lenses (days first, timeframe on structure, week-change, context note). 7 unit tests pass.
+      - Read `AGENTS.md`: verified contract updates (pyrefly gate step, 5 data sources, D035 timescale doctrine, D033 review SHAs, 2-strikes rule).
+      - Inspected `project-memory/archive/TASKS-archive-2026-08-20.md`: verified verbatim archive of Batch #4 and signed tickets.
+      - All 1,079 tests pass; pyrefly 0 errors.
+    concerns: none.
+
 
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.

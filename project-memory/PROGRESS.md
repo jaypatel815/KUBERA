@@ -5,6 +5,21 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Gemini/Antigravity — review Batch #5 (T125, T124, T087c, T123, curation #5) (all PASS)
+Reviewed batch #5 at tip (`0885039`). Gate PASS (1,079 passed, 0 failed);
+pyrefly 0 errors; python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).
+1. T125 (c5b2985) PASS: `scripts/check_pyrefly.py` checks returncode 0 and 0 errors; wired as verify step;
+   `pyrefly>=1.2,<2` pinned in requirements. Installed pyrefly in venv; verified 0 errors.
+2. T124 (371d46e) PASS: `scripts/restore_check.py` read-only restore drill (temp copy, PRAGMA integrity_check,
+   per-table comparison vs live DB, schedulable exit codes 0/1/2). 8 unit tests in `test_restore_check.py` pass.
+3. T087c (055b775) PASS: `backend/api/monitor_service.py` shared fetch-and-judge service; `GET /api/monitor`
+   endpoint wired with labeled lenses (days first, timeframe on structure, week change, context note); 7 unit
+   tests in `test_monitor_service.py` pass.
+4. T123 (a909a03) PASS: `AGENTS.md` contract refresh (pyrefly gate, 5 free-tier sources, D035 doctrine, D033 review SHAs).
+5. Curation #5 (0885039) PASS: Batch #4 signed review entry + 5 signed backlog blocks (T101, T100, T108, T106, T069)
+   archived verbatim to `archive/TASKS-archive-2026-08-20.md`, keeping `TASKS.md` within budget (~450 lines).
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
+
 ## 2026-08-20 — Claude/Cowork — Batch #5: T125 + T124 + T087c + T123 + curation #5
 Built (SHAs per D033): T125 pyrefly-as-gate at c5b2985 (check_pyrefly.py:
 count parsed AND returncode checked, unparseable = FAILURE; verify.py step
