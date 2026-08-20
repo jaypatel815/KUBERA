@@ -2420,6 +2420,32 @@ def _get_event_base_rates(ctx: ToolContext, a: EventRatesArgs) -> dict:
     return out
 
 
+@registry.tool(
+    "get_short_horizon",
+    "THE LEADING LENS (D035, owner-set): what the next 1-3 days usually look "
+    "like from HERE — p05..p95 range in % and price, up-odds, typical |move|, "
+    "from this symbol's own history, preferring current-vol-conditioned bands "
+    "and naming the basis. When the owner asks 'which way will it go', THIS "
+    "is the answer: lead with the range and odds, add ONE honest sentence "
+    "that point predictions are refused because they'd be a confidence trick "
+    "(D017) — never a bare structural label, never a target. State the "
+    "sample size and as-of date.",
+    SymbolArgs,
+)
+def _get_short_horizon(ctx: ToolContext, p: SymbolArgs) -> dict:
+    from analysis.short_horizon import short_horizon_read
+
+    market: MarketDataClient = ctx.require("market")
+    bars = market.get_daily_bars(p.symbol, days=500)
+    read = short_horizon_read(p.symbol,
+                              [b.close for b in bars.bars],
+                              [b.date for b in bars.bars])
+    out = asdict(read)
+    out["asof"] = bars.asof.isoformat()
+    out["source"] = bars.source
+    return out
+
+
 class EarningsReleaseArgs(SymbolArgs):
     max_chars: int = Field(
         default=20_000, ge=2_000, le=40_000,

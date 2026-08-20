@@ -42,6 +42,7 @@ from analysis.monitor import (  # noqa: E402
     summarize,
 )
 from analysis.regime import classify_regime  # noqa: E402
+from analysis.short_horizon import one_line, short_horizon_read  # noqa: E402
 from data.alpaca import AlpacaClient, AlpacaError  # noqa: E402
 from data.market_data import MarketDataClient, MarketDataError  # noqa: E402
 from settings import ConfigError, get_settings  # noqa: E402
@@ -64,7 +65,7 @@ def _open_event_windows() -> list[str]:
 
 
 def _check_symbol(market: MarketDataClient, symbol: str,
-                  windows: list[str]) -> PositionCheck:
+                  windows: list[str]) -> "tuple[PositionCheck, str]":
     bars = market.get_daily_bars(symbol, days=250)
     closes = [b.close for b in bars.bars]
     highs = [b.high for b in bars.bars]
@@ -119,6 +120,9 @@ def _check_symbol(market: MarketDataClient, symbol: str,
     # I033: the short lens, computed here so it prints BESIDE the label.
     week_change = (closes[-1] / closes[-6] - 1.0) if len(closes) >= 6 else None
 
+    # T116/D035: the DAYS lens leads — computed from the same closes.
+    days_line = one_line(short_horizon_read(symbol, closes, dates))
+
     return check_position(
         symbol, price,
         daily_regime=regime,
@@ -128,7 +132,7 @@ def _check_symbol(market: MarketDataClient, symbol: str,
         atr_value=atr_value,
         open_event_windows=windows,
         week_change_frac=week_change,
-    )
+    ), days_line
 
 
 def _print_alert(a: MonitorAlert) -> None:
@@ -154,8 +158,9 @@ def run_once(notify: bool = False) -> int:
             for pos in positions:
                 print(f"{pos.symbol}  qty {pos.qty:g}  "
                       f"uP&L {pos.unrealized_plpc:+.2%}")
-                c = _check_symbol(market, pos.symbol, windows)
+                c, days_line = _check_symbol(market, pos.symbol, windows)
                 checks.append(c)
+                print(f"  {days_line}")            # the days lens leads (D035)
                 week = (f"{c.week_change_frac:+.2%}"
                         if c.week_change_frac is not None else "?")
                 print(f"  structure: {describe_regime(c.regime)}")

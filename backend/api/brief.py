@@ -76,9 +76,15 @@ def _symbol_read(market: MarketDataClient, symbol: str) -> dict:
     last_close = closes[-1]
 
     trade = market.get_latest_trade(symbol)
+    # T116/D035: the days lens LEADS the per-symbol read — dict order is
+    # payload order, and the narrator reads top-down.
+    from dataclasses import asdict as _asdict
+
+    from analysis.short_horizon import short_horizon_read
     out: dict = {
         "symbol": symbol,
         "available": True,
+        "short_horizon": _asdict(short_horizon_read(symbol, closes, dates)),
         "last_close": last_close,
         "last_close_date": dates[-1],
         "latest_price": trade.price,

@@ -12,13 +12,63 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T116 (short-horizon FIRST — D035) — Claude/Cowork** — claimed 2026-08-20.
-- **T087b (monitor --notify toast) — Claude/Cowork** — claimed 2026-08-20.
-- **I023 (pyrefly to a true zero) — Claude/Cowork** — claimed 2026-08-20.
-- **ISSUES stale-marker sweep — Claude/Cowork** — claimed 2026-08-20.
 - **TASKS curation #3 (D031) — Claude/Cowork** — claimed 2026-08-20.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T116 (short-horizon FIRST — the owner's lens) — AWAITING REVIEW
+  2026-08-20 (Claude/Cowork)**. D035 delivered as surfaces, not a memo.
+  analysis/short_horizon.py (pure): packages T077's distributions into the
+  LEADING read — per horizon (1d, 3d): p05..p95 in % AND price, up-odds,
+  typical |move|, sample count, and the BASIS named (vol-conditioned
+  tercile when history qualifies, unconditional otherwise); refusals per
+  horizon by name; one_line() renders the monitor's lead line ending
+  "odds, not a prediction". Surfaces: tool #41 get_short_horizon (the
+  description tells the narrator to LEAD with range+odds and refuse point
+  calls with one honest sentence); monitor prints the days line FIRST
+  (before structure — which now carries its lens from I033); morning
+  brief _symbol_read leads with short_horizon (dict order = payload order
+  = narration order); persona gains SHORT_HORIZON_RULE wired into
+  build_system_prompt (which-way questions → get_short_horizon; every
+  regime word carries its timeframe out loud; session state named as the
+  minutes lens). MCP read-only list +1; guards 40→41 (×4 files).
+  EVIDENCE (D027): test_short_horizon.py 5 tests — packaging EXACTLY
+  equals the engine's numbers for the same basis (field-by-field vs a
+  direct expected_move call); thin/empty refusals named per horizon;
+  one_line leads with the shortest available horizon and pins the
+  odds-not-a-prediction wording; tool integration on a fake market;
+  persona rule pinned AND verified present in the BUILT prompt.
+  1039 passed; pyrefly 0 (the new true-zero canary); gate PASS.
+  D028: the read prefers CONDITIONED bands and says so — silently mixing
+  bases between chat and monitor was the failure mode to avoid, so every
+  surface composes from the ONE function.
+- **T087b (monitor --notify + shared hardened toast) — AWAITING REVIEW
+  2026-08-20 (Claude/Cowork)**. backend/notify.py promoted from
+  health_check's inline helper WITH its latent quoting bug fixed: raw
+  text into single-quoted PowerShell breaks on apostrophes — health_check's
+  fixed messages never tripped it, the monitor's alert details ("today's
+  tape", quoted plan reasons) absolutely would have. ps_script() is pure
+  (escaping pinned by test: quote-doubling, newline flattening, length
+  caps); notify_windows never raises by contract (FileNotFoundError and
+  TimeoutExpired both swallowed after bounded wait). Both scripts import
+  the ONE implementation; monitor gains --notify (first alert rides the
+  toast, exit codes carry the truth).
+  EVIDENCE (D027): test_notify.py 4 tests (the apostrophe case asserts
+  the raw form is GONE; call shape pinned); 11 monitor+notify tests
+  green; live sandbox: health_check still names PROBLEM, monitor --notify
+  exits 2 unreachable. Gate PASS.
+- **I023 fix + ISSUES stale-marker sweep — AWAITING REVIEW 2026-08-20
+  (Claude/Cowork, commits afbf8b3 + 0488c23)**. pyrefly is a TRUE ZERO:
+  the T045 __signature__ expressibility gap expressed via cast(Any, fn)
+  (runtime byte-for-byte identical; callable-class alternative REJECTED
+  in-line — FastMCP's iscoroutinefunction doesn't see through instances
+  and would have silently broken tool execution); pyrefly.toml records
+  the history; 13 MCP tests green; the canary convention is now EXACTLY
+  ZERO. Sweep: two healed REOPENED markers closed WITH evidence — I029's
+  inner "REOPENED until the re-run ticks clean" (it ticked clean 08-17,
+  triple-verified by T016b 39/39) and I016's numpy guard (per-test
+  importorskips at lines 37/133, BETTER than the module-level fix the
+  marker asked for — audio-free tests always run; verified by grep +
+  8/8 pass where numpy exists).
 - **I033 fix (regime labels carry their lens) — AWAITING REVIEW 2026-08-20
   (Claude/Cowork)**. From the owner's FIRST live monitor run: trending_up
   beside a −1.58% week read as a wrong prediction. describe_regime() puts

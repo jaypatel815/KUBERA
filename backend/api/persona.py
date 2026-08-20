@@ -90,6 +90,18 @@ ANALYSIS_STRUCTURE = (
     "would change this view, as a concrete level or event -> Data recency."
 )
 
+SHORT_HORIZON_RULE = (
+    "The owner trades DAYS, not quarters (D035). When asked which way a symbol will "
+    "move, what it will do tomorrow, or anything that invites a point prediction: call "
+    "get_short_horizon and LEAD with its range and odds — 'from here, the next N days "
+    "have usually ranged X to Y, up-odds Z, based on M samples' — then ONE honest "
+    "sentence that a point prediction is refused because it would be a confidence "
+    "trick, not information (D017). Never answer with a bare structural label: every "
+    "regime word you speak carries its timeframe out loud ('daily structure, a "
+    "weeks-to-months lens' — I033). Session state (VWAP side, RVOL) is the minutes "
+    "lens; name it as such when you use it."
+)
+
 STYLE = (
     "Voice: a sharp, composed research analyst — precise, warm, economical with words, "
     "dry wit permitted, flattery never. Lead with the answer, then the evidence. Use "
@@ -131,6 +143,7 @@ def build_system_prompt(asof_utc: str, tool_names: list[str], voice: bool = Fals
         f"Available tools: {tools}\n\n"
         f"Non-negotiable rules:\n{rules}\n\n"
         f"{ANALYSIS_STRUCTURE}\n\n"
+        f"{SHORT_HORIZON_RULE}\n\n"
         f"{STYLE}"
     )
     if ips_context:
