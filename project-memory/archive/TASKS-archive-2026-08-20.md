@@ -1191,3 +1191,59 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
     concerns: none.
 
 
+
+## Curation #8 (2026-08-20) - T122b double-signed (Gemini PASS at e5fdaeb, review cd8b53b), moved verbatim by Claude/Cowork (D031)
+
+- **T122b: Kronos runner - AWAITING REVIEW 2026-08-20 (Claude/Cowork;
+  SHA on this commit per D033).** Owner confirmed the gate on his
+  machine first (GATE OPEN, all four rails - the T127 acceptance run).
+  BUILT: data/models.py ResearchForecast + migration a3d9e8c1f5b7 (new
+  single head; proven on a scratch DB AND applied to the live DB);
+  research/isolation.py run_isolated_json - the JSON seam with the SAME
+  boundary guarantees (scrubbed env, -I, temp cwd, sentinel channel),
+  the model venv rides the existing python= injection point;
+  research/kronos_runner.py - forecasts logged AS MADE (unique per
+  revision/symbol/date, re-forecast REFUSED by name), call_model refuses
+  history reaching the target date (paper-forward at the seam),
+  malformed/partial distributions refused, coverage + toy-rule scorer
+  pure and hand-computed (equal-weight, costs per position change,
+  compounded), UNSCORABLE never consumes, consume-once through real
+  custody with the hash recomputed from what was ACTUALLY scored;
+  scripts/kronos_run.py - start (gate subprocess must print OPEN;
+  records 1 of 3 attempts), forecast (NO built-in model by design - a
+  stub would be fabricated data; --model-file + --python for the model
+  venv), score (--consume once; costs default 2x live T090 estimate,
+  --cost-bps override); RUNBOOK section 8 extended; kronos-v1.md gains
+  the PRE-WINDOW aggregation clarification (added before any forecast
+  exists - registration, not revision).
+  EVIDENCE (D027): test_kronos_runner.py 11 tests (real boundary
+  subprocess for call_model; every refusal matched by message; scorer
+  hand-computed incl. boundary-counts-as-inside and the 100%-coverage-
+  is-FAIL case; consume-once proven twice) + test_isolation.py +3 (JSON
+  seam roundtrip with env canary stripped, non-dict refused in child,
+  child exceptions named). RAN the CLI live: absent DB exit 2; missing
+  model file REFUSED exit 1; out-of-window date REFUSED exit 1;
+  missing-table crash found by the smoke -> named NOT CONFIGURED exit 2
+  + live DB migrated. Full gate PASS (1,119 passed, pyrefly 0).
+  D028 objections: (1) run_isolated_json with a model venv python DOES
+  give the child that venv's site-packages - the boundary still strips
+  env/cwd/PYTHONPATH but a malicious adapter could import anything the
+  venv has; same honest threat model as T110b (process isolation, not a
+  jail), now stated here too. (2) an attempt is spent at campaign START -
+  an owner who runs `start` twice by accident spends two; acceptable
+  because that is exactly what failures-count means, and the receipt
+  says remaining. (3) score fetches ~4x250 bars serially - fine for a
+  once-per-window read.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT e5fdaeb — PASS
+    aligned: T122b (Kronos candidate experiment campaign runner) — schema migration (`ResearchForecast`), isolated JSON boundary seam (`run_isolated_json`), paper-forward campaign runner (`research/kronos_runner.py`), CLI (`scripts/kronos_run.py`), runbook updates, and experiment pre-registration docs.
+    checked:
+      - Read `backend/alembic/versions/a3d9e8c1f5b7_t122b_research_forecasts.py` & `backend/data/models.py`: verified `research_forecasts` table with `uq_forecast_point` constraint on (revision, symbol, forecast_date) so re-forecast is refused; migration is clean single head applied to live DB.
+      - Read `backend/research/isolation.py` & `backend/tests/test_isolation.py`: verified `run_isolated_json` process isolation (-I, scrubbed environment, temp cwd, sentinel JSON channel, optional python interpreter path); 3 unit tests pass.
+      - Read `backend/research/kronos_runner.py` & `backend/tests/test_kronos_runner.py`: verified paper-forward history check (refusal if history contains target date), distribution validation, hand-computed coverage/toy-rule scoring, and consume-once custody binding with hash recomputation; 11 unit tests pass.
+      - Read `scripts/kronos_run.py`: verified `start` (phase7_gate subprocess check), `forecast` (external model execution via isolated JSON seam), and `score` (--consume once, cost calculation).
+      - Read `docs/RUNBOOK.md` & `docs/research/experiments/kronos-v1.md`: verified runbook section 8 and experiment pre-registration.
+      - Ran `phase7_gate.py --revision kronos-v1` live: all 4 gate checks PASS (GATE OPEN).
+      - Full gate PASS (1,122 passed, 0 failed, pyrefly 0 errors).
+    concerns: none.
+
+

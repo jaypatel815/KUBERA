@@ -47,6 +47,27 @@ pyrefly 0 errors; python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3
    archived verbatim to `archive/TASKS-archive-2026-08-20.md`, keeping `TASKS.md` within budget (~450 lines).
 Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
 
+## 2026-08-20 — Claude/Cowork — Batch #7: T122c adapter + T133 status + curation #8
+Honestly sized at 3 (the backlog held no more; D038: target, never
+quota). T122c at 1731adf: the adapter written against the FRESHLY-FETCHED
+Kronos README API - OHLCV rides the payload (misalignment refuses),
+machine paths ride --model-config (never committed), and the
+distribution is drawn (N_PATHS=30 independent samples; sample_count
+stays 1 because the documented parameter AVERAGES paths - an averaged
+point is what the pre-registration refuses); kronos_shape_check.py
+proves the adapter answers on synthetic bars BEFORE an attempt is spent;
+adapter reviewability pinned by test (T122b objection made it the
+control). T133: `status` subcommand, counts and dates only, anti-peek
+pinned (no price/coverage can appear mid-window); run live (opens in 4
+days, 0/3, 0 logged). Curation #8: T122b's double-signed record
+archived. Process slip recorded: backticks-in--m + a semicolon-broken
+chain let a commit land past a red pyrefly - caught same-minute, amended
+to 1731adf, messages now via -F. Canary exactly 0 (one narrow, reasoned
+ignore for the out-of-repo model import). Gate PASS at close. OWNER
+SEQUENCE before Monday: clone Kronos repo + make its venv, run
+kronos_shape_check.py (downloads weights, must PASS), then
+`kronos_run.py start`.
+
 ## 2026-08-20 — Claude/Cowork — T122b: the Kronos runner (campaign machinery)
 Owner confirmed GATE OPEN on his machine (T127 acceptance), then the
 runner shipped: ResearchForecast + migration a3d9e8c1f5b7 (scratch-proven,

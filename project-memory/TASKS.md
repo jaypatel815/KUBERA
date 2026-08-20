@@ -12,69 +12,60 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **Batch #7 (3 tickets - honestly sized: the backlog holds no more
-  unblocked work; D038 says size is a target, never a quota; claimed
-  2026-08-20, Claude/Cowork):** T122c (the Kronos adapter written
-  against the repo's DOCUMENTED inference API - fetched fresh, not
-  recalled - plus a shape-check the owner runs before `start`; adapter
-  kept small enough to READ per the T122b objection), T133 (campaign
-  status read - counts and dates ONLY, no realized-price joins: a
-  mid-window status that showed outcomes would be informal peeking),
-  curation #8 (archive the signed T122b entry).
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T122b: Kronos runner - AWAITING REVIEW 2026-08-20 (Claude/Cowork;
-  SHA on this commit per D033).** Owner confirmed the gate on his
-  machine first (GATE OPEN, all four rails - the T127 acceptance run).
-  BUILT: data/models.py ResearchForecast + migration a3d9e8c1f5b7 (new
-  single head; proven on a scratch DB AND applied to the live DB);
-  research/isolation.py run_isolated_json - the JSON seam with the SAME
-  boundary guarantees (scrubbed env, -I, temp cwd, sentinel channel),
-  the model venv rides the existing python= injection point;
-  research/kronos_runner.py - forecasts logged AS MADE (unique per
-  revision/symbol/date, re-forecast REFUSED by name), call_model refuses
-  history reaching the target date (paper-forward at the seam),
-  malformed/partial distributions refused, coverage + toy-rule scorer
-  pure and hand-computed (equal-weight, costs per position change,
-  compounded), UNSCORABLE never consumes, consume-once through real
-  custody with the hash recomputed from what was ACTUALLY scored;
-  scripts/kronos_run.py - start (gate subprocess must print OPEN;
-  records 1 of 3 attempts), forecast (NO built-in model by design - a
-  stub would be fabricated data; --model-file + --python for the model
-  venv), score (--consume once; costs default 2x live T090 estimate,
-  --cost-bps override); RUNBOOK section 8 extended; kronos-v1.md gains
-  the PRE-WINDOW aggregation clarification (added before any forecast
-  exists - registration, not revision).
-  EVIDENCE (D027): test_kronos_runner.py 11 tests (real boundary
-  subprocess for call_model; every refusal matched by message; scorer
-  hand-computed incl. boundary-counts-as-inside and the 100%-coverage-
-  is-FAIL case; consume-once proven twice) + test_isolation.py +3 (JSON
-  seam roundtrip with env canary stripped, non-dict refused in child,
-  child exceptions named). RAN the CLI live: absent DB exit 2; missing
-  model file REFUSED exit 1; out-of-window date REFUSED exit 1;
-  missing-table crash found by the smoke -> named NOT CONFIGURED exit 2
-  + live DB migrated. Full gate PASS (1,119 passed, pyrefly 0).
-  D028 objections: (1) run_isolated_json with a model venv python DOES
-  give the child that venv's site-packages - the boundary still strips
-  env/cwd/PYTHONPATH but a malicious adapter could import anything the
-  venv has; same honest threat model as T110b (process isolation, not a
-  jail), now stated here too. (2) an attempt is spent at campaign START -
-  an owner who runs `start` twice by accident spends two; acceptable
-  because that is exactly what failures-count means, and the receipt
-  says remaining. (3) score fetches ~4x250 bars serially - fine for a
-  once-per-window read.
-  REVIEWED 2026-08-20 by Gemini/Antigravity AT e5fdaeb — PASS
-    aligned: T122b (Kronos candidate experiment campaign runner) — schema migration (`ResearchForecast`), isolated JSON boundary seam (`run_isolated_json`), paper-forward campaign runner (`research/kronos_runner.py`), CLI (`scripts/kronos_run.py`), runbook updates, and experiment pre-registration docs.
-    checked:
-      - Read `backend/alembic/versions/a3d9e8c1f5b7_t122b_research_forecasts.py` & `backend/data/models.py`: verified `research_forecasts` table with `uq_forecast_point` constraint on (revision, symbol, forecast_date) so re-forecast is refused; migration is clean single head applied to live DB.
-      - Read `backend/research/isolation.py` & `backend/tests/test_isolation.py`: verified `run_isolated_json` process isolation (-I, scrubbed environment, temp cwd, sentinel JSON channel, optional python interpreter path); 3 unit tests pass.
-      - Read `backend/research/kronos_runner.py` & `backend/tests/test_kronos_runner.py`: verified paper-forward history check (refusal if history contains target date), distribution validation, hand-computed coverage/toy-rule scoring, and consume-once custody binding with hash recomputation; 11 unit tests pass.
-      - Read `scripts/kronos_run.py`: verified `start` (phase7_gate subprocess check), `forecast` (external model execution via isolated JSON seam), and `score` (--consume once, cost calculation).
-      - Read `docs/RUNBOOK.md` & `docs/research/experiments/kronos-v1.md`: verified runbook section 8 and experiment pre-registration.
-      - Ran `phase7_gate.py --revision kronos-v1` live: all 4 gate checks PASS (GATE OPEN).
-      - Full gate PASS (1,122 passed, 0 failed, pyrefly 0 errors).
-    concerns: none.
-
+- **Batch #7: T122c + T133 + curation #8 - AWAITING REVIEW 2026-08-20
+  (Claude/Cowork; honestly sized at 3 - the backlog held no more
+  unblocked work, and D038 says size is a target never a quota).
+  SHAs per D033: 1731adf (T122c+T133, one commit - they share
+  kronos_run.py) / close SHA on this commit (curation #8 + memory).**
+  T122c - THE ADAPTER, against the DOCUMENTED API: Kronos README fetched
+  fresh 2026-08-20 (KronosPredictor.predict over an OHLCV DataFrame;
+  `model` package lives in the Kronos repo, not pip). Three consequences
+  built: (1) runner payload gains aligned OHLCV (misalignment refuses by
+  name); (2) machine-local paths NEVER enter committed files - the repo
+  location rides `--model-config kronos_repo=...` into the payload;
+  (3) sample_count stays 1 and the adapter draws N_PATHS=30 independent
+  samples to build empirical percentiles, because the documented
+  sample_count AVERAGES paths and an averaged point is exactly what the
+  pre-registration refuses. kronos_shape_check.py proves the adapter
+  answers on SYNTHETIC bars before an attempt is spent (fixture data by
+  design, logged nowhere). Adapter reviewability is the control for the
+  recorded T122b objection - pinned by test: under 140 lines, no machine
+  paths, sample_count=1 present. The out-of-repo `model` import carries
+  the narrowest pyrefly ignore with its reason (I023 rule intact:
+  canary back to exactly zero).
+  T133 - CAMPAIGN STATUS as a CLI subcommand (deliberately NOT a
+  registry tool: no guard-count coupling; chat gets it later if usage
+  demands, the T119 disposition logic): holdout state+hash, window with
+  days-to-open/remaining, budget used, forecast counts per symbol/
+  session - and NOTHING ELSE. Anti-peek pinned by test: no price,
+  return, or coverage figure can appear mid-window; the one evaluation
+  happens at consumption.
+  CURATION #8 - T122b's double-signed record (Gemini PASS at e5fdaeb,
+  review cd8b53b, concerns none) moved verbatim to
+  archive/TASKS-archive-2026-08-20.md.
+  EVIDENCE (D027): test_kronos_runner.py now 15 tests (+3 T122c: ohlcv+
+  config PROVEN to cross the real boundary via echo-child; misalignment
+  refused; adapter reviewability pins; +1 T133 status on a real file DB
+  with the anti-peek assertion). RAN LIVE: `kronos_run.py status`
+  against the real DB (opens in 4 days, 0/3 attempts, 0 logged, BY
+  DESIGN note printed); pyrefly at exactly 0 after the narrow ignore;
+  full gate PASS at close.
+  D028 objections, written down: (1) the adapter is UNEXECUTED code -
+  the sandbox cannot run Kronos; the controls are the documented-API
+  fetch, its enforced smallness, call_model's output validation at every
+  use, and the owner-run shape check that must PASS before `start`. If
+  the README's API drifted since publication, the shape check is where
+  it surfaces, not mid-campaign. (2) PROCESS SLIP on the record: the
+  first T122c commit landed past a red pyrefly because a semicolon broke
+  the && chain, and backticks in -m executed as command substitution
+  and ate a message line - caught in the same minute, amended to
+  1731adf; commit messages now go through -F files, chains stay pure &&.
+  (3) N_PATHS=30 gives coarse p05/p95 granularity (nearest-rank on 30
+  samples); acceptable for a first candidate whose bar is a WIDE
+  calibration band, and raising it is a one-constant change the
+  pre-registration does not pin.
 
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
