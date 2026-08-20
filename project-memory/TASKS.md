@@ -21,7 +21,10 @@ Gemini on anything in Awaiting review.
   2026-08-20 (Claude/Cowork; probe-sized at 3+1: the probe SPLIT a
   fourth ticket out of T134 when it found the evidence gap). SHAs per
   D033: 3032c73 (T134+T135, shared seam) / 49bb5c8 (hygiene#7 + briefs)
-  / close SHA on this commit.**
+  / d6acfba (close) / 4430e61 (DELTA - review at THIS tip: a type
+  annotation fix the close commit sailed past via the pipe trap, now
+  ISSUE I035 with a one-line repro; the gate re-ran BARE and passed at
+  this SHA - the first close under the I035 rule).**
   T135 (split from T134 by probe): tier/breaker HISTORY was not
   persisted anywhere - the Sept-12 revisit would have arrived
   evidence-less. risk_events table (migration c8e4f2a91d63, new single
