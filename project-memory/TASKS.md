@@ -12,6 +12,15 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
+- **Batch #7 (3 tickets - honestly sized: the backlog holds no more
+  unblocked work; D038 says size is a target, never a quota; claimed
+  2026-08-20, Claude/Cowork):** T122c (the Kronos adapter written
+  against the repo's DOCUMENTED inference API - fetched fresh, not
+  recalled - plus a shape-check the owner runs before `start`; adapter
+  kept small enough to READ per the T122b objection), T133 (campaign
+  status read - counts and dates ONLY, no realized-price joins: a
+  mid-window status that showed outcomes would be informal peeking),
+  curation #8 (archive the signed T122b entry).
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T122b: Kronos runner - AWAITING REVIEW 2026-08-20 (Claude/Cowork;
