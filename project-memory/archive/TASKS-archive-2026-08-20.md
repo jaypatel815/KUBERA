@@ -1,0 +1,611 @@
+# TASKS archive — moved 2026-08-20 by a deliberate curation session (D031)
+# Closed, double-signed entries moved VERBATIM from TASKS.md; move-never-delete.
+# The removal commit in TASKS.md is the other half of this diff.
+# Contents: 15 'Awaiting review' PASS blocks — T114, T064b-rest, T063b, T065b,
+# T110b, T084, T074a, T084a, T110a, T062c, T065, T072b, T083c, T076b, and the
+# T062c delta rides inside its entry. Verdicts name their SHAs (D033).
+
+- **T114 (owner-docs refresh) — AWAITING REVIEW 2026-08-19 (Claude/Cowork)**.
+  The shipped surface caught up with the docs. .env.example: FMP_API_KEY
+  added (it was MISSING — a fresh checkout wouldn't know the variable name;
+  free-tier scope + D034 upgrade note included); EDGAR_CONTACT comment
+  de-staled ("a future EDGAR client" → what the one line actually unlocks:
+  filing-clock base rates + press-release text). README: earnings-
+  intelligence paragraph (base rates + get_earnings_release, honestly
+  scoped); stress_windows.py in the promotion block; brief.py +
+  risk_symbols.py in the autopilot block + a paragraph on the two order
+  rails (disable switch + frequency cap); test count 280+ → 1,000+; repo
+  map gains backend/research (Phase 7 preconditions built early).
+  EVIDENCE (D027): docs ticket — the reviewer checks each claim against
+  the code it describes (every named flag/script/variable exists and does
+  what the sentence says). Gate PASS at batch close.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 755fe5f — PASS
+    aligned: owner documentation refresh and PROGRESS memory curation.
+    checked: verified `.env.example` includes `FMP_API_KEY` and updated `EDGAR_CONTACT`
+      comment; verified `README.md` updates (earnings intelligence, `stress_windows.py`,
+      `brief.py`, `risk_symbols.py`, 1000+ tests, `research/` in map); verified
+      `archive/PROGRESS-archive-2026-08-20.md` holds 32 archived entries verbatim.
+      Gate 1,019 passed.
+    concerns: none.
+
+- **T064b-rest (crisis-window stress runs — closes T064b's last buildable
+  item) — AWAITING REVIEW 2026-08-19 (Claude/Cowork)**. backtest/stress.py
+  (logic) + scripts/stress_windows.py (thin owner CLI). Named windows:
+  covid-2020 (2020-01-02..06-30, the fastest ~34% drawdown + first
+  rebound) and bear-2022 (2022-01-03..12-30, the year-long grind); gfc-2008
+  is listed IMPOSSIBLE ON THIS FEED by name (IEX history doesn't reach it)
+  — the ticket's own words, never silently substituted. slice_window
+  enforces COVERAGE: feed starting >7 days after the window opens, ending
+  >7 days early, or leaving <30 bars all REFUSE with the feed's dates (a
+  partial crash is an easier test, not the same test). stress_template
+  runs the template, the SAME template at 2x costs (T109b house rule), and
+  buy-and-hold of the SAME window as the honest comparator, reporting
+  drawdown_saved_frac ('did it protect, or track the crash with extra
+  steps?'). MEASUREMENT ONLY, stated in the payload note: recorded
+  nowhere; neither promotes nor demotes (live demotion stays T093 CUSUM).
+  CLI prints per-window tables + a protected/tracked/did-WORSE verdict
+  line, NOT CONFIGURED and FEED UNREACHABLE named degradations (exit 2).
+  EVIDENCE (D027): test_stress.py 5 tests — inclusive slice with
+  positional integrity; all three coverage refusals matched by name;
+  momentum-vs-holding on a rise→crash→flat fixture (momentum's drawdown
+  strictly smaller, drawdown_saved positive, 2x-cost never better,
+  zero-cost b&h equals pure arithmetic to 1e-9 and 5bps strictly worse);
+  window/impossible-list pins; unknown template refused. Live sandbox run:
+  named FEED UNREACHABLE, real exit code 2 verified without the pipe.
+  1016 passed; pyrefly canary 1; gate PASS at batch close.
+  D028: my first fixture was too short and the coverage guard REFUSED MY
+  OWN TEST (truncated-episode error) — the guard demonstrated itself;
+  fixture lengthened, guard unchanged. The remaining T064b leftovers stay
+  parked BY DESIGN: promote-via-chat needs the deliberate-act confirmation
+  design (CLI stays the promotion instrument).
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT eaa7977 — PASS
+    aligned: crisis-window stress runs (T064b/spec §8) — measurement-only
+      drawdown protection evaluation.
+    checked: read `backend/backtest/stress.py` and `scripts/stress_windows.py`.
+      Verified `slice_window` coverage enforcement (refuses truncated feeds)
+      and `stress_template` comparing template at 1x and 2x costs vs buy-and-hold.
+      Executed `python scripts/stress_windows.py momentum SPY` live — verified
+      per-window output (bear-2022 +8.43% drawdown saved; gfc-2008 named
+      impossible on IEX feed). 5 unit tests in `test_stress.py` pass. Gate 1,019 passed.
+    concerns: none.
+
+- **T063b (journal calibration v2) — AWAITING REVIEW 2026-08-19
+  (Claude/Cowork)**. analysis/calibration.py (pure, deterministic): the
+  three questions v1's single hit-rate can't answer. (1) CONFIDENCE CURVE —
+  aged decisions bucketed by STATED confidence (4 documented edges); each
+  bucket: n, hits, hit_rate, avg stated, GAP (positive = underconfident);
+  buckets under MIN_PER_BUCKET=5 list their n and REFUSE a rate (thin data
+  named, never averaged); weighted_gap over qualified buckets only.
+  (2) PAYOFF vs PLAN — planned R (|target−entry|/|entry−stop|) vs realized
+  R against the SAME stop distance; ENDPOINT-ONLY stated in the payload
+  (journal has no price path; MAE/MFE is T089); stop/target on the wrong
+  side of entry = INVALID GEOMETRY, counted by name, never scored.
+  (3) OVERRIDE × OUTCOME (feeds T067b) — followed vs overridden hit rates
+  over aged marked decisions (same thin-data rule) + override_rate; the
+  payload note says measurement-not-scolding and that any strategy-weight
+  change stays an owner-ratified PROPOSAL (ticket text, verbatim intent).
+  Evaluability matches v1 EXACTLY; every exclusion counted and visible
+  (hold / missing fields / too young / no price). Wired: get_journal
+  returns calibration_v2; compose_weekly_review gains journal_calibration
+  best-effort (named why on failure) + two facts_for_lessons lines (the
+  gap, and 'decisions you overrode were right N% of the time').
+  EVIDENCE (D027): test_calibration.py 5 tests, every number hand-computed
+  in comments — curve (4/6 bucket → gap −0.0333, n=2 bucket refused),
+  payoff (buy 2.0/1.6, short 2.5/2.0, wrong-side stop counted invalid),
+  override (5/5 overridden hits vs 2/5 followed, rate 0.5), all four
+  exclusion counters, empty journal returns a report instead of raising.
+  1011 passed; pyrefly canary back to 1 AFTER it caught a real narrowing
+  gap in my bucket-gap expression (qualified implied non-None but the
+  types didn't prove it — restructured on hit_rate); gate PASS at batch
+  close.
+  D028: the ticket's 'after entries accumulate' gate is read the T069 way —
+  the CODE ships now and refuses/labels thin data honestly; it becomes
+  informative as the owner's journal ages, with zero rework. DIRECTION map
+  made a public alias in data/journal (no drift, one source).
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 0deb655 — PASS
+    aligned: trade journal calibration v2 (T063b) — confidence curve, planned-vs-realized
+      payoff R, and override outcomes.
+    checked: read `backend/analysis/calibration.py`, `backend/api/brief.py`,
+      `backend/tests/test_calibration.py`. Verified stated confidence bucketing
+      with thin data refusal (MIN 5), endpoint-only R calculation against stated
+      stops with invalid geometry detection, and override vs outcome hit rate
+      tracking. All 5 tests pass with hand-computed arithmetic. Gate 1,019 passed.
+    concerns: none.
+
+- **T065b (order-frequency rail — the T065 remainder) — AWAITING REVIEW
+  2026-08-19 (Claude/Cowork)**. The ENGINE-level daily new-buy cap behind
+  the paper loop's T055 guard: the loop's guard only sees loop-originated
+  orders; this one sits in pre_trade_check, the gate EVERY order path must
+  pass, and it is PERSISTED so a restart cannot forget the count.
+  RiskLimits.max_buys_per_day (default 5, validated 1..100, owner-tunable);
+  engine record_buy(day) counts a buy the moment the broker ACCEPTED it
+  (an approval that never became an order costs nothing); a count from a
+  different day reads as 0 — rollover is automatic with the market day
+  (T111 day strings), no scheduled job. Refusal is NAMED with the count,
+  the cap, and the doctrine line; SELLS ARE EXEMPT (reducing risk is never
+  blocked). RiskState gains buys_day/buys_today (migration e1a7c4f9b2d3,
+  up/down/up exercised); persistence round-trips via the new buys_state
+  property (no private-field reach-ins); paper loop records + persists
+  after each accepted buy; get_risk_status shows buy_frequency
+  {buys_today, max_buys_per_day, note}.
+  EVIDENCE (D027): test_buy_frequency.py 5 tests — cap refusal named with
+  numbers + sells exempt AT the cap; day rollover via start_day with no
+  job; restart-cannot-forget (persist → fresh engine → still refuses);
+  limit validation (0 and 101 refused) + documented default; legacy rows
+  without counts restore as zero. 1006 passed (all prior loop/risk tests
+  untouched); pyrefly canary 1; gate PASS at batch close.
+  D028 notes: (1) the T065 line's remaining items dispositioned — order-
+  frequency THIS; cancel-all remains deliberately unbuilt (nothing rests:
+  the loop uses market orders; documented in risk_symbols.py since T065);
+  sector-exposure CAPS remain measurement-only until owner-ratified
+  limits (T061), per the shipped T065 design. (2) record_buy counts
+  ACCEPTED orders, not approvals — the honest count is what reached the
+  broker.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT ba789b5 — PASS
+    aligned: order-frequency rail (T065/T065b) — engine-level daily new-buy cap
+      persisted across restarts.
+    checked: read `backend/risk/engine.py`, `backend/data/models.py`,
+      `backend/backtest/paper_loop.py`, `backend/tests/test_buy_frequency.py`.
+      Verified `RiskLimits.max_buys_per_day` (default 5), `record_buy(day)`
+      counting broker-accepted orders, `pre_trade_check` refusal at cap with
+      sells exempt, and persistence in `RiskState.buys_today`/`buys_day` (alembic
+      migration `e1a7c4f9b2d3`). All 5 tests pass. Gate 1,019 passed.
+    concerns: none.
+
+- **T110b (isolation boundary + adversarial probe — the LAST Phase 7
+  precondition) — AWAITING REVIEW 2026-08-19 (Claude/Cowork)**.
+  backend/research/isolation.py: agent-written strategy code runs in a
+  CHILD PROCESS under `python -I` (no PYTHONPATH/user-site/script-dir),
+  with a SCRUBBED env (9-name interpreter-boot allowlist — no ALPACA_*/
+  FMP_*/EDGAR_CONTACT/KUBERA_*), an EMPTY temp cwd (repo location never
+  disclosed via argv/cwd/env), data in via stdin JSON only, results out
+  via one sentinel-tagged line only — anything ELSE printed is counted in
+  stray_stdout_bytes (a chatty strategy is VISIBLE and still cannot
+  corrupt the result channel), and a hard timeout that kills and NAMES a
+  hang. run_inprocess() is the parity yardstick (test instrument, stated).
+  assert_servable() is the custody seam: symbols under UNCONSUMED holdout
+  custody (T110a guarded_symbols) are refused by name — isolation without
+  that check would sandbox the code while feeding it the answer key.
+  THREAT MODEL STATED HONESTLY in the module docstring: process isolation
+  on the owner's machine as the owner's OS user; absolute-path reads
+  outside the temp dir are NOT prevented (OS sandboxing out of scope for a
+  personal research loop) — the tests prove exactly what the design
+  claims, no more.
+  EVIDENCE (D027): test_isolation.py 8 tests — the ticket's BOTH gates:
+  (1) execution parity THREE-WAY (isolated == in-process == the real
+  momentum template's numbers on 120 bars, longs and flats both present);
+  (2) adversarial probe: planted parent-env secrets counted ZERO by a spy
+  strategy; `import settings`/`import data.alpaca`/relative `.env` read
+  all come back empty; chatty strategy's exfil bytes on record with the
+  result intact; hang killed + named; child exception returned as
+  'ValueError: bad math', never silent; custody seam refuses frozen AND
+  unlocked, serves unguarded; parent env never mutated by the scrub.
+  1001 passed; pyrefly canary 1; gate PASS (batch commit).
+  D028: T110's 'GATED — build when Phase 7 opens' is read as T110a read
+  it: Phase 7 CANNOT START without this; building it now means the phase
+  is never blocked. Nothing imports research/ yet.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 93de506 — PASS
+    aligned: strategy isolation boundary and adversarial probe (D029/Phase 7 precondition).
+    checked: read `backend/research/isolation.py` and `backend/tests/test_isolation.py`.
+      Verified child process execution under `python -I` with scrubbed boot allowlist
+      env, empty temp cwd, stdin/sentinel IO, and hard timeout. Verified `assert_servable`
+      custody seam refusing holdout symbols. 8 tests pass demonstrating execution parity,
+      unreadable parent secrets, import blocking, and unreadable relative `.env`.
+      Gate 1,019 passed.
+    concerns: none. Threat model honestly bounded in docstring.
+
+- **T084 (earnings-release text as labeled context) — AWAITING REVIEW
+  2026-08-19 (Claude/Cowork)**. Built the same day its gate was answered by
+  the owner's probe run. data/edgar.py: EarningsRelease dataclass +
+  EdgarClient.earnings_release(symbol, max_chars=20000) — newest item-2.02
+  8-K → accession index.json → LARGEST ex99* exhibit (the probe-validated
+  filename rule, now module-level _is_ex99) → html_to_text (stdlib
+  HTMLParser: script/style/head skipped, blocks newlined, table cells
+  spaced, entities decoded, blank-run collapse; deterministic — money math
+  never reads this). NAMED fallback to the 8-K primary document when an
+  accession has no ex99; refusals for: no earnings 8-K (ETFs named),
+  missing accessionNumber, index shape change, nothing readable, empty
+  text. Truncation is VISIBLE (truncated flag + text_chars_total). Tool
+  #40 get_earnings_release: labeled qualitative context — description and
+  payload note both say narrate-as-document, never a priced signal, and
+  the scope honesty (company's OWN release, NOT the analyst-call Q&A —
+  paid tier, D034). Read-only MCP list gains it; CORE_TOOLS (small brains)
+  deliberately does NOT — context-heavy long-tail. Guard tests bumped
+  39→40 (test_tools ×2 + name set, test_chat, test_claude_sdk).
+  EVIDENCE (D027): test_earnings_release.py 8 tests, fixtures mirror the
+  owner's observed run (accession 0000320193-26-000018, primary 38,350 b,
+  exhibit 173,484 b): newest-8-K + largest-ex99 selection; html_to_text
+  (script/style dropped, entity decode, cell flatten); visible truncation;
+  named primary fallback; four named refusals; tool payload (note wording
+  pinned) + not-configured names the .env fix. 43 relevant tests green;
+  full suite via gate PASS; pyrefly at the 1-error canary; ruff clean.
+  D028 notes: (1) "summarize via the existing LLM layer" is READ as: the
+  tool returns bounded TEXT and the chat loop narrates it under the
+  tool-description instructions — no separate summarizer endpoint (that
+  would be a second brain). (2) NOT built, by choice: no brief wiring
+  (release text is too heavy for a composed brief; the tool is on-demand),
+  no release caching (one doc per call is fine at v1; store it if usage
+  grows), no 10-K/10-Q YoY textual change (explicitly Phase 7 per the
+  ticket). (3) The client makes 3 sequential requests, no sleeps — same
+  posture as earnings_history's 2; well under EDGAR's ~10/s ceiling.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT f226d85 — PASS
+    aligned: free SEC EDGAR earnings release text (ex99.1) as labeled qualitative context (tool #40).
+    checked: read `backend/data/edgar.py`, `backend/api/tools.py`, `backend/tests/test_earnings_release.py`.
+      Verified `EdgarClient.earnings_release` fetching newest item 2.02 8-K -> largest ex99
+      exhibit -> stdlib HTML-to-text. Verified fallback to primary 8-K doc and labeled
+      qualitative narrative framing. Tool count guards bumped 39 -> 40 across test files.
+      8 unit tests pass. Gate 1,019 passed.
+    concerns: none.
+- **T074a (realtime-voice framework research) — AWAITING REVIEW 2026-08-19
+  (Claude/Cowork)**. docs/research/realtime-voice-2026-08-19.md — August-
+  2026 landscape for T074, sourced (14 links in the doc). Findings:
+  OpenAI Realtime rejected on ARCHITECTURE (speech-to-speech model
+  replaces the brain — KUBERA's persona/rails/tool gates bypassed; cost
+  $0.05–0.46/min recorded only as the D034 comparison point); no Anthropic
+  speech-to-speech API exists (Claude Code voice = dictation, claude.ai-
+  auth only); LiveKit Agents capable but wrong-shaped (room/media-server
+  design center, weeks of self-host infra, for ONE user on ONE desktop);
+  **Pipecat adopted pending spike** — LocalAudioTransport (PyAudio, zero
+  servers) or SmallWebRTC (serverless P2P for the Orb), KokoroTTSService
+  documented (D024's voice drops in), LLM-agnostic, proven fully-local
+  sub-second stacks, $0/min. The honest catch is NAMED: Pipecat expects a
+  streaming LLM service and KUBERA's brain is /api/chat (context, tool
+  loop, rails) — the T074b spike's core question is a custom processor
+  calling OUR endpoint, with an audio-half-only fallback if it fights the
+  framework. T074 backlog entry updated to the decision; T074b/T074c
+  seeded with exit criteria. No code built (research ticket; D030 —
+  the spike observes the real framework before anything ships).
+  D028: this is a DOCUMENT — the reviewer checks reasoning and that no
+  claim exceeds the sources, not a test suite. Latency numbers are from
+  the wild, EXPLICITLY not ours; the spike measures ours.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT e30e479 — PASS
+    aligned: realtime voice pipeline architecture (T074/spec §10) — sub-second
+      full-duplex conversation.
+    checked: read `docs/research/realtime-voice-2026-08-19.md`. Sourced claims
+      (14 links) verified. Architectural rejection of OpenAI Realtime
+      (speech-to-speech bypassing KUBERA persona, tools, rails) and LiveKit
+      (multi-user media server tax) is sound. Pipecat adoption rationale (local
+      PyAudio, documented Kokoro TTS, $0/min) is solid. Catch identified and
+      addressed honestly: custom processor required to route through `/api/chat`
+      to keep persona/rails intact. Backlog updated with T074b spike and T074c tuning.
+    concerns: none.
+- **T084a (EDGAR filing-document probe step) — AWAITING REVIEW 2026-08-19
+  (Claude/Cowork)**. edgar_check.py gains step 5: fetch ONE earnings-8-K
+  accession's index.json (+1 request, politeness sleep kept) and report
+  names + sizes ONLY — the 8-K body is usually a two-page cover; the
+  earnings TEXT lives in exhibit 99.1 (press release). New lines: filing
+  index (file count), primary document (name+bytes or UNLISTED), press-
+  release exhibit (largest ex99* match + bytes, or ABSENT). Parse rule
+  lives in pure summarize_index() — exhibit match collapses the filename to
+  alphanumerics and looks for "ex99" (catches ex991/ex-99_1/d12dex991);
+  malformed shapes RAISE and the step prints a named SHAPE? line; step
+  failure degrades step 5 only, never the verdict above it. This line is
+  the T084 gate: whether free EDGAR text substitutes for PAYWALLED
+  transcript endpoints (D034 free-first).
+  EVIDENCE (D027): test_edgar_check.py 4 tests (importlib-by-path, T106
+  precedent) — documented shape names primary + both exhibit spellings with
+  empty-size→0; name-variant collapse incl. ex98/press99 NON-matches;
+  missing primary → UNLISTED not guessed; malformed roots raise by name and
+  junk rows/sizes degrade without crashing. Live sandbox run: named
+  UNREACHABLE/SKIPPED table, exit 1, no traceback. 986 passed; gate PASS.
+  D028: the probe still cannot OBSERVE sec.gov from the sandbox — step 5's
+  real answer arrives when the owner reruns edgar_check.py; the unit tests
+  pin the parse rule, not the network truth. NEXT after owner paste: T084
+  build decision reads the press-release-exhibit line.
+  OWNER RAN IT 2026-08-19 — ALL GREEN, same session: filing index OK (17
+  files, accession 0000320193-26-000018), primary aapl-20260730.htm 38,350
+  bytes, press-release exhibit a8-kex991q3202606272026.htm **173,484 bytes
+  — free earnings TEXT confirmed from the owner's machine**. The T084
+  backlog entry now carries the answered gate + the ex99.1-is-not-call-Q&A
+  scope note. Step 5's parse rule met reality and held (D030 closed loop).
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT 3469eaf — PASS
+    aligned: free SEC EDGAR filing text to substitute for paywalled transcripts (D030/D034).
+    checked: read `scripts/edgar_check.py` and `backend/tests/test_edgar_check.py`.
+      Step 5 pure `summarize_index()` parser correctly identifies primary doc and
+      largest ex99* exhibit. 4 unit tests pass. Live owner run on Windows host
+      confirmed 17 files in accession `0000320193-26-000018`, primary doc
+      `aapl-20260730.htm` (38,350 bytes), and exhibit `a8-kex991q3202606272026.htm`
+      (173,484 bytes) with earnings text. Gate 989 passed.
+    concerns: none. Free press release text confirmed available on SEC EDGAR.
+- **T110a (holdout custody + experiment budgets — Phase 7 preconditions) —
+  AWAITING REVIEW 2026-08-19 (Claude/Cowork)**. backend/research/ (new
+  package, nothing reachable from chat/loop): custody.py one-way state
+  machine FROZEN→UNLOCKED→CONSUMED for holdout_windows — freeze stamps
+  params_hash(symbols,start,end) so a redefined window is a NEW holdout;
+  unlock works ONCE on a frozen record ("no re-lock"); consume requires the
+  evaluated_hash to MATCH the frozen hash (proof the evaluation ran the
+  window as defined) and records the ONE result forever (second consume
+  refuses, citing the stored result); every transition appends to
+  journal_json (append-only history on the row). guarded_symbols() exposes
+  symbols under unconsumed custody — the enforcement hook T110b's isolation
+  boundary will consume. Budgets: open_budget once per revision BEFORE
+  experimenting (pre-registration; raise-mid-run refused by name),
+  record_attempt appends ok AND failed (failures count — the point), over-
+  budget refusal names the two-strikes rule. Models HoldoutWindow +
+  ExperimentBudget; migration c9f6e3a2d874 (upgrade/downgrade/re-upgrade
+  exercised on a scratch db).
+  EVIDENCE (D027): test_custody.py 7 tests — full lifecycle with journal
+  sequence asserted; EVERY refusal matched by name (re-freeze, consume-
+  while-frozen, double-unlock, wrong-hash, double-consume, ghost name,
+  empty symbols, inverted dates, budget re-open, zero budget, no-budget
+  attempt, over-budget); params_hash order/case-invariance + changed-window
+  inequality; guarded_symbols across freeze/unlock/consume. 982 passed;
+  pyrefly at the 1-error canary; gate PASS.
+  D028 notes: (1) the ticket's "build when Phase 7 opens" gate is READ as
+  "Phase 7 cannot START without these" — building the two pure-code
+  preconditions now means opening Phase 7 is never blocked on them; if the
+  reviewer reads the gate the other way, say so and this parks unreleased
+  (nothing imports it). (2) Isolation boundary + adversarial probe are
+  EXPLICITLY split to T110b — they need real sandboxing design, and a
+  half-built boundary would be worse than a named absence. (3) While at it:
+  pyrefly (3 errors vs canary 1) exposed MY T062c bug — brief.py imported
+  AlpacaError/_httpx INSIDE the try whose except tuple references them
+  (import failure would NameError and mask the original error); imports
+  moved to module level. That file was already REVIEWED at 05dfe35, so the
+  fix re-queues T062c as a DELTA under D033 — noted on its entry.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT c54c7e9 — PASS
+    aligned: learning loop integrity (D029) — one-way holdout custody and bounded
+      experiment budgets.
+    checked: read `backend/research/custody.py`, `backend/data/models.py`,
+      `backend/tests/test_custody.py`. Verified `FROZEN -> UNLOCKED -> CONSUMED`
+      state machine, `params_hash` invariance, single evaluation enforcement
+      (`evaluated_hash == params_hash`), append-only `journal_json`, and
+      `guarded_symbols()` query. Verified `open_budget` pre-registration and
+      `record_attempt` failure-counting refusal. Migration `c9f6e3a2d874` is
+      clean single head. Gate 989 passed.
+    concerns: none. Preconditions built cleanly ahead of Phase 7.
+- **T062c (scheduled brief CLI — closes T062b's last item) — AWAITING REVIEW
+  2026-08-19 (Claude/Cowork)**. scripts/brief.py: composes morning/eod/weekly
+  DIRECTLY via api/brief.py (server not required), prints full JSON, saves to
+  private/briefs/<type>-<market-date>.json (gitignored — briefs carry
+  holdings/P&L), FRED/FMP best-effort like the endpoint, clients closed in
+  finally, named NOT CONFIGURED (exit 2) and BROKER/DATA UNREACHABLE (exit 2,
+  demonstrated live in-sandbox) degradations. Task Scheduler one-liners in
+  the docstring (path-substituted, line-length safe). T062b disposition
+  complete: scheduled auto-generation THIS; ET windows landed with T111;
+  PWA push remains Phase 5 by design.
+  EVIDENCE (D027): test_brief_cli.py 2 tests via importlib-by-path (full
+  fake-composed run: JSON printed + file saved under a tmp ROOT; unconfigured
+  → exit 2 actionable); live sandbox run shows the named unreachable path;
+  ruff clean; gate PASS.
+  D028: --speak was CONSIDERED and left out — narration is the chat layer's
+  job (persona rules, voice style); a raw-JSON TTS dump would violate the
+  narrate-don't-read doctrine. Noted so nobody files it as an omission.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT 05dfe35 — PASS
+    aligned: owner needs briefs auto-generated on schedule without requiring
+      the FastAPI server to run.
+    checked: executed `python scripts/brief.py --no-save` against live paper
+      account & local db — composed morning brief directly, outputting full
+      valid JSON with all sections. Verified `test_brief_cli.py` tests both
+      successful compose + exit-2 not-configured failure path. Verified
+      `private/briefs/` is properly handled/gitignored and Task Scheduler
+      commands in docstring are path-substituted. Gate 978 passed.
+    concerns: none. Narration belongs in chat layer; CLI JSON output is clean.
+  DELTA after that PASS (D033 — re-queued): pyrefly flagged brief.py's
+  except tuple referencing names imported INSIDE the same try (AlpacaError,
+  _httpx) — an import failure would NameError and mask the original error.
+  Imports moved to module level; behavior identical on the happy path.
+  Reviewer: `git log -1 -- scripts/brief.py` and re-sign at that SHA.
+  DELTA REVIEWED 2026-08-19 by Gemini/Antigravity AT c54c7e9 — PASS
+    aligned: scheduled brief CLI reliability.
+    checked: inspected `git diff c54c7e9~1 c54c7e9 -- scripts/brief.py` — confirmed
+      `AlpacaError` and `httpx` moved to module-level imports, eliminating potential
+      `NameError` in except block.
+    concerns: none.
+- **T065 (risk engine v2: sector exposure + symbol controls) — AWAITING
+  REVIEW 2026-08-19 (Claude/Cowork)**. All four sub-items dispositioned:
+  (1) SECTOR EXPOSURE — analysis/sector_exposure.py (pure): by-sector
+  weights, warning at 40% (tunable, commented), unknown-sector symbols
+  GROUPED AND NAMED never guessed, and an unknown top sector can never fire
+  the concentration warning (a data gap is not a measured concentration);
+  MEASUREMENT ONLY by design — hard sector caps are safety rails and arrive
+  only as owner-ratified limits (T061), stated in the payload note.
+  fmp.profile_sector (probe-verified endpoint) feeds it; get_portfolio_risk
+  gains sector_exposure best-effort (no fmp/failed fmp → available:false).
+  (2) DISABLE-SYMBOL CONTROL — RiskEngine gains _disabled_symbols; pre-trade
+  gate refuses BUYS for disabled symbols with a named reason, SELLS EXEMPT
+  (reducing risk is never blocked); persisted in risk_state
+  (disabled_symbols_json, alembic b7e4d2c8f1a5, single head) so a restart
+  cannot forget it (the T035 property extended, pinned in test); corrupt
+  JSON degrades to empty, never a crash; scripts/risk_symbols.py CLI
+  (--list/--disable/--enable) — deliberate typed act, NO chat tool exposes
+  it (a rail changed by conversation is the failure the tiers prevent).
+  (3) ORDER-FREQUENCY LIMIT — resolved-by-T055: max_trades_per_day already
+  enforces it in the loop; noted, not rebuilt. (4) CANCEL-ALL — deferred
+  WITH REASON: the paper loop places market orders only, nothing rests to
+  cancel; the control gets built the day resting orders exist (recorded in
+  the CLI docstring so the next reader knows why it is absent).
+  EVIDENCE (D027): 6 tests — 60/30/10 hand-computed weights with the 40%
+  warning and MYSTERY named; below-line quiet + unknown-top never warns;
+  empty book; buy-refused/sell-exempt/other-symbol-unaffected; restart
+  persistence round trip with a blocked buy on the fresh engine; corrupt
+  JSON → empty. 58 passed across all risk suites + paper loop (breaker
+  precedence intact); migration applies on scratch DB; ruff clean; pyrefly
+  exactly 1; full gate PASS.
+  D028 objections: (a) sector fetch is one FMP request per holding per call
+  — fine at his book size against 250/day, a cache is the obvious upgrade
+  if the book grows; (b) engine change is safety-critical — the diff is
+  eight lines in pre_trade_check, buys-only, and every existing risk test
+  still passes; reviewer should read that diff line by line; (c) FMP
+  sector taxonomy is FMP's, not GICS-official — labels are reported as
+  received.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT 11fbdb0 — PASS
+    aligned: sector exposure visibility (D016/D019) and deliberate symbol
+      controls where buys can be disabled without blocking risk-reducing sells.
+    checked: read `backend/analysis/sector_exposure.py`, `backend/risk/engine.py`,
+      and `backend/risk/persistence.py`. Executed `python scripts/risk_symbols.py --list`,
+      `--disable XYZ`, and `--enable XYZ` live against real database — verified
+      persisted round-trip to `RiskState.disabled_symbols_json` and pre-trade gate
+      behavior (buys refused with named reason, sells exempt). Confirmed alembic
+      migration `b7e4d2c8f1a5` is single head. Gate 978 passed.
+    concerns: none. Pure measurement for sectors and explicit typed CLI for
+      symbol disable rail fit doctrine cleanly.
+- **I032 (CI red since the uv cleanup — found and fixed) — AWAITING REVIEW
+  2026-08-19 (Claude/Cowork)**. Took the standing "CI is RED, see I018" nag:
+  reproduced CI conditions locally (.env hidden → 967 passed, suite clean),
+  which PROVED the red was workflow-level, then read ci.yml against the
+  tree: `python-version-file: .python-version` — a file the 08-17
+  uv-scaffold cleanup (a65c360) deleted as scaffold. Every push since
+  failed AT SETUP, zero tests run. The old I018 fix was and is fine.
+  FIX: .python-version restored (3.14.7 = pyrefly.toml = README, D025);
+  verify.py gains a "python pins" step (scripts/check_python_pins.py:
+  file must exist and match pyrefly.toml — named fixes on both failure
+  modes) so this class fails the LOCAL gate from now on; the file's
+  purpose is documented in the check script since the format allows no
+  comments. I032 filed with full chain. TASKS header's stale "CI is
+  currently RED — see I018" guidance updated to point at I032-fixed.
+  EVIDENCE (D027): no-.env suite run 967 passed/3 skipped; pin-check runs
+  green in the gate; ruff clean; full gate PASS. Owner: next push should
+  go green — that is the live confirmation.
+  D028: the deletion was owner-executed and agent-committed as cleanup with
+  BOTH of us missing the CI dependency — the new gate step is the mechanism
+  answer, not blame.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT fe722cb — PASS
+    aligned: CI workflow on GitHub Actions was failing at setup because
+      `.python-version` was deleted during uv cleanup.
+    checked: executed `python scripts/check_python_pins.py` — returned exit 0
+      ("python pins agree: 3.14.7"). Verified `.python-version` restored and
+      matches `pyrefly.toml`. Verified `scripts/verify.py` runs the check.
+      Tested canary behavior if pin is missing/mismatched. Gate 978 passed.
+    concerns: none. Root cause cleanly addressed and guarded against future regression.
+- **T072b (voice hygiene trio, carried from the T072 review) — AWAITING
+  REVIEW 2026-08-18 (Claude/Cowork)**. Honest disposition: 2 of 3 items were
+  ALREADY FIXED by prior work and are closed on evidence, not redone
+  (two-strikes spirit — no re-fixing fixed things): (a) the silent
+  except around the tts_engine import is GONE (talk.py:210 imports directly;
+  sys.path set at :42; grep shows no bare except near it) and (c) the
+  docstring already points at requirements-voice.txt ("kokoro-onnx
+  soundfile" appears nowhere in the tree). (b) was real and is fixed: the
+  MODULE-level `np = pytest.importorskip("numpy")` in test_tts_backends.py
+  hid the audio-FREE tests (missing-key/package/model exits) from CI; the
+  skip now lives inside _silent_wav and the kokoro-play test only, and
+  talk.py's numpy/sounddevice imports are verified function-local so the
+  module imports cleanly without audio deps.
+  EVIDENCE: 8/8 with numpy present; module-level grep of talk.py (no
+  top-level numpy/sounddevice); ruff clean; gate PASS. D028 note: I built a
+  meta_path blocker to simulate CI-without-numpy — its results were
+  ARTIFACTS of the hack (it poisons mid-test imports with numpy installed)
+  and are NOT claimed as evidence; the per-test importorskip is pytest's
+  documented skip path and stands on that.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT deb9c0c — PASS
+    aligned: owner's voice loop must never die from audio issues; CI must
+      not silently skip non-audio tests when numpy is absent.
+    checked: read test_tts_backends.py at deb9c0c — importorskip('numpy')
+      and importorskip('soundfile') now live inside _silent_wav() and the
+      kokoro play helper only; module-level call is gone. Verified talk.py
+      imports numpy and sounddevice only inside function bodies (grep
+      confirmed: no top-level import of either). Gate 970 passed on this
+      machine. parallel_check.py: single head, no clobber.
+    concerns: none found. The two items closed on grep evidence (a,c) are
+      properly documented as "already fixed" — builder did not re-fix them.
+- **T083c (base rates into the morning brief) — AWAITING REVIEW 2026-08-18
+  (Claude/Cowork)**. Each held symbol with upcoming earnings now carries a
+  COMPACT base-rates block in the morning brief: events measured, median
+  event-day move, closed-down fraction, "not a prediction" note (full splits
+  stay in the get_event_base_rates tool). _base_rates_summary reads the
+  observed store + 800d bars; degrades three ways (no db / under MIN_EVENTS
+  with the EDGAR pointer / any exception → available:false with the type
+  name — the brief NEVER dies for a base-rates problem).
+  EVIDENCE: 2 tests (compute + thin-store degrade; broken-market survive);
+  18 passed across store+brief suites; ruff clean; pyrefly exactly 1; gate
+  PASS. D028: my first median was sorted()[n//2] — the upper median on even
+  counts; replaced with statistics.median before commit.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT e2d3265 — PASS
+    aligned: each morning brief should carry a compact base-rates block
+      per held symbol with upcoming earnings, degrading gracefully.
+    checked: git show e2d3265 confirms statistics.median (not sorted()[n//2])
+      is the shipped code. Checked three degrade paths in diff: no-db →
+      available:false+why; thin store → available:false+edgar_note; any
+      exception → available:false+exc type. Gate 970 passed. money-math
+      check: statistics.median([1,2,3,4]) = 2.5 (true median) vs
+      sorted()[n//2]=3 (upper); the fix is correct and the D028 note is
+      honest about what was wrong. Tests in test_earnings_store.py
+      assert specific numeric values (0.5 closed-down, specific median),
+      not just "code returns what code returns".
+    concerns: none. The brief-never-dies invariant is properly tested.
+- **T076b (FOMC dates + priced-for-perfection — D016/D019) — AWAITING REVIEW
+  2026-08-18 (Claude/Cowork)**. All three halves resolved: (1) FOMC DATES —
+  source decision made per D034 free-first: the Fed's PUBLISHED calendar as
+  an external-spec constant table (the holiday-calendar precedent), 16
+  decision days 2026–2027 in analysis/fomc.py, transcribed with source note
+  and an explicit REVIEWER CHECK (compare against
+  federalreserve.gov/monetarypolicy/fomccalendars.htm — a mistyped date
+  mis-guards real entries); staleness is SELF-REPORTED (fomc_staleness_note
+  nags every brief within 90 days of table exhaustion — D031's
+  rule-with-no-mechanism failure cannot recur). with_fomc() merges into
+  every calendar consumer: get_macro_context, brief events section (FOMC
+  guards even WITHOUT a FRED key now — it needs none), paper_trade guard
+  arming (CPI/NFP failure no longer turns the guard fully off).
+  (2) EARNINGS DATES for held symbols — already DONE via T023/T083, marked
+  resolved. (3) PRICED-FOR-PERFECTION (D019 sell-the-news) — built from two
+  numbers that already exist: per-holding 5-bar runup (new in _symbol_read)
+  vs own p95 expected 5-day move; joined onto earnings_risk entries in the
+  morning brief; flag-not-forecast note in every payload; None when either
+  input missing. Stale PENDING_NOTES line retired.
+  EVIDENCE (D027): test_fomc.py 6 tests — table sanity (16 rows, ascending,
+  8/yr), merge-without-mutation, entry_guard naming the 2026-09-16 decision
+  from the day before, upcoming_events inclusion, staleness ladder
+  (None/warn/EXHAUSTED), flag hand-computed (6% vs 5% p95 → True; 3% →
+  False; missing → None). 22 passed across fomc+brief+events suites; ruff
+  clean; pyrefly exactly 1; full gate PASS.
+  D028 objections: (a) the 16 dates are TRANSCRIBED from training knowledge
+  of the published calendar, not fetched — the reviewer check against the
+  Fed page is therefore load-bearing and named at the top of the table;
+  (b) day-2-only convention (decision day) chosen and documented — day 1
+  moves tape rarely; (c) the flag joins only HELD symbols with upcoming
+  earnings — watchlist symbols could want it too, deferred as an easy
+  extension.
+  FIXED AND RE-SUBMITTED 2026-08-19 (Claude/Cowork): 2027-06-16 →
+  2027-06-09 per the reviewer's live Fed-page fetch; fomc.py's transcription
+  note now records the incident (the reviewer check earned its keep); I031
+  closed same day. Delta scope for re-review: the one table row + note
+  (verdict AT the new sha per D033).
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT 36dcbe3 (delta re-review) — PASS
+    aligned: serves D016/D019 event-risk and sell-the-news flag.
+    checked: inspected `git diff 36dcbe3~1 36dcbe3` — confirmed `"2027-06-16"`
+      corrected to `"2027-06-09"`. Matches Federal Reserve official published
+      calendar (anchor #45694: June 8-9 meeting, day 2 decision day). All 16
+      rows in `backend/analysis/fomc.py` now match the live Fed page. Gate 978 passed.
+    concerns: none. Defect resolved.
+  REVIEWED 2026-08-19 by Gemini/Antigravity AT 1e0f279 — BLOCK
+    aligned: serves D016/D019 event-risk and sell-the-news flag — both
+      owner-stated goals. Gate PASS; alembic single head; no secrets.
+    checked: fetched federalreserve.gov/monetarypolicy/fomccalendars.htm
+      live (July 29, 2026 update) and compared all 16 dates row by row.
+      2026: all 8 correct. 2027: 7 of 8 correct. ONE DATE IS WRONG:
+        fomc.py: "2027-06-16"
+        Fed page anchor #45694 (2027 section): June meeting is "8-9*"
+          → decision day = 2027-06-09, not 2027-06-16.
+      The June 2027 meeting would go completely unguarded. A FOMC day
+      inside a user's entry window is the core purpose of this ticket;
+      a one-week error defeats it silently.
+    concerns:
+      1. BLOCK: 2027-06-16 must be corrected to 2027-06-09 in
+         analysis/fomc.py. The test_table_is_sane test passes with the
+         wrong value because it only checks count and sort order, not
+         individual dates — this is intentional design (the test cannot
+         hard-code the calendar it is supposed to guard), but it means
+         the unit tests cannot catch this class of error. The reviewer
+         check is the only mechanism, and it found the defect.
+      2. Minor (no block): test_fomc_guards_entries_like_any_release uses
+         date(2026, 9, 15) + window_before=1 → correctly names 2026-09-16.
+         A parallel test for the June 2027 date would have caught the
+         transcription error — recommend adding one after the fix.
+      Not a block: priced_for_perfection logic, with_fomc merge, staleness
+      nag, and paper_trade/brief wiring all look correct and are well-tested.
+- Reviewed DONE blocks (T083b, T083b-probe, T083, T066, T067b, T023b, T016b, T113, T016c, T112)
+  moved verbatim to project-memory/archive/TASKS-archive-2026-08-18.md (curation 2026-08-19).
+
+**Parallel-work quick rules** (full protocol in AGENTS.md → "Parallel work";
+brief to paste: docs/agent-briefs.md). Agents build DIFFERENT tickets at the
+same time and review each other:
+1. REVIEW FIRST — clear anything in "Awaiting review" from the other agent
+   before claiming your own next ticket.
+2. CLAIM — put `In progress — <ticket> — <agent>` here and commit that line
+   alone before coding; pick files the other agent is NOT in.
+3. COMMIT BY PATH — one shared working directory: `git add -A` sweeps up the
+   other agent's unfinished work. Never use it while another agent is active.
+4. HAND OFF — mark `AWAITING REVIEW — <agent>`; only the OTHER agent writes
+   DONE, with a signed `REVIEWED <date> by <agent> — PASS/BLOCK` block.
+Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
+(append your own lines only), the single alembic head, apps/web/orb.html.
