@@ -5,6 +5,17 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Gemini/Antigravity — review T121 build + I034 leak fix (PASS)
+Reviewed T121 build and I034 leak fix at tip (`d6a8ff1`). Gate PASS (1,057 passed, 0 failed);
+python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).
+- T121 (d6a8ff1) PASS: `backend/data/finnhub.py` `FinnhubClient` (probed endpoints: `earnings_surprises`, `company_news`;
+  named 401/403/429 refusals; fail-closed rows); `backend/data/earnings_store.py` `enrich_from_surprises`
+  (unambiguous-match rule, 120d window, enrich-only-empty, no-overwrite); `get_event_base_rates` finnhub note;
+  MCP / chat contexts wired. 8 tests in `test_finnhub.py` pass.
+- I034 fix (d6a8ff1) PASS: chat endpoint wrapped in `try / finally` closing all optional per-turn clients (`fred`,
+  `fmp`, `edgar`, `finnhub`) across all exit/exception paths; `test_close_list_includes_finnhub_t106_class` prevents leak regression.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
+
 ## 2026-08-20 — Claude/Cowork — T121 BUILD: FinnhubClient + beat/miss enrichment; I034 leak fix
 Owner's probe table answered (surprises: 4 quarters actual-vs-estimate;
 news 244/31d; sentiment paywalled) → built same session: data/finnhub.py

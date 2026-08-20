@@ -49,6 +49,15 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   SEEDED: T121b below (company-news into get_news as a second labeled
   source - the probe says 244 articles/31d exist; separate ticket, news
   works today).
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT d6a8ff1 — PASS
+    aligned: T121 FinnhubClient build + beat/miss earnings store enrichment, plus I034 chat socket leak fix.
+    checked:
+      - Read `backend/data/finnhub.py`: verified `FinnhubClient` implements probed endpoints (`earnings_surprises`, `company_news`), named refusals (401, 403, 429, payload shape), and fail-closed parsing.
+      - Read `backend/data/earnings_store.py`: verified `enrich_from_surprises` adheres to unambiguous-match rule (exact 1 report in (period, period+120d]), counting and skipping ambiguity or unmatched, with enrich-only-empty semantics (never overwriting existing data).
+      - Read `backend/api/main.py` & `backend/api/mcp_server.py`: verified per-turn optional client lifecycle in `try / finally` closing `fred`, `fmp`, `edgar`, `finnhub` across all exit/exception paths (I034 fix).
+      - Read `backend/tests/test_finnhub.py`: 8 tests covering parsing, refusals, enrichment rules, and context closing guard pass.
+      - All 1,057 tests pass.
+    concerns: none.
 - **Repo review #2 + T121 probe (FinRobot/AI-Trader/Kronos, D037) -
   AWAITING REVIEW 2026-08-20 (Claude/Cowork)**. Disposition doc:
   docs/research/finrobot-aitrader-kronos-review-2026-08-20.md (read via
