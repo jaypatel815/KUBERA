@@ -158,3 +158,81 @@ def test_reconciliation_quiet_when_it_cannot_judge(db):
     # bad payload (equity 0): refuse to divide, stay quiet
     assert health_check.check_reconciliation(
         "http://test", db, client=_acct_client(0.0)) == []
+
+
+# --- check_feed (T129 - Phase 8 "data feed outages") --------------------------
+
+from types import SimpleNamespace  # noqa: E402
+
+
+def _feed_settings(configured=True):
+    return SimpleNamespace(alpaca_configured=configured)
+
+
+def _trade(age_seconds: float, now: datetime):
+    ts = now - timedelta(seconds=age_seconds)
+    return SimpleNamespace(exchange_ts=ts, age_human=f"{age_seconds:.0f}s")
+
+
+class _Market:
+    def __init__(self, trade=None, exc=None):
+        self.trade, self.exc = trade, exc
+
+    def get_latest_trade(self, symbol):
+        if self.exc:
+            raise self.exc
+        return self.trade
+
+    def close(self):
+        pass
+
+
+class _Clock:
+    def __init__(self, is_open):
+        self._open = is_open
+
+    def get_clock(self):
+        return SimpleNamespace(is_open=self._open)
+
+
+def test_check_feed_quiet_when_unconfigured():
+    # an unconfigured box is not an outage
+    assert health_check.check_feed(settings=_feed_settings(False)) == []
+
+
+def test_check_feed_names_unreachable_feed():
+    problems = health_check.check_feed(
+        settings=_feed_settings(),
+        market=_Market(exc=httpx.ConnectError("boom")))
+    assert len(problems) == 1
+    assert "FEED unreachable" in problems[0]
+    assert "ConnectError" in problems[0]
+
+
+def test_check_feed_quiet_on_fresh_print_while_open():
+    now = datetime.now(timezone.utc)
+    problems = health_check.check_feed(
+        settings=_feed_settings(), market=_Market(trade=_trade(30, now)),
+        alpaca=_Clock(is_open=True), now=now)
+    assert problems == []
+
+
+def test_check_feed_flags_stale_print_while_open():
+    # market OPEN but the print is 20 minutes old = the feed is behind
+    now = datetime.now(timezone.utc)
+    problems = health_check.check_feed(
+        settings=_feed_settings(), market=_Market(trade=_trade(1200, now)),
+        alpaca=_Clock(is_open=True), now=now)
+    assert len(problems) == 1 and "FEED STALE" in problems[0]
+    assert "feed is behind" in problems[0]
+
+
+def test_check_feed_wallclock_fallback_without_broker_clock():
+    # no clock: T036b's fallback deliberately assumes OPEN (conservative),
+    # so a 5-day-old print flags STALE — and admits the state is unknown
+    now = datetime.now(timezone.utc)
+    problems = health_check.check_feed(
+        settings=_feed_settings(),
+        market=_Market(trade=_trade(5 * 24 * 3600, now)), now=now)
+    assert len(problems) == 1 and "FEED STALE" in problems[0]
+    assert "market state unknown" in problems[0]
