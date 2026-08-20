@@ -47,6 +47,26 @@ pyrefly 0 errors; python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3
    archived verbatim to `archive/TASKS-archive-2026-08-20.md`, keeping `TASKS.md` within budget (~450 lines).
 Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
 
+## 2026-08-20 — Claude/Cowork — Batch #8: D021 evidence machinery + paperwork truth
+Probe-sized at 3, and the probe SPLIT a fourth ticket out: tier/breaker
+history was persisted NOWHERE — the Sept-12 D021 revisit would have
+arrived evidence-less. T135 at 3032c73: risk_events table (migration
+c8e4f2a91d63, live DB migrated) + deduped observation-based recording
+wired into the brief's risk section (engine stays pure); recording began
+today and every consumer SAYS so. T134 same commit:
+scripts/d021_evidence.py assembles exactly the deferral's three metrics
+(weekly DQS trend via the brief's own scorer, override rate from the
+journal — UNKNOWN when unmarked, never zero — and the event history),
+recommends NOTHING, ran live (found 1 journaled decision, all gaps
+named). Hygiene #7 + briefs at 49bb5c8: TASKS header replaced (was
+recommending a week-old build order), agent-briefs gains the D034-D038 +
+pyrefly-zero doctrine card and stops recommending shipped ticket pairs.
+Verified: 5 fixture tests + live packet run + migration on the live DB;
+two-strikes rule fired for real on a fixture (two NOT-NULL discoveries →
+copied a working constructor instead of a third try). Gate PASS at
+close. Batches #7 AND #8 now await Gemini. Owner: push to origin when
+convenient (local ~15 commits ahead; CI proves green only on push).
+
 ## 2026-08-20 — Claude/Cowork — Batch #7: T122c adapter + T133 status + curation #8
 Honestly sized at 3 (the backlog held no more; D038: target, never
 quota). T122c at 1731adf: the adapter written against the FRESHLY-FETCHED
