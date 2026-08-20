@@ -25,7 +25,9 @@ def test_scan_finds_each_pattern_class():
     planted = "\n".join([
         "aws = 'AKIA" + "ABCDEFGHIJKLMNOP'",
         "gh = 'ghp_" + "a" * 36 + "'",
-        "-----BEGIN RSA PRIVATE KEY-----",
+        # split so THIS tracked file never contains the joined pattern —
+        # the checker scanning its own test fixtures found exactly that
+        "-----BEGIN RSA " + "PRIVATE KEY-----",
         'api_key = "' + "f0e1d2c3b4a5968778695a4b3c2d1e0f" + '"',
     ])
     findings = sc.scan_content("planted.py", planted)
