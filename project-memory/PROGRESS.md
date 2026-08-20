@@ -47,6 +47,17 @@ pyrefly 0 errors; python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3
    archived verbatim to `archive/TASKS-archive-2026-08-20.md`, keeping `TASKS.md` within budget (~450 lines).
 Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
 
+## 2026-08-20 — owner + Claude/Cowork — KRONOS CAMPAIGN STARTED (attempt 1/3)
+The owner ran `kronos_run.py start`: gate OPEN on his machine, attempt 1
+recorded with 2 remaining. Confirmed from the sandbox against the same
+DB (`status`: 1/3 used, 0 forecasts, window opens 2026-08-24). The first
+Phase 7 experiment is live under the pre-registered protocol. Before
+Monday: the shape check (no budget cost; a broken adapter found Monday
+would cost session coverage instead — paper-forward days don't come
+back). Terminal note passed to owner: the black-diamond characters in
+his console are cp1252 rendering of em-dashes, cosmetic only
+(`chcp 65001` or PYTHONIOENCODING=utf-8 fixes the display).
+
 ## 2026-08-20 — Claude/Cowork — Batch #8: D021 evidence machinery + paperwork truth
 Probe-sized at 3, and the probe SPLIT a fourth ticket out: tier/breaker
 history was persisted NOWHERE — the Sept-12 D021 revisit would have

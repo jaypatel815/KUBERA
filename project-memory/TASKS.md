@@ -236,7 +236,16 @@ Gemini on anything in Awaiting review.
   in every report and re-filed as T067c below.)
 - [x] T121b - BUILT 2026-08-20, REVIEWED PASS by Gemini (batch #4; record
   in archive/TASKS-archive-2026-08-20.md). Stale seed closed by hygiene #6.
-- [~] T122 - PRE-REGISTERED 2026-08-20 (owner picked Kronos as the next
+- [~] T122 - CAMPAIGN STARTED 2026-08-20: the owner ran `kronos_run.py
+  start` on his machine - gate printed OPEN (all four rails, isolation
+  0.10s), ATTEMPT 1 of 3 recorded, confirmed from the sandbox via
+  `status` (1/3 used, 0 forecasts, window opens in 4 days). Remaining
+  before Monday's first forecast: the SHAPE CHECK (kronos_shape_check.py
+  with the model venv) - it costs no budget, and a broken adapter found
+  Monday morning would cost a session's coverage instead (paper-forward:
+  a missed session can never be forecast later). Then daily `forecast`,
+  `score --consume` once after 2026-10-02.
+  (was) PRE-REGISTERED 2026-08-20 (owner picked Kronos as the next
   front; Claude/Cowork executed the registration): docs/research/
   experiments/kronos-v1.md written BEFORE any run (symbols SPY/QQQ/NVDA,
   window 2026-08-24..2026-10-02 forward-only, calibration 80-97% coverage
