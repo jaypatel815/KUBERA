@@ -4,6 +4,19 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I035 [BEHAVIORAL, 2026-08-20 — three occurrences in ONE day, so it gets
+  an entry, not another note] THE PIPE EATS THE EXIT CODE. Shell chains
+  of the shape `checker | grep/tail/head ...; or && next-step` take the
+  FILTER's exit status, not the checker's — so a red check sails through.
+  Observed: (1) batch #6, `pytest | tail` let a red test into a commit
+  (caught minutes later, amended to 355a3c0); (2) batch #7, a semicolon-
+  broken chain plus backticks-in--m let a commit land past a red pyrefly
+  (amended to 1731adf); (3) batch #8 close, `verify.py | grep VERIFY &&
+  commit` committed d6acfba past a RED types step (fix followed
+  immediately). RULE, mechanical: run gates/tests BARE and check `$?` on
+  its own line, or `set -o pipefail` first; commit messages via -F file,
+  never -m with backticks; the close commit runs ONLY after a bare-exit
+  gate PASS. REPRO: `false | grep -c '' ; echo $?` prints 1 then 0.
 - I034 [FOUND AND FIXED same commit, 2026-08-20 — while wiring T121]
   The CHAT endpoint built per-turn optional clients (fred/fmp/edgar since
   T083b) and NEVER closed them — one leaked httpx socket per configured

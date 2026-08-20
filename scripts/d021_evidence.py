@@ -38,14 +38,14 @@ from sqlalchemy.orm import sessionmaker  # noqa: E402
 
 from data.models import DecisionJournal, SignalLog  # noqa: E402
 from data.risk_events import events_between  # noqa: E402
-from risk.dqs import score_decisions  # noqa: E402
+from risk.dqs import DQSReport, score_decisions  # noqa: E402
 
 DEFAULT_DB = REPO_ROOT / "kubera.sqlite3"
 D021_DATE = "2026-08-13"          # the deferral decision, on the record
 EVENTS_SINCE = "2026-08-20"       # T135 recording began — earlier days have no history
 
 
-def weekly_dqs(rows, since: date, until: date) -> list[tuple[str, object]]:
+def weekly_dqs(rows, since: date, until: date) -> list[tuple[str, DQSReport]]:
     """One DQS reading per 7-day window, week-ends stepping from `since`.
     Pure: caller supplies the rows."""
     out = []
