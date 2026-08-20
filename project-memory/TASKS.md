@@ -93,6 +93,19 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   check_symbol call, which T087-Orb renders; the shared payload shape is
   pinned by test_monitor_service + test_orb_panel. Everything else is
   file-disjoint by construction.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 4199c69 (SHAs: 2435dd7 / 6dbfa34 / a471ff6 / 355d2c2 / f844f8f+d371830 / 355a3c0 / a5b0c02 / 5f5c6c4) — PASS
+    aligned: Batch #6 (9 tickets per D038) — T126 (batch protocol codified), hygiene #6 (stale seeds closed), T127 (Phase 7 gate script), T129 (feed-outage health check), T130 (secrets hygiene script), T116b (event-aware short horizon lens), T087-Orb (monitor panel UI), T128 (incident runbook), and T132 (README surface delta).
+    checked:
+      - Read `AGENTS.md`, `project-memory/REVIEW.md`, `project-memory/DECISIONS.md`: verified batch protocol sizing rules, review severity guidelines, and D038 record.
+      - Read `scripts/phase7_gate.py` & `backend/tests/test_phase7_gate.py`: verified 4 code-enforced gate checks (custody, budget, contamination rule, two-sided isolation canary). 8 tests pass.
+      - Read `scripts/health_check.py` & `backend/tests/test_health_check.py`: verified feed unreachable and stale-feed checks. 5 tests pass.
+      - Read `scripts/secret_check.py` & `backend/tests/test_secret_check.py`: verified tracked-file scan, `.env.example`<->`settings.py` parity check, and `SecretStr` floor. 7 tests pass.
+      - Read `backend/analysis/short_horizon.py` & `backend/tests/test_short_horizon.py`: verified event conditioning notes attached for FOMC/earnings within window without distorting distribution bands. 5 tests pass.
+      - Read `apps/web/orb.html` & `backend/tests/test_orb_panel.py`: verified Orb panel renders `/api/monitor` payload (days lens first, alerts, blind spots, advisory footer, HTML escaping). 2 tests pass.
+      - Read `docs/RUNBOOK.md` & `backend/tests/test_runbook.py`: verified 8 incident procedures grounded in shipped scripts. 2 tests pass.
+      - Read `README.md`: verified surface documentation updates.
+      - Full gate PASS (1,108 passed, 0 failed, pyrefly 0 errors).
+    concerns: none.
 
 - **Batch #5: T125 + T124 + T087c + T123 + curation #5 - AWAITING REVIEW
   2026-08-20 (Claude/Cowork; SHAs per D033: c5b2985 / 371d46e / 055b775 /

@@ -5,6 +5,23 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Gemini/Antigravity — review Batch #6 (9 tickets per D038) (all PASS)
+Reviewed batch #6 at tip (`4199c69`). Gate PASS (1,108 passed, 0 failed);
+pyrefly 0 errors; python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).
+1. T126 (2435dd7) PASS: `AGENTS.md` + `REVIEW.md` + `DECISIONS.md` codified D038 batch protocol.
+2. Hygiene #6 (6dbfa34) PASS: 5 stale seed checkboxes closed with archive pointers; T062b remainder trimmed.
+3. T127 (a471ff6) PASS: `scripts/phase7_gate.py` code-enforced gate (custody, budget, contamination rule, isolation);
+   8 tests in `test_phase7_gate.py` pass.
+4. T129 (355d2c2) PASS: `scripts/health_check.py` feed outage checks (unreachable and stale feed); 5 tests pass.
+5. T130 (f844f8f, d371830) PASS: `scripts/secret_check.py` tracked-file scan, `.env.example`<->`settings.py` parity,
+   `SecretStr` floor; 7 tests pass.
+6. T116b (355a3c0) PASS: `short_horizon.py` event-aware caveat note without distorting distribution bands; 5 tests pass.
+7. T087-Orb (a5b0c02) PASS: `apps/web/orb.html` monitor panel rendering `/api/monitor` (days lens first, alerts, blind spots,
+   advisory footer, HTML escaping); 2 tests pass.
+8. T128 (5f5c6c4) PASS: `docs/RUNBOOK.md` 8 incident procedures grounded in shipped scripts; 2 tests pass.
+9. T132 (4199c69) PASS: `README.md` delta for all new surfaces.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
+
 ## 2026-08-20 — Gemini/Antigravity — review Batch #5 (T125, T124, T087c, T123, curation #5) (all PASS)
 Reviewed batch #5 at tip (`0885039`). Gate PASS (1,079 passed, 0 failed);
 pyrefly 0 errors; python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).
