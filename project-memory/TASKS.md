@@ -19,6 +19,39 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
 - **T114 (owner-docs refresh: README + .env.example) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T110b (isolation boundary + adversarial probe — the LAST Phase 7
+  precondition) — AWAITING REVIEW 2026-08-19 (Claude/Cowork)**.
+  backend/research/isolation.py: agent-written strategy code runs in a
+  CHILD PROCESS under `python -I` (no PYTHONPATH/user-site/script-dir),
+  with a SCRUBBED env (9-name interpreter-boot allowlist — no ALPACA_*/
+  FMP_*/EDGAR_CONTACT/KUBERA_*), an EMPTY temp cwd (repo location never
+  disclosed via argv/cwd/env), data in via stdin JSON only, results out
+  via one sentinel-tagged line only — anything ELSE printed is counted in
+  stray_stdout_bytes (a chatty strategy is VISIBLE and still cannot
+  corrupt the result channel), and a hard timeout that kills and NAMES a
+  hang. run_inprocess() is the parity yardstick (test instrument, stated).
+  assert_servable() is the custody seam: symbols under UNCONSUMED holdout
+  custody (T110a guarded_symbols) are refused by name — isolation without
+  that check would sandbox the code while feeding it the answer key.
+  THREAT MODEL STATED HONESTLY in the module docstring: process isolation
+  on the owner's machine as the owner's OS user; absolute-path reads
+  outside the temp dir are NOT prevented (OS sandboxing out of scope for a
+  personal research loop) — the tests prove exactly what the design
+  claims, no more.
+  EVIDENCE (D027): test_isolation.py 8 tests — the ticket's BOTH gates:
+  (1) execution parity THREE-WAY (isolated == in-process == the real
+  momentum template's numbers on 120 bars, longs and flats both present);
+  (2) adversarial probe: planted parent-env secrets counted ZERO by a spy
+  strategy; `import settings`/`import data.alpaca`/relative `.env` read
+  all come back empty; chatty strategy's exfil bytes on record with the
+  result intact; hang killed + named; child exception returned as
+  'ValueError: bad math', never silent; custody seam refuses frozen AND
+  unlocked, serves unguarded; parent env never mutated by the scrub.
+  1001 passed; pyrefly canary 1; gate PASS (batch commit).
+  D028: T110's 'GATED — build when Phase 7 opens' is read as T110a read
+  it: Phase 7 CANNOT START without this; building it now means the phase
+  is never blocked. Nothing imports research/ yet.
+
 - **T084 (earnings-release text as labeled context) — AWAITING REVIEW
   2026-08-19 (Claude/Cowork)**. Built the same day its gate was answered by
   the owner's probe run. data/edgar.py: EarningsRelease dataclass +
@@ -592,15 +625,11 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   -$7,998.86 realized, 53.8% win rate (options -$11,706 / equities +$3,707).
 - [x] T109 — Pre-registered selection rule + cost stress — DONE 2026-08-17
   (REVIEWED PASS; record in archive/TASKS-archive-2026-08-18.md).
-- [ ] T110 — Phase 7 preconditions: evidence custody for the learning loop
-  (D029, GATED — design exists, build when Phase 7 opens): reserved holdout
-  window with code-enforced custody outside agent reach (freeze-then-unlock,
-  ONE evaluation, no revision after the result is known); per-revision
-  experiment budget, failures included, recorded append-only; agent-written
-  strategy code runs only in an isolation boundary that has passed BOTH an
-  execution-parity test (isolated vs in-process identical numbers) AND an
-  adversarial probe (a strategy that tries to read credentials/holdout and
-  must come back empty). Phase 7 does not start without this ticket done.
+- [x] T110 — Phase 7 preconditions COMPLETE 2026-08-19: T110a (holdout
+  custody + experiment budgets, PASSED by Gemini at c54c7e9) + T110b
+  (isolation boundary + adversarial probe — see Awaiting review). The
+  D029 gate 'Phase 7 does not start without this ticket done' is now
+  satisfiable: custody, budgets, parity-proven isolation, custody seam.
 - [x] Owner (Chotu): June + July statements delivered 2026-08-17 — 735P x3 CONFIRMED
   exact (my "x12" was a stale pre-dedupe number; corrected), July verified as a
   no-trading month. Keep dropping each new monthly statement in as it posts.
