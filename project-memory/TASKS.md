@@ -17,6 +17,18 @@ Gemini on anything in Awaiting review.
 ## In progress
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T122d: accidental-restart guard - AWAITING REVIEW 2026-08-20
+  (Claude/Cowork; SHA 89ca9cf).** Observed LIVE minutes after attempt 1:
+  the owner correctly hit the out-of-window forecast refusal, then re-ran
+  `start` - only an argparse error on a wrong flag stopped attempt 2
+  being spent (the exact D028 objection recorded on T122b, now proven
+  real). `start` with attempts already used now REFUSES by name and
+  requires an explicit `--another-attempt` (the legitimate restart-after-
+  failure path). EVIDENCE: test proves the refusal spends NOTHING
+  (status still 1/3) and the flag records attempt 2; live-proven against
+  the real DB (guard refused, 1/3 intact). Gate PASS bare-exit (I035
+  rule). Both of the owner's error outputs were rails working: the
+  forecast refusal is paper-forward doing its job.
 - **Batch #8: T134+T135 + hygiene#7 + briefs-refresh - AWAITING REVIEW
   2026-08-20 (Claude/Cowork; probe-sized at 3+1: the probe SPLIT a
   fourth ticket out of T134 when it found the evidence gap). SHAs per
