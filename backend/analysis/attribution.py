@@ -222,7 +222,10 @@ def fifo_attribution(fills: Sequence[AttributedFill]) -> AttributionReport:
     open_lots = [
         {"symbol": sym, "qty": lot["qty"], "price": lot["price"],
          "regime": lot["regime"], "sub_strategy": lot["sub_strategy"],
-         "bucket": lot["bucket"]}
+         "bucket": lot["bucket"],
+         # T117: the TLH scan needs each lot's entry clock (ST/LT line) and
+         # the contract multiplier (options exposure) — additive fields.
+         "ts": lot.get("ts"), "mult": lot.get("mult", 1)}
         for sym, queue in lots.items() for lot in queue
     ]
     return AttributionReport(

@@ -2421,6 +2421,51 @@ def _get_event_base_rates(ctx: ToolContext, a: EventRatesArgs) -> dict:
 
 
 @registry.tool(
+    "get_tlh_scan",
+    "Tax-loss harvesting scan over the owner's OPEN LOTS from recorded fills "
+    "(T117, measurement only): per lot - unrealized loss, short/long-term "
+    "(365-day line), a WASH flag when a recorded buy of the same symbol sits "
+    "inside the 30-day lookback, and the first safe repurchase date if sold "
+    "today. Narrate the limitations VERBATIM: this is NOT tax advice; wash "
+    "checks see only KUBERA-recorded fills (other accounts, IRAs, DRIPs can "
+    "still wash a loss); options lots are listed unpriced. Never suggest a "
+    "specific replacement security - describe the similar-exposure concept "
+    "only. The loss is reported, never the refund (KUBERA does not know the "
+    "owner's tax bracket).",
+    NoArgs,
+)
+def _get_tlh_scan(ctx: ToolContext, _: NoArgs) -> dict:
+    from analysis.tlh import scan_tlh
+
+    db = ctx.require("db")
+    market: MarketDataClient = ctx.require("market")
+    txns = db.execute(
+        select(Transaction).order_by(Transaction.occurred_at)).scalars().all()
+    if not txns:
+        raise ToolError("no recorded fills - run scripts/sync.py first; a "
+                        "TLH scan without the real lots would be fiction")
+    fills = attributed_fills_from_rows(txns, {})
+    rep = fifo_attribution(fills)
+
+    prices: dict[str, float | None] = {}
+    for sym in sorted({str(lot["symbol"]).upper() for lot in rep.open_lots}):
+        try:
+            prices[sym] = market.get_latest_trade(sym).price
+        except Exception:  # noqa: BLE001 - unpriced is a NAMED state, not a crash
+            prices[sym] = None
+
+    scan = scan_tlh(
+        rep.open_lots, prices,
+        recent_buys=[(f.symbol, f.ts_iso) for f in fills if f.side == "buy"],
+        today=market_today(),
+    )
+    out = asdict(scan)
+    out["asof"] = datetime.now(timezone.utc).isoformat()
+    out["source"] = "recorded fills (FIFO open lots) + live prices"
+    return out
+
+
+@registry.tool(
     "get_short_horizon",
     "THE LEADING LENS (D035, owner-set): what the next 1-3 days usually look "
     "like from HERE — p05..p95 range in % and price, up-odds, typical |move|, "
@@ -2444,6 +2489,87 @@ def _get_short_horizon(ctx: ToolContext, p: SymbolArgs) -> dict:
     out["asof"] = bars.asof.isoformat()
     out["source"] = bars.source
     return out
+
+
+@registry.tool(
+    "get_earnings_preview",
+    "Pre-earnings setup for a symbol (T118) - everything KUBERA can MEASURE "
+    "before the print, in one read: next report date + timing, this symbol's "
+    "OWN reaction base rates (real filing clocks - the history others search "
+    "for, measured), the 1-day expected-move distribution (REALIZED moves, "
+    "honestly labeled - not options-implied), the 5-day runup into the print "
+    "(priced-for-perfection input), and current position exposure. Narrate "
+    "as a setup, not a forecast: no bull/base/bear price targets - the "
+    "distribution IS the scenario framework (D035). Consensus estimates are "
+    "a paid tier (D034) and their absence is stated, never guessed.",
+    SymbolArgs,
+)
+def _get_earnings_preview(ctx: ToolContext, p: SymbolArgs) -> dict:
+    from analysis.short_horizon import short_horizon_read
+
+    symbol = p.symbol.upper()
+    market: MarketDataClient = ctx.require("market")
+    today = market_today()
+
+    next_report: dict | None = None
+    report_note = None
+    if ctx.fmp is not None:
+        try:
+            cal = ctx.fmp.earnings_calendar(today, today + timedelta(days=90))
+            mine = sorted((e for e in cal.events if e.symbol == symbol),
+                          key=lambda e: e.date)
+            if mine:
+                next_report = {"date": mine[0].date.isoformat(),
+                               "time_hint": mine[0].time_hint}
+            else:
+                report_note = ("no report inside the 90-day forward window "
+                               "(or symbol absent from the free calendar)")
+        except FmpError as e:
+            report_note = f"forward calendar unavailable ({e})"
+    else:
+        report_note = "FMP not configured - forward report date unknown"
+
+    base_rates: dict
+    try:
+        base_rates = registry.execute(
+            "get_event_base_rates", {"symbol": symbol}, ctx)
+    except ToolError as e:
+        base_rates = {"available": False, "why": str(e)}
+
+    bars = market.get_daily_bars(symbol, days=500)
+    closes = [b.close for b in bars.bars]
+    dates = [b.date for b in bars.bars]
+    sh = short_horizon_read(symbol, closes, dates, horizons=(1,))
+    runup = (closes[-1] / closes[-6] - 1.0) if len(closes) >= 6 else None
+
+    position = None
+    if ctx.alpaca is not None:
+        try:
+            for pos in ctx.alpaca.get_positions():
+                if pos.symbol == symbol:
+                    position = {"qty": pos.qty,
+                                "market_value": pos.market_value,
+                                "unrealized_plpc": pos.unrealized_plpc}
+                    break
+        except Exception:  # noqa: BLE001 - exposure is context, not the answer
+            position = None
+
+    return {
+        "symbol": symbol,
+        "next_report": next_report,
+        "next_report_note": report_note,
+        "base_rates": base_rates,
+        "expected_move_1d": asdict(sh),
+        "runup_5d_frac": runup,
+        "position": position,
+        "note": ("a SETUP, not a forecast: reaction base rates are this "
+                 "symbol's measured past, the 1-day distribution is REALIZED "
+                 "moves (not options-implied), and no price targets exist "
+                 "here by design (D035). Consensus estimates would need the "
+                 "paid FMP tier (D034) - absent, and said so."),
+        "asof": bars.asof.isoformat(),
+        "source": f"earnings_observed + {bars.source}",
+    }
 
 
 class EarningsReleaseArgs(SymbolArgs):

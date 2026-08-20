@@ -46,7 +46,9 @@ def test_fifo_hand_walked():
     # 3 shares of lot2 remain open at 110
     assert r.open_lots == [{"symbol": "SPY", "qty": 3, "price": 110.0,
                             "regime": "range_bound", "sub_strategy": "range",
-                            "bucket": "first_hour"}]
+                            "bucket": "first_hour",
+                            # T117: lots now carry their entry clock + mult
+                            "ts": "2026-08-02T14:00", "mult": 1}]
     assert r.oversold == []
     assert "sample size" in r.note
 

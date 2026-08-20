@@ -12,11 +12,40 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T117 (TLH scan, measurement-only) - Claude/Cowork** - claimed 2026-08-20.
-- **T118 (earnings preview composition) - Claude/Cowork** - claimed 2026-08-20.
 (none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T117 + T118 (FSI-review adoptions, one SHA) - AWAITING REVIEW
+  2026-08-20 (Claude/Cowork)**. From the owner-requested review of the
+  Anthropic FSI repos (disposition: docs/research/
+  anthropic-fsi-plugins-review-2026-08-20.md, committed ab1b055; D036).
+  T117 - TLH SCAN, measurement only: analysis/tlh.py pure scan over FIFO
+  open lots (attribution open_lots now carry ts + mult - additive; the
+  hand-walked pin extended, not weakened): unrealized-loss candidates
+  sorted largest-first, ST/LT at the 365-day line, wash-sale 30-day
+  LOOKBACK flagged from the owner's OWN recorded buys with the buy date
+  named, first-safe-repurchase date (+31d), gains counted-and-skipped,
+  unpriced options lots LISTED never guessed. Tool #42 get_tlh_scan
+  (refuses without recorded fills). DELIBERATELY absent: replacement
+  suggestions (D017), tax-rate math (loss reported, never the refund).
+  Limitations verbatim in payload: NOT TAX ADVICE; single-account view;
+  DRIPs invisible.
+  T118 - EARNINGS PREVIEW composition: tool #43 get_earnings_preview =
+  next report date+timing (FMP forward, absence named), the symbol's OWN
+  base rates (reuses get_event_base_rates through the registry; degrades
+  to available:false with why), 1-day REALIZED-move distribution (labeled
+  not-options-implied), 5-day runup, position exposure best-effort. No
+  bull/base/bear price targets BY DESIGN (D035) - the distribution is the
+  scenario framework; consensus estimates named as paid-tier-absent.
+  Guards 41->43 (x4 files); MCP read-only +2.
+  EVIDENCE (D027): test_tlh.py 4 hand-computed tests (-350 total across
+  ST/LT, wash flag names the 2026-08-05 buy, 50-day-old buy stays clean,
+  100x option lot unpriced-and-said, no-clock term=unknown);
+  test_fsi_tools.py 3 end-to-end (real db fills -> -104.0 exact, both AAA
+  lots wash-flagged, gains skipped; no-fills refusal; preview composes
+  with EVERY absence named on fakes). 1046 passed; pyrefly 0; gate PASS.
+  D028: attribution's exact-dict pin broke on the additive fields - the
+  pin was UPDATED to the grown contract (ts/mult asserted), not deleted.
 - **T116 (short-horizon FIRST — the owner's lens) — AWAITING REVIEW
   2026-08-20 (Claude/Cowork)**. D035 delivered as surfaces, not a memo.
   analysis/short_horizon.py (pure): packages T077's distributions into the

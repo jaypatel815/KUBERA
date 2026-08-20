@@ -2,6 +2,21 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D036 - Anthropic FSI/plugin repos: adopt methodology, never content (2026-08-20)
+Owner asked for a review of anthropics/financial-services,
+claude-plugins-official, and knowledge-work-plugins. Full disposition:
+docs/research/anthropic-fsi-plugins-review-2026-08-20.md. Ruling:
+- These are analyst-workflow CHECKLISTS; KUBERA implements the steps that
+  matter as deterministic tested code. Adoption = "did their checklist
+  name a step our composition lacks?" Two did: T117 (TLH scan,
+  measurement-only) and T118 (earnings-preview composition) - BUILT.
+- REJECTED by name: replacement-security suggestions (a named buy is a
+  recommendation - D017), scenario price targets (D035), consensus/
+  whisper scraping (no measured free source - D030), partner MCP
+  connectors (all subscriptions - D034 upgrade-day candidates).
+- SEEDED: T119 thesis view, T120 plugin packaging.
+- All Apache-2.0; methodology adopted, zero text/code copied.
+
 ## D035 — Timescale doctrine: days are odds, minutes are state, seconds are out (2026-08-20)
 Owner direction after his first live monitor run: "I want KUBERA to
 predict the move within days, minutes, seconds — not weeks/months/years."

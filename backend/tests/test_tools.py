@@ -60,7 +60,7 @@ def test_registry_rejects_duplicate_names():
 
 def test_schemas_export_shape():
     schemas = registry.schemas()
-    assert len(schemas) == len(registry.names()) == 41
+    assert len(schemas) == len(registry.names()) == 43
     by_name = {s["name"]: s for s in schemas}
     assert "get_portfolio" in by_name
     bars = by_name["get_daily_bars"]
@@ -130,14 +130,15 @@ def test_api_lists_tools():
     r = client.get("/api/tools")
     assert r.status_code == 200
     body = r.json()
-    assert body["count"] == 41
+    assert body["count"] == 43
     assert {t["name"] for t in body["tools"]} == {
         "get_portfolio", "get_latest", "get_daily_bars", "compare_benchmark",
         "get_symbol_briefing", "run_backtest", "get_ips", "update_ips", "get_regime",
         "get_levels", "get_breakouts", "get_intraday", "get_expected_move",
         "get_risk_status", "get_brief", "get_macro_context",
         "record_decision", "mark_decision", "get_journal", "get_confluence",
-        "coach_trade", "get_event_base_rates", "get_earnings_release", "get_short_horizon",
+        "coach_trade", "get_event_base_rates", "get_earnings_release",
+        "get_short_horizon", "get_tlh_scan", "get_earnings_preview",
         "get_exit_plan", "size_position", "triage_position", "get_attribution",
         "goal_math", "get_news", "get_correlation", "get_liquidity",
         "get_portfolio_risk", "get_watchlist", "update_watchlist",

@@ -68,6 +68,25 @@ python pins agree (3.14.7); alembic single head (e1a7c4f9b2d3).
    stdlib html_to_text) + tool #40 `get_earnings_release` qualitative framing. Guards bumped to 40.
 Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
 
+## 2026-08-20 — Claude/Cowork — Anthropic FSI/plugin repos reviewed; T117 + T118 built (D036)
+Owner asked for a review of anthropics/financial-services,
+claude-plugins-official, knowledge-work-plugins. Read the READMEs + the
+two most KUBERA-relevant SKILL.md files in full; disposition doc at
+docs/research/anthropic-fsi-plugins-review-2026-08-20.md (ab1b055); D036
+records the ruling (adopt methodology, never content; all Apache-2.0).
+ADOPTED AND BUILT: T117 TLH scan (measurement-only: FIFO open lots with
+new ts/mult fields, ST/LT split, wash lookback from the owner's OWN buys,
+first-safe-repurchase date, unpriced options listed never guessed, NOT
+TAX ADVICE verbatim; tool #42) + T118 earnings-preview composition (next
+report + own base rates + realized 1-day distribution labeled
+not-options-implied + runup + exposure; no price targets by design; tool
+#43). Guards 41->43; MCP +2. REJECTED BY NAME: replacement-security
+suggestions (D017), scenario targets (D035), consensus scraping (D030),
+subscription connectors (D034). SEEDED: T119 thesis view, T120 plugin
+packaging. VERIFIED: test_tlh.py 4 hand-computed + test_fsi_tools.py 3
+end-to-end; 1046 passed; pyrefly 0; gate PASS. NEXT: Gemini reviews the
+T117+T118 SHA + the disposition commit.
+
 ## 2026-08-20 — Claude/Cowork — batch of five #3: T116, T087b, I023, stale-sweep, curation
 The owner's D035 direction became SURFACES. Five closed at their SHAs:
 7af3dcc T116 — short-horizon FIRST: analysis/short_horizon.py packages
