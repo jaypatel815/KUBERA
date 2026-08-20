@@ -280,7 +280,28 @@ python scripts\monitor.py --loop 300       # open-trade monitor during market ho
                                            # its volume, VWAP churn, price at/near your
                                            # exit plan's invalidation, open event windows.
                                            # ADVISORY ONLY; exit 1 = something needs eyes
+python scripts\restore_check.py            # prove the NEWEST backup actually restores
+                                           # (integrity + schema vs live); schedule it
+                                           # right after the nightly backup
+python scripts\secret_check.py             # public-repo hygiene: key-shaped strings in
+                                           # tracked files, .env.example completeness,
+                                           # SecretStr coverage — values never printed
 ```
+
+The same monitor judgment is also servable — `GET /api/monitor` — and the Orb's
+portfolio panel (▣) now renders it: days lens first, alerts by severity, blind
+spots named, "advisory only" in the payload itself. The health check also watches
+the market-data FEED now (unreachable or stale prints flag by name), and the
+whole incident playbook lives in **`docs/RUNBOOK.md`**: feed down, breaker
+tripped, CI red, restore steps, suspected key leak, wrong brain, Schwab token,
+and the Phase 7 pre-flight (`python scripts\phase7_gate.py --revision <name>` —
+OPEN only when custody refuses, the budget is pre-registered, the contamination
+rule is written down, and the isolation boundary holds parity).
+
+When you ask "which way will SPY go this week", the days-lens answer now also
+NAMES any scheduled event standing inside its window (FOMC from the published
+table; your symbol's recorded earnings dates): "these bands are drawn from
+ordinary days and do not price the event" — the bands themselves never change.
 
 Two rails watch order flow itself: a per-symbol disable switch (above) and an
 **order-frequency rail** — at most 5 new buys per market day by default, counted in

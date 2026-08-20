@@ -20,6 +20,31 @@ pyrefly 0 errors; python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3
    archived verbatim to `archive/TASKS-archive-2026-08-20.md`, keeping `TASKS.md` within budget (~450 lines).
 Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
 
+## 2026-08-20 — Claude/Cowork — Batch #6: first at the D038 size (9 tickets)
+The owner approved scaling batches (his ChatGPT-drafted proposal mapped
+~1:1 onto our existing system — D038 adopted only the two missing pieces:
+coupling-based sizing, verdict severities; rejected a second
+"constitution"). Built, SHAs in the TASKS manifest: T126 protocol into
+AGENTS.md/REVIEW.md/D038 (2435dd7); hygiene #6 five stale seeds closed
+(6dbfa34); T127 phase7_gate.py — D029 preconditions as CODE, four checks
+that RUN what they verify (a471ff6); T129 health_check feed-outage check,
+shrunk by probe (355d2c2); T130 secret_check.py — first live run caught 3
+real undocumented credentials, suite now pins the repo clean (f844f8f +
+d371830 own-test-PEM fix); T116b event-aware days lens, bands pinned
+untouched (355a3c0); T087-Orb monitor panel rendering /api/monitor
+(a5b0c02); T128 docs/RUNBOOK.md written last so it documents what exists
+(5f5c6c4); T132 README delta (close commit). Verified (D027): +32 tests;
+ran phase7_gate/health_check/secret_check live with named degradations;
+node --check on the Orb script; full gate PASS (1,105 passed). D028 pass
+caught and recorded: the type gate found a str/date bug that a broad
+except would have made a silently dead feature (end-to-end test now pins
+it alive); one mid-batch commit briefly carried a red test because
+`pytest | tail` ate the exit code — amended to 355a3c0 within minutes,
+exit codes now checked bare. Tail-quality held: ticket 9 got the same
+treatment as ticket 1. Next: Gemini reviews batches #5 AND #6 (14 SHAs
+total in TASKS); then T122 runs through the now-mechanical phase7 gate
+when the owner wants Kronos.
+
 ## 2026-08-20 — Claude/Cowork — Batch #5: T125 + T124 + T087c + T123 + curation #5
 Built (SHAs per D033): T125 pyrefly-as-gate at c5b2985 (check_pyrefly.py:
 count parsed AND returncode checked, unparseable = FAILURE; verify.py step

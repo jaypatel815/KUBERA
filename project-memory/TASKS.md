@@ -12,22 +12,88 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **Batch #6 (first at the new size - 9 tickets picked for INDEPENDENCE,
-  claimed 2026-08-20, Claude/Cowork):** T126 (batch protocol into the
-  contract: coupling-based sizing + manifest fields + verdict severities,
-  owner-approved after ChatGPT's proposal mapped ~1:1 onto our existing
-  system), hygiene #6 (stale seeds T121b/T119/T120/T116/T085b-note ->
-  [x] pointers; T062b remainder trimmed; I016 numpy-guard verify),
-  T127 (scripts/phase7_gate.py - D029 preconditions as CODE), T128
-  (docs/RUNBOOK.md - Phase 8 spec's incident runbook), T129 (health_check
-  gains the missing FEED-outage check - probe showed breaker+snapshot
-  already covered), T130 (scripts/secret_check.py - tracked-file secret
-  scan + .env.example<->settings parity; repo is PUBLIC), T116b
-  (event-aware days lens - probe showed short_horizon has zero event
-  conditioning), T087-Orb (monitor panel rendering /api/monitor), T132
-  (README delta for the new surface).
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **Batch #6: T126 + hygiene#6 + T127 + T129 + T130(+fix) + T116b +
+  T087-Orb + T128 + T132 - AWAITING REVIEW 2026-08-20 (Claude/Cowork;
+  first batch at the owner-approved D038 size, 9 tickets picked for
+  independence). SHAs per D033:** 2435dd7 / 6dbfa34 / a471ff6 / 355d2c2 /
+  f844f8f+d371830 / 355a3c0 / a5b0c02 / 5f5c6c4 / close SHA on this
+  commit.
+  T126 - BATCH PROTOCOL CODIFIED (D038) at 2435dd7: AGENTS.md gains the
+  coupling-based sizing table + probe-before-claim + tail-quality STOP
+  rule + manifest-fields contract; REVIEW.md gains CRITICAL/MAJOR/MINOR/
+  NOTE severities annotating per-ticket PASS/BLOCK; DECISIONS D038
+  records what was adopted from the owner's ChatGPT proposal (only the
+  two missing pieces) and what was rejected (a second constitution).
+  HYGIENE #6 at 6dbfa34: T121b/T119/T120 seed checkboxes were still OPEN
+  after batch #4 shipped+PASSed (the T104 stale-duplicate class) - closed
+  with archive pointers; T116 closed on grep evidence with remainder
+  split to T116b; Kelly-note consumed by T085b; T062b remainder trimmed
+  to PWA-push-only; I016 verified already RESOLVED (per-test
+  importorskips, lines 37/133).
+  T127 - PHASE 7 GATE IS CODE at a471ff6: scripts/phase7_gate.py, four
+  checks that RUN what they verify - custody must REFUSE a guarded
+  symbol; budget pre-registered with attempts left; pre-registration doc
+  must state the contamination rule (D037); isolation parity with a
+  TWO-SIDED env canary (visible in-process = canary alive, stripped
+  across = boundary works). Exit 0 OPEN / 1 CLOSED / 2 unconfigured.
+  T129 - FEED-OUTAGE CHECK at 355d2c2: probe first (D030) showed
+  breaker+snapshot already covered, so the ticket shrank to the missing
+  Phase 8 piece - check_feed owns exactly two failure modes (feed
+  unreachable, print stale/old via T036b), broker clock refines, quiet
+  when unconfigured; stale 3-check docstring fixed.
+  T130 - SECRETS HYGIENE at f844f8f + d371830: tracked-file scan (values
+  NEVER echoed), .env.example<->settings parity via pydantic
+  introspection (aliases + the commented-var convention), SecretStr
+  floor. FIRST LIVE RUN caught 3 real gaps (anthropic/openai/
+  claude_code_oauth_token undocumented - the T114 FMP class, mechanized);
+  the suite now pins the repo CLEAN, and the pin promptly caught the
+  checker's own test PEM fixture (split, not excluded - d371830).
+  T116b - EVENT-AWARE DAYS LENS at 355a3c0: events inside the 1-3d
+  window (FOMC keyless table; recorded earnings dates from the store)
+  become caveats - "these bands are drawn from ordinary days and do not
+  price the event" - measured-reaction sentence attached when the caller
+  has one, named route to get_earnings_preview when not. Bands PINNED
+  untouched (horizons compare equal with/without events).
+  T087-Orb at a5b0c02: the portfolio panel renders GET /api/monitor -
+  days lens first, alerts by severity, blind spots named, advisory
+  footer from the payload; all API text HTML-escaped; degrades by name;
+  JS passes node --check; wiring pinned. T087 remainder: voice barge-in
+  only (dep T074).
+  T128 - INCIDENT RUNBOOK at 5f5c6c4: docs/RUNBOOK.md, eight incidents
+  each grounded in a shipped exit-coded script, written LAST so it
+  documents what exists; pinned (named scripts must exist, spec's
+  verbatim incidents covered).
+  T132 - README delta in the close commit: restore drill, secret check,
+  /api/monitor + Orb panel, RUNBOOK pointer, phase7_gate, event caveats.
+  EVIDENCE (D027): tests +32 this batch (8 phase7_gate incl. sabotaged
+  rail + leaky boundary; +5 check_feed on _Market/_Clock fakes; 7 secret
+  incl. planted patterns + repo-pinned-clean; +5 short_horizon events
+  incl. end-to-end registry test on a real store row; 2 orb wiring;
+  2 runbook pins). RAN: phase7_gate --revision on missing DB (named exit
+  2), health_check live (FEED unreachable NAMED via sandbox ProxyError,
+  exit 1), secret_check live (3 real findings -> fixed -> CLEAN over 335
+  files), node --check on the extracted Orb script, restore/monitor from
+  batch #5 unchanged. Full gate PASS at close (1,105 passed, 3 skipped).
+  D028 (strongest objections, written down): (1) the T125 canary caught a
+  str/date bug in T116b's store path that my degrade-catch would have
+  turned into a SILENTLY DEAD feature - the end-to-end test now pins the
+  path alive, but the pattern (broad except around enrichment) remains a
+  standing risk elsewhere. (2) Mid-batch I committed T116b with a red
+  test because `pytest | tail` swallowed the exit code - caught minutes
+  later by rerunning without the pipe, amended to 355a3c0 before
+  anything referenced the SHA; rule now followed: exit codes checked
+  bare, never through a pipe. (3) secret_check's placeholder heuristic
+  can be fooled by a real key containing "example" - accepted: the
+  parity+SecretStr checks don't share that hole, and values are never
+  echoed regardless.
+  BATCH-LEVEL COUPLING NOTE (D038): tickets share TASKS/PROGRESS (mine
+  alone this session) and ONE seam - T116b touched monitor_service's
+  check_symbol call, which T087-Orb renders; the shared payload shape is
+  pinned by test_monitor_service + test_orb_panel. Everything else is
+  file-disjoint by construction.
+
 - **Batch #5: T125 + T124 + T087c + T123 + curation #5 - AWAITING REVIEW
   2026-08-20 (Claude/Cowork; SHAs per D033: c5b2985 / 371d46e / 055b775 /
   a909a03 / close SHA on this commit)**.
