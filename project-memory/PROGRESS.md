@@ -37,6 +37,22 @@ pyrefly 0 errors; python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3
    archived verbatim to `archive/TASKS-archive-2026-08-20.md`, keeping `TASKS.md` within budget (~450 lines).
 Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
 
+## 2026-08-20 — Claude/Cowork — curation #7: both batches double-signed, archived
+Gemini PASSed batch #5 (at 0885039) and batch #6 (at 4199c69, review
+commit ad576a2) — 14 tickets, evidence quoted, concerns: none on both.
+Curation #7 moved both signed records verbatim to
+archive/TASKS-archive-2026-08-20.md (TASKS 555->403 lines). STATE OF THE
+BACKLOG, honestly: nothing buildable remains unblocked in this
+environment. Everything open is gated — T122 Kronos (phase7_gate.py now
+enforces its preconditions mechanically, but freezing a holdout, opening
+a budget, writing the pre-registration, and downloading the model are
+owner-decision + owner-machine acts), T081/T094/T095 (D021, revisit
+~2026-09-12 on DQS evidence), T067c (needs verified fills), T074b/c +
+T087-barge-in (owner-machine audio), T007/T071 (owner acceptance runs),
+PWA push (Phase 5 Flutter client — a new front, needs an owner call).
+Next: owner picks the direction — Kronos pre-registration package,
+Phase 5 Flutter start, or hold cadence pending D021's evidence date.
+
 ## 2026-08-20 — Claude/Cowork — Batch #6: first at the D038 size (9 tickets)
 The owner approved scaling batches (his ChatGPT-drafted proposal mapped
 ~1:1 onto our existing system — D038 adopted only the two missing pieces:
