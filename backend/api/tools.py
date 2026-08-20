@@ -2382,3 +2382,56 @@ def _get_event_base_rates(ctx: ToolContext, a: EventRatesArgs) -> dict:
     out["asof"] = bars.asof.isoformat()
     out["source"] = f"earnings_observed + {bars.source} bars"
     return out
+
+
+class EarningsReleaseArgs(SymbolArgs):
+    max_chars: int = Field(
+        default=20_000, ge=2_000, le=40_000,
+        description="Cap on the extracted text (the payload says when it "
+                    "truncated)")
+
+
+@registry.tool(
+    "get_earnings_release",
+    "Fetch the TEXT of a company's most recent earnings press release "
+    "(exhibit 99.1 of its earnings 8-K) straight from SEC EDGAR — free and "
+    "authoritative. This is QUALITATIVE CONTEXT: narrate it as a document "
+    "('the release says…', 'guidance language reads…'), always with its "
+    "filing date and acceptance time — NEVER as a priced signal, a forecast, "
+    "or a reason to size a trade. Be honest about scope: this is what the "
+    "COMPANY said, not what management answered analysts on the call (call "
+    "transcripts are a paid tier). Financial tables arrive flattened; for "
+    "the numbers themselves use the fundamentals and base-rate tools.",
+    EarningsReleaseArgs,
+)
+def _get_earnings_release(ctx: ToolContext, a: EarningsReleaseArgs) -> dict:
+    """T084 — gate answered by the owner's probe run 2026-08-19: ex99.1 is
+    free (173,484 bytes observed for AAPL). Requires EDGAR (contact in .env);
+    every failure is a named ToolError, never a silent empty answer."""
+    if ctx.edgar is None:
+        raise ToolError(
+            "EDGAR is not configured — add EDGAR_CONTACT=you@example.com to "
+            ".env (the SEC requires a contact in the User-Agent; it stays on "
+            "your machine).")
+    symbol = a.symbol.upper()
+    try:
+        rel = ctx.edgar.earnings_release(symbol, max_chars=a.max_chars)
+    except EdgarError as e:
+        raise ToolError(f"earnings release unavailable for '{symbol}': {e}") from e
+    return {
+        "symbol": rel.symbol,
+        "accession": rel.accession,
+        "filing_date": rel.filing_date.isoformat(),
+        "acceptance_utc": (rel.acceptance_utc.isoformat()
+                           if rel.acceptance_utc else None),
+        "document": rel.doc_name,
+        "document_kind": rel.doc_kind,
+        "text": rel.text,
+        "text_chars_total": rel.text_chars_total,
+        "truncated": rel.truncated,
+        "note": ("qualitative context — the company's OWN press release, not "
+                 "the analyst-call Q&A (paid tier, D034); tables flattened; "
+                 "never a priced signal"),
+        "asof": rel.asof,
+        "source": rel.source,
+    }

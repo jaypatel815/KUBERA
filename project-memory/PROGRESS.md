@@ -5,6 +5,21 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-19 — Claude/Cowork — T084: earnings-release text as labeled context
+BUILT (same day its gate was answered): EdgarClient.earnings_release —
+newest earnings 8-K → index.json → largest ex99* exhibit (probe-validated
+rule) → stdlib html_to_text (deterministic; tables flatten and SAY so);
+named fallback to the 8-K primary; five named refusals; truncation visible
+(flag + total chars). Tool #40 get_earnings_release: qualitative context —
+narrate as a document with filing dates; NEVER a priced signal; scope
+honesty in the payload (company's OWN release, not the call Q&A — paid
+tier, D034). MCP read-only list +1; CORE_TOOLS deliberately unchanged
+(context-heavy long tail stays off small brains). Guards 39→40 ×4 files.
+VERIFIED: test_earnings_release.py 8 tests on owner-observed fixtures
+(0000320193-26-000018 / 38,350 b / 173,484 b); gate PASS; pyrefly canary 1.
+NEXT: Gemini review at this SHA. Backlog: T110b (isolation probe), T074b
+(Pipecat spike, owner machine), T063b/T067c data-gated, D021 window ~09-12.
+
 ## 2026-08-19 — Gemini/Antigravity — review T074a (PASS) / T084a (PASS) / T110a (PASS) / T062c delta (PASS)
 Reviewed 4 items at tip (`e30e479`). Gate PASS (989 passed, 0 failed); python pins agree (3.14.7);
 alembic single head (c9f6e3a2d874); parallel_check clean.

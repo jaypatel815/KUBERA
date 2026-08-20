@@ -12,9 +12,43 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T084 (earnings-release text as labeled context) — Claude/Cowork** — claimed 2026-08-19.
+(none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T084 (earnings-release text as labeled context) — AWAITING REVIEW
+  2026-08-19 (Claude/Cowork)**. Built the same day its gate was answered by
+  the owner's probe run. data/edgar.py: EarningsRelease dataclass +
+  EdgarClient.earnings_release(symbol, max_chars=20000) — newest item-2.02
+  8-K → accession index.json → LARGEST ex99* exhibit (the probe-validated
+  filename rule, now module-level _is_ex99) → html_to_text (stdlib
+  HTMLParser: script/style/head skipped, blocks newlined, table cells
+  spaced, entities decoded, blank-run collapse; deterministic — money math
+  never reads this). NAMED fallback to the 8-K primary document when an
+  accession has no ex99; refusals for: no earnings 8-K (ETFs named),
+  missing accessionNumber, index shape change, nothing readable, empty
+  text. Truncation is VISIBLE (truncated flag + text_chars_total). Tool
+  #40 get_earnings_release: labeled qualitative context — description and
+  payload note both say narrate-as-document, never a priced signal, and
+  the scope honesty (company's OWN release, NOT the analyst-call Q&A —
+  paid tier, D034). Read-only MCP list gains it; CORE_TOOLS (small brains)
+  deliberately does NOT — context-heavy long-tail. Guard tests bumped
+  39→40 (test_tools ×2 + name set, test_chat, test_claude_sdk).
+  EVIDENCE (D027): test_earnings_release.py 8 tests, fixtures mirror the
+  owner's observed run (accession 0000320193-26-000018, primary 38,350 b,
+  exhibit 173,484 b): newest-8-K + largest-ex99 selection; html_to_text
+  (script/style dropped, entity decode, cell flatten); visible truncation;
+  named primary fallback; four named refusals; tool payload (note wording
+  pinned) + not-configured names the .env fix. 43 relevant tests green;
+  full suite via gate PASS; pyrefly at the 1-error canary; ruff clean.
+  D028 notes: (1) "summarize via the existing LLM layer" is READ as: the
+  tool returns bounded TEXT and the chat loop narrates it under the
+  tool-description instructions — no separate summarizer endpoint (that
+  would be a second brain). (2) NOT built, by choice: no brief wiring
+  (release text is too heavy for a composed brief; the tool is on-demand),
+  no release caching (one doc per call is fine at v1; store it if usage
+  grows), no 10-K/10-Q YoY textual change (explicitly Phase 7 per the
+  ticket). (3) The client makes 3 sequential requests, no sleeps — same
+  posture as earnings_history's 2; well under EDGAR's ~10/s ceiling.
 - **T074a (realtime-voice framework research) — AWAITING REVIEW 2026-08-19
   (Claude/Cowork)**. docs/research/realtime-voice-2026-08-19.md — August-
   2026 landscape for T074, sourced (14 links in the doc). Findings:
@@ -691,7 +725,7 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 - [x] T083b — built 2026-08-18 (probe ALL GREEN same day), see Awaiting
   review at top. Years of earnings history now arrive instantly; real
   acceptance clocks replace bmo/amc guesses.
-- [ ] T084 — Earnings TEXT as labeled CONTEXT (D019/D034; GATE ANSWERED by owner probe 2026-08-19): FMP transcripts are PAYWALLED, but the owner-run T084a probe measured the free substitute — exhibit 99.1 (the press release) in the earnings 8-K accession: AAPL 2026-07-30 → 173,484 bytes of free HTML (primary doc 38,350 bytes; 17 files in the accession). SCOPE HONESTY: ex99.1 is the COMPANY'S release (results, guidance language, management quotes) — it is NOT the call Q&A; "what management answered analysts" stays unavailable until a paid tier (D034 upgrade-day item). v1 design: EdgarClient gains fetch of the ex99.1 doc for a symbol's latest earnings 8-K, summarize via the EXISTING LLM layer, clearly labeled qualitative context — never a priced signal. 10-K/10-Q YoY textual-change ("Lazy Prices") stays a Phase 7 research-agent candidate via §7.7, human-gated. No FinBERT.
+- [x] T084 — BUILT 2026-08-19, see Awaiting review (the gate was answered by the owner's probe the same morning; 10-K/10-Q YoY textual change stays a Phase 7 candidate).
 - [x] T016a — Schwab read-only client + transaction mapping — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
   `backend/data/schwab.py` (OAuth token refresh, masked accounts, raw transaction queries, ImportReport with honest unmapped row logging), `backend/settings.py` (schwab_* settings and require_schwab), `.env.example`, `scripts/schwab_auth.py`, `scripts/reconcile_schwab.py`, `scripts/env_check.py`, and `backend/tests/test_schwab.py` (19 unit tests).
   REVIEW VERDICT: PASS. (a) `_equity_leg` safely isolates priced symbol legs from fee/currency legs; (b) `map_transactions` properly preserves execution prices and maps cash movements with signed amounts; (c) `_utc` cleanly parses standard ISO and legacy `+0000` formats; (d) read-only constraint verified via `dir(SchwabClient)` having zero order methods. Gate PASS (728 passed).
