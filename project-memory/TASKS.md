@@ -15,6 +15,27 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
 (none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **Repo review #2 + T121 probe (FinRobot/AI-Trader/Kronos, D037) -
+  AWAITING REVIEW 2026-08-20 (Claude/Cowork)**. Disposition doc:
+  docs/research/finrobot-aitrader-kronos-review-2026-08-20.md (read via
+  subagent extraction; licenses honored - AI-Trader code untouched, its
+  LICENSE 404s). HEADLINE: AI-Trader's live benchmark results recorded as
+  EVIDENCE for KUBERA's architecture (six frontier LLMs as autonomous
+  traders: 4/6 lost to QQQ in US, 6/6 lost to SSE-50, 6/6 lost money in
+  crypto - the LLM-decides design measured and found wanting). BUILT:
+  scripts/finnhub_check.py (T121) - 5-endpoint free-tier probe (quote,
+  company-news, news-sentiment, earnings surprises, stock/metric), named
+  BAD KEY/PAYWALLED/RATE LIMITED/EMPTY-SHAPE verdicts, polite pacing, key
+  never echoed, exit 2 without key (demonstrated), UNREACHABLE named in
+  sandbox (demonstrated); .env.example gains the optional key line. The
+  earnings-surprises line is the prize: T083 base rates currently mark
+  beat/miss "unknown" - actual-vs-estimate history would fix that.
+  EVIDENCE (D027): probe script is owner-run instrumentation (fmp_check/
+  edgar_check precedent - no unit tests, no pure parsers); ruff clean;
+  pyrefly 0; live sandbox degradations shown; gate PASS at close.
+  D028: no FinnhubClient exists and none will unless the owner's paste
+  says the tier answers (D030). OWNER ACTION: free key -> .env ->
+  `python scripts\finnhub_check.py` -> paste the table.
 - **T117 + T118 (FSI-review adoptions, one SHA) - AWAITING REVIEW
   2026-08-20 (Claude/Cowork)**. From the owner-requested review of the
   Anthropic FSI repos (disposition: docs/research/
@@ -248,6 +269,19 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
 - [x] T067b — built 2026-08-18, see Awaiting review at top. (FOMO-into-late-
   RVOL deliberately NOT built — needs an intraday clock on every fill; named
   in every report and re-filed as T067c below.)
+- [ ] T122 - Kronos candidate experiment (Phase 7-GATED; D037; MIT model
+  NeoQuasar/Kronos-base 102M params, CPU-feasible ~400MB F32). PRE-
+  REGISTERED PROTOCOL REQUIRED BEFORE ANY RUN: (1) THE CONTAMINATION RULE:
+  Kronos trained on 12B K-lines through its cutoff - a historical backtest
+  is a test ON ITS OWN TRAINING DATA; only post-cutoff or paper-forward
+  evaluation counts, full stop. (2) open_budget() BEFORE the first
+  attempt; failures count (T110a). (3) holdout frozen before experiment
+  one; consumed once (T110a). (4) any glue code runs inside the T110b
+  boundary. (5) a Kronos-derived signal reaches the paper loop ONLY
+  through the T064 promotion gate + selection rule, like every other
+  strategy. (6) D035 stands: forecasts are internal signals; the owner
+  hears odds and ranges, never "the model says 770". Fine-tuning on the
+  owner's fills: REFUSED (D037).
 - [ ] T119 - Thesis view (adopted from equity-research thesis-tracker,
   docs/research/anthropic-fsi-plugins-review-2026-08-20.md): one composition
   per symbol joining watchlist note (thesis text) + latest journal entries +

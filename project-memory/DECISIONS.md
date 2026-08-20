@@ -2,6 +2,29 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D037 - FinRobot/AI-Trader/Kronos review: their data backs our doctrine (2026-08-20)
+Second owner-requested repo review; full disposition:
+docs/research/finrobot-aitrader-kronos-review-2026-08-20.md. Rulings:
+- AI-Trader's published live benchmark (arXiv:2512.10971) is RECORDED AS
+  EVIDENCE on D017/D035: six frontier LLMs trading autonomously for five
+  weeks - 4 of 6 lost to QQQ buy-and-hold in US equities, all six lost to
+  the index in A-shares, all six lost money in crypto. The architecture
+  KUBERA refuses (LLM decides), measured. Their code is untouched
+  (LICENSE file 404s - unresolved license); the paper's facts are cited.
+- Kronos (MIT, weights on HF, AAAI 2026) is the first REAL Phase 7
+  candidate: seeded as T122 with the contamination rule VERBATIM - a
+  historical backtest of a model trained on 12B K-lines through its
+  cutoff is a test on its own training data; only post-cutoff/paper-
+  forward evaluation counts, under custody+budgets+isolation+promotion.
+  Forecasts-as-internal-signals are compatible with D035 (the owner still
+  hears odds and ranges); fine-tuning on the owner's fills is refused
+  (overfit machine).
+- FinRobot: independent convergence on our founding split (code computes,
+  LLM narrates) - validation. One lead adopted: Finnhub free tier -> T121
+  probe BUILT (scripts/finnhub_check.py, owner runs); yfinance rejected
+  (unofficial API); debate-agents rejected (persona does case-for/against
+  in one pass).
+
 ## D036 - Anthropic FSI/plugin repos: adopt methodology, never content (2026-08-20)
 Owner asked for a review of anthropics/financial-services,
 claude-plugins-official, and knowledge-work-plugins. Full disposition:

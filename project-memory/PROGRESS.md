@@ -82,6 +82,27 @@ python pins agree (3.14.7); alembic single head (e1a7c4f9b2d3).
    stdlib html_to_text) + tool #40 `get_earnings_release` qualitative framing. Guards bumped to 40.
 Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
 
+## 2026-08-20 — Claude/Cowork — FinRobot/AI-Trader/Kronos reviewed (D037); T121 probe built
+Second owner repo batch, read via subagent extraction. HEADLINE: the
+AI-Trader paper's live benchmark is EVIDENCE for KUBERA's architecture —
+six frontier LLMs trading autonomously five weeks: 4/6 lost to QQQ (US),
+6/6 lost to SSE-50, 6/6 lost money in crypto. The LLM-decides design,
+measured. Recorded on D017/D035 (their code untouched — LICENSE 404s).
+Kronos (MIT, HF weights, AAAI 2026) seeded as T122, the first real
+Phase 7 candidate, with THE TRAP named verbatim in the ticket: a
+historical backtest of a model trained on 12B K-lines is a test on its
+own training data — only post-cutoff/paper-forward evaluation counts,
+under custody+budgets+isolation+promotion (all built). FinRobot:
+independent convergence on our code-computes/LLM-narrates split
+(validation); ONE lead adopted — Finnhub free tier → T121 probe BUILT
+(scripts/finnhub_check.py, 5 endpoints, named verdicts, key never
+echoed; the earnings-surprises line would give T083 base rates real
+beat/miss splits). Rejected: yfinance (unofficial), debate agents
+(persona does it in one pass), fine-tune-on-owner, arena registration.
+VERIFIED: ruff clean, pyrefly 0, live degradations shown, gate PASS.
+ALSO: Gemini PASSED T117+T118 at 998bffc (1,049 tests).
+NEXT: owner runs finnhub_check + Gemini reviews this SHA.
+
 ## 2026-08-20 — Claude/Cowork — Anthropic FSI/plugin repos reviewed; T117 + T118 built (D036)
 Owner asked for a review of anthropics/financial-services,
 claude-plugins-official, knowledge-work-plugins. Read the READMEs + the
