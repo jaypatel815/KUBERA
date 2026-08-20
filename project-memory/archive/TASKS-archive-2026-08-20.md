@@ -966,3 +966,72 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
       `pyrefly.toml` error threshold at 0; verified `project-memory/ISSUES.md` closures
       for I023, I029, and I016 with evidence. Gate 1,042 passed.
     concerns: none.
+## Curation #5 (2026-08-20) - moved verbatim from TASKS.md by Claude/Cowork (D031: move, never delete)
+
+- **Batch #4: T121b + T119 + T120 + T114b + curation #4 - AWAITING REVIEW
+  2026-08-20 (Claude/Cowork; two build SHAs + close SHA)**.
+  T121b - FINNHUB NEWS as a second labeled source in get_news: per-symbol
+  only (no market-wide feed on the probed tier - said in the note), merged
+  newest-first with a cross-feed timestamp NORMALIZATION (str(datetime)
+  sorts by its space separator against ISO 'T' - normalized to isoformat
+  before sorting), deduped by URL against alpaca items, every item carries
+  its feed label, bounded 5-symbol fan-out, per-symbol degradations named.
+  T119 - THESIS VIEW (tool #44): the owner's record COMPOSED, never
+  invented - watchlist note quoted verbatim, latest 5 journal decisions
+  with their stated theses and stops-then, the CURRENT exit plan's
+  invalidation (same T056 composition every surface uses; regime carries
+  its I033 lens), upcoming catalysts (FMP earnings best-effort + FOMC
+  table which needs no key), position exposure; both absences NAMED (not
+  on watchlist -> points at update_watchlist; no journal entries).
+  Guards 43->44 (x4); MCP read-only +1.
+  T120 - PLUGIN PACKAGING (claude-plugins-official conventions, D036
+  seed): .claude-plugin/plugin.json + marketplace.json (root plugin,
+  source "."), commands/kubera.md (the resume protocol as a slash
+  command) + commands/kubera-connect.md (MCP wiring walkthrough - the
+  machine-local config is GENERATED via install_mcp_config.py, never
+  shipped; read-only surface + I021 exclusion stated).
+  test_plugin_manifest.py pins: name-slug immutability, marketplace
+  shape, frontmatter present, NO machine paths in shipped files.
+  T114b - README delta: earnings intelligence now two free lines
+  (EDGAR + FINNHUB) with beat/miss wording, TLH/preview/thesis chat
+  examples, plugin-install section.
+  CURATION #4 - 6 signed entries moved verbatim (TASKS 609->420 lines).
+  EVIDENCE (D027): test_thesis_and_news.py 4 tests (owner's words
+  verbatim incl. 95.0 stop-then; absences named; URL dedupe keeps the
+  alpaca copy; feeds labeled; not-configured and market-wide notes) +
+  test_plugin_manifest.py 3. 1061 passed; pyrefly 0; ruff clean;
+  gate PASS at close.
+  D028: T121b's Finnhub fan-out is capped at 5 symbols per call - a
+  portfolio fan-out hitting the 60/min ceiling would turn a news question
+  into a rate-limit incident; the cap is the polite answer.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT cce62a3 / 7dc4988 / fc2d7ff — PASS
+    aligned: batch #4 adoptions — T121b (Finnhub news merge), T119 (thesis view tool #44), T120 (Claude plugin packaging), T114b (README delta), and Curation #4.
+    checked:
+      - Read `backend/api/tools.py` & `backend/tests/test_thesis_and_news.py`: verified `get_news` merges Finnhub company news with ISO timestamp normalization, URL dedupe, feed labels, and 5-symbol fan-out cap; verified `get_thesis_view` (tool #44) composes watchlist note verbatim, journal history, current invalidation plan with regime lens, catalysts, and exposure with named absences.
+      - Read `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `commands/resume.md`, `commands/connect.md`, & `backend/tests/test_plugin_manifest.py`: verified immutable plugin slug, required owner object, frontmatter, and no machine-specific paths in shipped plugin files.
+      - Read `README.md`: verified free earnings lines documentation, chat examples, and plugin installation instructions.
+      - Inspected `project-memory/archive/TASKS-archive-2026-08-20.md`: verified 6 double-signed review entries moved verbatim.
+      - All 1,064 tests pass.
+    concerns: none.
+
+- [x] T101 — Make the last 6 pyrefly errors expressible rather than tolerated — DONE 2026-08-16 (Gemini/Antigravity, REVIEWED 2026-08-16 by Claude/Cowork — PASS):
+  `CorrelationMatch` TypedDict in `backend/analysis/correlation.py`; narrowed `pcts` list comprehension in `backend/analysis/ranking.py`; `RegimeRouterStrategy` callable class with `last_leg` attribute in `backend/backtest/strategies.py`; non-None assertion on `s.fred_api_key` in `backend/data/fred.py`. Updated `pyrefly.toml` to 0 remaining known errors. Gate PASS (743 passed).
+
+- [x] T100 — Honor `LLM_TIMEOUT_SECONDS` in the claude-sdk provider (I017) — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
+  `backend/api/llm_claude_sdk.py` (wrapped query stream in `asyncio.wait_for(timeout=self.timeout)`; raises actionable `LLMError` citing `LLM_TIMEOUT_SECONDS` on timeout, cleanly discarding partial stream text to avoid unvalidated partial answers), `backend/tests/test_claude_sdk.py` (3 tests). Gate PASS (731 passed).
+
+- [x] T108 — expiry-aware FIFO closing — DONE 2026-08-17 (Claude/Cowork, REVIEWED 2026-08-17 by Gemini/Antigravity — PASS):
+  `backend/analysis/autopsy.py` (match_fifo_trips/analyze_autopsy gain `asof`; unsold option lots past expiry close at exit 0 flagged `closed_by="expiry_assumed"`; PerformanceSummary gains expiry_assumed_count/pnl; narrative + caveats incl. the 100%-win-rate BUG SIGNAL), `backend/analysis/pattern_warning.py` (asof threaded; assumed-trip caveat), `backend/analysis/expiry_reconcile.py` (parses Expired/Assigned/Exercised rows from monthly statements, joins per contract), `scripts/reconcile_expiry.py` (CLI), `backend/data/statements.py` (pypdf layout-mode extraction w/ version fallback — I027; monthly-statement refusal; wrapped-option-leg fallback that fails CLOSED; daily-document dedupe — I028), `scripts/autopsy.py`, tests (test_autopsy +9, test_statements +8, test_expiry_reconcile +12). Gate PASS (823 passed, 0 lint errors).
+
+- [x] T106 — MCP context lifecycle — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini/Antigravity — PASS):
+  chose close-per-call over build-once — a shared client would serve stale sessions and
+  a shared DB session would grow unbounded; the leak was the missing close, not the
+  per-call build. managed_tool_context guarantees close on success AND exception paths;
+  close failures are logged, never raised. Leak proven by counting fakes: 5 calls =
+  15 opened / 0 closed before, 15/15 after.
+  REVIEW VERDICT: PASS. Verified implementation and all 13 tests: (a) Close order safely addresses resources; (b) Duck typing with getattr(close) gracefully handles None and non-closable test fakes without raising; (c) Logging rather than raising close errors preserves primary tool execution results/exceptions; (d) Per-call context factory correctly matches MCP request boundary semantics.
+
+- [x] T069 — Adaptive risk-tolerance estimation — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
+  `analysis/risk_tolerance.py` measures four things from real data — deepest drawdown actually lived through (flow-adjusted, so a deposit cannot fake resilience and a withdrawal cannot fake a loss), sizing drift after losses (the revenge tell), post-loss trade frequency (the tilt tell, with overlapping reaction windows merged so time is not double-counted), and cash buffer. Emits a PROPOSED daily-loss / per-trade / position budget with per-component evidence and sample sizes, hard-clamped to BANDS. Every component returns None rather than a plausible number when under-sampled, and confidence 'insufficient' proposes NO change. Registry tool #34 `estimate_risk_tolerance`. Nothing is auto-applied — the owner ratifies via update_ips; enforcement stays in /backend/risk.
+  REVIEW VERDICT: PASS. Verified all 4 review focus points: (a) compounding multiplier chain (0.75 * 0.80 * 0.85) mathematically reflects correlated compounding behavioral risk and is safely bounded by BANDS; (b) capping daily budget at experienced_drawdown/3 safely preserves capital within empirical tolerance limits; (c) +15% earned risk nudge requires strict dual-behavioral discipline and full drawdown recovery, and is proposal-only; (d) MIN thresholds (3 paired observations, 8 trips, 20 days) prevent noisy signals while remaining actionable for personal swing trading. All 21 tests pass, tool counts synced.
+

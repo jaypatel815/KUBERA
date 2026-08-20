@@ -12,58 +12,57 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T125 (pyrefly as a verify-gate step, exactly 0) - Claude/Cowork** - claimed 2026-08-20.
-- **T124 (backup restore drill) - Claude/Cowork** - claimed 2026-08-20.
-- **T087c (/api/monitor endpoint - shared service refactor) - Claude/Cowork** - claimed 2026-08-20.
-- **T123 (AGENTS.md contract refresh) - Claude/Cowork** - claimed 2026-08-20.
-- **TASKS curation #5 (D031) - Claude/Cowork** - claimed 2026-08-20.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **Batch #4: T121b + T119 + T120 + T114b + curation #4 - AWAITING REVIEW
-  2026-08-20 (Claude/Cowork; two build SHAs + close SHA)**.
-  T121b - FINNHUB NEWS as a second labeled source in get_news: per-symbol
-  only (no market-wide feed on the probed tier - said in the note), merged
-  newest-first with a cross-feed timestamp NORMALIZATION (str(datetime)
-  sorts by its space separator against ISO 'T' - normalized to isoformat
-  before sorting), deduped by URL against alpaca items, every item carries
-  its feed label, bounded 5-symbol fan-out, per-symbol degradations named.
-  T119 - THESIS VIEW (tool #44): the owner's record COMPOSED, never
-  invented - watchlist note quoted verbatim, latest 5 journal decisions
-  with their stated theses and stops-then, the CURRENT exit plan's
-  invalidation (same T056 composition every surface uses; regime carries
-  its I033 lens), upcoming catalysts (FMP earnings best-effort + FOMC
-  table which needs no key), position exposure; both absences NAMED (not
-  on watchlist -> points at update_watchlist; no journal entries).
-  Guards 43->44 (x4); MCP read-only +1.
-  T120 - PLUGIN PACKAGING (claude-plugins-official conventions, D036
-  seed): .claude-plugin/plugin.json + marketplace.json (root plugin,
-  source "."), commands/kubera.md (the resume protocol as a slash
-  command) + commands/kubera-connect.md (MCP wiring walkthrough - the
-  machine-local config is GENERATED via install_mcp_config.py, never
-  shipped; read-only surface + I021 exclusion stated).
-  test_plugin_manifest.py pins: name-slug immutability, marketplace
-  shape, frontmatter present, NO machine paths in shipped files.
-  T114b - README delta: earnings intelligence now two free lines
-  (EDGAR + FINNHUB) with beat/miss wording, TLH/preview/thesis chat
-  examples, plugin-install section.
-  CURATION #4 - 6 signed entries moved verbatim (TASKS 609->420 lines).
-  EVIDENCE (D027): test_thesis_and_news.py 4 tests (owner's words
-  verbatim incl. 95.0 stop-then; absences named; URL dedupe keeps the
-  alpaca copy; feeds labeled; not-configured and market-wide notes) +
-  test_plugin_manifest.py 3. 1061 passed; pyrefly 0; ruff clean;
-  gate PASS at close.
-  D028: T121b's Finnhub fan-out is capped at 5 symbols per call - a
-  portfolio fan-out hitting the 60/min ceiling would turn a news question
-  into a rate-limit incident; the cap is the polite answer.
-  REVIEWED 2026-08-20 by Gemini/Antigravity AT cce62a3 / 7dc4988 / fc2d7ff — PASS
-    aligned: batch #4 adoptions — T121b (Finnhub news merge), T119 (thesis view tool #44), T120 (Claude plugin packaging), T114b (README delta), and Curation #4.
-    checked:
-      - Read `backend/api/tools.py` & `backend/tests/test_thesis_and_news.py`: verified `get_news` merges Finnhub company news with ISO timestamp normalization, URL dedupe, feed labels, and 5-symbol fan-out cap; verified `get_thesis_view` (tool #44) composes watchlist note verbatim, journal history, current invalidation plan with regime lens, catalysts, and exposure with named absences.
-      - Read `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `commands/resume.md`, `commands/connect.md`, & `backend/tests/test_plugin_manifest.py`: verified immutable plugin slug, required owner object, frontmatter, and no machine-specific paths in shipped plugin files.
-      - Read `README.md`: verified free earnings lines documentation, chat examples, and plugin installation instructions.
-      - Inspected `project-memory/archive/TASKS-archive-2026-08-20.md`: verified 6 double-signed review entries moved verbatim.
-      - All 1,064 tests pass.
-    concerns: none.
+- **Batch #5: T125 + T124 + T087c + T123 + curation #5 - AWAITING REVIEW
+  2026-08-20 (Claude/Cowork; SHAs per D033: c5b2985 / 371d46e / 055b775 /
+  a909a03 / close SHA on this commit)**.
+  T125 - PYREFLY IS A GATE STEP at c5b2985: scripts/check_pyrefly.py runs
+  `python -m pyrefly check` from backend/, parses "INFO N errors" AND
+  requires returncode 0 - unparseable output is FAILURE (a deaf wrapper
+  reporting zero would be indistinguishable from success); wired into
+  verify.py STEPS as "types (pyrefly = exactly 0)"; pyrefly>=1.2,<2 pinned
+  in backend/requirements.txt so CI runs the same gate. I023's zero is now
+  mechanized, not a habit.
+  T124 - RESTORE DRILL at 371d46e: scripts/restore_check.py takes the
+  NEWEST backups/kubera-*.sqlite3, copies to scratch (the restore motion),
+  PRAGMA integrity_check + per-table counts vs live, all READ-ONLY
+  (mode=ro URI). Exit 0 PASS / 1 FAIL (no backup, corrupt, zero tables) /
+  2 WARN (schema drift = backup predates a migration -> "needs alembic
+  upgrade head"; or no live DB to compare). Lagging counts labeled
+  informational - a snapshot is allowed to be behind.
+  T087c - MONITOR IS SERVABLE at 055b775: fetch-and-judge moved verbatim
+  from scripts/monitor.py to api/monitor_service.py (api/brief.py
+  precedent - one implementation, two surfaces); CLI keeps progressive
+  printing + toasts + exit codes; GET /api/monitor (yield-deps 503/502)
+  returns run_payload with every lens labeled: days_lens first (D035),
+  structure with timeframe (I033), week_change_frac beside it,
+  context_note where the lenses meet, advisory-only in the payload's own
+  words. Orb panel stays deferred with T087.
+  T123 - AGENTS.md REFRESH at a909a03: five verified-stale fixes only
+  (probed before editing; python pin checked and NOT changed): gate line
+  names the pyrefly exactly-zero step; all five free-tier data sources
+  under D034; D035 timescale doctrine under safety rails; D033
+  verdict-names-its-SHA + re-queue in the review flow; two-strikes stop
+  rule in D028; scripts/docs/plugin surfaces in Where-things-live.
+  CURATION #5 - batch #4 signed entry + 5 signed backlog blocks (T101,
+  T100, T108, T106, T069) moved verbatim to
+  archive/TASKS-archive-2026-08-20.md with stubs; TASKS 465->~450 lines
+  after this entry.
+  EVIDENCE (D027): test_restore_check.py 8 tests (fixture DBs cover
+  PASS/FAIL/WARN/newest-by-name/pure compare); test_monitor_service.py
+  7 tests (real composition through 80 fake bars, no-positions never
+  touches market, thin-history named, I033 explainer in payload,
+  endpoint 200 + 502-named via dependency overrides, settings pinned so
+  no ambient FRED call); RAN scripts/restore_check.py (named refusal,
+  exit 1 - no backups in sandbox, correct) and scripts/monitor.py
+  (BROKER/DATA UNREACHABLE named, exit 2 - sandbox egress, correct);
+  full gate PASS incl. the NEW types step at exactly 0.
+  D028 objection: T087c's endpoint fetches serially per position - a
+  10-position book means ~30 HTTP calls in one request. Acceptable for
+  an owner-facing advisory read (the CLI has the same cost); parallelize
+  only if the Orb panel ever needs sub-second loads.
+
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.
@@ -240,14 +239,11 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   silent `except Exception` around the api.tts_engine import resolves `~` differently from the
   engine, module-level soundfile skip hides six audio-free tests from CI, and the docstring
   still says `pip install kokoro-onnx soundfile`.
-- [x] T101 — Make the last 6 pyrefly errors expressible rather than tolerated — DONE 2026-08-16 (Gemini/Antigravity, REVIEWED 2026-08-16 by Claude/Cowork — PASS):
-  `CorrelationMatch` TypedDict in `backend/analysis/correlation.py`; narrowed `pcts` list comprehension in `backend/analysis/ranking.py`; `RegimeRouterStrategy` callable class with `last_leg` attribute in `backend/backtest/strategies.py`; non-None assertion on `s.fred_api_key` in `backend/data/fred.py`. Updated `pyrefly.toml` to 0 remaining known errors. Gate PASS (743 passed).
-- [x] T100 — Honor `LLM_TIMEOUT_SECONDS` in the claude-sdk provider (I017) — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
-  `backend/api/llm_claude_sdk.py` (wrapped query stream in `asyncio.wait_for(timeout=self.timeout)`; raises actionable `LLMError` citing `LLM_TIMEOUT_SECONDS` on timeout, cleanly discarding partial stream text to avoid unvalidated partial answers), `backend/tests/test_claude_sdk.py` (3 tests). Gate PASS (731 passed).
+- [x] T101 - pyrefly errors made expressible - DONE 2026-08-16 (REVIEWED PASS; record in archive/TASKS-archive-2026-08-20.md).
+- [x] T100 - LLM_TIMEOUT_SECONDS in claude-sdk provider (I017) - DONE 2026-08-16 (REVIEWED PASS; record in archive/TASKS-archive-2026-08-20.md).
 - [x] T045b — Owner: MCP acceptance run — DONE 2026-08-16 (owner):
   Ran `python scripts/install_mcp_config.py`; verified `%APPDATA%\Claude\claude_desktop_config.json` is configured with `.venv` Python interpreter and `scripts/mcp_server.py` stdio entrypoint.
-- [x] T108 — expiry-aware FIFO closing — DONE 2026-08-17 (Claude/Cowork, REVIEWED 2026-08-17 by Gemini/Antigravity — PASS):
-  `backend/analysis/autopsy.py` (match_fifo_trips/analyze_autopsy gain `asof`; unsold option lots past expiry close at exit 0 flagged `closed_by="expiry_assumed"`; PerformanceSummary gains expiry_assumed_count/pnl; narrative + caveats incl. the 100%-win-rate BUG SIGNAL), `backend/analysis/pattern_warning.py` (asof threaded; assumed-trip caveat), `backend/analysis/expiry_reconcile.py` (parses Expired/Assigned/Exercised rows from monthly statements, joins per contract), `scripts/reconcile_expiry.py` (CLI), `backend/data/statements.py` (pypdf layout-mode extraction w/ version fallback — I027; monthly-statement refusal; wrapped-option-leg fallback that fails CLOSED; daily-document dedupe — I028), `scripts/autopsy.py`, tests (test_autopsy +9, test_statements +8, test_expiry_reconcile +12). Gate PASS (823 passed, 0 lint errors).
+- [x] T108 - expiry-aware FIFO closing - DONE 2026-08-17 (REVIEWED PASS; record in archive/TASKS-archive-2026-08-20.md).
 - [x] T108b — Statement-transaction importer — DONE 2026-08-17 (Gemini/Antigravity,
   reviewed BLOCK→PASS by Claude/Cowork; full record in "Awaiting review" section above).
   Reconciliation 13/13 clean; the honest full-history record is now 131 fills, 80 trips,
@@ -268,17 +264,9 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   PASS 2026-08-17 at 516dca5). The two deliberate hardcodes stand with comments:
   Alpaca PAPER base URL (safety rail) and the option multiplier 100 (market
   fact). Full record in archive/TASKS-archive-2026-08-18.md.
-- [x] T106 — MCP context lifecycle — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini/Antigravity — PASS):
-  chose close-per-call over build-once — a shared client would serve stale sessions and
-  a shared DB session would grow unbounded; the leak was the missing close, not the
-  per-call build. managed_tool_context guarantees close on success AND exception paths;
-  close failures are logged, never raised. Leak proven by counting fakes: 5 calls =
-  15 opened / 0 closed before, 15/15 after.
-  REVIEW VERDICT: PASS. Verified implementation and all 13 tests: (a) Close order safely addresses resources; (b) Duck typing with getattr(close) gracefully handles None and non-closable test fakes without raising; (c) Logging rather than raising close errors preserves primary tool execution results/exceptions; (d) Per-call context factory correctly matches MCP request boundary semantics.
+- [x] T106 - MCP context lifecycle - DONE 2026-08-16 (REVIEWED PASS; record in archive/TASKS-archive-2026-08-20.md).
 - [ ] T071 — Owner: voice acceptance run — `pip install -r requirements-voice.txt`, server up, `python scripts\talk.py`, hold a conversation. If faster-whisper wheels fail on Python 3.14 → `set KUBERA_STT=openai`. Report quirks to ISSUES.
-- [x] T069 — Adaptive risk-tolerance estimation — DONE 2026-08-16 (Claude/Cowork, REVIEWED 2026-08-16 by Gemini — PASS):
-  `analysis/risk_tolerance.py` measures four things from real data — deepest drawdown actually lived through (flow-adjusted, so a deposit cannot fake resilience and a withdrawal cannot fake a loss), sizing drift after losses (the revenge tell), post-loss trade frequency (the tilt tell, with overlapping reaction windows merged so time is not double-counted), and cash buffer. Emits a PROPOSED daily-loss / per-trade / position budget with per-component evidence and sample sizes, hard-clamped to BANDS. Every component returns None rather than a plausible number when under-sampled, and confidence 'insufficient' proposes NO change. Registry tool #34 `estimate_risk_tolerance`. Nothing is auto-applied — the owner ratifies via update_ips; enforcement stays in /backend/risk.
-  REVIEW VERDICT: PASS. Verified all 4 review focus points: (a) compounding multiplier chain (0.75 * 0.80 * 0.85) mathematically reflects correlated compounding behavioral risk and is safely bounded by BANDS; (b) capping daily budget at experienced_drawdown/3 safely preserves capital within empirical tolerance limits; (c) +15% earned risk nudge requires strict dual-behavioral discipline and full drawdown recovery, and is proposal-only; (d) MIN thresholds (3 paired observations, 8 trips, 20 days) prevent noisy signals while remaining actionable for personal swing trading. All 21 tests pass, tool counts synced.
+- [x] T069 - adaptive risk-tolerance estimation - DONE 2026-08-16 (REVIEWED PASS; record in archive/TASKS-archive-2026-08-20.md).
 
 ## Backlog — Phase 2: Analysis & insight engine (agents)
 - [x] T023 — Fundamentals + news ingestion — DONE via D030 (owner's probe
@@ -387,7 +375,7 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   go", answer with the distribution + the honest sentence about why point
   predictions are refused (D017/D035) — never a bare label. Sweep ALL
   chat/brief surfaces for unlabeled-lens regime mentions (the I033 class).
-- [~] T087 — Open-trade monitor: the ANALYSIS + CLI half SHIPPED 2026-08-19 as T087a (see Awaiting review) — all four checks live via scripts/monitor.py with schedulable exit codes. REMAINING here: Windows toast wiring, Orb surface, and voice barge-in (dep T074) — the delivery surfaces, not the judgment.
+- [~] T087 — Open-trade monitor: ANALYSIS + CLI shipped as T087a (2026-08-19), toast wiring as T087b, and the ENDPOINT as T087c (2026-08-20, api/monitor_service.py shared by CLI + GET /api/monitor — see Awaiting review). REMAINING here: the Orb panel (render /api/monitor's payload; the serialization is ready for it) and voice barge-in (dep T074) — delivery surfaces only, the judgment is done.
 - [ ] (advisory note for T077b/T085) Fractional-Kelly sizing VIEW from T077 win-rate/payoff — advisory-only, capped, never autopilot; single-trade "probability of profit" remains rejected per D017.
 - [x] T083 — built 2026-08-18, see Awaiting review at top. Post-probe
   redesign: past FMP windows are PAYWALLED on the owner's tier, so history

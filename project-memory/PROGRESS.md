@@ -5,6 +5,34 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Claude/Cowork — Batch #5: T125 + T124 + T087c + T123 + curation #5
+Built (SHAs per D033): T125 pyrefly-as-gate at c5b2985 (check_pyrefly.py:
+count parsed AND returncode checked, unparseable = FAILURE; verify.py step
+"types (pyrefly = exactly 0)"; pyrefly pinned in requirements so CI runs
+it). T124 restore drill at 371d46e (restore_check.py: newest backup ->
+scratch copy -> integrity_check + per-table counts vs live, read-only
+everywhere; exit 0/1/2, schedulable after the nightly backup; 8 fixture-DB
+tests). T087c monitor-servable at 055b775 (fetch-and-judge moved verbatim
+to api/monitor_service.py, shared by scripts/monitor.py and new GET
+/api/monitor; payload lens-labeled: days first D035, structure+timeframe
+I033, context_note where lenses meet; 7 tests incl. 502-named; Orb panel
+deferred to T087). T123 AGENTS.md refresh at a909a03 (five verified-stale
+fixes: pyrefly gate line, D034 data sources, D035 doctrine, D033
+verdict-SHA rule, two-strikes; python pin probed and left alone).
+Curation #5: batch #4 signed entry + T101/T100/T108/T106/T069 moved
+verbatim to archive/TASKS-archive-2026-08-20.md with stubs.
+Verified (D027): RAN restore_check.py (named refusal exit 1 - sandbox has
+no backups, correct) and monitor.py (BROKER/DATA UNREACHABLE exit 2 -
+sandbox egress, correct); endpoint tests pin settings so no ambient FRED
+call; full gate PASS including the NEW types step. D028 pass changed:
+removed a pointless sys import + walrus-in-comprehension from the service;
+caught endpoint tests depending on ambient .env (FRED key would have made
+owner-machine pytest do a real HTTP call) and pinned KuberaSettings(
+_env_file=None). Objection recorded: /api/monitor fetches serially
+(~3 calls/position) - fine for an advisory read, parallelize only if the
+Orb needs it. Next: batch #5 review by Gemini; then T122 (Phase 7 gate +
+Kronos contamination rule) or T067c when fills verify.
+
 ## 2026-08-20 — Gemini/Antigravity — review Batch #4 (T121b, T119, T120, T114b, curation #4) (all PASS)
 Reviewed batch #4 at tip (`fc2d7ff`). Gate PASS (1,064 passed, 0 failed);
 python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).
