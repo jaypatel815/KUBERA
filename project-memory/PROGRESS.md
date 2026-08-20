@@ -5,6 +5,17 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Gemini/Antigravity — review Repo review #2 + T121 probe (PASS)
+Reviewed FinRobot/AI-Trader/Kronos review & T121 probe at tip (`b34b410`). Gate PASS (1,049 passed, 0 failed);
+python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).
+- Repo review #2 (`b34b410`): `docs/research/finrobot-aitrader-kronos-review-2026-08-20.md` reviewed.
+  AI-Trader live benchmark evidence recorded; Kronos candidate experiment seeded (T122) with strict
+  pre-registered contamination protocol; yfinance/fine-tuning/debate agents rejected (D037).
+- T121 (b34b410) PASS: `scripts/finnhub_check.py` 5-endpoint probe (quote, company-news, news-sentiment,
+  earnings surprises, basic metrics). Owner's live run verified free tier answers company-news and earnings
+  surprises (4 quarters actual-vs-estimate); 403 PAYWALLED on news-sentiment.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. In-flight `backend/settings.py` left untouched per parallel rule. No code edits.
+
 ## 2026-08-20 — Gemini/Antigravity — review T117 + T118 / FSI disposition (all PASS)
 Reviewed FSI review disposition (`ab1b055`) and adoptions (`998bffc`). Gate PASS (1,049 passed, 0 failed);
 python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).

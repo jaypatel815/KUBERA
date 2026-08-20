@@ -36,6 +36,14 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   D028: no FinnhubClient exists and none will unless the owner's paste
   says the tier answers (D030). OWNER ACTION: free key -> .env ->
   `python scripts\finnhub_check.py` -> paste the table.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT b34b410 — PASS
+    aligned: second repo review (FinRobot/AI-Trader/Kronos, D037) and T121 Finnhub free-tier probe.
+    checked:
+      - Read `docs/research/finrobot-aitrader-kronos-review-2026-08-20.md`: AI-Trader benchmark results properly contextualized as evidence for code-decides doctrine; Kronos seeded (T122) with data contamination rule; yfinance/fine-tuning/debate agents properly rejected.
+      - Read `scripts/finnhub_check.py`: verified 5 probe endpoints, polite pacing, key loading without echo/logging, and clear degradation handling.
+      - Verified owner's live run output on Windows host: confirmed free tier answers quote, company-news, earnings surprises (4 quarters actual-vs-estimate), and basic metrics; news-sentiment correctly flagged 403 PAYWALLED.
+      - All 1,049 tests pass.
+    concerns: none.
 - **T117 + T118 (FSI-review adoptions, one SHA) - AWAITING REVIEW
   2026-08-20 (Claude/Cowork)**. From the owner-requested review of the
   Anthropic FSI repos (disposition: docs/research/
