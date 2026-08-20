@@ -17,7 +17,6 @@ market hours an old snapshot is expected; read the message, not just the exit co
 """
 
 import argparse
-import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,6 +25,7 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
+from notify import notify_windows  # noqa: E402
 from sqlalchemy import select  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
@@ -118,23 +118,6 @@ def run_checks(base_url: str, db: Session, max_sync_age_min: float) -> list[str]
     problems += check_sync_freshness(db, max_sync_age_min)
     problems += check_reconciliation(base_url, db)
     return problems
-
-
-def notify_windows(title: str, message: str) -> None:
-    """Best-effort toast via PowerShell; silently a no-op anywhere it can't work."""
-    script = (
-        "[reflection.assembly]::loadwithpartialname('System.Windows.Forms')|Out-Null;"
-        "$n=New-Object System.Windows.Forms.NotifyIcon;"
-        "$n.Icon=[System.Drawing.SystemIcons]::Warning;$n.Visible=$true;"
-        f"$n.ShowBalloonTip(10000,'{title}','{message}','Warning')"
-    )
-    try:
-        subprocess.run(
-            ["powershell", "-NoProfile", "-Command", script],
-            capture_output=True, timeout=15, check=False,
-        )
-    except Exception:  # noqa: BLE001 — notification is never worth crashing over
-        pass
 
 
 def main() -> int:

@@ -2,6 +2,7 @@
 
     python scripts\\monitor.py                # one pass over held positions
     python scripts\\monitor.py --loop 300     # every 5 minutes until Ctrl+C
+    python scripts\\monitor.py --loop 300 --notify   # + Windows toast on alerts
 
 Per held position: the daily regime, session RVOL + VWAP churn (T052), the
 exit plan's invalidation level (T056) against the LIVE price, and any open
@@ -23,6 +24,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
 import httpx  # noqa: E402
+from notify import notify_windows  # noqa: E402
 
 from analysis.breakout import detect_breakouts  # noqa: E402
 from analysis.events import entry_guard  # noqa: E402
@@ -134,7 +136,7 @@ def _print_alert(a: MonitorAlert) -> None:
     print(f"  {flag} [{a.kind}] {a.detail}")
 
 
-def run_once() -> int:
+def run_once(notify: bool = False) -> int:
     try:
         get_settings().require_alpaca()
     except ConfigError as e:
@@ -183,6 +185,13 @@ def run_once() -> int:
     print(f"{s.positions} position(s): {s.alerts} alert(s), "
           f"{s.watches} watch(es), {s.blind_spots} named blind spot(s)")
     print(s.note)
+    if notify and s.alerts:
+        # T087b: tap on the shoulder — the FIRST alert rides in the toast;
+        # the terminal (and the exit code) carry the full story.
+        first = next(a for c in checks for a in c.alerts
+                     if a.severity == "alert")
+        notify_windows(f"KUBERA monitor: {s.alerts} alert(s)",
+                       f"{first.symbol} [{first.kind}] {first.detail}")
     return s.exit_code
 
 
@@ -191,11 +200,13 @@ def main() -> int:
         description="Open-trade monitor (T087a) — advisory only.")
     ap.add_argument("--loop", type=int, default=0, metavar="SECONDS",
                     help="repeat every N seconds (0 = run once)")
+    ap.add_argument("--notify", action="store_true",
+                    help="Windows toast when something needs eyes (best-effort)")
     args = ap.parse_args()
     if args.loop <= 0:
-        return run_once()
+        return run_once(notify=args.notify)
     while True:
-        code = run_once()
+        code = run_once(notify=args.notify)
         if code == 2:
             return code  # config/broker problems don't fix themselves in a loop
         time.sleep(args.loop)
