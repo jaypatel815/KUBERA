@@ -26,113 +26,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 import httpx  # noqa: E402
 from notify import notify_windows  # noqa: E402
 
-from analysis.breakout import detect_breakouts  # noqa: E402
-from analysis.events import entry_guard  # noqa: E402
-from analysis.exit_plan import build_exit_plan  # noqa: E402
-from analysis.fomc import with_fomc  # noqa: E402
-from analysis.intraday import build_session_read  # noqa: E402
-from analysis.levels import find_levels  # noqa: E402
-from analysis.market_time import market_today  # noqa: E402
-from analysis.metrics import atr  # noqa: E402
-from analysis.monitor import (  # noqa: E402
-    MonitorAlert,
-    PositionCheck,
-    check_position,
-    describe_regime,
-    summarize,
-)
-from analysis.regime import classify_regime  # noqa: E402
-from analysis.short_horizon import one_line, short_horizon_read  # noqa: E402
+from analysis.monitor import MonitorAlert, describe_regime, summarize  # noqa: E402
+from api.monitor_service import check_symbol, open_event_windows  # noqa: E402
 from data.alpaca import AlpacaClient, AlpacaError  # noqa: E402
 from data.market_data import MarketDataClient, MarketDataError  # noqa: E402
 from settings import ConfigError, get_settings  # noqa: E402
 
-
-def _open_event_windows() -> list[str]:
-    """Names of scheduled-event guard windows open today. FRED is optional;
-    the FOMC table needs no key. Failure degrades to empty + stderr note."""
-    dates = None
-    try:
-        settings = get_settings()
-        if settings.fred_api_key:
-            from data.fred import FredClient
-            with FredClient(settings=settings) as fred:
-                dates = fred.release_calendar()
-    except Exception as e:  # noqa: BLE001 — the calendar is context, not the job
-        print(f"  (event calendar degraded: {type(e).__name__}: {e})",
-              file=sys.stderr)
-    return entry_guard(with_fomc(dates), market_today())
-
-
-def _check_symbol(market: MarketDataClient, symbol: str,
-                  windows: list[str]) -> "tuple[PositionCheck, str]":
-    bars = market.get_daily_bars(symbol, days=250)
-    closes = [b.close for b in bars.bars]
-    highs = [b.high for b in bars.bars]
-    lows = [b.low for b in bars.bars]
-    dates = [b.date for b in bars.bars]
-
-    regime = None
-    plan_level, plan_reason = None, "no exit plan (thin history)"
-    atr_value = None
-    if len(bars.bars) >= 21:
-        volumes = [b.volume for b in bars.bars]
-        reading = classify_regime(highs, lows, closes, volumes, dates,
-                                  volume_feed=bars.source)
-        regime = reading.regime
-        atr_value = atr(highs, lows, closes) if len(bars.bars) >= 15 else None
-        levels = find_levels(highs, lows, closes, dates)
-        boundary = direction = None
-        scan = detect_breakouts(highs, lows, closes, volumes, dates)
-        if scan.active and scan.latest is not None:
-            boundary, direction = scan.latest.boundary, scan.latest.direction
-        # same composition the get_exit_plan tool uses (T056)
-        plan = build_exit_plan(
-            reading.regime, closes[-1],
-            atr_value=atr_value,
-            support=(levels.nearest_support.price
-                     if levels.nearest_support else None),
-            resistance=(levels.nearest_resistance.price
-                        if levels.nearest_resistance else None),
-            sma=reading.sma,
-            breakout_boundary=boundary,
-            breakout_direction=direction,
-        )
-        plan_level = plan.invalidation_level
-        plan_reason = plan.invalidation_reason
-
-    price = None
-    try:
-        price = market.get_latest_trade(symbol).price
-    except (MarketDataError, httpx.HTTPError):
-        pass  # named inside check_position as a blind spot
-
-    session_rvol, crossings, used = None, None, 0
-    try:
-        five = market.get_intraday_bars(symbol, timeframe="5Min", days=9)
-        if five.bars:
-            s = build_session_read(five.bars, volume_feed=five.source)
-            session_rvol, used = s.intraday_rvol, s.rvol_sessions_used
-            crossings = s.vwap_crossings
-    except (MarketDataError, ValueError, httpx.HTTPError):
-        pass  # named inside check_position
-
-    # I033: the short lens, computed here so it prints BESIDE the label.
-    week_change = (closes[-1] / closes[-6] - 1.0) if len(closes) >= 6 else None
-
-    # T116/D035: the DAYS lens leads — computed from the same closes.
-    days_line = one_line(short_horizon_read(symbol, closes, dates))
-
-    return check_position(
-        symbol, price,
-        daily_regime=regime,
-        session_rvol=session_rvol, rvol_sessions_used=used,
-        vwap_crossings=crossings,
-        invalidation_level=plan_level, invalidation_reason=plan_reason,
-        atr_value=atr_value,
-        open_event_windows=windows,
-        week_change_frac=week_change,
-    ), days_line
+# T087c: the fetch-and-judge half moved VERBATIM to api/monitor_service.py,
+# shared with GET /api/monitor — two surfaces, one implementation. This
+# script keeps only the terminal half: progressive printing (a human is
+# watching it fetch), toasts, and schedulable exit codes.
 
 
 def _print_alert(a: MonitorAlert) -> None:
@@ -153,12 +56,15 @@ def run_once(notify: bool = False) -> int:
                 print("no open positions — nothing to monitor (that is an "
                       "answer, not an error)")
                 return 0
-            windows = _open_event_windows()
+            windows, cal_note = open_event_windows(get_settings())
+            if cal_note:
+                print(f"  (event calendar degraded: {cal_note})",
+                      file=sys.stderr)
             checks = []
             for pos in positions:
                 print(f"{pos.symbol}  qty {pos.qty:g}  "
                       f"uP&L {pos.unrealized_plpc:+.2%}")
-                c, days_line = _check_symbol(market, pos.symbol, windows)
+                c, days_line = check_symbol(market, pos.symbol, windows)
                 checks.append(c)
                 print(f"  {days_line}")            # the days lens leads (D035)
                 week = (f"{c.week_change_frac:+.2%}"

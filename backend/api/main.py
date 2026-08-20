@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from dataclasses import asdict
 from datetime import datetime, timezone
 
+import httpx
 from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -18,6 +19,7 @@ from analysis.portfolio import summarize, win_loss
 from api import tts_engine
 from api.chat import run_chat_turn
 from api.llm import LLMError, build_provider
+from api.monitor_service import run_monitor, run_payload
 from api.tools import ToolArgumentError, ToolContext, ToolError, registry
 from backtest.ledger import list_runs
 from data.alpaca import AlpacaClient, AlpacaError
@@ -326,6 +328,23 @@ def symbol_levels(
         raise HTTPException(status_code=422, detail=str(e))
     except MarketDataError as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.get("/api/monitor")
+def monitor(
+    alpaca: AlpacaClient = Depends(get_alpaca_client),
+    market: MarketDataClient = Depends(get_market_client),
+    s: KuberaSettings = Depends(get_settings),
+) -> dict:
+    """T087c — the open-trade monitor, servable. Same fetch-and-judge
+    implementation the owner's scripts/monitor.py runs (api/monitor_service),
+    serialized with its lenses labeled. ADVISORY ONLY — this endpoint
+    never places, cancels, or resizes anything."""
+    try:
+        return run_payload(run_monitor(alpaca, market, settings=s))
+    except (AlpacaError, MarketDataError, httpx.HTTPError) as e:
+        # the CLI's "BROKER/DATA UNREACHABLE" named degrade, HTTP-shaped
+        raise HTTPException(status_code=502, detail=f"{type(e).__name__}: {e}")
 
 
 def get_fred_client(s: KuberaSettings = Depends(get_settings)):
