@@ -5,6 +5,20 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Gemini/Antigravity — review T117 + T118 / FSI disposition (all PASS)
+Reviewed FSI review disposition (`ab1b055`) and adoptions (`998bffc`). Gate PASS (1,049 passed, 0 failed);
+python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).
+- FSI disposition doc (`ab1b055`): `docs/research/anthropic-fsi-plugins-review-2026-08-20.md` reviewed.
+  Methodology-only adoption rationale (D036) is sound; price targets (D035) and replacement buy recommendations
+  (D017) properly rejected.
+- T117 (998bffc) PASS: `analysis/tlh.py` FIFO open lot scan (ST/LT 365d split, 30d wash lookback from recorded buys,
+  forward safe-rebuy date, unpriced options lot handling, "NOT TAX ADVICE" disclaimer) + tool #42 `get_tlh_scan`.
+  4 hand-computed tests in `test_tlh.py` pass.
+- T118 (998bffc) PASS: tool #43 `get_earnings_preview` composition (next report, own base rates, realized 1d
+  distribution labeled not-options-implied, 5d runup, position exposure). Unit tests in `test_fsi_tools.py` pass.
+  Tool count guards bumped 41->43 across 4 test suites.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
+
 ## 2026-08-20 — Gemini/Antigravity — review T116 / T087b / I023 sweep / curation #3 (all PASS)
 Reviewed batch of tickets at tip (`4a1dbdb`). Gate PASS (1,042 passed, 0 failed);
 python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).

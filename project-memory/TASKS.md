@@ -46,6 +46,14 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   with EVERY absence named on fakes). 1046 passed; pyrefly 0; gate PASS.
   D028: attribution's exact-dict pin broke on the additive fields - the
   pin was UPDATED to the grown contract (ts/mult asserted), not deleted.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 998bffc — PASS
+    aligned: Anthropic FSI review adoption (D036) — TLH scan (T117) and earnings preview composition (T118).
+    checked:
+      - Read `docs/research/anthropic-fsi-plugins-review-2026-08-20.md` (committed at ab1b055): methodology-only adoption rationale is sound; rejected price targets (D035) and replacement buy recommendations (D017) properly respected.
+      - Read `backend/analysis/tlh.py` & `backend/tests/test_tlh.py`: verified FIFO open lot scan, ST/LT 365d split, 30d wash-sale lookback against recorded buys, forward safe-rebuy date (+31d), unpriced options lot handling, and explicit "NOT TAX ADVICE" disclaimer.
+      - Read `backend/api/tools.py` & `backend/tests/test_fsi_tools.py`: verified `get_tlh_scan` (tool #42) and `get_earnings_preview` (tool #43) with graceful degradation on missing FMP/observed events. Tool count guards bumped 41->43 across 4 test suites.
+      - All 1,049 tests pass.
+    concerns: none.
 - **T116 (short-horizon FIRST — the owner's lens) — AWAITING REVIEW
   2026-08-20 (Claude/Cowork)**. D035 delivered as surfaces, not a memo.
   analysis/short_horizon.py (pure): packages T077's distributions into the
