@@ -466,11 +466,47 @@ def compose_weekly_review(db: Session, alpaca: AlpacaClient,
         attribution = {"available": False,
                        "why": "no recorded fills yet — run scripts/sync.py after trading"}
 
+    # T063b: calibration v2 — was stated confidence honest, did plans pay
+    # their planned R, and how did overridden calls resolve? Best-effort:
+    # the review composes even if prices or the journal are unavailable.
+    try:
+        from dataclasses import asdict as _asdict
+
+        from analysis.calibration import compute_calibration
+        from data.journal import list_decisions
+        jrows = list_decisions(db, limit=200)
+        _cache: dict[str, float | None] = {}
+
+        def _px(sym: str) -> float | None:
+            if sym not in _cache:
+                try:
+                    _cache[sym] = market.get_latest_trade(sym).price
+                except Exception:  # noqa: BLE001 — one dead symbol, not the review
+                    _cache[sym] = None
+            return _cache[sym]
+
+        cal = compute_calibration(jrows, price_lookup=_px)
+        journal_calibration = {"available": True, **_asdict(cal)}
+        if cal.weighted_gap is not None:
+            facts.append(
+                f"confidence calibration gap {cal.weighted_gap:+.2f} over "
+                f"{cal.n_evaluable} aged decisions "
+                "(positive = underconfident, negative = overconfident)")
+        ov = cal.override.get("overridden", {})
+        if ov.get("hit_rate") is not None:
+            facts.append(
+                f"decisions you overrode were right {ov['hit_rate']:.0%} of "
+                f"the time (n={ov['n']}) — measurement, not a scolding")
+    except Exception as e:  # noqa: BLE001 — calibration is optional context
+        journal_calibration = {"available": False,
+                               "why": f"{type(e).__name__}: {e}"}
+
     return {
         "type": "weekly",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "performance": performance,
         "attribution": attribution,
+        "journal_calibration": journal_calibration,
         "discipline": {
             "dqs": {"score": dqs.score, "components": dqs.components},
             "orders": len(ordered), "no_trades": len(no_trades),

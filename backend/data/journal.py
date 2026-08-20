@@ -17,6 +17,7 @@ from data.models import DecisionJournal
 
 VERDICTS = ("buy", "add", "hold", "trim", "sell", "avoid")
 _DIRECTION = {"buy": 1, "add": 1, "trim": -1, "sell": -1, "avoid": -1}  # hold: no direction
+DIRECTION = _DIRECTION  # public alias — calibration v2 (T063b) reads the same map
 
 
 def record_decision(db: Session, **fields) -> DecisionJournal:

@@ -19,6 +19,40 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
 - **T114 (owner-docs refresh: README + .env.example) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T063b (journal calibration v2) — AWAITING REVIEW 2026-08-19
+  (Claude/Cowork)**. analysis/calibration.py (pure, deterministic): the
+  three questions v1's single hit-rate can't answer. (1) CONFIDENCE CURVE —
+  aged decisions bucketed by STATED confidence (4 documented edges); each
+  bucket: n, hits, hit_rate, avg stated, GAP (positive = underconfident);
+  buckets under MIN_PER_BUCKET=5 list their n and REFUSE a rate (thin data
+  named, never averaged); weighted_gap over qualified buckets only.
+  (2) PAYOFF vs PLAN — planned R (|target−entry|/|entry−stop|) vs realized
+  R against the SAME stop distance; ENDPOINT-ONLY stated in the payload
+  (journal has no price path; MAE/MFE is T089); stop/target on the wrong
+  side of entry = INVALID GEOMETRY, counted by name, never scored.
+  (3) OVERRIDE × OUTCOME (feeds T067b) — followed vs overridden hit rates
+  over aged marked decisions (same thin-data rule) + override_rate; the
+  payload note says measurement-not-scolding and that any strategy-weight
+  change stays an owner-ratified PROPOSAL (ticket text, verbatim intent).
+  Evaluability matches v1 EXACTLY; every exclusion counted and visible
+  (hold / missing fields / too young / no price). Wired: get_journal
+  returns calibration_v2; compose_weekly_review gains journal_calibration
+  best-effort (named why on failure) + two facts_for_lessons lines (the
+  gap, and 'decisions you overrode were right N% of the time').
+  EVIDENCE (D027): test_calibration.py 5 tests, every number hand-computed
+  in comments — curve (4/6 bucket → gap −0.0333, n=2 bucket refused),
+  payoff (buy 2.0/1.6, short 2.5/2.0, wrong-side stop counted invalid),
+  override (5/5 overridden hits vs 2/5 followed, rate 0.5), all four
+  exclusion counters, empty journal returns a report instead of raising.
+  1011 passed; pyrefly canary back to 1 AFTER it caught a real narrowing
+  gap in my bucket-gap expression (qualified implied non-None but the
+  types didn't prove it — restructured on hit_rate); gate PASS at batch
+  close.
+  D028: the ticket's 'after entries accumulate' gate is read the T069 way —
+  the CODE ships now and refuses/labels thin data honestly; it becomes
+  informative as the owner's journal ages, with zero rework. DIRECTION map
+  made a public alias in data/journal (no drift, one source).
+
 - **T065b (order-frequency rail — the T065 remainder) — AWAITING REVIEW
   2026-08-19 (Claude/Cowork)**. The ENGINE-level daily new-buy cap behind
   the paper loop's T055 guard: the loop's guard only sees loop-originated
@@ -581,7 +615,7 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   trimmed to the earnings-dates gap (T023/T076b). REMAINING in this ticket:
   PWA push delivery (Phase 5), ET-aware "today" windows (T036b), scheduled
   auto-generation (Task Scheduler hitting /api/brief + TTS).
-- [ ] T063b — Journal calibration v2 (after entries accumulate): confidence-vs-outcome calibration curves (was "0.7 confidence" right 70% of the time?), payoff-weighted scoring vs the stated target/stop, override-rate × outcome analysis feeding T067b, weekly-review integration. Any strategy-weight change remains a PROPOSAL the owner ratifies (human-gated).
+- [x] T063b — BUILT 2026-08-19, see Awaiting review (ships thin-data-honest now; grows informative as the journal ages).
 - [~] T064b — Rigor follow-ups, core DONE 2026-08-14 (Claude/Cowork):
   run_backtest tool output now carries `trades` (full TradeStats), `calmar`,
   and a `promotion` block (is_promoted + latest T092 stability verdict via new

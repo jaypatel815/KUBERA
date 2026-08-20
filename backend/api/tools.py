@@ -931,9 +931,14 @@ def _get_journal(ctx: ToolContext, p: JournalArgs) -> dict:
             return cache[symbol]
 
     summary = summarize_decisions(rows, price_lookup=lookup)
+    # T063b: calibration v2 rides along — confidence buckets, payoff-vs-plan
+    # R, override-vs-outcome; thin buckets are named, never averaged.
+    from analysis.calibration import compute_calibration
+    calibration_v2 = compute_calibration(rows, price_lookup=lookup)
     return {
         "decisions": [decision_as_dict(r) for r in rows],
         "summary": asdict(summary),
+        "calibration_v2": asdict(calibration_v2),
         "asof": datetime.now(timezone.utc).isoformat(),
     }
 
