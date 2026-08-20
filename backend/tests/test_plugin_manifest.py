@@ -21,6 +21,10 @@ def test_marketplace_lists_the_root_plugin():
     m = json.loads((ROOT / ".claude-plugin" / "marketplace.json")
                    .read_text(encoding="utf-8"))
     assert m["name"] == "kubera"
+    # the owner's live install failed without this: the CLI validator
+    # REQUIRES an `owner` OBJECT ("expected object, received undefined",
+    # observed 2026-08-20) — pinned so it can't be dropped in a cleanup.
+    assert isinstance(m["owner"], dict) and m["owner"]["name"]
     assert [pl["name"] for pl in m["plugins"]] == ["kubera"]
     assert m["plugins"][0]["source"] == "."
 

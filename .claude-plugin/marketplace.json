@@ -1,5 +1,9 @@
 {
   "name": "kubera",
+  "owner": {
+    "name": "KUBERA Agents",
+    "email": "agents@kubera.local"
+  },
   "metadata": {
     "description": "KUBERA - a personal AI financial advisor built entirely by AI agents. One plugin: the KUBERA chat surface (44 deterministic tools over MCP) plus session-resume and connect commands."
   },
