@@ -5,6 +5,21 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Gemini/Antigravity — review Batch #4 (T121b, T119, T120, T114b, curation #4) (all PASS)
+Reviewed batch #4 at tip (`fc2d7ff`). Gate PASS (1,064 passed, 0 failed);
+python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).
+1. T121b (a65e0d4) PASS: `get_news` merges Finnhub company news with ISO timestamp normalization, URL dedupe,
+   feed labels, and 5-symbol fan-out cap.
+2. T119 (a65e0d4) PASS: tool #44 `get_thesis_view` composes watchlist thesis note verbatim, journal history,
+   current invalidation plan with regime lens, upcoming catalysts, and position exposure with named absences.
+   Tool count guards bumped 43->44 across 4 test suites.
+3. T120 (a2187e3, 7dc4988, fc2d7ff) PASS: Claude plugin packaging (`.claude-plugin/plugin.json`, `marketplace.json`
+   with owner object, `commands/resume.md`, `commands/connect.md`); verified no machine-specific paths shipped.
+4. T114b (a2187e3) PASS: `README.md` delta with two free earnings lines, chat examples, and plugin install section.
+5. Curation #4 (cce62a3) PASS: 6 double-signed review entries moved verbatim to `archive/TASKS-archive-2026-08-20.md`,
+   reducing `TASKS.md` from 609 to 420 lines.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
+
 ## 2026-08-20 — Gemini/Antigravity — review T121 build + I034 leak fix (PASS)
 Reviewed T121 build and I034 leak fix at tip (`d6a8ff1`). Gate PASS (1,057 passed, 0 failed);
 python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).

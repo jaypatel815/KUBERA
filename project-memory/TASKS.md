@@ -50,6 +50,15 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   D028: T121b's Finnhub fan-out is capped at 5 symbols per call - a
   portfolio fan-out hitting the 60/min ceiling would turn a news question
   into a rate-limit incident; the cap is the polite answer.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT cce62a3 / 7dc4988 / fc2d7ff — PASS
+    aligned: batch #4 adoptions — T121b (Finnhub news merge), T119 (thesis view tool #44), T120 (Claude plugin packaging), T114b (README delta), and Curation #4.
+    checked:
+      - Read `backend/api/tools.py` & `backend/tests/test_thesis_and_news.py`: verified `get_news` merges Finnhub company news with ISO timestamp normalization, URL dedupe, feed labels, and 5-symbol fan-out cap; verified `get_thesis_view` (tool #44) composes watchlist note verbatim, journal history, current invalidation plan with regime lens, catalysts, and exposure with named absences.
+      - Read `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `commands/resume.md`, `commands/connect.md`, & `backend/tests/test_plugin_manifest.py`: verified immutable plugin slug, required owner object, frontmatter, and no machine-specific paths in shipped plugin files.
+      - Read `README.md`: verified free earnings lines documentation, chat examples, and plugin installation instructions.
+      - Inspected `project-memory/archive/TASKS-archive-2026-08-20.md`: verified 6 double-signed review entries moved verbatim.
+      - All 1,064 tests pass.
+    concerns: none.
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.
