@@ -65,3 +65,62 @@ def volatility_parity_notional(
         stop_distance=stop_distance,
         atr_value=atr_value,
     )
+
+
+# ------------------------------------------------------------------ T085b
+
+KELLY_MIN_SAMPLES = 30      # below this the view refuses — thin history lies
+KELLY_FRACTION = 0.25       # quarter-Kelly: full Kelly assumes the estimates
+                            # are TRUE; they are estimates, so bet a quarter
+KELLY_ADVISORY_CAP = 0.10   # even great numbers never advise >10% of equity
+
+
+@dataclass(frozen=True)
+class KellyView:
+    """ADVISORY ONLY (D017): a fractional-Kelly reading from T077's
+    DISTRIBUTION of past h-day moves (win rate + payoff ratio over N
+    samples) — never a per-trade probability, never autopilot. The actual
+    sizing (ATR risk-parity + caps) is unchanged by this view existing."""
+
+    available: bool
+    why: str | None
+    win_rate: float | None
+    payoff_ratio: float | None
+    n_samples: int | None
+    full_kelly_frac: float | None       # w - (1-w)/R; can be negative
+    advisory_frac: float | None         # quarter-Kelly, floored 0, capped
+    note: str
+
+
+_KELLY_NOTE = ("advisory view only (D017): fractional Kelly from the "
+               "distribution of past moves — the actual sized qty above is "
+               "unchanged; quarter-Kelly because win rate and payoff are "
+               "ESTIMATES, capped at "
+               f"{KELLY_ADVISORY_CAP:.0%} of equity regardless")
+
+
+def fractional_kelly_view(win_rate: float | None,
+                          payoff_ratio: float | None,
+                          n_samples: int | None) -> KellyView:
+    """Pure math with named refusals. full Kelly f* = w - (1-w)/R.
+    A non-positive f* is REPORTED (the distribution argues for no
+    position at this payoff), not floored away silently — the advisory
+    fraction floors at 0 but the full number stays visible."""
+    if n_samples is None or n_samples < KELLY_MIN_SAMPLES:
+        return KellyView(False,
+                         f"only {n_samples or 0} samples "
+                         f"(need {KELLY_MIN_SAMPLES}) — thin history lies",
+                         win_rate, payoff_ratio, n_samples, None, None,
+                         _KELLY_NOTE)
+    if payoff_ratio is None or payoff_ratio <= 0:
+        return KellyView(False, "no payoff ratio (one-sided sample window)",
+                         win_rate, payoff_ratio, n_samples, None, None,
+                         _KELLY_NOTE)
+    if win_rate is None or not 0.0 < win_rate < 1.0:
+        return KellyView(False, f"win rate {win_rate!r} outside (0, 1)",
+                         win_rate, payoff_ratio, n_samples, None, None,
+                         _KELLY_NOTE)
+    full = win_rate - (1.0 - win_rate) / payoff_ratio
+    advisory = min(max(0.0, full * KELLY_FRACTION), KELLY_ADVISORY_CAP)
+    return KellyView(True, None, win_rate, payoff_ratio, n_samples,
+                     full, advisory, _KELLY_NOTE)

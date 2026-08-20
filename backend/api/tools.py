@@ -9,7 +9,7 @@ Adding a capability = one @registry.tool registration next to the function it wr
 LLM function-calling APIs consume (Anthropic/OpenAI/Gemini formats derive directly).
 """
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import date as _dt_date
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -1083,7 +1083,11 @@ def _get_exit_plan(ctx: ToolContext, p: SymbolArgs) -> dict:
     "scaled by the current risk tier (halved at tier 2, ZERO at tier 3+ or with the "
     "breaker tripped). Every input is returned — narrate the qty WITH its stop "
     "price and what was binding. Advisory for the owner's manual trades; the paper "
-    "loop enforces the same math itself. Disclose price staleness.",
+    "loop enforces the same math itself. Disclose price staleness. The payload's "
+    "kelly_view is ADVISORY ONLY — a fractional-Kelly reading from the "
+    "distribution of past 5-day moves (quarter-Kelly, capped): narrate it as "
+    "context ('the distribution would argue for about X%'), NEVER as the "
+    "recommendation — the sized qty above is the recommendation.",
     SymbolArgs,
 )
 def _size_position(ctx: ToolContext, p: SymbolArgs) -> dict:
@@ -1150,12 +1154,31 @@ def _size_position(ctx: ToolContext, p: SymbolArgs) -> dict:
         qty = adv_cap_qty
         effective_notional = round(qty * price, 2)
         binding = "adv_cap"
+
+    # T085b: the fractional-Kelly ADVISORY view (D017-respecting: from the
+    # DISTRIBUTION of past 5-day moves, never a per-trade probability, and
+    # it changes nothing above). Best-effort — a sizer must never die for
+    # an advisory footnote.
+    from risk.sizing import fractional_kelly_view
+    try:
+        longer = market.get_daily_bars(symbol, days=500)
+        em = expected_move([b.close for b in longer.bars],
+                           [b.date for b in longer.bars], horizon_days=5)
+        kv = fractional_kelly_view(em.unconditional.up_frac,
+                                   em.unconditional.payoff_ratio,
+                                   em.unconditional.samples)
+    except (MarketDataError, ValueError) as e:
+        kv = fractional_kelly_view(None, None, None)
+        kv = replace(kv, why=f"expected-move unavailable ({e})")
+    kelly_view = asdict(kv)
+
     return {
         "symbol": symbol,
         "qty": qty,
         "notional": round(effective_notional, 2),
         "binding": binding,
         "blocked_reason": blocked_reason,
+        "kelly_view": kelly_view,
         "inputs": {
             "equity": acct.equity,
             "cash": acct.cash,

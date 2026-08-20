@@ -12,11 +12,29 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T085b (fractional-Kelly advisory view in size_position) — Claude/Cowork** — claimed 2026-08-19.
 - **T093c (marginal risk contribution + effective bets) — Claude/Cowork** — claimed 2026-08-19.
 - **T087a (open-trade monitor v1 — advisory CLI, no voice/Orb) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T085b (fractional-Kelly ADVISORY view in size_position) — AWAITING
+  REVIEW 2026-08-19 (Claude/Cowork)**. The filed T077b/T085 advisory note,
+  built with its guardrails intact: risk/sizing.fractional_kelly_view —
+  pure math, f* = w − (1−w)/R from T077's DISTRIBUTION (up_frac,
+  payoff_ratio, samples of past 5-day moves — never a per-trade
+  probability; the D017 rejection stands). QUARTER-Kelly because the
+  inputs are estimates; hard 10% advisory cap regardless; a NEGATIVE f*
+  is REPORTED, not floored away (the distribution arguing for no position
+  is information) — only the advisory fraction floors at 0. Named
+  refusals: <30 samples ("thin history lies"), one-sided window (no
+  payoff ratio), win rate outside (0,1). size_position payload gains
+  kelly_view BEST-EFFORT (a sizer never dies for an advisory footnote;
+  fetch failure → available:false with the why) and the tool description
+  instructs the narrator: context, never the recommendation — the sized
+  qty above IS the recommendation, and it is UNCHANGED by this view.
+  EVIDENCE (D027): test_kelly_view.py 4 tests, hand-computed — w=.54
+  R=1.8 → f*=0.28444, advisory 0.07111; negative Kelly visible (w=.40
+  R=1.0 → −0.20, advisory 0); cap binds (w=.80 R=4 → f*=0.75 → 0.10);
+  all four refusals named. Full suite green at batch close; pyrefly 1.
 - **T115 (risk limits from settings — the T033 promise) — AWAITING REVIEW
   2026-08-19 (Claude/Cowork)**. T033's docstring said "owner tunes via
   config later" — later arrived. All six RiskLimits knobs now read from
