@@ -3,13 +3,16 @@
 One ticket = one focused agent session. Claim by adding your name as owner.
 IDs never get reused. Format per PROJECT_SPEC.md §11.
 
-**Build-order guidance (D018, 2026-08-13):** T052 intraday (doctrine backbone) →
-T055 no-trade condition (owner's overtrading failure mode — lands WITH or BEFORE
-T054's router, never after) → T077 expected-move → T067 DQS / T062 briefs.
-Owner actions that unlock the most: T007 finale. (T005 is DONE — the owner has
-been pushing all along; origin/main == local main, 7 Actions runs. Any agent
-still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
-was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
+**Current state (hygiene #7, 2026-08-20 — the old D018 build-order here
+referenced tickets shipped a week ago):** batches run under D038 (size
+follows coupling). The active front is the KRONOS CAMPAIGN — pre-registered,
+gate OPEN, window 2026-08-24..2026-10-02; owner sequence: shape check →
+`kronos_run.py start` → daily `forecast` → `score --consume` once at end.
+The D021 revisit (~2026-09-12) decides shorts/pairs/HRP on evidence —
+`scripts/d021_evidence.py` assembles it; risk-event history records from
+2026-08-20. Owner actions that unlock the most: T007 finale, pushing to
+origin (local runs ahead — CI confirms green only on push), and triggering
+Gemini on anything in Awaiting review.
 
 ## In progress
 - **Batch #8 (3 tickets, probe-sized; claimed 2026-08-20, Claude/Cowork;

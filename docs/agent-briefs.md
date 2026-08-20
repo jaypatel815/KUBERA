@@ -89,6 +89,23 @@ verdict covers its SHA and nothing after; a verdict without a SHA is void
 
 If you and the other agent disagree twice on a review, stop and escalate to
 Chotu with both positions in three lines each.
+
+DOCTRINE DELTAS SINCE THIS BRIEF WAS FIRST WRITTEN (full text in
+DECISIONS.md; the contract is AGENTS.md — this is the reminder card):
+- The verify gate now includes pyrefly at EXACTLY ZERO (T125): one new
+  type error is a red gate, not baseline noise.
+- D034: free data tiers only until autonomy is earned; paywalled reads
+  degrade to NAMED refusals, never silence, and are deliberately unbuilt.
+- D035: days = odds and ranges surfaced FIRST; minutes = state, not
+  direction; seconds are OUT. No point predictions anywhere (D017).
+- D036/D037: external repos are reviewed for METHODOLOGY, never content;
+  a model's historical backtest on its own training data is inadmissible.
+- D038: batches — size follows COUPLING (independent 8-10, coupled 4-6,
+  migrations 1-3); the AWAITING REVIEW entry IS the manifest (per-ticket
+  SHA, what was RUN, strongest self-objection); verdict severities
+  CRITICAL/MAJOR/MINOR/NOTE annotate per-ticket PASS/BLOCK.
+- Two strikes then STOP: the same attempt failing twice means change the
+  approach, never a third identical try.
 ```
 
 ---
@@ -110,12 +127,16 @@ checks syntax is not.
 
 ## Ticket pairs that are safe to run at the same time
 
-| Agent A (backend-leaning) | Agent B (UI/field-leaning) | Overlap |
+(Refreshed 2026-08-20 — the original table listed tickets that have all
+shipped. The honest current state: the buildable backlog is thin; most
+parallel value now is one agent REVIEWING the other's batch while the
+second builds.)
+
+| Agent A (backend-leaning) | Agent B (review/field-leaning) | Overlap |
 |---|---|---|
-| T091b holding-period distribution | T082 remaining Orb polish | none |
-| T072 human-grade TTS backends | T082 freshness badges | none |
-| T083 event base rates (needs T023) | T087 open-trade monitor surface | none |
-| T094 HRP / T095 factor loadings | phone install / PWA | none |
+| next unblocked build ticket | review the queued batch (D032 scope) | memory files only |
+| T081/T094/T095 when D021 unlocks (~09-12) | Phase 5 Flutter exploration | none |
+| Kronos scorer follow-ups (post-window) | Orb polish / owner field-testing | none |
 
 **Do NOT pair:** two tickets that both add registry tools (three shared guard
 tests), two tickets that both add database tables (single alembic head), or two
