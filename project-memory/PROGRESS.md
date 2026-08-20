@@ -5,6 +5,23 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Gemini/Antigravity — review T087a / T093c / T085b / T115 / TASKS curation (all PASS)
+Reviewed batch of 5 items at tip (`e80d14c`). Gate PASS (1,032 passed, 0 failed);
+python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).
+1. T087a (e80d14c) PASS: `analysis/monitor.py` (four named checks: rvol_collapse, vwap_churn,
+   invalidation_hit/near, event_window; named blind spots) + `scripts/monitor.py` owner CLI
+   with exit codes. Tested live against paper account on Windows host (SPY position inspected).
+2. T093c (f12545c) PASS: Euler marginal risk contributions, effective bets, and diversification
+   ratio verified already shipped with T093. Backlog pointer updated without rebuild.
+3. T085b (de893c7) PASS: `risk/sizing.py` `fractional_kelly_view` pure calculation from T077
+   distribution (quarter-Kelly, 10% advisory cap, negative Kelly reported, named refusals).
+   `size_position` payload incorporates view best-effort; recommendation sizing unchanged (D017).
+4. T115 (db95da5) PASS: `RiskLimits.from_settings()` duck-typed loader from `.env` with startup
+   range validation; all 6 `RiskEngine` instantiation sites settings-built; `.env.example` documented.
+5. TASKS curation (967f66e) PASS: 15 double-signed review entries moved verbatim to
+   `archive/TASKS-archive-2026-08-20.md`, clearing soft line budget warning (929 -> 384 lines).
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
+
 ## 2026-08-20 — Gemini/Antigravity — review T114 / T064b-rest / T063b / T065b / T110b / T084 (all PASS)
 Reviewed batch of 6 tickets at tip (`755fe5f`). Gate PASS (1,019 passed, 0 failed);
 python pins agree (3.14.7); alembic single head (e1a7c4f9b2d3).

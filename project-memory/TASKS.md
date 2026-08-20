@@ -49,6 +49,13 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   owner feedback territory, not silent edits; the monitor deliberately
   reads THE SAME exit plan the owner sees in chat, so it can never alert
   on a plan that differs from the one narrated.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT e80d14c — PASS
+    aligned: open-trade monitor v1 (T087a) — advisory session alerts for held positions.
+    checked: read `backend/analysis/monitor.py` and `scripts/monitor.py`. Tested live against
+      paper account on Windows host: SPY position inspected with `trending_up` regime,
+      `vwap_churn` watch flagged cleanly, 0 blind spots, advisory note printed. 6 unit tests in
+      `test_monitor.py` pass. Gate 1,032 passed.
+    concerns: none. Advisory only; execution stays inside paper loop.
 - **T093c (marginal risk contribution + effective bets) — CLOSED WITHOUT
   BUILDING 2026-08-19 (Claude/Cowork): ALREADY SHIPPED.** Claimed from the
   stale pointer "T093 extends this (marginal risk contribution, effective
@@ -63,6 +70,12 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   rebuild. The stale backlog pointer is corrected in this commit. The
   REAL remaining T093-family work stays where it was filed: T094 HRP
   (D021-gated, trigger written) and T095 factor loadings (data-gated).
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT f12545c — PASS
+    aligned: portfolio risk Euler marginal contributions & effective bets (T093c).
+    checked: verified `analysis/portfolio_risk.py` already includes Euler marginal contributions,
+      effective bets, diversification ratio, and concentration warnings; verified `test_portfolio_risk.py`
+      pins all behavior. Disposition as already shipped is accurate. Gate 1,032 passed.
+    concerns: none.
 - **T085b (fractional-Kelly ADVISORY view in size_position) — AWAITING
   REVIEW 2026-08-19 (Claude/Cowork)**. The filed T077b/T085 advisory note,
   built with its guardrails intact: risk/sizing.fractional_kelly_view —
@@ -82,6 +95,15 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   R=1.8 → f*=0.28444, advisory 0.07111; negative Kelly visible (w=.40
   R=1.0 → −0.20, advisory 0); cap binds (w=.80 R=4 → f*=0.75 → 0.10);
   all four refusals named. Full suite green at batch close; pyrefly 1.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT de893c7 — PASS
+    aligned: fractional-Kelly advisory view in `size_position` (T085b/D017).
+    checked: read `backend/risk/sizing.py` and `backend/tests/test_kelly_view.py`. Verified
+      quarter-Kelly computation from distribution (win rate & payoff ratio), 10% advisory cap,
+      negative Kelly reported (not floored in full metric, floored at 0 for advisory fraction),
+      and named refusals for thin samples (<30), one-sided windows, or win rates outside (0,1).
+      Confirmed `size_position` payload incorporates `kelly_view` best-effort while recommendation
+      sizing is unchanged. 4 unit tests pass. Gate 1,032 passed.
+    concerns: none.
 - **T115 (risk limits from settings — the T033 promise) — AWAITING REVIEW
   2026-08-19 (Claude/Cowork)**. T033's docstring said "owner tunes via
   config later" — later arrived. All six RiskLimits knobs now read from
@@ -101,6 +123,13 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   missing get_settings imports MY import-smoke-test could not (function
   bodies) — fixed before anything shipped; pyrefly canary 1; gate PASS at
   batch close.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT db95da5 — PASS
+    aligned: configurable risk limits from settings (T115/T033).
+    checked: read `backend/risk/engine.py`, `backend/settings.py`, `backend/tests/test_risk_settings.py`.
+      Verified `RiskLimits.from_settings()` duck-typing, startup validation refusing out-of-range
+      values with named errors, and all 6 `RiskEngine` instantiation sites passing settings-built
+      limits. Verified `.env.example` documentation. 3 unit tests pass. Gate 1,032 passed.
+    concerns: none.
 - **TASKS curation (D031) — AWAITING REVIEW 2026-08-19 (Claude/Cowork)**.
   15 double-signed AWAITING entries (T114, T064b-rest, T063b, T065b, T110b,
   T084, T074a, T084a, T110a, T062c+delta, T065, T072b, T083c, T076b) moved
@@ -109,6 +138,12 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   additions must equal the TASKS removals byte-for-byte (move-never-delete);
   the script ASSERTED exactly 15 signed entries and zero unsigned leftovers
   before writing.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 967f66e — PASS
+    aligned: memory management and budget enforcement (D031/T112).
+    checked: inspected `git show 967f66e` — verified 15 double-signed review entries moved
+      verbatim to `archive/TASKS-archive-2026-08-20.md`, clearing soft line budget warning
+      in `TASKS.md` (929 -> 384 lines). Gate 1,032 passed.
+    concerns: none.
 (empty — 15 double-signed entries moved verbatim to archive/TASKS-archive-2026-08-20.md, curation 2026-08-19/20; every verdict names its SHA per D033)
 
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
