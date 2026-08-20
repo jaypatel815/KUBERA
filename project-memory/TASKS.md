@@ -176,9 +176,10 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   `event_risk` (upcoming CPI/NFP dates; no FRED key or calendar failure
   degrades to a note, core brief still delivers; fred is an OPTIONAL ToolContext
   member for get_brief, /api/brief constructs it best-effort). PENDING_NOTES
-  trimmed to the earnings-dates gap (T023/T076b). REMAINING in this ticket:
-  PWA push delivery (Phase 5), ET-aware "today" windows (T036b), scheduled
-  auto-generation (Task Scheduler hitting /api/brief + TTS).
+  trimmed to the earnings-dates gap (T023/T076b). REMAINING trimmed by hygiene #6
+  (2026-08-20): ET-aware windows shipped as T036b/T111, scheduled
+  generation as T062c (scripts/brief.py, no server needed) — both
+  consumed. Still open here: PWA push delivery only (Phase 5, Flutter).
 - [x] T063b — BUILT 2026-08-19, see Awaiting review (ships thin-data-honest now; grows informative as the journal ages).
 - [x] T064b — Rigor follow-ups COMPLETE 2026-08-19: core (richer
   run_backtest + promotion expiry) DONE 2026-08-14; crisis-window stress
@@ -200,11 +201,8 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
 - [x] T067b — built 2026-08-18, see Awaiting review at top. (FOMO-into-late-
   RVOL deliberately NOT built — needs an intraday clock on every fill; named
   in every report and re-filed as T067c below.)
-- [ ] T121b - Finnhub company-news as a SECOND labeled news source in
-  get_news (probe: 244 articles/31d free). Alpaca news works today; this
-  is enrichment, not a gap - build when news volume/recency shows Alpaca
-  thin. Client method already shipped (T121); the ticket is tool wiring +
-  source labeling + dedupe-by-url.
+- [x] T121b - BUILT 2026-08-20, REVIEWED PASS by Gemini (batch #4; record
+  in archive/TASKS-archive-2026-08-20.md). Stale seed closed by hygiene #6.
 - [ ] T122 - Kronos candidate experiment (Phase 7-GATED; D037; MIT model
   NeoQuasar/Kronos-base 102M params, CPU-feasible ~400MB F32). PRE-
   REGISTERED PROTOCOL REQUIRED BEFORE ANY RUN: (1) THE CONTAMINATION RULE:
@@ -218,17 +216,11 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   strategy. (6) D035 stands: forecasts are internal signals; the owner
   hears odds and ranges, never "the model says 770". Fine-tuning on the
   owner's fills: REFUSED (D037).
-- [ ] T119 - Thesis view (adopted from equity-research thesis-tracker,
-  docs/research/anthropic-fsi-plugins-review-2026-08-20.md): one composition
-  per symbol joining watchlist note (thesis text) + latest journal entries +
-  exit plan invalidation + upcoming catalysts (earnings/FOMC/releases).
-  Pieces all exist; this is the unified read. UX-adjacent - build when chat
-  usage shows the distributed answers annoy the owner.
-- [ ] T120 - Package KUBERA's chat surface as a Claude plugin
-  (.claude-plugin/plugin.json + commands/, per claude-plugins-official
-  conventions). Caveat recorded: MCP config is machine-local (venv path) -
-  manifest must template it; install_mcp_config.py logic becomes the
-  plugin's setup command. Makes the T045 surface installable by URL.
+- [x] T119 - BUILT 2026-08-20 (tool #44 get_thesis_view), REVIEWED PASS by
+  Gemini (batch #4; archive/TASKS-archive-2026-08-20.md). Stale seed closed.
+- [x] T120 - BUILT 2026-08-20 (.claude-plugin + commands/, owner installed
+  live; manifest owner-object fix at fc2d7ff), REVIEWED PASS by Gemini
+  (batch #4; archive/TASKS-archive-2026-08-20.md). Stale seed closed.
 - [ ] T067c — FOMO-into-late-RVOL-spike detection (split out of T067b): flag
   entries made into a late-session volume spike. Needs BOTH an intraday
   timestamp per fill (the T016c Schwab sync now records execution times — let
@@ -391,7 +383,12 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   stays quiet when server-down/no-snapshot — those belong to the existing
   checks. Wired into run_checks → the owner's every-5-min scheduled task and
   --notify toast get it for free. 3 tests (drift/quiet/cannot-judge).
-- [ ] T116 — Short-horizon FIRST (owner direction 2026-08-20, D035): every
+- [x] T116 — BUILT 2026-08-20 (batch #3, REVIEWED PASS): short_horizon.py +
+  monitor/brief/persona all lead with the days lens (evidence: brief.py:87
+  short_horizon in _symbol_read, persona.py:96 LEAD-with-range rule, tool
+  #41). REMAINING split to T116b (event-aware lens — in batch #6). Original
+  direction preserved below for T116b's contract:
+  (was) Short-horizon FIRST (owner direction 2026-08-20, D035): every
   surface leads with the days lens — monitor/symbol briefing/morning brief
   open with "from HERE: next 1-3 day range p05..p95, up-odds, typical
   |move|" (T077 conditioned distribution + T083 base rates when an event
@@ -401,7 +398,8 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   predictions are refused (D017/D035) — never a bare label. Sweep ALL
   chat/brief surfaces for unlabeled-lens regime mentions (the I033 class).
 - [~] T087 — Open-trade monitor: ANALYSIS + CLI shipped as T087a (2026-08-19), toast wiring as T087b, and the ENDPOINT as T087c (2026-08-20, api/monitor_service.py shared by CLI + GET /api/monitor — see Awaiting review). REMAINING here: the Orb panel (render /api/monitor's payload; the serialization is ready for it) and voice barge-in (dep T074) — delivery surfaces only, the judgment is done.
-- [ ] (advisory note for T077b/T085) Fractional-Kelly sizing VIEW from T077 win-rate/payoff — advisory-only, capped, never autopilot; single-trade "probability of profit" remains rejected per D017.
+- [x] (advisory note, consumed) Fractional-Kelly VIEW — BUILT 2026-08-19 as
+  T085b (REVIEWED PASS; kelly_view in size_position, capped, advisory-only).
 - [x] T083 — built 2026-08-18, see Awaiting review at top. Post-probe
   redesign: past FMP windows are PAYWALLED on the owner's tier, so history
   self-accumulates in earnings_observed from the working forward window
