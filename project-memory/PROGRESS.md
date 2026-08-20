@@ -52,6 +52,31 @@ python pins agree (3.14.7); alembic single head (e1a7c4f9b2d3).
    stdlib html_to_text) + tool #40 `get_earnings_release` qualitative framing. Guards bumped to 40.
 Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
 
+## 2026-08-20 — Claude/Cowork — batch of five #3: T116, T087b, I023, stale-sweep, curation
+The owner's D035 direction became SURFACES. Five closed at their SHAs:
+7af3dcc T116 — short-horizon FIRST: analysis/short_horizon.py packages
+T077's conditioned distributions into the leading read (1d/3d p05..p95 in
+% and price, up-odds, typical |move|, BASIS named); tool #41
+get_short_horizon; the monitor prints the days line FIRST; the morning
+brief's per-symbol read leads with it; persona SHORT_HORIZON_RULE wired
+into the built prompt (which-way → distribution + one honest sentence;
+every regime word carries its timeframe; session state = the minutes
+lens). Every surface composes from ONE function — chat and monitor can
+never disagree. 8e817c3 T087b — monitor --notify via backend/notify.py,
+promoted from health_check WITH its latent apostrophe-quoting bug fixed
+(monitor alert text would have tripped it; escaping pinned by test).
+afbf8b3 I023 — pyrefly is a TRUE ZERO: cast(Any, fn) expresses the
+__signature__ gap (callable-class rejected in-line: FastMCP coroutine
+detection); pyrefly.toml records the history; NEW CANARY = EXACTLY 0.
+0488c23 sweep — two healed REOPENED markers (I029 inner, I016 numpy)
+closed with evidence, plus I023 bookkeeping. Curation #3 — six signed
+entries archived verbatim; TASKS at 441 lines.
+VERIFIED: 1039 passed; pyrefly 0; gate PASS per ticket; monitor/health
+degradations re-demonstrated live (exit 2 named).
+NEXT: Gemini reviews T116 + T087b + I023/sweep at their SHAs. Owner: next
+monitor run leads with "next 1d usually X..Y; up-odds Z" — the lens you
+asked for; tell KUBERA if the numbers read right.
+
 ## 2026-08-19/20 — Claude/Cowork — batch of five #2: curation, T115, T085b, T093c, T087a
 Owner asked for another 4–5; five closed, each at its own SHA (D033):
 967f66e CURATION (D031) — 15 double-signed entries moved VERBATIM to

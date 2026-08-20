@@ -609,3 +609,162 @@ same time and review each other:
    DONE, with a signed `REVIEWED <date> by <agent> — PASS/BLOCK` block.
 Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 (append your own lines only), the single alembic head, apps/web/orb.html.
+
+
+# TASKS archive appendix — moved 2026-08-20 (curation #3, D031)
+# Double-signed entries moved VERBATIM; move-never-delete.
+# Contents: 6 PASS blocks — I033 fix, T087a, T093c, T085b, T115, curation #2.
+
+- **I033 fix (regime labels carry their lens) — AWAITING REVIEW 2026-08-20
+  (Claude/Cowork)**. From the owner's FIRST live monitor run: trending_up
+  beside a −1.58% week read as a wrong prediction. describe_regime() puts
+  the timeframe ON the label; week_change_frac rides the PositionCheck
+  and prints beside the structure line; the one-line explainer appears
+  ONLY in the exact confusion case (structural uptrend + red week).
+  EVIDENCE (D027): test_regime_labels_carry_their_lens (label wording for
+  all cases incl. thin-history, breakout pointer to session lines,
+  week-change passthrough + honest None); 7 monitor tests green; full
+  gate PASS; pyrefly canary 1. D035 records the owner's timescale
+  direction; T116 seeded below to make short-horizon the LEADING lens on
+  every surface (the class fix; this ticket is the point fix).
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 45dc086 — PASS
+    aligned: regime labels must explicitly state their timescale lens (I033/D035) to
+      prevent confusing multi-month structure with short-term price movement.
+    checked: read `backend/analysis/monitor.py`, `scripts/monitor.py`,
+      `backend/tests/test_monitor.py`. Verified `describe_regime()` outputs timeframe on every
+      label, `PositionCheck` carries `week_change_frac`, and `scripts/monitor.py` prints the
+      contextual explanation specifically during structural uptrend + red week conditions.
+      Verified live run output from owner. Unit test `test_regime_labels_carry_their_lens_i033`
+      passes. Gate 1,033 passed.
+    concerns: none. D035 timescale doctrine and T116 short-horizon-first backlog item align cleanly.
+- **T087a (open-trade monitor v1 — advisory CLI) — AWAITING REVIEW
+  2026-08-19 (Claude/Cowork)**. The owner's Q&A ticket, minus its voice/
+  Orb halves (those stay with T074/T087 BY DESIGN — stated in module and
+  ticket). analysis/monitor.py (pure; the script fetches, this judges):
+  four named checks per held position — rvol_collapse (ALERT, fires ONLY
+  under a breakout-ish daily regime: low volume on a range day is normal),
+  vwap_churn (WATCH at the T052 churn line of 4 crossings),
+  invalidation_hit/_near (ALERT through the T056 plan's level — "the plan
+  you ratified says the thesis is dead; staying is a NEW decision,
+  journal it" — WATCH within 0.5 ATR), event_window (WATCH per open
+  T076/T076b guard window — "a surface, not an instruction"). Missing
+  inputs become NAMED blind-spot notes, never crashes. summarize() gives
+  a schedulable exit code (1 = something needs eyes NOW). Long-thesis v1
+  stated (exit plans are long-oriented by doctrine; shorts arrive with
+  D021). scripts/monitor.py: one pass or --loop N; composes the exit plan
+  EXACTLY as the get_exit_plan tool does (same regime/levels/breakout/
+  ATR inputs); NOT CONFIGURED and BROKER/DATA UNREACHABLE named (exit 2,
+  demonstrated live in-sandbox, real exit code verified); no-positions is
+  an answer, not an error. ADVISORY ONLY — nothing placed/cancelled/
+  resized; README autopilot block gains the line.
+  EVIDENCE (D027): test_monitor.py 6 tests — rvol fires only under
+  breakout thesis (range-bound stays quiet) with numbers in the detail;
+  churn at exactly the shipped line; invalidation hit/near/far with
+  hand-set ATR distances (0.40 ATR in the detail) and the shipped 0.5
+  constant pinned; event windows are watches with the not-an-instruction
+  wording pinned; all three blind spots named on empty inputs, zero
+  raises; summary exit codes 1/0. 1029 passed; pyrefly canary 1 — after
+  it caught TWO REAL BUGS in the script layer the unit tests cannot
+  reach (a wrong build_exit_plan signature that would have crashed the
+  first real run, and a wrong return annotation) — both fixed before
+  commit; ruff clean; gate PASS at batch close.
+  D028: thresholds are module constants (commented) — tuning them is
+  owner feedback territory, not silent edits; the monitor deliberately
+  reads THE SAME exit plan the owner sees in chat, so it can never alert
+  on a plan that differs from the one narrated.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT e80d14c — PASS
+    aligned: open-trade monitor v1 (T087a) — advisory session alerts for held positions.
+    checked: read `backend/analysis/monitor.py` and `scripts/monitor.py`. Tested live against
+      paper account on Windows host: SPY position inspected with `trending_up` regime,
+      `vwap_churn` watch flagged cleanly, 0 blind spots, advisory note printed. 6 unit tests in
+      `test_monitor.py` pass. Gate 1,032 passed.
+    concerns: none. Advisory only; execution stays inside paper loop.
+- **T093c (marginal risk contribution + effective bets) — CLOSED WITHOUT
+  BUILDING 2026-08-19 (Claude/Cowork): ALREADY SHIPPED.** Claimed from the
+  stale pointer "T093 extends this (marginal risk contribution, effective
+  bets)" in the ChatGPT-review backlog — mapping the code BEFORE building
+  (D028/two-strikes: never redo work) found the extension landed WITH T093
+  parts 1+3 on 2026-08-14: analysis/portfolio_risk.py has Euler
+  marginal_contributions (sum exactly to sigma_p), effective_bets
+  (1/sum(w²) normalized), diversification_ratio, and the ≥60%-one-name
+  warning; get_portfolio_risk calls portfolio_risk() directly (tools.py);
+  test_portfolio_risk.py pins it (hand-computed two/three-asset cases,
+  rho=±1 edges, contribution-sum invariant). Evidence is the grep, not a
+  rebuild. The stale backlog pointer is corrected in this commit. The
+  REAL remaining T093-family work stays where it was filed: T094 HRP
+  (D021-gated, trigger written) and T095 factor loadings (data-gated).
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT f12545c — PASS
+    aligned: portfolio risk Euler marginal contributions & effective bets (T093c).
+    checked: verified `analysis/portfolio_risk.py` already includes Euler marginal contributions,
+      effective bets, diversification ratio, and concentration warnings; verified `test_portfolio_risk.py`
+      pins all behavior. Disposition as already shipped is accurate. Gate 1,032 passed.
+    concerns: none.
+- **T085b (fractional-Kelly ADVISORY view in size_position) — AWAITING
+  REVIEW 2026-08-19 (Claude/Cowork)**. The filed T077b/T085 advisory note,
+  built with its guardrails intact: risk/sizing.fractional_kelly_view —
+  pure math, f* = w − (1−w)/R from T077's DISTRIBUTION (up_frac,
+  payoff_ratio, samples of past 5-day moves — never a per-trade
+  probability; the D017 rejection stands). QUARTER-Kelly because the
+  inputs are estimates; hard 10% advisory cap regardless; a NEGATIVE f*
+  is REPORTED, not floored away (the distribution arguing for no position
+  is information) — only the advisory fraction floors at 0. Named
+  refusals: <30 samples ("thin history lies"), one-sided window (no
+  payoff ratio), win rate outside (0,1). size_position payload gains
+  kelly_view BEST-EFFORT (a sizer never dies for an advisory footnote;
+  fetch failure → available:false with the why) and the tool description
+  instructs the narrator: context, never the recommendation — the sized
+  qty above IS the recommendation, and it is UNCHANGED by this view.
+  EVIDENCE (D027): test_kelly_view.py 4 tests, hand-computed — w=.54
+  R=1.8 → f*=0.28444, advisory 0.07111; negative Kelly visible (w=.40
+  R=1.0 → −0.20, advisory 0); cap binds (w=.80 R=4 → f*=0.75 → 0.10);
+  all four refusals named. Full suite green at batch close; pyrefly 1.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT de893c7 — PASS
+    aligned: fractional-Kelly advisory view in `size_position` (T085b/D017).
+    checked: read `backend/risk/sizing.py` and `backend/tests/test_kelly_view.py`. Verified
+      quarter-Kelly computation from distribution (win rate & payoff ratio), 10% advisory cap,
+      negative Kelly reported (not floored in full metric, floored at 0 for advisory fraction),
+      and named refusals for thin samples (<30), one-sided windows, or win rates outside (0,1).
+      Confirmed `size_position` payload incorporates `kelly_view` best-effort while recommendation
+      sizing is unchanged. 4 unit tests pass. Gate 1,032 passed.
+    concerns: none.
+- **T115 (risk limits from settings — the T033 promise) — AWAITING REVIEW
+  2026-08-19 (Claude/Cowork)**. T033's docstring said "owner tunes via
+  config later" — later arrived. All six RiskLimits knobs now read from
+  .env (KUBERA_DAILY_LOSS_LIMIT_FRAC / MAX_POSITION_FRAC / COOLDOWN_HOURS /
+  RISK_PER_TRADE_FRAC / STOP_ATR_MULTIPLE / MAX_BUYS_PER_DAY) via
+  RiskLimits.from_settings() — duck-typed so engine.py stays import-pure;
+  __post_init__ validates, so a bad .env value REFUSES AT STARTUP with the
+  allowed range, never silently clamped. ALL SIX RiskEngine() construction
+  sites now pass settings-built limits (paper loop, both status/sizing
+  tools, brief risk section, risk_reset, risk_symbols) — the loop that
+  ENFORCES and the payloads that DISPLAY read the same numbers.
+  .env.example documents the block with the rails-not-tweaks warning.
+  EVIDENCE (D027): test_risk_settings.py 3 tests — defaults CANNOT drift
+  (settings-built == RiskLimits() pinned); env values flow through
+  (monkeypatched KUBERA_* honored, untouched fields stay default); three
+  bad values refuse with their ranges named. 1019 passed; ruff caught 4
+  missing get_settings imports MY import-smoke-test could not (function
+  bodies) — fixed before anything shipped; pyrefly canary 1; gate PASS at
+  batch close.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT db95da5 — PASS
+    aligned: configurable risk limits from settings (T115/T033).
+    checked: read `backend/risk/engine.py`, `backend/settings.py`, `backend/tests/test_risk_settings.py`.
+      Verified `RiskLimits.from_settings()` duck-typing, startup validation refusing out-of-range
+      values with named errors, and all 6 `RiskEngine` instantiation sites passing settings-built
+      limits. Verified `.env.example` documentation. 3 unit tests pass. Gate 1,032 passed.
+    concerns: none.
+- **TASKS curation (D031) — AWAITING REVIEW 2026-08-19 (Claude/Cowork)**.
+  15 double-signed AWAITING entries (T114, T064b-rest, T063b, T065b, T110b,
+  T084, T074a, T084a, T110a, T062c+delta, T065, T072b, T083c, T076b) moved
+  VERBATIM to archive/TASKS-archive-2026-08-20.md; TASKS.md 929 → 384 lines
+  (soft-warn cleared). Reviewer check: `git show` this commit — the archive
+  additions must equal the TASKS removals byte-for-byte (move-never-delete);
+  the script ASSERTED exactly 15 signed entries and zero unsigned leftovers
+  before writing.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 967f66e — PASS
+    aligned: memory management and budget enforcement (D031/T112).
+    checked: inspected `git show 967f66e` — verified 15 double-signed review entries moved
+      verbatim to `archive/TASKS-archive-2026-08-20.md`, clearing soft line budget warning
+      in `TASKS.md` (929 -> 384 lines). Gate 1,032 passed.
+    concerns: none.
+(empty — 15 double-signed entries moved verbatim to archive/TASKS-archive-2026-08-20.md, curation 2026-08-19/20; every verdict names its SHA per D033)
