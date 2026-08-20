@@ -37,6 +37,23 @@ pyrefly 0 errors; python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3
    archived verbatim to `archive/TASKS-archive-2026-08-20.md`, keeping `TASKS.md` within budget (~450 lines).
 Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
 
+## 2026-08-20 — Claude/Cowork — T122 pre-registration: PHASE 7 GATE IS OPEN
+Owner picked Kronos as the next front. Executed the registration in the
+pre-committed order: (1) docs/research/experiments/kronos-v1.md written
+BEFORE any run — contamination rule (paper-forward only), frozen
+definition (SPY/QQQ/NVDA, 2026-08-24..2026-10-02), success criteria
+pre-stated (interval coverage 80-97% AND toy rule not losing to b&h at
+2x costs; FAIL is a real answer and D037's AI-Trader data says it is the
+base rate), budget 3 attempts with failures counting. (2) Holdout
+`kronos-v1-fwd` FROZEN on the live DB, params_hash f3237504f1c9e3b1;
+budget opened. (3) `phase7_gate.py --revision kronos-v1` run LIVE: four
+PASSes, GATE OPEN — custody refused NVDA on the record, isolation parity
++ canary held. The first Phase 7 experiment is formally authorized.
+Remaining: owner downloads the model (~400MB); T122b (seeded) builds the
+runner against a fake-model injection point so only the real attempts
+need his machine. Custody rows live in the DB (git-ignored) — the hash
+in TASKS + this entry is the committed cross-reference.
+
 ## 2026-08-20 — Claude/Cowork — curation #7: both batches double-signed, archived
 Gemini PASSed batch #5 (at 0885039) and batch #6 (at 4199c69, review
 commit ad576a2) — 14 tickets, evidence quoted, concerns: none on both.

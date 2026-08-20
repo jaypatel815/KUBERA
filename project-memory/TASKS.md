@@ -130,7 +130,19 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   in every report and re-filed as T067c below.)
 - [x] T121b - BUILT 2026-08-20, REVIEWED PASS by Gemini (batch #4; record
   in archive/TASKS-archive-2026-08-20.md). Stale seed closed by hygiene #6.
-- [ ] T122 - Kronos candidate experiment (Phase 7-GATED; D037; MIT model
+- [~] T122 - PRE-REGISTERED 2026-08-20 (owner picked Kronos as the next
+  front; Claude/Cowork executed the registration): docs/research/
+  experiments/kronos-v1.md written BEFORE any run (symbols SPY/QQQ/NVDA,
+  window 2026-08-24..2026-10-02 forward-only, calibration 80-97% coverage
+  + toy-rule-vs-b&h success criteria pre-stated, FAIL is a real answer);
+  holdout `kronos-v1-fwd` FROZEN on the live DB (params_hash
+  f3237504f1c9e3b1); budget kronos-v1 opened at 3 attempts.
+  `phase7_gate.py --revision kronos-v1` run LIVE: all four checks PASS,
+  GATE OPEN (custody refused NVDA on the record). REMAINING: owner
+  downloads the model (~400MB, huggingface); T122b (seed below) builds
+  the runner. Original protocol text preserved below - it is now ALSO
+  enforced by the gate script:
+  (was) Kronos candidate experiment (Phase 7-GATED; D037; MIT model
   NeoQuasar/Kronos-base 102M params, CPU-feasible ~400MB F32). PRE-
   REGISTERED PROTOCOL REQUIRED BEFORE ANY RUN: (1) THE CONTAMINATION RULE:
   Kronos trained on 12B K-lines through its cutoff - a historical backtest
@@ -143,6 +155,17 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   strategy. (6) D035 stands: forecasts are internal signals; the owner
   hears odds and ranges, never "the model says 770". Fine-tuning on the
   owner's fills: REFUSED (D037).
+- [ ] T122b - Kronos runner (next build ticket, unblocked by the OPEN
+  gate): backend/research/kronos_runner.py - loads the model BEHIND the
+  T110b boundary, produces per-symbol next-day distributions, LOGS each
+  forecast as made (paper-forward discipline: no scoring until window
+  end), records every attempt via record_attempt (failures count), and a
+  consumption scorer that runs ONCE at window end against the frozen
+  definition (coverage + toy-rule-vs-b&h, per kronos-v1.md). Buildable
+  agent-side against a FAKE model interface with the real model as an
+  injection point (sandbox cannot download 400MB; the owner's machine
+  runs the real attempts). Every surface labels output EXPERIMENTAL,
+  odds-and-ranges only (D035).
 - [x] T119 - BUILT 2026-08-20 (tool #44 get_thesis_view), REVIEWED PASS by
   Gemini (batch #4; archive/TASKS-archive-2026-08-20.md). Stale seed closed.
 - [x] T120 - BUILT 2026-08-20 (.claude-plugin + commands/, owner installed
