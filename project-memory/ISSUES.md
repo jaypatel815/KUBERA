@@ -93,6 +93,10 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   is then fixed against reality and re-reconciled. T016's acceptance is
   REOPENED until that re-run ticks clean — which is the reconciliation
   process WORKING, not failing.
+  [CLOSED 2026-08-17/18, marker updated 2026-08-20: the re-run ticked
+  clean the same day (owner: "it reads like my statement") and T016b's
+  automated diff confirmed 39/39 CLEAN on the third owner run. This
+  sentence described the state DURING the fix path; it is history now.]
 - I028 [FIXED 2026-08-17 by T108 dedupe + T108b statement importer (e15a785,
   reviewed BLOCK→PASS) — reconciliation now 13/13 clean, option balance 36/36,
   imported fills carry derived T+1 trade dates with a date_source flag.
@@ -193,7 +197,7 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   the report, and the one most likely to change how the owner trades.
   FIX: compute drift WITHIN an asset class or on risk-normalised terms, and
   refuse to emit the tell when the two populations are not comparable.
-- I023 [OPEN — pyrefly is at 1, the config still claims 0] (2026-08-16)
+- I023 [FIXED 2026-08-20 by afbf8b3 (was: OPEN — pyrefly is at 1, the config still claims 0)] (2026-08-16)
   T101 drove the checker to zero and wrote "KNOWN REMAINING ERRORS — 0" into
   pyrefly.toml with the instruction "if new errors appear, investigate
   immediately before suppressing". T045 then introduced one:
@@ -207,6 +211,13 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   real signature, as T101 did for RegimeRouterStrategy) or update the pyrefly.toml
   block to say 1 with the reason. Silently leaving the comment wrong is the one
   option that is not acceptable — it is how the 138-error state started.
+  FIXED 2026-08-20 (afbf8b3): expressed the gap with cast(Any, fn) on the
+  __signature__ assignment in api/mcp_server.py; runtime byte-for-byte
+  identical, reasoning in-line. The callable-class alternative was
+  REJECTED: FastMCP's iscoroutinefunction does not see through instances
+  and would have silently broken tool execution. pyrefly: 0 errors, 13 MCP
+  tests green, pyrefly.toml block records the history instead of
+  overwriting it. The canary convention is now EXACTLY ZERO.
 - I021 [BLOCKING T045 — the MCP server bypasses the confirmation gate] (2026-08-16)
   DEMONSTRATED, not inferred: through the MCP server, with no confirmation step,
   `update_ips` set max_drawdown_frac=0.99 and objectives="YOLO everything" on a
@@ -588,6 +599,12 @@ Cross-check that numpy is genuinely absent there: `pip install --dry-run --repor
 backend/requirements.txt resolves fastapi/pydantic-settings/sqlalchemy/alembic/uvicorn/
 httpx/pytest/ruff/tzdata and pulls no numpy.
 FIX: `np = pytest.importorskip("numpy")` (proven: skips clean without numpy, runs with it).
+RESOLVED (marker updated 2026-08-20): the shipped fix went FURTHER than the
+FIX line — per-test importorskips (test_tts_backends.py lines 37/133), so
+the audio-FREE tests in that file always run and only the audio tests skip
+on lean runners; module-level skip would have hidden them (comment at line
+16 records why). Verified today: guards present by grep; file passes 8/8
+where numpy exists; collection never aborts either way.
 Better still, move `sf` into `_silent_wav` — six of the eight tests are pure mocks that need
 neither library, so CI could actually exercise the backend routing instead of skipping it.
 STATUS: RESOLVED 2026-08-16 in `fd1c10c` (Gemini). `np = pytest.importorskip("numpy")` now
