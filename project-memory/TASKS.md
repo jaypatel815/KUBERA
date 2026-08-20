@@ -12,7 +12,11 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-(none)
+- **T110b (isolation boundary + adversarial probe) — Claude/Cowork** — claimed 2026-08-19.
+- **T065b (order-frequency rail — T065 remainder) — Claude/Cowork** — claimed 2026-08-19.
+- **T063b (journal calibration v2) — Claude/Cowork** — claimed 2026-08-19.
+- **T064b-rest (crisis-window stress runs) — Claude/Cowork** — claimed 2026-08-19.
+- **T114 (owner-docs refresh: README + .env.example) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T084 (earnings-release text as labeled context) — AWAITING REVIEW
