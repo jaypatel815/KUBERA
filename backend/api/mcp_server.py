@@ -127,6 +127,14 @@ def make_default_tool_context(
                                     s.edgar_contact.get_secret_value()) else None)
     except Exception:
         edgar = None
+    finnhub: Any | None = None
+    try:
+        from data.finnhub import FinnhubClient
+        finnhub = (FinnhubClient(s) if (s.finnhub_api_key and
+                                        s.finnhub_api_key.get_secret_value())
+                   else None)
+    except Exception:
+        finnhub = None
 
     return ToolContext(
         alpaca=alpaca,
@@ -134,6 +142,7 @@ def make_default_tool_context(
         fred=fred,
         fmp=fmp,
         edgar=edgar,
+        finnhub=finnhub,
         db=db,
         confirmed=False,  # never True here — no out-of-band confirmation over MCP (I021)
     )
@@ -148,7 +157,7 @@ def close_tool_context(ctx: ToolContext) -> None:
     """
     # T083b: fmp/edgar joined the context — a member missing from this list
     # LEAKS one client per MCP call, the exact failure T106 closed.
-    for name in ("alpaca", "market", "fred", "fmp", "edgar", "db"):
+    for name in ("alpaca", "market", "fred", "fmp", "edgar", "finnhub", "db"):
         resource = getattr(ctx, name, None)
         close = getattr(resource, "close", None)
         if callable(close):

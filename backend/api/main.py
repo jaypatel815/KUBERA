@@ -746,7 +746,7 @@ def chat(
     # Optional clients, best-effort (T083b closed the gap: chat previously
     # built NO fred/fmp, so calendar/macro tools claimed "not configured"
     # over chat even with keys present — the brief endpoint had them).
-    fred = fmp = edgar = None
+    fred = fmp = edgar = finnhub = None
     try:
         fred = FredClient(settings=get_settings())
     except ConfigError:
@@ -761,22 +761,41 @@ def chat(
         edgar = _Edgar(settings=get_settings())
     except ConfigError:
         pass
+    try:
+        from data.finnhub import FinnhubClient as _Finnhub
+        finnhub = _Finnhub(settings=get_settings())
+    except ConfigError:
+        pass
     ctx = ToolContext(alpaca=alpaca, market=market, db=session, fred=fred,
-                      fmp=fmp, edgar=edgar, confirmed=body.confirm)
+                      fmp=fmp, edgar=edgar, finnhub=finnhub,
+                      confirmed=body.confirm)
     # Swagger's default example for optional ints is 0 — treat it as "new conversation".
     conversation_id = body.conversation_id or None
     try:
-        r = run_chat_turn(session, provider, ctx, body.message, conversation_id,
-                          voice=body.voice)
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
-    except LLMError as e:
-        raise HTTPException(status_code=502, detail=str(e))
-    except OperationalError:
-        raise HTTPException(
-            status_code=503,
-            detail="database not initialized — run: alembic -c backend/alembic.ini upgrade head",
-        )
+        try:
+            r = run_chat_turn(session, provider, ctx, body.message,
+                              conversation_id, voice=body.voice)
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except LLMError as e:
+            raise HTTPException(status_code=502, detail=str(e))
+        except OperationalError:
+            raise HTTPException(
+                status_code=503,
+                detail=("database not initialized — run: "
+                        "alembic -c backend/alembic.ini upgrade head"),
+            )
+    finally:
+        # I034 (found wiring T121): these per-turn clients were built and
+        # NEVER closed — one leaked socket per optional client per chat
+        # turn since T083b, the exact T106 failure class on a new surface.
+        for _c in (fred, fmp, edgar, finnhub):
+            close = getattr(_c, "close", None)
+            if callable(close):
+                try:
+                    close()
+                except Exception:  # noqa: BLE001 — closing is best-effort
+                    pass
     return {
         "conversation_id": r.conversation_id,
         "reply": r.reply,

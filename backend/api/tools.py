@@ -75,6 +75,7 @@ from backtest.stats import calmar, trade_stats
 from backtest.strategies import TEMPLATES, build_strategy
 from data.alpaca import AlpacaClient, AlpacaError
 from data.edgar import EdgarClient, EdgarError
+from data.finnhub import FinnhubClient
 from data.flows import flow_history
 from data.fmp import FmpClient, FmpError
 from data.fred import SERIES, FredClient, FredError
@@ -131,6 +132,7 @@ class ToolContext:
     fred: "FredClient | None" = None
     fmp: "FmpClient | None" = None
     edgar: "EdgarClient | None" = None
+    finnhub: "FinnhubClient | None" = None  # T121
     db: Session | None = None
     confirmed: bool = False
 
@@ -2383,6 +2385,28 @@ def _get_event_base_rates(ctx: ToolContext, a: EventRatesArgs) -> dict:
         edgar_note = ("EDGAR not configured (EDGAR_CONTACT in .env unlocks "
                       "years of past dates instantly)")
 
+    # T121 (owner-probed 2026-08-20): Finnhub free tier carries 4 quarters
+    # of actual-vs-estimate — the beat/miss splits the store lacks. Folded
+    # in under the UNAMBIGUOUS-MATCH rule (period-end -> exactly one stored
+    # report date within 120d; ambiguity skipped, counted). Best-effort.
+    finnhub_note = None
+    if ctx.finnhub is not None:
+        from data.earnings_store import enrich_from_surprises
+        from data.finnhub import FinnhubError
+        try:
+            sur = ctx.finnhub.earnings_surprises(symbol)
+            res = enrich_from_surprises(db, symbol, sur.rows)
+            finnhub_note = (
+                f"Finnhub surprises: {len(sur.rows)} quarters — "
+                f"{res['enriched']} enriched, {res['ambiguous']} ambiguous "
+                f"skipped, {res['unmatched']} unmatched, "
+                f"{res['already']} already known")
+        except FinnhubError as e:
+            finnhub_note = f"Finnhub unavailable ({e}) — store unchanged"
+    else:
+        finnhub_note = ("Finnhub not configured (free FINNHUB_API_KEY adds "
+                        "real beat/miss splits)")
+
     past = [SimpleNamespace(date=_dt_date.fromisoformat(r.event_date),
                             time_hint=r.time_hint,
                             eps_actual=r.eps_actual,
@@ -2413,6 +2437,7 @@ def _get_event_base_rates(ctx: ToolContext, a: EventRatesArgs) -> dict:
     out: dict[str, Any] = asdict(rates)
     out["fetch_note"] = fetch_note
     out["edgar_note"] = edgar_note
+    out["finnhub_note"] = finnhub_note
     out["history_source"] = ("earnings_observed store (self-accumulated — "
                              "past FMP windows are paywalled on this tier)")
     out["asof"] = bars.asof.isoformat()

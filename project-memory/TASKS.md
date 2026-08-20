@@ -15,6 +15,40 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
 (none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T121 build (FinnhubClient + beat/miss enrichment) + I034 leak fix -
+  AWAITING REVIEW 2026-08-20 (Claude/Cowork)**. The owner's probe table
+  answered (quote OK, company-news 244/31d, surprises 4 quarters,
+  news-sentiment PAYWALLED) so the client exists: data/finnhub.py speaks
+  EXACTLY the probed endpoints (earnings_surprises + company_news;
+  sentiment deliberately absent until a paid tier measures otherwise);
+  named 401/403-PAYWALLED/429-no-retry refusals; fail-closed rows
+  (unparseable period -> counted, never guessed); news newest-first,
+  capped at 50 with the pre-cap count visible. THE PRIZE WIRED:
+  earnings_store.enrich_from_surprises folds actual-vs-estimate into the
+  store under an UNAMBIGUOUS-MATCH rule - Finnhub rows carry fiscal
+  PERIOD END, not report dates, so a surprise enriches only when EXACTLY
+  ONE stored report date falls within (period, period+120d]; zero ->
+  unmatched counted, two+ -> ambiguous SKIPPED (guessing which report a
+  quarter belongs to is how beat/miss splits go silently wrong);
+  enrich-only-empty (never overwrites). get_event_base_rates gains the
+  finnhub best-effort block + finnhub_note; ToolContext.finnhub typed
+  properly (the true-zero canary CAUGHT my loose `object` typing before
+  commit - fixed to FinnhubClient). Contexts wired: chat + MCP builders;
+  MCP close list +finnhub.
+  I034 FOUND WHILE WIRING: the chat endpoint NEVER CLOSED its per-turn
+  fred/fmp/edgar clients (leak since T083b, T106-class on a new surface)
+  - fixed with try/finally covering all HTTPException paths; guard test
+  pins finnhub in the close path.
+  EVIDENCE (D027): test_finnhub.py 8 tests - probe-faithful parse
+  (unparsed counted, oldest-first, None kept not guessed), all four named
+  refusals, news cap+count, enrichment: unambiguous enriches empty-only
+  (hand-set 1.57/1.43 land on 2026-07-30), two-candidate ambiguity and
+  zero-candidate unmatched counted with store UNTOUCHED, pre-existing
+  9.99 never overwritten, close-list guard. 1054 passed; pyrefly 0
+  (restored after the catch); gate PASS.
+  SEEDED: T121b below (company-news into get_news as a second labeled
+  source - the probe says 244 articles/31d exist; separate ticket, news
+  works today).
 - **Repo review #2 + T121 probe (FinRobot/AI-Trader/Kronos, D037) -
   AWAITING REVIEW 2026-08-20 (Claude/Cowork)**. Disposition doc:
   docs/research/finrobot-aitrader-kronos-review-2026-08-20.md (read via
@@ -277,6 +311,11 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
 - [x] T067b — built 2026-08-18, see Awaiting review at top. (FOMO-into-late-
   RVOL deliberately NOT built — needs an intraday clock on every fill; named
   in every report and re-filed as T067c below.)
+- [ ] T121b - Finnhub company-news as a SECOND labeled news source in
+  get_news (probe: 244 articles/31d free). Alpaca news works today; this
+  is enrichment, not a gap - build when news volume/recency shows Alpaca
+  thin. Client method already shipped (T121); the ticket is tool wiring +
+  source labeling + dedupe-by-url.
 - [ ] T122 - Kronos candidate experiment (Phase 7-GATED; D037; MIT model
   NeoQuasar/Kronos-base 102M params, CPU-feasible ~400MB F32). PRE-
   REGISTERED PROTOCOL REQUIRED BEFORE ANY RUN: (1) THE CONTAMINATION RULE:

@@ -4,6 +4,17 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I034 [FOUND AND FIXED same commit, 2026-08-20 — while wiring T121]
+  The CHAT endpoint built per-turn optional clients (fred/fmp/edgar since
+  T083b) and NEVER closed them — one leaked httpx socket per configured
+  client per chat turn, the exact T106 failure class on a new surface
+  (T106 fixed MCP; nobody swept chat). FIX: the whole turn now runs in
+  try/finally that best-effort closes fred/fmp/edgar/finnhub on success
+  AND on every HTTPException path. The new finnhub member joined the MCP
+  close list in the same commit, with a guard test
+  (test_close_list_includes_finnhub_t106_class) so the NEXT client added
+  to ToolContext has a failing test to update instead of a silent leak.
+
 - I033 [FIXED same day, 2026-08-20 — found by the owner's FIRST live
   monitor run] The monitor printed `regime: trending_up` beside a week SPY
   spent DOWN 1.58%; the owner reasonably read the label as a wrong

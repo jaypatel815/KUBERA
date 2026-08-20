@@ -184,6 +184,22 @@ class KuberaSettings(BaseSettings):
         validation_alias=AliasChoices("KUBERA_MAX_BUYS_PER_DAY"),
     )
 
+    # Finnhub (T121, D030/D037) — OWNER-PROBED 2026-08-20 from his machine:
+    # free tier answers quote, company-news (244 articles/31d observed),
+    # /stock/earnings surprises (4 quarters actual-vs-estimate — the prize:
+    # real beat/miss splits for T083 base rates), stock/metric (133
+    # metrics); news-sentiment PAYWALLED (403). 60 calls/min free ceiling.
+    finnhub_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("FINNHUB_API_KEY",
+                                      "KUBERA_FINNHUB_API_KEY"),
+    )
+    finnhub_base_url: str = Field(
+        default="https://finnhub.io/api/v1",
+        validation_alias=AliasChoices("FINNHUB_BASE_URL",
+                                      "KUBERA_FINNHUB_BASE_URL"),
+    )
+
     # SEC EDGAR (T083b, D030/D034) — free and keyless, probe-verified
     # 2026-08-18 (46 earnings 8-Ks for the probe symbol, 46/46 with
     # acceptance timestamps). The SEC requires a CONTACT ADDRESS in the

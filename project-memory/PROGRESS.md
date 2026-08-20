@@ -5,6 +5,24 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Claude/Cowork — T121 BUILD: FinnhubClient + beat/miss enrichment; I034 leak fix
+Owner's probe table answered (surprises: 4 quarters actual-vs-estimate;
+news 244/31d; sentiment paywalled) → built same session: data/finnhub.py
+(exactly the probed endpoints, named 401/403/429 refusals, fail-closed
+rows) + enrich_from_surprises under the UNAMBIGUOUS-MATCH rule (period
+end → exactly one stored report date within 120d; ambiguity SKIPPED and
+counted; enrich-only-empty). get_event_base_rates gains finnhub_note;
+chat + MCP contexts build it; MCP close list +finnhub with a guard test.
+I034 FOUND WHILE WIRING: chat never closed its per-turn fred/fmp/edgar
+clients (T106-class leak since T083b) — fixed with try/finally on all
+paths. The true-zero canary CAUGHT my loose ToolContext typing before
+commit (object → FinnhubClient). T121b seeded (news enrichment, later).
+VERIFIED: test_finnhub.py 8 tests (probe-faithful fixtures, hand-set
+enrichment values, ambiguity counted with store untouched, overwrite
+refused, close-list guard); 1054 passed; pyrefly 0; gate PASS.
+NEXT: Gemini reviews this SHA. Owner: nothing — base rates start showing
+real beat/miss splits as the store enriches on normal use.
+
 ## 2026-08-20 — Gemini/Antigravity — review Repo review #2 + T121 probe (PASS)
 Reviewed FinRobot/AI-Trader/Kronos review & T121 probe at tip (`b34b410`). Gate PASS (1,049 passed, 0 failed);
 python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).
