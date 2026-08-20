@@ -5,6 +5,16 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Gemini/Antigravity — review I033 fix (PASS)
+Reviewed I033 fix at tip (`45dc086`). Gate PASS (1,033 passed, 0 failed);
+python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).
+- I033 fix (45dc086) PASS: `analysis/monitor.py` `describe_regime()` outputs timeframe on every
+  label ("trending_up (daily structure - a weeks-to-months lens)"); `PositionCheck` carries
+  `week_change_frac`; `scripts/monitor.py` prints contextual explanation when structural uptrend
+  coincides with red week. `test_regime_labels_carry_their_lens_i033` passes. D035 timescale
+  doctrine and T116 short-horizon-first backlog item align cleanly.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
+
 ## 2026-08-20 — Gemini/Antigravity — review T087a / T093c / T085b / T115 / TASKS curation (all PASS)
 Reviewed batch of 5 items at tip (`e80d14c`). Gate PASS (1,032 passed, 0 failed);
 python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).

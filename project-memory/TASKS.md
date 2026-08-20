@@ -26,6 +26,16 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   gate PASS; pyrefly canary 1. D035 records the owner's timescale
   direction; T116 seeded below to make short-horizon the LEADING lens on
   every surface (the class fix; this ticket is the point fix).
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 45dc086 — PASS
+    aligned: regime labels must explicitly state their timescale lens (I033/D035) to
+      prevent confusing multi-month structure with short-term price movement.
+    checked: read `backend/analysis/monitor.py`, `scripts/monitor.py`,
+      `backend/tests/test_monitor.py`. Verified `describe_regime()` outputs timeframe on every
+      label, `PositionCheck` carries `week_change_frac`, and `scripts/monitor.py` prints the
+      contextual explanation specifically during structural uptrend + red week conditions.
+      Verified live run output from owner. Unit test `test_regime_labels_carry_their_lens_i033`
+      passes. Gate 1,033 passed.
+    concerns: none. D035 timescale doctrine and T116 short-horizon-first backlog item align cleanly.
 - **T087a (open-trade monitor v1 — advisory CLI) — AWAITING REVIEW
   2026-08-19 (Claude/Cowork)**. The owner's Q&A ticket, minus its voice/
   Orb halves (those stay with T074/T087 BY DESIGN — stated in module and
