@@ -25,6 +25,8 @@ def restore_risk_state(session: Session, engine: RiskEngine) -> bool:
         tripped=row.tripped,
         trip_reason=row.trip_reason,
         lockout_until=row.lockout_until,
+        buys_day=row.buys_day,
+        buys_today=row.buys_today or 0,
     )
     try:  # T065: disabled symbols ride the same row; a corrupt list is empty, loudly
         engine.set_disabled_symbols(json.loads(row.disabled_symbols_json or "[]"))
@@ -44,5 +46,6 @@ def persist_risk_state(session: Session, engine: RiskEngine) -> None:
     row.trip_reason = engine.trip_reason
     row.lockout_until = engine.lockout_until
     row.disabled_symbols_json = json.dumps(sorted(engine.disabled_symbols))
+    row.buys_day, row.buys_today = engine.buys_state
     row.updated_at = utcnow()
     session.commit()

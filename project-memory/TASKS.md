@@ -19,6 +19,36 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
 - **T114 (owner-docs refresh: README + .env.example) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T065b (order-frequency rail — the T065 remainder) — AWAITING REVIEW
+  2026-08-19 (Claude/Cowork)**. The ENGINE-level daily new-buy cap behind
+  the paper loop's T055 guard: the loop's guard only sees loop-originated
+  orders; this one sits in pre_trade_check, the gate EVERY order path must
+  pass, and it is PERSISTED so a restart cannot forget the count.
+  RiskLimits.max_buys_per_day (default 5, validated 1..100, owner-tunable);
+  engine record_buy(day) counts a buy the moment the broker ACCEPTED it
+  (an approval that never became an order costs nothing); a count from a
+  different day reads as 0 — rollover is automatic with the market day
+  (T111 day strings), no scheduled job. Refusal is NAMED with the count,
+  the cap, and the doctrine line; SELLS ARE EXEMPT (reducing risk is never
+  blocked). RiskState gains buys_day/buys_today (migration e1a7c4f9b2d3,
+  up/down/up exercised); persistence round-trips via the new buys_state
+  property (no private-field reach-ins); paper loop records + persists
+  after each accepted buy; get_risk_status shows buy_frequency
+  {buys_today, max_buys_per_day, note}.
+  EVIDENCE (D027): test_buy_frequency.py 5 tests — cap refusal named with
+  numbers + sells exempt AT the cap; day rollover via start_day with no
+  job; restart-cannot-forget (persist → fresh engine → still refuses);
+  limit validation (0 and 101 refused) + documented default; legacy rows
+  without counts restore as zero. 1006 passed (all prior loop/risk tests
+  untouched); pyrefly canary 1; gate PASS at batch close.
+  D028 notes: (1) the T065 line's remaining items dispositioned — order-
+  frequency THIS; cancel-all remains deliberately unbuilt (nothing rests:
+  the loop uses market orders; documented in risk_symbols.py since T065);
+  sector-exposure CAPS remain measurement-only until owner-ratified
+  limits (T061), per the shipped T065 design. (2) record_buy counts
+  ACCEPTED orders, not approvals — the honest count is what reached the
+  broker.
+
 - **T110b (isolation boundary + adversarial probe — the LAST Phase 7
   precondition) — AWAITING REVIEW 2026-08-19 (Claude/Cowork)**.
   backend/research/isolation.py: agent-written strategy code runs in a
@@ -562,7 +592,7 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   crisis-window stress runs (2020/2022 where IEX reaches; 2008 impossible on
   this feed — say so), promote-via-chat (needs the deliberate-act confirmation
   design; parked intentionally, CLI stays the promotion instrument).
-- [ ] T065 — Risk engine v2: sector-exposure caps (needs sector data from T023), cancel-all + disable-symbol controls, order-frequency limit (merge with T055 overtrading guard).
+- [x] T065 — Risk engine v2 COMPLETE 2026-08-19 across two tickets: sector-exposure measurement + disable-symbol (T065, PASSED at 05dfe35-era review) and the order-frequency rail (T065b, see Awaiting review). Cancel-all deliberately unbuilt — nothing rests (market orders only); hard sector CAPS wait on owner-ratified limits (T061) by design.
 
 ## Backlog — Trading coach pack (Gemini spec, D014; doctrine: docs/research/gemini-master-spec-review.md)
 - [x] T066 — built 2026-08-18, see Awaiting review at top. (Correlation

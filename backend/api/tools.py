@@ -660,6 +660,13 @@ def _get_risk_status(ctx: ToolContext, _: NoArgs) -> dict:
             "lockout_until": (engine.lockout_until.isoformat()
                               if engine.lockout_until else None),
         },
+        # T065b: the order-frequency rail — a stale count from a previous
+        # day reads as 0; the rollover is automatic.
+        "buy_frequency": {
+            "buys_today": engine.buys_today(),
+            "max_buys_per_day": engine.limits.max_buys_per_day,
+            "note": "new buys refused past the cap; sells always allowed",
+        },
         "dqs": asdict(dqs),
         "owner_dqs": _owner_dqs_block(db, engine.limits.daily_loss_limit_frac),
         "asof": acct.asof.isoformat(),

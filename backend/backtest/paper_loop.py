@@ -343,6 +343,11 @@ def run_paper_cycle(
         return CycleResult("rejected", symbol, weight, target_value, current_value, reasons)
 
     placed = alpaca.place_order(symbol, side, qty)
+    if side == "buy":
+        # T065b: count the buy against today's frequency budget the moment
+        # the broker accepted it, and persist — a restart must not forget.
+        risk.record_buy(risk.day or market_today().isoformat())
+        persist_risk_state(db, risk)
     log_row("ordered", sizing_note, placed.external_id)
     detail = f"{side} {qty} {symbol} @ ~{last_price:.2f} (order {placed.status})"
     if sizing_note:

@@ -44,8 +44,18 @@ class RiskLimits:
     # fraction of equity. Band capped at 5% — beyond that isn't sizing, it's gambling.
     risk_per_trade_frac: float = 0.01
     stop_atr_multiple: float = 2.0
+    # T065b: order-frequency rail — max NEW BUYS per market day, counted in
+    # the ENGINE (persisted; restarts can't forget). This is the blunt rail
+    # BEHIND the paper loop's T055 overtrading guard: the loop's guard only
+    # sees loop-originated orders; this one sits in the gate every order
+    # path must pass. Sells are exempt — reducing risk is never blocked.
+    max_buys_per_day: int = 5
 
     def __post_init__(self):
+        if not 1 <= self.max_buys_per_day <= 100:
+            raise ValueError(
+                f"max_buys_per_day must be in [1, 100], got {self.max_buys_per_day}"
+            )
         if not 0 < self.max_position_frac <= 1:
             raise ValueError(f"max_position_frac must be in (0, 1], got {self.max_position_frac}")
         if not 0 < self.daily_loss_limit_frac < 1:
@@ -94,6 +104,9 @@ class RiskEngine:
     # T065: owner-disabled symbols — BUYS refused, sells always allowed
     # (reducing risk is never blocked). Persisted with the rest of the state.
     _disabled_symbols: frozenset[str] = frozenset()
+    # T065b: buys recorded this market day (the frequency rail's memory).
+    _buys_day: str | None = None
+    _buys_today: int = 0
 
     # -- state ---------------------------------------------------------------
 
@@ -127,6 +140,29 @@ class RiskEngine:
         this (no tool exposes it; changing a rail stays a deliberate act)."""
         self._disabled_symbols = frozenset(str(s).upper() for s in symbols if s)
 
+    @property
+    def buys_state(self) -> "tuple[str | None, int]":
+        """Raw (day, count) pair — persistence-layer use, like restore()."""
+        return self._buys_day, self._buys_today
+
+    def buys_today(self, day: str | None = None) -> int:
+        """T065b: buys recorded for `day` (default: the engine's current day).
+        A count from a DIFFERENT day is stale and reads as 0 — the rollover
+        needs no scheduled job; it happens the moment the day moves on."""
+        ref = day if day is not None else self._day
+        return self._buys_today if (ref is not None and ref == self._buys_day) else 0
+
+    def record_buy(self, day: str) -> int:
+        """T065b: count one placed BUY against `day`'s budget. Called by the
+        order path AFTER the broker accepted the order (an approval that
+        never became an order costs nothing). Returns the new count."""
+        if day != self._buys_day:
+            self._buys_day, self._buys_today = day, 0
+        self._buys_today += 1
+        log.info("buy recorded: %d of %d for %s",
+                 self._buys_today, self.limits.max_buys_per_day, day)
+        return self._buys_today
+
     def restore(
         self,
         day: str | None,
@@ -134,6 +170,8 @@ class RiskEngine:
         tripped: bool,
         trip_reason: str | None,
         lockout_until: datetime | None = None,
+        buys_day: str | None = None,
+        buys_today: int = 0,
     ) -> None:
         """Persistence-layer use ONLY (risk/persistence.py): rehydrate saved state so a
         process restart cannot forget a tripped breaker OR its lockout."""
@@ -142,6 +180,8 @@ class RiskEngine:
         self._tripped = tripped
         self._trip_reason = trip_reason
         self._lockout_until = lockout_until
+        self._buys_day = buys_day
+        self._buys_today = max(0, int(buys_today or 0))
         if tripped:
             log.warning("risk state restored TRIPPED: %s", trip_reason)
 
@@ -222,6 +262,14 @@ class RiskEngine:
                 f"{order.symbol.upper()} is DISABLED for new buys "
                 "(scripts/risk_symbols.py --enable to lift; sells were never "
                 "blocked — reducing risk is always allowed)")
+
+        if not reasons and order.side == "buy" and \
+                self.buys_today() >= self.limits.max_buys_per_day:
+            reasons.append(
+                f"order-frequency rail: {self.buys_today()} buys already "
+                f"placed on {self._day} (max {self.limits.max_buys_per_day}/"
+                "day) — the biggest enemy is overtrading; sells remain "
+                "allowed, and the count resets with the next market day")
 
         if not reasons and order.side == "buy":
             projected = current_position_value + order.notional
