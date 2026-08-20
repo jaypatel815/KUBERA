@@ -12,6 +12,14 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
+- **T122b (Kronos runner) - Claude/Cowork** - claimed 2026-08-20, after
+  the owner CONFIRMED the gate on his machine (GATE OPEN, all four rails,
+  isolation 0.13s - the T127 acceptance run). Scope: ResearchForecast
+  table + migration on e1a7c4f9b2d3; runner module (forecasts logged AS
+  MADE, coverage + toy-rule scorer, consume-once via custody);
+  run_isolated_json boundary extension (same guarantees, JSON payload -
+  the model venv rides the existing `python=` injection point);
+  gate-checked CLI; pre-window aggregation clarification in kronos-v1.md.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 
