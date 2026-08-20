@@ -385,6 +385,21 @@ class ExperimentBudget(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
+class RiskEvent(Base):
+    """T135 — append-only history of risk-state moments (D021 evidence):
+    tier changes and breaker trips, recorded at OBSERVATION time by the
+    brief's risk section. Current-state tables answer "what is"; the
+    Sept-12 D021 revisit needs "what happened" — and history only exists
+    if something writes it down as it goes."""
+
+    __tablename__ = "risk_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ts: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    kind: Mapped[str] = mapped_column(String(16))    # tier_change | breaker_trip
+    detail: Mapped[str] = mapped_column(String(400))
+
+
 class ResearchForecast(Base):
     """T122b — a research candidate's forecast, logged AS MADE (the
     paper-forward discipline): made_at is stamped before the outcome

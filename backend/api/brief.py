@@ -55,6 +55,12 @@ def _risk_section(db: Session, equity: float) -> dict:
                          engine.limits.daily_loss_limit_frac)
         tier = {"level": t.level, "name": t.name,
                 "budget_consumed_frac": t.budget_consumed_frac}
+        # T135: history for the D021 revisit is written as it happens —
+        # deduped observations, so every brief run is a safe recorder
+        from data.risk_events import observe_breaker, observe_tier
+
+        observe_tier(db, t.level, t.name)
+        observe_breaker(db, engine.tripped, engine.trip_reason)
     rows = db.execute(select(SignalLog)).scalars().all()
     dqs = score_decisions(rows)
     return {
