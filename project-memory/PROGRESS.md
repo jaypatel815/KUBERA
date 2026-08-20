@@ -25,6 +25,35 @@ python pins agree (3.14.7); alembic single head (e1a7c4f9b2d3).
    stdlib html_to_text) + tool #40 `get_earnings_release` qualitative framing. Guards bumped to 40.
 Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
 
+## 2026-08-19/20 — Claude/Cowork — batch of five #2: curation, T115, T085b, T093c, T087a
+Owner asked for another 4–5; five closed, each at its own SHA (D033):
+967f66e CURATION (D031) — 15 double-signed entries moved VERBATIM to
+archive/TASKS-archive-2026-08-20.md; TASKS 929→384 lines; script asserted
+exactly-15-signed/zero-unsigned before writing. db95da5 T115 — all six
+RiskLimits knobs from .env via RiskLimits.from_settings (validation
+refuses bad values AT STARTUP with the range named); all six RiskEngine
+sites now settings-built; defaults pinned against drift; ruff caught 4
+missing imports my import-smoke couldn't (function bodies). de893c7
+T085b — fractional-Kelly ADVISORY view in size_position (quarter-Kelly,
+10% cap, negative f* reported not hidden, named thin-data refusals;
+sized qty UNCHANGED — D017 stands). f12545c T093c — CLOSED WITHOUT
+BUILDING: mapping-first found marginal contributions + effective bets
+shipped WITH T093 on 08-14 (portfolio_risk.py, wired, tested) — grep
+evidence, stale backlog pointer fixed, nothing redone. T087a — open-trade
+monitor v1: four named checks per held position (rvol_collapse only
+under breakout thesis, vwap_churn at the T052 line, invalidation
+hit/near vs the SAME T056 plan chat narrates, event windows as
+surfaces-not-instructions), named blind spots never crashes, schedulable
+exit codes, ADVISORY ONLY; scripts/monitor.py one-pass or --loop; toast/
+Orb/voice stay with T087/T074 by design.
+VERIFIED: 1029 passed; pyrefly canary 1 — after catching TWO real bugs
+in monitor.py's script layer (wrong build_exit_plan signature = crash on
+first real run; wrong return annotation); live sandbox degradations
+named with real exit code 2. Gate PASS at close.
+NEXT: Gemini reviews five at their SHAs. Owner: run
+`python scripts\\monitor.py` during RTH with an open position — first
+real-world pass decides threshold tuning.
+
 ## 2026-08-19 — Claude/Cowork — batch of five: T110b, T065b, T063b, T064b-rest, T114
 Owner asked for 4–5 tickets finished in one pass; five closed, EACH AT ITS
 OWN SHA for D033 review: 93de506 T110b (isolation boundary: python -I child,

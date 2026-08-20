@@ -265,6 +265,11 @@ python scripts\brief.py --type eod         # eod / weekly); saves to private/bri
                                            # Task Scheduler one-liners in the docstring
 python scripts\risk_symbols.py --list      # per-symbol buy switch: --disable TSLA blocks
                                            # NEW BUYS only — sells are never blocked
+python scripts\monitor.py --loop 300       # open-trade monitor during market hours:
+                                           # per held position — breakout thesis losing
+                                           # its volume, VWAP churn, price at/near your
+                                           # exit plan's invalidation, open event windows.
+                                           # ADVISORY ONLY; exit 1 = something needs eyes
 ```
 
 Two rails watch order flow itself: a per-symbol disable switch (above) and an

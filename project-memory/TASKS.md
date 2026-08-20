@@ -12,9 +12,43 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T087a (open-trade monitor v1 — advisory CLI, no voice/Orb) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T087a (open-trade monitor v1 — advisory CLI) — AWAITING REVIEW
+  2026-08-19 (Claude/Cowork)**. The owner's Q&A ticket, minus its voice/
+  Orb halves (those stay with T074/T087 BY DESIGN — stated in module and
+  ticket). analysis/monitor.py (pure; the script fetches, this judges):
+  four named checks per held position — rvol_collapse (ALERT, fires ONLY
+  under a breakout-ish daily regime: low volume on a range day is normal),
+  vwap_churn (WATCH at the T052 churn line of 4 crossings),
+  invalidation_hit/_near (ALERT through the T056 plan's level — "the plan
+  you ratified says the thesis is dead; staying is a NEW decision,
+  journal it" — WATCH within 0.5 ATR), event_window (WATCH per open
+  T076/T076b guard window — "a surface, not an instruction"). Missing
+  inputs become NAMED blind-spot notes, never crashes. summarize() gives
+  a schedulable exit code (1 = something needs eyes NOW). Long-thesis v1
+  stated (exit plans are long-oriented by doctrine; shorts arrive with
+  D021). scripts/monitor.py: one pass or --loop N; composes the exit plan
+  EXACTLY as the get_exit_plan tool does (same regime/levels/breakout/
+  ATR inputs); NOT CONFIGURED and BROKER/DATA UNREACHABLE named (exit 2,
+  demonstrated live in-sandbox, real exit code verified); no-positions is
+  an answer, not an error. ADVISORY ONLY — nothing placed/cancelled/
+  resized; README autopilot block gains the line.
+  EVIDENCE (D027): test_monitor.py 6 tests — rvol fires only under
+  breakout thesis (range-bound stays quiet) with numbers in the detail;
+  churn at exactly the shipped line; invalidation hit/near/far with
+  hand-set ATR distances (0.40 ATR in the detail) and the shipped 0.5
+  constant pinned; event windows are watches with the not-an-instruction
+  wording pinned; all three blind spots named on empty inputs, zero
+  raises; summary exit codes 1/0. 1029 passed; pyrefly canary 1 — after
+  it caught TWO REAL BUGS in the script layer the unit tests cannot
+  reach (a wrong build_exit_plan signature that would have crashed the
+  first real run, and a wrong return annotation) — both fixed before
+  commit; ruff clean; gate PASS at batch close.
+  D028: thresholds are module constants (commented) — tuning them is
+  owner feedback territory, not silent edits; the monitor deliberately
+  reads THE SAME exit plan the owner sees in chat, so it can never alert
+  on a plan that differs from the one narrated.
 - **T093c (marginal risk contribution + effective bets) — CLOSED WITHOUT
   BUILDING 2026-08-19 (Claude/Cowork): ALREADY SHIPPED.** Claimed from the
   stale pointer "T093 extends this (marginal risk contribution, effective
@@ -362,7 +396,7 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   stays quiet when server-down/no-snapshot — those belong to the existing
   checks. Wired into run_checks → the owner's every-5-min scheduled task and
   --notify toast get it for free. 3 tests (drift/quiet/cannot-judge).
-- [ ] T087 — Open-trade monitor (owner Q&A; deps T074/T082/T036): watch held positions during RTH — alert when session RVOL collapses under a breakout thesis, VWAP churn rises, exit-plan invalidation approaches/hits, or the event guard window opens; Windows toast + Orb surface v1, voice barge-in with T074. Advisory only — execution stays in the loop's rails.
+- [~] T087 — Open-trade monitor: the ANALYSIS + CLI half SHIPPED 2026-08-19 as T087a (see Awaiting review) — all four checks live via scripts/monitor.py with schedulable exit codes. REMAINING here: Windows toast wiring, Orb surface, and voice barge-in (dep T074) — the delivery surfaces, not the judgment.
 - [ ] (advisory note for T077b/T085) Fractional-Kelly sizing VIEW from T077 win-rate/payoff — advisory-only, capped, never autopilot; single-trade "probability of profit" remains rejected per D017.
 - [x] T083 — built 2026-08-18, see Awaiting review at top. Post-probe
   redesign: past FMP windows are PAYWALLED on the owner's tier, so history
