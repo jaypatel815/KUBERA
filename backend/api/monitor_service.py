@@ -125,7 +125,10 @@ def check_symbol(
     week_change = (closes[-1] / closes[-6] - 1.0) if len(closes) >= 6 else None
 
     # T116/D035: the DAYS lens leads — computed from the same closes.
-    days_line = one_line(short_horizon_read(symbol, closes, dates))
+    # T116b: FOMC dates (keyless table) become caveats when inside the
+    # window; the monitor already guards TODAY's windows separately.
+    days_line = one_line(short_horizon_read(symbol, closes, dates,
+                                            upcoming=with_fomc(None)))
 
     return check_position(
         symbol, price,

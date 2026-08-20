@@ -2559,13 +2559,36 @@ def _get_tlh_scan(ctx: ToolContext, _: NoArgs) -> dict:
     SymbolArgs,
 )
 def _get_short_horizon(ctx: ToolContext, p: SymbolArgs) -> dict:
+    from analysis.fomc import with_fomc
     from analysis.short_horizon import short_horizon_read
 
     market: MarketDataClient = ctx.require("market")
     bars = market.get_daily_bars(p.symbol, days=500)
+
+    # T116b: events inside the window ride BESIDE the bands as named
+    # caveats. FOMC needs no key; the symbol's own recorded earnings dates
+    # come from the store best-effort (absent store = fewer caveats, said).
+    upcoming = with_fomc(None)
+    if ctx.db is not None:
+        try:
+            from data.earnings_store import stored_events
+
+            # event_date is an ISO string column — string compare IS date
+            # compare for YYYY-MM-DD (the pyrefly gate caught a .isoformat()
+            # call here that would have gone silently dead in the degrade)
+            today_iso = market_today().isoformat()
+            future = [str(e.event_date)
+                      for e in stored_events(ctx.db, p.symbol)
+                      if str(e.event_date) >= today_iso]
+            if future:
+                upcoming[f"{p.symbol.upper()} earnings"] = future
+        except Exception:  # noqa: BLE001 — caveats degrade, bands never do
+            pass
+
     read = short_horizon_read(p.symbol,
                               [b.close for b in bars.bars],
-                              [b.date for b in bars.bars])
+                              [b.date for b in bars.bars],
+                              upcoming=upcoming)
     out = asdict(read)
     out["asof"] = bars.asof.isoformat()
     out["source"] = bars.source
