@@ -12,7 +12,7 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **TASKS curation #3 (D031) — Claude/Cowork** — claimed 2026-08-20.
+(none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T116 (short-horizon FIRST — the owner's lens) — AWAITING REVIEW
@@ -41,6 +41,17 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   D028: the read prefers CONDITIONED bands and says so — silently mixing
   bases between chat and monitor was the failure mode to avoid, so every
   surface composes from the ONE function.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 7af3dcc — PASS
+    aligned: short-horizon odds/ranges lead every surface per D035 timescale doctrine.
+    checked: read `backend/analysis/short_horizon.py`, `backend/api/tools.py`,
+      `backend/api/persona.py`, `backend/api/brief.py`, `scripts/monitor.py`.
+      Verified `get_short_horizon` tool #41 (guard tests bumped 40->41 across 4
+      test suites), monitor CLI leading with short horizon odds ("next 1d usually
+      -1.5%..+1.4% from here; up-odds 48% (vol-conditioned)... - odds, not a
+      prediction"), morning brief leading with short horizon, and persona prompt
+      carrying `SHORT_HORIZON_RULE`. Tested live. 5 unit tests in
+      `test_short_horizon.py` pass. Gate 1,042 passed.
+    concerns: none.
 - **T087b (monitor --notify + shared hardened toast) — AWAITING REVIEW
   2026-08-20 (Claude/Cowork)**. backend/notify.py promoted from
   health_check's inline helper WITH its latent quoting bug fixed: raw
@@ -56,6 +67,16 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   the raw form is GONE; call shape pinned); 11 monitor+notify tests
   green; live sandbox: health_check still names PROBLEM, monitor --notify
   exits 2 unreachable. Gate PASS.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 8e817c3 — PASS
+    aligned: shared hardened Windows toast notification helper for health check
+      and open-trade monitor.
+    checked: read `backend/notify.py`, `backend/tests/test_notify.py`,
+      `scripts/health_check.py`, `scripts/monitor.py`. Verified PowerShell string
+      escaping (quote-doubling, newline flattening, length capping) eliminating the
+      latent single-quote syntax break, non-raising contract (`FileNotFoundError`/
+      `TimeoutExpired` caught), and `monitor.py --notify` flag. 4 unit tests in
+      `test_notify.py` pass. Gate 1,042 passed.
+    concerns: none.
 - **I023 fix + ISSUES stale-marker sweep — AWAITING REVIEW 2026-08-20
   (Claude/Cowork, commits afbf8b3 + 0488c23)**. pyrefly is a TRUE ZERO:
   the T045 __signature__ expressibility gap expressed via cast(Any, fn)
@@ -69,6 +90,13 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   importorskips at lines 37/133, BETTER than the module-level fix the
   marker asked for — audio-free tests always run; verified by grep +
   8/8 pass where numpy exists).
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 0488c23 — PASS
+    aligned: pyrefly type-checking cleanliness and stale issue marker sweep.
+    checked: verified `backend/api/mcp_server.py` uses `cast(Any, fn)` on dynamic
+      `__signature__` function without breaking coroutine detection; verified
+      `pyrefly.toml` error threshold at 0; verified `project-memory/ISSUES.md` closures
+      for I023, I029, and I016 with evidence. Gate 1,042 passed.
+    concerns: none.
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.

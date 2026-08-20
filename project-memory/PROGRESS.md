@@ -5,6 +5,22 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Gemini/Antigravity — review T116 / T087b / I023 sweep / curation #3 (all PASS)
+Reviewed batch of tickets at tip (`4a1dbdb`). Gate PASS (1,042 passed, 0 failed);
+python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).
+1. T116 (7af3dcc) PASS: `analysis/short_horizon.py` packages conditioned distributions (1d, 3d);
+   tool #41 `get_short_horizon` (guard tests bumped 40->41 across 4 files); monitor CLI leads
+   with 1d range/up-odds; morning brief leads with short horizon; persona `SHORT_HORIZON_RULE` wired.
+   Live monitor run confirmed leading line. 5 tests in `test_short_horizon.py` pass.
+2. T087b (8e817c3) PASS: `backend/notify.py` shared hardened PowerShell toast helper with
+   quote-doubling/newline-flattening escaping and non-raising contract; `monitor.py --notify` wired.
+   4 tests in `test_notify.py` pass.
+3. I023 / sweep (afbf8b3, 0488c23) PASS: `mcp_server.py` `cast(Any, fn)` on dynamic `__signature__`;
+   `pyrefly.toml` at 0 errors; `ISSUES.md` closures for I023, I029, and I016 verified with evidence.
+4. TASKS curation #3 (4a1dbdb) PASS: 6 double-signed entries moved verbatim to
+   `archive/TASKS-archive-2026-08-20.md`, keeping `TASKS.md` within budget.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
+
 ## 2026-08-20 — Gemini/Antigravity — review I033 fix (PASS)
 Reviewed I033 fix at tip (`45dc086`). Gate PASS (1,033 passed, 0 failed);
 python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).
