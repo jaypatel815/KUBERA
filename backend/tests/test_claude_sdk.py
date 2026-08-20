@@ -140,7 +140,7 @@ def test_complete_locks_down_and_parses(monkeypatch):
     assert opts["max_turns"] == 8
     assert "Bash" in opts["disallowed_tools"]
     assert all(a.startswith("mcp__kubera__") for a in opts["allowed_tools"])
-    assert len(opts["allowed_tools"]) == 43  # every registry tool bridged, nothing else
+    assert len(opts["allowed_tools"]) == 44  # every registry tool bridged, nothing else
     assert reply.text == "Grounded answer."
     assert reply.tool_calls == []  # SDK executes internally; our loop never re-runs
     assert reply.input_tokens == 100 and reply.output_tokens == 40
