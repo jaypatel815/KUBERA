@@ -184,3 +184,91 @@ def test_consume_records_once_and_refuses_twice(db):  # noqa: F811
     assert row.state == "consumed" and "FAIL" in (row.result_summary or "")
     with pytest.raises(RunnerError, match="consumption refused"):
         consume_with_result(db, defn, report)  # the one shot is spent
+
+
+# --- T122c: the payload extension (ohlcv + config across the boundary) -------
+
+
+def test_call_model_delivers_ohlcv_and_config_to_the_child():
+    echo = """
+def forecast(payload):
+    o = payload["ohlcv"]
+    cfg = payload["config"]
+    # encode what the child SAW into the returned floats (bounded fields)
+    return {"p05_frac": -abs(float(o["high"][0]) / 1e6),
+            "p50_frac": 0.0,
+            "p95_frac": float(len(cfg)) / 100.0,
+            "up_odds": 1.0 if cfg.get("kronos_repo") == "/tmp/kr" else 0.0}
+"""
+    out = call_model(
+        echo, "forecast", "SPY", [100.0], ["2026-08-20"], "2026-08-24",
+        timeout_s=30.0,
+        ohlcv={"open": [99.8], "high": [100.5], "low": [99.4],
+               "close": [100.0], "volume": [1e6]},
+        config={"kronos_repo": "/tmp/kr"})
+    assert out["up_odds"] == 1.0          # config crossed the boundary
+    assert out["p05_frac"] == pytest.approx(-100.5 / 1e6)  # ohlcv did too
+    assert out["p95_frac"] == pytest.approx(0.01)
+
+
+def test_call_model_refuses_misaligned_ohlcv():
+    with pytest.raises(RunnerError, match="misaligned"):
+        call_model(GOOD_MODEL, "forecast", "SPY", [100.0, 101.0],
+                   ["2026-08-19", "2026-08-20"], "2026-08-24",
+                   ohlcv={"open": [99.0]})  # 1 vs 2 dates
+
+
+def test_committed_adapter_is_readable_and_carries_no_machine_paths():
+    # the T122b objection made reviewability the control: pin size and
+    # cleanliness of the committed adapter + shape check
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[2] / "scripts"
+    for name in ("kronos_adapter.py", "kronos_shape_check.py"):
+        text = (root / name).read_text(encoding="utf-8")
+        assert "C:\\Users" not in text and "/home/" not in text
+        assert len(text.splitlines()) < 140, f"{name} outgrew reviewability"
+    adapter = (root / "kronos_adapter.py").read_text(encoding="utf-8")
+    # the distribution is drawn, never averaged (sample_count stays 1)
+    assert "sample_count=1" in adapter and "N_PATHS" in adapter
+    assert "config" in adapter and "kronos_repo" in adapter
+
+
+# --- T133: campaign status — counts and dates only, never outcomes -----------
+
+
+def test_cli_status_shows_counts_never_outcomes(tmp_path, capsys):
+    import importlib.util
+    from pathlib import Path as _P
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from data.models import Base
+
+    dbfile = tmp_path / "kubera.sqlite3"
+    engine = create_engine(f"sqlite:///{dbfile.as_posix()}")
+    Base.metadata.create_all(engine)
+    with sessionmaker(bind=engine)() as s:
+        freeze_holdout(s, "kronos-v1-fwd", ["SPY", "QQQ"],
+                       "2026-08-24", "2026-10-02")
+        from research.custody import open_budget, record_attempt
+        open_budget(s, "kronos-v1", max_attempts=3)
+        record_attempt(s, "kronos-v1", outcome="started")
+        log_forecast(s, "kronos-v1", "SPY", "2026-08-24", 100.0, DIST)
+        log_forecast(s, "kronos-v1", "QQQ", "2026-08-24", 200.0, DIST)
+        log_forecast(s, "kronos-v1", "SPY", "2026-08-25", 101.0, DIST)
+    engine.dispose()
+
+    script = _P(__file__).resolve().parents[2] / "scripts" / "kronos_run.py"
+    spec = importlib.util.spec_from_file_location("kronos_run_t133", script)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert mod.cmd_status(dbfile) == 0
+    out = capsys.readouterr().out
+    assert "1/3 attempts used" in out
+    assert "3 logged across 2 session(s), latest 2026-08-25" in out
+    assert "SPY: 2" in out and "QQQ: 1" in out
+    assert "BY DESIGN" in out
+    # the anti-peek pin: no price, return, or coverage figure appears
+    for banned in ("coverage", "%", "101", "200.0"):
+        assert banned not in out

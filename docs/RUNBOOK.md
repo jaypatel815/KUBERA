@@ -124,9 +124,13 @@ FIX:
 
 The kronos-v1 campaign (T122b) runs through its own gated CLI, in order:
 
+    py scripts\kronos_shape_check.py --python <model-venv\python.exe> --model-config kronos_repo=<path>
+                                            # ONCE before start: adapter answers? weights present?
     py scripts\kronos_run.py start          # gate must be OPEN; spends 1 of 3 attempts
-    py scripts\kronos_run.py forecast --model-file <adapter.py> --python <model-venv\python.exe>
+    py scripts\kronos_run.py forecast --model-file scripts\kronos_adapter.py
+        --python <model-venv\python.exe> --model-config kronos_repo=<path>
                                             # each session in the window, AS MADE
+    py scripts\kronos_run.py status         # counts and dates only — no outcomes mid-window
     py scripts\kronos_run.py score          # dry read any time AFTER the window
     py scripts\kronos_run.py score --consume  # ONCE, at window end — the verdict is forever
 

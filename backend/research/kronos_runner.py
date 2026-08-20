@@ -84,10 +84,15 @@ def load_definition(session: Session, name: str) -> HoldoutDefinition:
 def call_model(model_source: str, func_name: str, symbol: str,
                closes: list[float], dates: list[str], forecast_date: str,
                *, python: str | None = None,
-               timeout_s: float = 120.0) -> dict:
+               timeout_s: float = 120.0,
+               ohlcv: dict[str, list[float]] | None = None,
+               config: dict[str, str] | None = None) -> dict:
     """One model call through the T110b boundary. Refuses, by name, any
     payload that would leak the forecast target: every supplied date must
-    be STRICTLY BEFORE forecast_date."""
+    be STRICTLY BEFORE forecast_date. `ohlcv` carries the full bars the
+    real Kronos needs (documented API: OHLCV DataFrame); `config` carries
+    owner-machine strings like the Kronos repo path — passed per-call so
+    no committed file ever holds a machine-local path."""
     if len(closes) != len(dates):
         raise RunnerError("closes and dates must align")
     if not closes:
@@ -97,11 +102,19 @@ def call_model(model_source: str, func_name: str, symbol: str,
             f"history for {symbol} reaches {max(dates)} but the forecast "
             f"target is {forecast_date} — the model may only see strictly "
             "earlier sessions (paper-forward discipline)")
+    if ohlcv is not None:
+        bad = [k for k, v in ohlcv.items() if len(v) != len(dates)]
+        if bad:
+            raise RunnerError(
+                f"ohlcv series {bad} misaligned with dates for {symbol} — "
+                "a ragged payload silently shifts the model's view")
     res: JsonCallResult = run_isolated_json(
         model_source, func_name,
         {"symbol": symbol, "closes": [float(c) for c in closes],
          "dates": [str(d)[:10] for d in dates],
-         "forecast_date": forecast_date},
+         "forecast_date": forecast_date,
+         "ohlcv": ohlcv or {},
+         "config": config or {}},
         python=python, timeout_s=timeout_s)
     if res.error is not None:
         raise RunnerError(f"model call failed for {symbol}: {res.error}")
