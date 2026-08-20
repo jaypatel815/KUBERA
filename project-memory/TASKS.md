@@ -12,206 +12,44 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T121b (Finnhub news as second labeled source) - Claude/Cowork** - claimed 2026-08-20.
-- **T119 (thesis view composition) - Claude/Cowork** - claimed 2026-08-20.
-- **T120 (plugin packaging) - Claude/Cowork** - claimed 2026-08-20.
-- **T114b (docs delta: README for the new surface) - Claude/Cowork** - claimed 2026-08-20.
-- **TASKS curation #4 (D031) - Claude/Cowork** - claimed 2026-08-20.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
-- **T121 build (FinnhubClient + beat/miss enrichment) + I034 leak fix -
-  AWAITING REVIEW 2026-08-20 (Claude/Cowork)**. The owner's probe table
-  answered (quote OK, company-news 244/31d, surprises 4 quarters,
-  news-sentiment PAYWALLED) so the client exists: data/finnhub.py speaks
-  EXACTLY the probed endpoints (earnings_surprises + company_news;
-  sentiment deliberately absent until a paid tier measures otherwise);
-  named 401/403-PAYWALLED/429-no-retry refusals; fail-closed rows
-  (unparseable period -> counted, never guessed); news newest-first,
-  capped at 50 with the pre-cap count visible. THE PRIZE WIRED:
-  earnings_store.enrich_from_surprises folds actual-vs-estimate into the
-  store under an UNAMBIGUOUS-MATCH rule - Finnhub rows carry fiscal
-  PERIOD END, not report dates, so a surprise enriches only when EXACTLY
-  ONE stored report date falls within (period, period+120d]; zero ->
-  unmatched counted, two+ -> ambiguous SKIPPED (guessing which report a
-  quarter belongs to is how beat/miss splits go silently wrong);
-  enrich-only-empty (never overwrites). get_event_base_rates gains the
-  finnhub best-effort block + finnhub_note; ToolContext.finnhub typed
-  properly (the true-zero canary CAUGHT my loose `object` typing before
-  commit - fixed to FinnhubClient). Contexts wired: chat + MCP builders;
-  MCP close list +finnhub.
-  I034 FOUND WHILE WIRING: the chat endpoint NEVER CLOSED its per-turn
-  fred/fmp/edgar clients (leak since T083b, T106-class on a new surface)
-  - fixed with try/finally covering all HTTPException paths; guard test
-  pins finnhub in the close path.
-  EVIDENCE (D027): test_finnhub.py 8 tests - probe-faithful parse
-  (unparsed counted, oldest-first, None kept not guessed), all four named
-  refusals, news cap+count, enrichment: unambiguous enriches empty-only
-  (hand-set 1.57/1.43 land on 2026-07-30), two-candidate ambiguity and
-  zero-candidate unmatched counted with store UNTOUCHED, pre-existing
-  9.99 never overwritten, close-list guard. 1054 passed; pyrefly 0
-  (restored after the catch); gate PASS.
-  SEEDED: T121b below (company-news into get_news as a second labeled
-  source - the probe says 244 articles/31d exist; separate ticket, news
-  works today).
-  REVIEWED 2026-08-20 by Gemini/Antigravity AT d6a8ff1 — PASS
-    aligned: T121 FinnhubClient build + beat/miss earnings store enrichment, plus I034 chat socket leak fix.
-    checked:
-      - Read `backend/data/finnhub.py`: verified `FinnhubClient` implements probed endpoints (`earnings_surprises`, `company_news`), named refusals (401, 403, 429, payload shape), and fail-closed parsing.
-      - Read `backend/data/earnings_store.py`: verified `enrich_from_surprises` adheres to unambiguous-match rule (exact 1 report in (period, period+120d]), counting and skipping ambiguity or unmatched, with enrich-only-empty semantics (never overwriting existing data).
-      - Read `backend/api/main.py` & `backend/api/mcp_server.py`: verified per-turn optional client lifecycle in `try / finally` closing `fred`, `fmp`, `edgar`, `finnhub` across all exit/exception paths (I034 fix).
-      - Read `backend/tests/test_finnhub.py`: 8 tests covering parsing, refusals, enrichment rules, and context closing guard pass.
-      - All 1,057 tests pass.
-    concerns: none.
-- **Repo review #2 + T121 probe (FinRobot/AI-Trader/Kronos, D037) -
-  AWAITING REVIEW 2026-08-20 (Claude/Cowork)**. Disposition doc:
-  docs/research/finrobot-aitrader-kronos-review-2026-08-20.md (read via
-  subagent extraction; licenses honored - AI-Trader code untouched, its
-  LICENSE 404s). HEADLINE: AI-Trader's live benchmark results recorded as
-  EVIDENCE for KUBERA's architecture (six frontier LLMs as autonomous
-  traders: 4/6 lost to QQQ in US, 6/6 lost to SSE-50, 6/6 lost money in
-  crypto - the LLM-decides design measured and found wanting). BUILT:
-  scripts/finnhub_check.py (T121) - 5-endpoint free-tier probe (quote,
-  company-news, news-sentiment, earnings surprises, stock/metric), named
-  BAD KEY/PAYWALLED/RATE LIMITED/EMPTY-SHAPE verdicts, polite pacing, key
-  never echoed, exit 2 without key (demonstrated), UNREACHABLE named in
-  sandbox (demonstrated); .env.example gains the optional key line. The
-  earnings-surprises line is the prize: T083 base rates currently mark
-  beat/miss "unknown" - actual-vs-estimate history would fix that.
-  EVIDENCE (D027): probe script is owner-run instrumentation (fmp_check/
-  edgar_check precedent - no unit tests, no pure parsers); ruff clean;
-  pyrefly 0; live sandbox degradations shown; gate PASS at close.
-  D028: no FinnhubClient exists and none will unless the owner's paste
-  says the tier answers (D030). OWNER ACTION: free key -> .env ->
-  `python scripts\finnhub_check.py` -> paste the table.
-  REVIEWED 2026-08-20 by Gemini/Antigravity AT b34b410 — PASS
-    aligned: second repo review (FinRobot/AI-Trader/Kronos, D037) and T121 Finnhub free-tier probe.
-    checked:
-      - Read `docs/research/finrobot-aitrader-kronos-review-2026-08-20.md`: AI-Trader benchmark results properly contextualized as evidence for code-decides doctrine; Kronos seeded (T122) with data contamination rule; yfinance/fine-tuning/debate agents properly rejected.
-      - Read `scripts/finnhub_check.py`: verified 5 probe endpoints, polite pacing, key loading without echo/logging, and clear degradation handling.
-      - Verified owner's live run output on Windows host: confirmed free tier answers quote, company-news, earnings surprises (4 quarters actual-vs-estimate), and basic metrics; news-sentiment correctly flagged 403 PAYWALLED.
-      - All 1,049 tests pass.
-    concerns: none.
-- **T117 + T118 (FSI-review adoptions, one SHA) - AWAITING REVIEW
-  2026-08-20 (Claude/Cowork)**. From the owner-requested review of the
-  Anthropic FSI repos (disposition: docs/research/
-  anthropic-fsi-plugins-review-2026-08-20.md, committed ab1b055; D036).
-  T117 - TLH SCAN, measurement only: analysis/tlh.py pure scan over FIFO
-  open lots (attribution open_lots now carry ts + mult - additive; the
-  hand-walked pin extended, not weakened): unrealized-loss candidates
-  sorted largest-first, ST/LT at the 365-day line, wash-sale 30-day
-  LOOKBACK flagged from the owner's OWN recorded buys with the buy date
-  named, first-safe-repurchase date (+31d), gains counted-and-skipped,
-  unpriced options lots LISTED never guessed. Tool #42 get_tlh_scan
-  (refuses without recorded fills). DELIBERATELY absent: replacement
-  suggestions (D017), tax-rate math (loss reported, never the refund).
-  Limitations verbatim in payload: NOT TAX ADVICE; single-account view;
-  DRIPs invisible.
-  T118 - EARNINGS PREVIEW composition: tool #43 get_earnings_preview =
-  next report date+timing (FMP forward, absence named), the symbol's OWN
-  base rates (reuses get_event_base_rates through the registry; degrades
-  to available:false with why), 1-day REALIZED-move distribution (labeled
-  not-options-implied), 5-day runup, position exposure best-effort. No
-  bull/base/bear price targets BY DESIGN (D035) - the distribution is the
-  scenario framework; consensus estimates named as paid-tier-absent.
-  Guards 41->43 (x4 files); MCP read-only +2.
-  EVIDENCE (D027): test_tlh.py 4 hand-computed tests (-350 total across
-  ST/LT, wash flag names the 2026-08-05 buy, 50-day-old buy stays clean,
-  100x option lot unpriced-and-said, no-clock term=unknown);
-  test_fsi_tools.py 3 end-to-end (real db fills -> -104.0 exact, both AAA
-  lots wash-flagged, gains skipped; no-fills refusal; preview composes
-  with EVERY absence named on fakes). 1046 passed; pyrefly 0; gate PASS.
-  D028: attribution's exact-dict pin broke on the additive fields - the
-  pin was UPDATED to the grown contract (ts/mult asserted), not deleted.
-  REVIEWED 2026-08-20 by Gemini/Antigravity AT 998bffc — PASS
-    aligned: Anthropic FSI review adoption (D036) — TLH scan (T117) and earnings preview composition (T118).
-    checked:
-      - Read `docs/research/anthropic-fsi-plugins-review-2026-08-20.md` (committed at ab1b055): methodology-only adoption rationale is sound; rejected price targets (D035) and replacement buy recommendations (D017) properly respected.
-      - Read `backend/analysis/tlh.py` & `backend/tests/test_tlh.py`: verified FIFO open lot scan, ST/LT 365d split, 30d wash-sale lookback against recorded buys, forward safe-rebuy date (+31d), unpriced options lot handling, and explicit "NOT TAX ADVICE" disclaimer.
-      - Read `backend/api/tools.py` & `backend/tests/test_fsi_tools.py`: verified `get_tlh_scan` (tool #42) and `get_earnings_preview` (tool #43) with graceful degradation on missing FMP/observed events. Tool count guards bumped 41->43 across 4 test suites.
-      - All 1,049 tests pass.
-    concerns: none.
-- **T116 (short-horizon FIRST — the owner's lens) — AWAITING REVIEW
-  2026-08-20 (Claude/Cowork)**. D035 delivered as surfaces, not a memo.
-  analysis/short_horizon.py (pure): packages T077's distributions into the
-  LEADING read — per horizon (1d, 3d): p05..p95 in % AND price, up-odds,
-  typical |move|, sample count, and the BASIS named (vol-conditioned
-  tercile when history qualifies, unconditional otherwise); refusals per
-  horizon by name; one_line() renders the monitor's lead line ending
-  "odds, not a prediction". Surfaces: tool #41 get_short_horizon (the
-  description tells the narrator to LEAD with range+odds and refuse point
-  calls with one honest sentence); monitor prints the days line FIRST
-  (before structure — which now carries its lens from I033); morning
-  brief _symbol_read leads with short_horizon (dict order = payload order
-  = narration order); persona gains SHORT_HORIZON_RULE wired into
-  build_system_prompt (which-way questions → get_short_horizon; every
-  regime word carries its timeframe out loud; session state named as the
-  minutes lens). MCP read-only list +1; guards 40→41 (×4 files).
-  EVIDENCE (D027): test_short_horizon.py 5 tests — packaging EXACTLY
-  equals the engine's numbers for the same basis (field-by-field vs a
-  direct expected_move call); thin/empty refusals named per horizon;
-  one_line leads with the shortest available horizon and pins the
-  odds-not-a-prediction wording; tool integration on a fake market;
-  persona rule pinned AND verified present in the BUILT prompt.
-  1039 passed; pyrefly 0 (the new true-zero canary); gate PASS.
-  D028: the read prefers CONDITIONED bands and says so — silently mixing
-  bases between chat and monitor was the failure mode to avoid, so every
-  surface composes from the ONE function.
-  REVIEWED 2026-08-20 by Gemini/Antigravity AT 7af3dcc — PASS
-    aligned: short-horizon odds/ranges lead every surface per D035 timescale doctrine.
-    checked: read `backend/analysis/short_horizon.py`, `backend/api/tools.py`,
-      `backend/api/persona.py`, `backend/api/brief.py`, `scripts/monitor.py`.
-      Verified `get_short_horizon` tool #41 (guard tests bumped 40->41 across 4
-      test suites), monitor CLI leading with short horizon odds ("next 1d usually
-      -1.5%..+1.4% from here; up-odds 48% (vol-conditioned)... - odds, not a
-      prediction"), morning brief leading with short horizon, and persona prompt
-      carrying `SHORT_HORIZON_RULE`. Tested live. 5 unit tests in
-      `test_short_horizon.py` pass. Gate 1,042 passed.
-    concerns: none.
-- **T087b (monitor --notify + shared hardened toast) — AWAITING REVIEW
-  2026-08-20 (Claude/Cowork)**. backend/notify.py promoted from
-  health_check's inline helper WITH its latent quoting bug fixed: raw
-  text into single-quoted PowerShell breaks on apostrophes — health_check's
-  fixed messages never tripped it, the monitor's alert details ("today's
-  tape", quoted plan reasons) absolutely would have. ps_script() is pure
-  (escaping pinned by test: quote-doubling, newline flattening, length
-  caps); notify_windows never raises by contract (FileNotFoundError and
-  TimeoutExpired both swallowed after bounded wait). Both scripts import
-  the ONE implementation; monitor gains --notify (first alert rides the
-  toast, exit codes carry the truth).
-  EVIDENCE (D027): test_notify.py 4 tests (the apostrophe case asserts
-  the raw form is GONE; call shape pinned); 11 monitor+notify tests
-  green; live sandbox: health_check still names PROBLEM, monitor --notify
-  exits 2 unreachable. Gate PASS.
-  REVIEWED 2026-08-20 by Gemini/Antigravity AT 8e817c3 — PASS
-    aligned: shared hardened Windows toast notification helper for health check
-      and open-trade monitor.
-    checked: read `backend/notify.py`, `backend/tests/test_notify.py`,
-      `scripts/health_check.py`, `scripts/monitor.py`. Verified PowerShell string
-      escaping (quote-doubling, newline flattening, length capping) eliminating the
-      latent single-quote syntax break, non-raising contract (`FileNotFoundError`/
-      `TimeoutExpired` caught), and `monitor.py --notify` flag. 4 unit tests in
-      `test_notify.py` pass. Gate 1,042 passed.
-    concerns: none.
-- **I023 fix + ISSUES stale-marker sweep — AWAITING REVIEW 2026-08-20
-  (Claude/Cowork, commits afbf8b3 + 0488c23)**. pyrefly is a TRUE ZERO:
-  the T045 __signature__ expressibility gap expressed via cast(Any, fn)
-  (runtime byte-for-byte identical; callable-class alternative REJECTED
-  in-line — FastMCP's iscoroutinefunction doesn't see through instances
-  and would have silently broken tool execution); pyrefly.toml records
-  the history; 13 MCP tests green; the canary convention is now EXACTLY
-  ZERO. Sweep: two healed REOPENED markers closed WITH evidence — I029's
-  inner "REOPENED until the re-run ticks clean" (it ticked clean 08-17,
-  triple-verified by T016b 39/39) and I016's numpy guard (per-test
-  importorskips at lines 37/133, BETTER than the module-level fix the
-  marker asked for — audio-free tests always run; verified by grep +
-  8/8 pass where numpy exists).
-  REVIEWED 2026-08-20 by Gemini/Antigravity AT 0488c23 — PASS
-    aligned: pyrefly type-checking cleanliness and stale issue marker sweep.
-    checked: verified `backend/api/mcp_server.py` uses `cast(Any, fn)` on dynamic
-      `__signature__` function without breaking coroutine detection; verified
-      `pyrefly.toml` error threshold at 0; verified `project-memory/ISSUES.md` closures
-      for I023, I029, and I016 with evidence. Gate 1,042 passed.
-    concerns: none.
+- **Batch #4: T121b + T119 + T120 + T114b + curation #4 - AWAITING REVIEW
+  2026-08-20 (Claude/Cowork; two build SHAs + close SHA)**.
+  T121b - FINNHUB NEWS as a second labeled source in get_news: per-symbol
+  only (no market-wide feed on the probed tier - said in the note), merged
+  newest-first with a cross-feed timestamp NORMALIZATION (str(datetime)
+  sorts by its space separator against ISO 'T' - normalized to isoformat
+  before sorting), deduped by URL against alpaca items, every item carries
+  its feed label, bounded 5-symbol fan-out, per-symbol degradations named.
+  T119 - THESIS VIEW (tool #44): the owner's record COMPOSED, never
+  invented - watchlist note quoted verbatim, latest 5 journal decisions
+  with their stated theses and stops-then, the CURRENT exit plan's
+  invalidation (same T056 composition every surface uses; regime carries
+  its I033 lens), upcoming catalysts (FMP earnings best-effort + FOMC
+  table which needs no key), position exposure; both absences NAMED (not
+  on watchlist -> points at update_watchlist; no journal entries).
+  Guards 43->44 (x4); MCP read-only +1.
+  T120 - PLUGIN PACKAGING (claude-plugins-official conventions, D036
+  seed): .claude-plugin/plugin.json + marketplace.json (root plugin,
+  source "."), commands/kubera.md (the resume protocol as a slash
+  command) + commands/kubera-connect.md (MCP wiring walkthrough - the
+  machine-local config is GENERATED via install_mcp_config.py, never
+  shipped; read-only surface + I021 exclusion stated).
+  test_plugin_manifest.py pins: name-slug immutability, marketplace
+  shape, frontmatter present, NO machine paths in shipped files.
+  T114b - README delta: earnings intelligence now two free lines
+  (EDGAR + FINNHUB) with beat/miss wording, TLH/preview/thesis chat
+  examples, plugin-install section.
+  CURATION #4 - 6 signed entries moved verbatim (TASKS 609->420 lines).
+  EVIDENCE (D027): test_thesis_and_news.py 4 tests (owner's words
+  verbatim incl. 95.0 stop-then; absences named; URL dedupe keeps the
+  alpaca copy; feeds labeled; not-configured and market-wide notes) +
+  test_plugin_manifest.py 3. 1061 passed; pyrefly 0; ruff clean;
+  gate PASS at close.
+  D028: T121b's Finnhub fan-out is capped at 5 symbols per call - a
+  portfolio fan-out hitting the 60/min ceiling would turn a news question
+  into a rate-limit incident; the cap is the polite answer.
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.

@@ -16,6 +16,23 @@ python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).
   `fmp`, `edgar`, `finnhub`) across all exit/exception paths; `test_close_list_includes_finnhub_t106_class` prevents leak regression.
 Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
 
+## 2026-08-20 — Claude/Cowork — batch of five #4: T121b, T119, T120, T114b, curation #4
+Five closed. T121b — Finnhub news merged into get_news as a second LABELED
+source: per-symbol only (tier has no market-wide feed — said), URL-deduped
+against alpaca, newest-first after normalizing the cross-feed timestamp
+forms (str(datetime)'s space separator would have sorted against ISO 'T'
+by punctuation, not time — caught in design), 5-symbol fan-out cap (60/min
+politeness). T119 — thesis view, tool #44: the owner's record COMPOSED
+never invented (watchlist note verbatim + journal theses + current
+invalidation with its I033 lens + catalysts + exposure; absences named).
+T120 — the repo is now an installable Claude plugin (.claude-plugin/
+manifest + marketplace + /kubera and /kubera-connect commands; machine
+paths never ship — pinned by test). T114b — README catches up (two free
+earnings lines, TLH/preview/thesis examples, plugin install). Curation #4
+— 6 signed entries archived; TASKS 609→420.
+VERIFIED: 1061 passed; pyrefly 0; ruff clean; gate PASS. Guards 43→44.
+NEXT: Gemini reviews the batch SHAs.
+
 ## 2026-08-20 — Claude/Cowork — T121 BUILD: FinnhubClient + beat/miss enrichment; I034 leak fix
 Owner's probe table answered (surprises: 4 quarters actual-vs-estimate;
 news 244/31d; sentiment paywalled) → built same session: data/finnhub.py
