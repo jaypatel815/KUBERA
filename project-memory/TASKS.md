@@ -12,6 +12,20 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
+- **Batch #6 (first at the new size - 9 tickets picked for INDEPENDENCE,
+  claimed 2026-08-20, Claude/Cowork):** T126 (batch protocol into the
+  contract: coupling-based sizing + manifest fields + verdict severities,
+  owner-approved after ChatGPT's proposal mapped ~1:1 onto our existing
+  system), hygiene #6 (stale seeds T121b/T119/T120/T116/T085b-note ->
+  [x] pointers; T062b remainder trimmed; I016 numpy-guard verify),
+  T127 (scripts/phase7_gate.py - D029 preconditions as CODE), T128
+  (docs/RUNBOOK.md - Phase 8 spec's incident runbook), T129 (health_check
+  gains the missing FEED-outage check - probe showed breaker+snapshot
+  already covered), T130 (scripts/secret_check.py - tracked-file secret
+  scan + .env.example<->settings parity; repo is PUBLIC), T116b
+  (event-aware days lens - probe showed short_horizon has zero event
+  conditioning), T087-Orb (monitor panel rendering /api/monitor), T132
+  (README delta for the new surface).
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **Batch #5: T125 + T124 + T087c + T123 + curation #5 - AWAITING REVIEW
