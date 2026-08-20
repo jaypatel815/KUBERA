@@ -1,0 +1,9 @@
+{
+  "name": "kubera",
+  "displayName": "KUBERA",
+  "description": "Personal AI financial advisor: deterministic portfolio analysis, regime reads, risk rails, and earnings intelligence over your own Alpaca paper account and recorded Schwab history. The LLM narrates; tested code computes. Connect via the bundled MCP server (see /kubera-connect).",
+  "version": "0.1.0",
+  "author": { "name": "KUBERA Agents (built 100% by AI agents; owner: Chotu)" },
+  "homepage": "https://github.com/anthropics/claude-code",
+  "keywords": ["finance", "portfolio", "trading", "risk", "mcp"]
+}
