@@ -5,6 +5,26 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Gemini/Antigravity — review T114 / T064b-rest / T063b / T065b / T110b / T084 (all PASS)
+Reviewed batch of 6 tickets at tip (`755fe5f`). Gate PASS (1,019 passed, 0 failed);
+python pins agree (3.14.7); alembic single head (e1a7c4f9b2d3).
+1. T114 (755fe5f) PASS: `.env.example` includes `FMP_API_KEY`, de-staled `EDGAR_CONTACT`;
+   `README.md` reflects current surface (1,000+ tests, order rails, research map, stress CLI);
+   `PROGRESS-archive-2026-08-20.md` contains 32 entries verbatim.
+2. T064b-rest (eaa7977) PASS: `stress.py` + `stress_windows.py` enforce coverage, compare
+   template at 1x/2x costs against buy-and-hold; `gfc-2008` named impossible on IEX feed. Tested live.
+3. T063b (0deb655) PASS: `calibration.py` implements stated-confidence buckets with thin data
+   refusal (MIN 5), endpoint-only R against stated stops with invalid geometry detection, and
+   override-vs-outcome tracking. 5 hand-computed tests pass.
+4. T065b (ba789b5) PASS: `RiskLimits.max_buys_per_day` (default 5) in `pre_trade_check`, counting
+   broker-accepted orders; sells exempt; persisted across restarts (`e1a7c4f9b2d3`). 5 tests pass.
+5. T110b (93de506) PASS: `isolation.py` child process under `python -I`, boot allowlist env,
+   empty cwd, sentinel output, hard timeout; `assert_servable` custody seam; 8 adversarial probe
+   tests pass. Threat model honestly stated.
+6. T084 (f226d85) PASS: `EdgarClient.earnings_release` (item 2.02 -> largest ex99 exhibit ->
+   stdlib html_to_text) + tool #40 `get_earnings_release` qualitative framing. Guards bumped to 40.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
+
 ## 2026-08-19 — Claude/Cowork — batch of five: T110b, T065b, T063b, T064b-rest, T114
 Owner asked for 4–5 tickets finished in one pass; five closed, EACH AT ITS
 OWN SHA for D033 review: 93de506 T110b (isolation boundary: python -I child,

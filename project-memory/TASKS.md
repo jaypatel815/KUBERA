@@ -29,6 +29,14 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   EVIDENCE (D027): docs ticket — the reviewer checks each claim against
   the code it describes (every named flag/script/variable exists and does
   what the sentence says). Gate PASS at batch close.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 755fe5f — PASS
+    aligned: owner documentation refresh and PROGRESS memory curation.
+    checked: verified `.env.example` includes `FMP_API_KEY` and updated `EDGAR_CONTACT`
+      comment; verified `README.md` updates (earnings intelligence, `stress_windows.py`,
+      `brief.py`, `risk_symbols.py`, 1000+ tests, `research/` in map); verified
+      `archive/PROGRESS-archive-2026-08-20.md` holds 32 archived entries verbatim.
+      Gate 1,019 passed.
+    concerns: none.
 
 - **T064b-rest (crisis-window stress runs — closes T064b's last buildable
   item) — AWAITING REVIEW 2026-08-19 (Claude/Cowork)**. backtest/stress.py
@@ -60,6 +68,16 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   fixture lengthened, guard unchanged. The remaining T064b leftovers stay
   parked BY DESIGN: promote-via-chat needs the deliberate-act confirmation
   design (CLI stays the promotion instrument).
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT eaa7977 — PASS
+    aligned: crisis-window stress runs (T064b/spec §8) — measurement-only
+      drawdown protection evaluation.
+    checked: read `backend/backtest/stress.py` and `scripts/stress_windows.py`.
+      Verified `slice_window` coverage enforcement (refuses truncated feeds)
+      and `stress_template` comparing template at 1x and 2x costs vs buy-and-hold.
+      Executed `python scripts/stress_windows.py momentum SPY` live — verified
+      per-window output (bear-2022 +8.43% drawdown saved; gfc-2008 named
+      impossible on IEX feed). 5 unit tests in `test_stress.py` pass. Gate 1,019 passed.
+    concerns: none.
 
 - **T063b (journal calibration v2) — AWAITING REVIEW 2026-08-19
   (Claude/Cowork)**. analysis/calibration.py (pure, deterministic): the
@@ -94,6 +112,15 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   the CODE ships now and refuses/labels thin data honestly; it becomes
   informative as the owner's journal ages, with zero rework. DIRECTION map
   made a public alias in data/journal (no drift, one source).
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 0deb655 — PASS
+    aligned: trade journal calibration v2 (T063b) — confidence curve, planned-vs-realized
+      payoff R, and override outcomes.
+    checked: read `backend/analysis/calibration.py`, `backend/api/brief.py`,
+      `backend/tests/test_calibration.py`. Verified stated confidence bucketing
+      with thin data refusal (MIN 5), endpoint-only R calculation against stated
+      stops with invalid geometry detection, and override vs outcome hit rate
+      tracking. All 5 tests pass with hand-computed arithmetic. Gate 1,019 passed.
+    concerns: none.
 
 - **T065b (order-frequency rail — the T065 remainder) — AWAITING REVIEW
   2026-08-19 (Claude/Cowork)**. The ENGINE-level daily new-buy cap behind
@@ -124,6 +151,16 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   limits (T061), per the shipped T065 design. (2) record_buy counts
   ACCEPTED orders, not approvals — the honest count is what reached the
   broker.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT ba789b5 — PASS
+    aligned: order-frequency rail (T065/T065b) — engine-level daily new-buy cap
+      persisted across restarts.
+    checked: read `backend/risk/engine.py`, `backend/data/models.py`,
+      `backend/backtest/paper_loop.py`, `backend/tests/test_buy_frequency.py`.
+      Verified `RiskLimits.max_buys_per_day` (default 5), `record_buy(day)`
+      counting broker-accepted orders, `pre_trade_check` refusal at cap with
+      sells exempt, and persistence in `RiskState.buys_today`/`buys_day` (alembic
+      migration `e1a7c4f9b2d3`). All 5 tests pass. Gate 1,019 passed.
+    concerns: none.
 
 - **T110b (isolation boundary + adversarial probe — the LAST Phase 7
   precondition) — AWAITING REVIEW 2026-08-19 (Claude/Cowork)**.
@@ -157,6 +194,15 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   D028: T110's 'GATED — build when Phase 7 opens' is read as T110a read
   it: Phase 7 CANNOT START without this; building it now means the phase
   is never blocked. Nothing imports research/ yet.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 93de506 — PASS
+    aligned: strategy isolation boundary and adversarial probe (D029/Phase 7 precondition).
+    checked: read `backend/research/isolation.py` and `backend/tests/test_isolation.py`.
+      Verified child process execution under `python -I` with scrubbed boot allowlist
+      env, empty temp cwd, stdin/sentinel IO, and hard timeout. Verified `assert_servable`
+      custody seam refusing holdout symbols. 8 tests pass demonstrating execution parity,
+      unreadable parent secrets, import blocking, and unreadable relative `.env`.
+      Gate 1,019 passed.
+    concerns: none. Threat model honestly bounded in docstring.
 
 - **T084 (earnings-release text as labeled context) — AWAITING REVIEW
   2026-08-19 (Claude/Cowork)**. Built the same day its gate was answered by
@@ -192,6 +238,14 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   grows), no 10-K/10-Q YoY textual change (explicitly Phase 7 per the
   ticket). (3) The client makes 3 sequential requests, no sleeps — same
   posture as earnings_history's 2; well under EDGAR's ~10/s ceiling.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT f226d85 — PASS
+    aligned: free SEC EDGAR earnings release text (ex99.1) as labeled qualitative context (tool #40).
+    checked: read `backend/data/edgar.py`, `backend/api/tools.py`, `backend/tests/test_earnings_release.py`.
+      Verified `EdgarClient.earnings_release` fetching newest item 2.02 8-K -> largest ex99
+      exhibit -> stdlib HTML-to-text. Verified fallback to primary 8-K doc and labeled
+      qualitative narrative framing. Tool count guards bumped 39 -> 40 across test files.
+      8 unit tests pass. Gate 1,019 passed.
+    concerns: none.
 - **T074a (realtime-voice framework research) — AWAITING REVIEW 2026-08-19
   (Claude/Cowork)**. docs/research/realtime-voice-2026-08-19.md — August-
   2026 landscape for T074, sourced (14 links in the doc). Findings:
