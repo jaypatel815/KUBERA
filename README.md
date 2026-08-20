@@ -131,6 +131,16 @@ Then open `/docs`, expand `POST /api/chat`, "Try it out", and ask *"Should I buy
 AAPL?"* — KUBERA calls its tools and answers with sourced, dated numbers. Reuse the
 returned `conversation_id` to continue the thread.
 
+**Earnings intelligence rides one free line in `.env`** (`EDGAR_CONTACT=you@example.com` —
+the SEC requires a contact and blocks anonymous clients): ask *"should I hold through
+NVDA earnings?"* and KUBERA answers with that symbol's OWN base rates — how past
+earnings actually resolved, timed by real SEC filing clocks, never a prediction. Ask
+*"what did Apple's earnings release say?"* and it reads the press release (exhibit 99.1)
+straight from EDGAR — labeled context with filing dates, honestly scoped: the company's
+words, not the analyst call (that would need a paid tier, D034). The forward calendar
+comes from your free FMP key; the past accumulates in KUBERA's own store every time
+it looks.
+
 Backtest the strategy templates on real history (no server needed):
 
 ```
@@ -146,6 +156,11 @@ backtests the pair on real history and only a pass unlocks new buys (sells alway
 
 ```
 python scripts\promote.py regime_router SPY     # PASS/FAIL + per-segment returns
+python scripts\stress_windows.py momentum SPY   # how would it have behaved in the 2020
+                                                # crash and the 2022 grind? vs buy-and-hold,
+                                                # also at 2x costs; 2008 is named impossible
+                                                # on this feed (measurement only — changes
+                                                # nothing)
 python scripts\paper_trade.py SPY --strategy regime_router              # one cycle
 python scripts\paper_trade.py SPY --strategy regime_router --loop 3600  # hourly
 ```
@@ -245,13 +260,24 @@ before a turn is the ONLY way to send a confirmed request — saying "yes" never
 python scripts\backup_db.py                # timestamped DB backup, keeps newest 14
 python scripts\health_check.py --notify    # server up? breaker tripped? sync fresh?
                                            # exit 1 + Windows toast on problems
+python scripts\brief.py                    # morning brief WITHOUT the server (also
+python scripts\brief.py --type eod         # eod / weekly); saves to private/briefs/;
+                                           # Task Scheduler one-liners in the docstring
+python scripts\risk_symbols.py --list      # per-symbol buy switch: --disable TSLA blocks
+                                           # NEW BUYS only — sells are never blocked
 ```
+
+Two rails watch order flow itself: a per-symbol disable switch (above) and an
+**order-frequency rail** — at most 5 new buys per market day by default, counted in
+the risk engine and persisted, so neither a runaway loop nor a tilted afternoon can
+machine-gun orders. Sells are always allowed; the count resets with the next market
+day. Both show up in `/api/risk`'s payload.
 
 Every live quote now carries `age_seconds` and a `stale` flag (older than 15 min —
 normal outside market hours): KUBERA is told to never present stale data as live.
 
-Run the full test suite any time: `python scripts\verify.py` (280+ tests; a few live ones
-run only when keys + internet are available). If local Python ever breaks:
+Run the full test suite any time: `python scripts\verify.py` (1,000+ tests; a few live
+ones run only when keys + internet are available). If local Python ever breaks:
 `powershell -ExecutionPolicy Bypass -File scripts\repair_python.ps1`.
 
 ## Repo map
@@ -259,7 +285,9 @@ run only when keys + internet are available). If local Python ever breaks:
 - `/AGENTS.md` — the contract every AI agent follows. Read first, always.
 - `/project-memory/` — shared memory: spec, progress, tasks, decisions, issues.
 - `/backend/` — FastAPI app (`api`), deterministic engine (`analysis`, `risk`, `backtest`),
-  data layer (`data`), scheduled research process (`research_agent`), tests.
+  data layer (`data`), Phase 7 preconditions (`research`: holdout custody, experiment
+  budgets, the isolation boundary — built BEFORE the research agent exists), scheduled
+  research process (`research_agent`), tests.
 - `/apps/` — PWA client (Phase 5).
 - `/scripts/verify.py` — the one gate: green before any session ends. CI runs the same script.
 

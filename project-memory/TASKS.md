@@ -12,13 +12,24 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T110b (isolation boundary + adversarial probe) — Claude/Cowork** — claimed 2026-08-19.
-- **T065b (order-frequency rail — T065 remainder) — Claude/Cowork** — claimed 2026-08-19.
-- **T063b (journal calibration v2) — Claude/Cowork** — claimed 2026-08-19.
-- **T064b-rest (crisis-window stress runs) — Claude/Cowork** — claimed 2026-08-19.
-- **T114 (owner-docs refresh: README + .env.example) — Claude/Cowork** — claimed 2026-08-19.
+(none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T114 (owner-docs refresh) — AWAITING REVIEW 2026-08-19 (Claude/Cowork)**.
+  The shipped surface caught up with the docs. .env.example: FMP_API_KEY
+  added (it was MISSING — a fresh checkout wouldn't know the variable name;
+  free-tier scope + D034 upgrade note included); EDGAR_CONTACT comment
+  de-staled ("a future EDGAR client" → what the one line actually unlocks:
+  filing-clock base rates + press-release text). README: earnings-
+  intelligence paragraph (base rates + get_earnings_release, honestly
+  scoped); stress_windows.py in the promotion block; brief.py +
+  risk_symbols.py in the autopilot block + a paragraph on the two order
+  rails (disable switch + frequency cap); test count 280+ → 1,000+; repo
+  map gains backend/research (Phase 7 preconditions built early).
+  EVIDENCE (D027): docs ticket — the reviewer checks each claim against
+  the code it describes (every named flag/script/variable exists and does
+  what the sentence says). Gate PASS at batch close.
+
 - **T064b-rest (crisis-window stress runs — closes T064b's last buildable
   item) — AWAITING REVIEW 2026-08-19 (Claude/Cowork)**. backtest/stress.py
   (logic) + scripts/stress_windows.py (thin owner CLI). Named windows:
