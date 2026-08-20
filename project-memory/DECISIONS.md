@@ -2,6 +2,36 @@
 
 Newest on top. Format per PROJECT_SPEC.md §11. Record the *why*, so no agent relitigates.
 
+## D038 - batch protocol: size follows coupling; the manifest is the entry (2026-08-20)
+
+CONTEXT: the owner wants larger batches (10-15 was the ask) and brought a
+ChatGPT-drafted "project constitution + batch manifest + audit reviewer"
+system. Mapped against this repo, that proposal is ~1:1 with what already
+exists: its constitution is AGENTS.md+PROJECT_SPEC, its decision log is this
+file, its manifest is our AWAITING REVIEW entry (D027 evidence + D028
+objection + D033 SHAs), its audit-not-redesign reviewer is D023/D027/D032,
+its repair loop is our BLOCK->fix->re-review-at-new-SHA. Adopting the full
+prompt would create a SECOND source of truth that drifts from the first -
+the exact disease it claims to cure.
+
+DECIDED (owner approved 2026-08-20; full text AGENTS.md "Batch protocol" +
+REVIEW.md "Severity classes"):
+1. Batch size follows COUPLING, not capability: independent 8-10, coupled
+   4-6, architecture/migrations 1-3.
+2. Tail-quality rule: quality flat across the batch or STOP and close clean;
+   size is a target, never a quota.
+3. Probe before claiming (D030 at batch scale) - the claim states what was
+   probed.
+4. The batch manifest IS the AWAITING REVIEW entry; required fields per
+   ticket: SHA, what shipped, what was RUN, strongest self-objection; plus
+   one batch-level coupling note.
+5. Verdict severities CRITICAL/MAJOR/MINOR/NOTE annotate the binary
+   PASS/BLOCK, per ticket - one blocked ticket never holds the batch hostage.
+ADOPTED from the ChatGPT draft: only #1 and #5 (the two things we lacked).
+REJECTED: the standalone constitution prompt, per-batch re-statement of
+project goals in chat (the repo IS the statement), and a separate manifest
+artifact (a second copy of TASKS.md content would rot - D031).
+
 ## D037 - FinRobot/AI-Trader/Kronos review: their data backs our doctrine (2026-08-20)
 Second owner-requested repo review; full disposition:
 docs/research/finrobot-aitrader-kronos-review-2026-08-20.md. Rulings:

@@ -178,6 +178,43 @@ TASKS.md first: two agents both adding registry tools, or both writing
 migrations. When in doubt, take the ticket that touches files the other agent
 isn't in.
 
+## Batch protocol — many tickets, one session (D038)
+
+The owner runs builders in MULTI-TICKET batches. The rules that make five
+tickets safe make ten safe too — IF the batch is picked for independence.
+This section is the delta; everything else in this file applies per ticket,
+unchanged (one commit per ticket by pathspec, gate green at close, the
+D027/D028 sections in full for EACH ticket, verdicts per D033).
+
+**Size follows COUPLING, not capability:**
+- Independent tickets (different modules, no shared guard tests, no
+  migrations, no same-file edits): 8–10 per batch.
+- Coupled tickets (shared files, new registry tools, anything touching the
+  tool-count guards): 4–6.
+- Architecture or migration work: 1–3. Two concurrent migrations = two
+  alembic heads; that class of work does not batch.
+
+**Probe before you claim.** The claim line for a batch states what was
+PROBED, not just what will be built — a ticket claimed on an assumption the
+first grep would have killed wastes the whole slot (D030). Rebuilding
+something that already exists is the batch-scale version of a fabricated
+input.
+
+**Tail-quality rule — the failure mode of big batches.** Quality must be
+flat across the batch: ticket 9 gets the same self-review as ticket 1. If
+context, attention, or the gate's runtime starts degrading mid-batch, STOP,
+close out what is DONE cleanly (gate, memory, commits), and leave the rest
+claimed-but-unstarted with a note. A batch size is a target, never a quota —
+five finished tickets beat nine thin ones every time.
+
+**The batch manifest IS the AWAITING REVIEW entry.** One entry for the
+batch, and it must carry, per ticket: the SHA (D033), what shipped, what was
+RUN as evidence (D027), and the strongest objection you found against your
+own work (D028). Plus one batch-level line: what the tickets share, if
+anything (files, assumptions, ordering), so the reviewer knows where a
+defect would propagate. A manifest missing any of these is not reviewable —
+it is a summary, and summaries are not evidence.
+
 ## Before you commit: read your own diff, line by line (D028)
 
 The five checks below the next heading are MECHANICAL — they catch things that

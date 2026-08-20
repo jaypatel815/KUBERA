@@ -159,6 +159,28 @@ Not:
 
 > BLOCK — I'd have written this differently.
 
+## Severity classes — so a verdict can be precise (D038)
+
+The verdict stays binary: PASS or BLOCK, at a named SHA (D033). Severities
+classify the FINDINGS inside it, so a mostly-good batch doesn't bounce whole
+and a serious defect can't hide inside "some notes":
+
+- **CRITICAL** — violates the contract (AGENTS.md priorities, safety rails,
+  determinism rule) or the implementation is wrong at its job. Always BLOCK.
+- **MAJOR** — a task requirement is unmet, a regression is real, or a claim
+  in the manifest is unsupported by what was run. BLOCK for that ticket.
+- **MINOR** — a localized defect that doesn't change direction or correctness
+  of the whole. PASS is allowed WITH the finding written into the verdict;
+  the builder fixes it next session as its own small ticket line. A MINOR
+  left unwritten is how MINORs become MAJORs.
+- **NOTE** — an observation, not a defect. Never blocks, never obligates.
+
+In a multi-ticket batch, verdicts are PER TICKET (each has its own SHA):
+one BLOCKed ticket does not hold the other eight hostage — mark the rest
+PASS, name the one that isn't, and the builder's fix comes back as its own
+re-queued delta (D033). Judge against the contract, not against how you
+would have designed it — severity is about consequence, not taste.
+
 ## Reviewing your own agent's earlier work
 Allowed and encouraged — the ban is on reviewing the commit you just wrote.
 A fresh session reviewing last week's ticket is a real review.
