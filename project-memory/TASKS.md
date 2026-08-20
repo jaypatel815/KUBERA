@@ -12,6 +12,16 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
+- **Batch #8 (3 tickets, probe-sized; claimed 2026-08-20, Claude/Cowork;
+  batch #7 still awaits Gemini - no file overlap with it):** T134 (D021
+  evidence packet: the Sept-12 revisit is "on evidence: DQS trend,
+  override rate, tier trips" - weekly review shows SNAPSHOTS, nothing
+  assembles the TREND; scripts/d021_evidence.py composes it from
+  existing modules, naming any metric that turns out not to be
+  persisted), hygiene #7 (TASKS build-order header is stale - references
+  T052/T055/T077 all long shipped and a fixed CI incident as current),
+  briefs-refresh (docs/agent-briefs.md stops at D033 - add D034-D038 +
+  the campaign sequence so Gemini's brief matches the contract).
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **Batch #7: T122c + T133 + curation #8 - AWAITING REVIEW 2026-08-20
