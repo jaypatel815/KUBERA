@@ -12,6 +12,11 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
+- **T125 (pyrefly as a verify-gate step, exactly 0) - Claude/Cowork** - claimed 2026-08-20.
+- **T124 (backup restore drill) - Claude/Cowork** - claimed 2026-08-20.
+- **T087c (/api/monitor endpoint - shared service refactor) - Claude/Cowork** - claimed 2026-08-20.
+- **T123 (AGENTS.md contract refresh) - Claude/Cowork** - claimed 2026-08-20.
+- **TASKS curation #5 (D031) - Claude/Cowork** - claimed 2026-08-20.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **Batch #4: T121b + T119 + T120 + T114b + curation #4 - AWAITING REVIEW
