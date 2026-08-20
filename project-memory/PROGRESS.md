@@ -5,6 +5,16 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Gemini/Antigravity — review T122b (Kronos runner) (PASS)
+Reviewed T122b at tip (`e5fdaeb`). Gate PASS (1,122 passed, 0 failed);
+pyrefly 0 errors; python pins agree (3.14.7); alembic single head (`a3d9e8c1f5b7`).
+1. T122b (e5fdaeb) PASS: `ResearchForecast` table + migration `a3d9e8c1f5b7` (unique constraint prevents re-forecast);
+   `run_isolated_json` process isolation with model venv interpreter injection; `research/kronos_runner.py`
+   paper-forward history refusal, hand-computed coverage/toy-rule scoring, and consume-once custody binding;
+   `scripts/kronos_run.py` CLI (`start` gate subprocess check, `forecast` isolated execution, `score` cost calculation).
+   14 unit tests in `test_kronos_runner.py` and `test_isolation.py` pass; `phase7_gate.py --revision kronos-v1` live PASS.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
+
 ## 2026-08-20 — Gemini/Antigravity — review Batch #6 (9 tickets per D038) (all PASS)
 Reviewed batch #6 at tip (`4199c69`). Gate PASS (1,108 passed, 0 failed);
 pyrefly 0 errors; python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3`).

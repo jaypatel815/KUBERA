@@ -53,7 +53,19 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   an owner who runs `start` twice by accident spends two; acceptable
   because that is exactly what failures-count means, and the receipt
   says remaining. (3) score fetches ~4x250 bars serially - fine for a
-  once-per-window read. (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+  once-per-window read.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT e5fdaeb — PASS
+    aligned: T122b (Kronos candidate experiment campaign runner) — schema migration (`ResearchForecast`), isolated JSON boundary seam (`run_isolated_json`), paper-forward campaign runner (`research/kronos_runner.py`), CLI (`scripts/kronos_run.py`), runbook updates, and experiment pre-registration docs.
+    checked:
+      - Read `backend/alembic/versions/a3d9e8c1f5b7_t122b_research_forecasts.py` & `backend/data/models.py`: verified `research_forecasts` table with `uq_forecast_point` constraint on (revision, symbol, forecast_date) so re-forecast is refused; migration is clean single head applied to live DB.
+      - Read `backend/research/isolation.py` & `backend/tests/test_isolation.py`: verified `run_isolated_json` process isolation (-I, scrubbed environment, temp cwd, sentinel JSON channel, optional python interpreter path); 3 unit tests pass.
+      - Read `backend/research/kronos_runner.py` & `backend/tests/test_kronos_runner.py`: verified paper-forward history check (refusal if history contains target date), distribution validation, hand-computed coverage/toy-rule scoring, and consume-once custody binding with hash recomputation; 11 unit tests pass.
+      - Read `scripts/kronos_run.py`: verified `start` (phase7_gate subprocess check), `forecast` (external model execution via isolated JSON seam), and `score` (--consume once, cost calculation).
+      - Read `docs/RUNBOOK.md` & `docs/research/experiments/kronos-v1.md`: verified runbook section 8 and experiment pre-registration.
+      - Ran `phase7_gate.py --revision kronos-v1` live: all 4 gate checks PASS (GATE OPEN).
+      - Full gate PASS (1,122 passed, 0 failed, pyrefly 0 errors).
+    concerns: none.
+
 
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
