@@ -26,14 +26,14 @@ def test_marketplace_lists_the_root_plugin():
 
 
 def test_commands_exist_with_frontmatter_and_no_machine_paths():
-    for name in ("kubera.md", "kubera-connect.md"):
+    for name in ("resume.md", "connect.md"):
         text = (ROOT / "commands" / name).read_text(encoding="utf-8")
         assert text.startswith("---\ndescription:")
         # machine-local paths must NEVER ship in the plugin — the connect
         # command instructs generating them (install_mcp_config.py / a
         # substituted claude mcp add), it does not hardcode one.
         assert "C:\\Users" not in text and "/sessions/" not in text
-    connect = (ROOT / "commands" / "kubera-connect.md").read_text(
+    connect = (ROOT / "commands" / "connect.md").read_text(
         encoding="utf-8")
     assert "install_mcp_config.py" in connect
     assert "READ-ONLY" in connect
