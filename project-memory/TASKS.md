@@ -12,10 +12,23 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T093c (marginal risk contribution + effective bets) — Claude/Cowork** — claimed 2026-08-19.
 - **T087a (open-trade monitor v1 — advisory CLI, no voice/Orb) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T093c (marginal risk contribution + effective bets) — CLOSED WITHOUT
+  BUILDING 2026-08-19 (Claude/Cowork): ALREADY SHIPPED.** Claimed from the
+  stale pointer "T093 extends this (marginal risk contribution, effective
+  bets)" in the ChatGPT-review backlog — mapping the code BEFORE building
+  (D028/two-strikes: never redo work) found the extension landed WITH T093
+  parts 1+3 on 2026-08-14: analysis/portfolio_risk.py has Euler
+  marginal_contributions (sum exactly to sigma_p), effective_bets
+  (1/sum(w²) normalized), diversification_ratio, and the ≥60%-one-name
+  warning; get_portfolio_risk calls portfolio_risk() directly (tools.py);
+  test_portfolio_risk.py pins it (hand-computed two/three-asset cases,
+  rho=±1 edges, contribution-sum invariant). Evidence is the grep, not a
+  rebuild. The stale backlog pointer is corrected in this commit. The
+  REAL remaining T093-family work stays where it was filed: T094 HRP
+  (D021-gated, trigger written) and T095 factor loadings (data-gated).
 - **T085b (fractional-Kelly ADVISORY view in size_position) — AWAITING
   REVIEW 2026-08-19 (Claude/Cowork)**. The filed T077b/T085 advisory note,
   built with its guardrails intact: risk/sizing.fractional_kelly_view —
@@ -101,7 +114,7 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   position weights w/ coverage warning). Tool `get_correlation` (#27, guard
   tests bumped in all three files) + `GET /api/correlation?candidate=&days=`.
   Persona-facing description orders the model to run it BEFORE recommending
-  buys. T093 extends this (marginal risk contribution, effective bets).
+  buys. T093's extension (marginal risk contribution, effective bets) SHIPPED with parts 1+3 — see analysis/portfolio_risk.py (T093c verified 2026-08-19).
 - [x] T082a — Conversations index (the sidebar's BACKEND) — DONE 2026-08-14
   (Claude/Cowork): `data/conversations.py` list_conversations — ordered by LAST
   ACTIVITY not creation (a revived old thread belongs on top, proven in test),
