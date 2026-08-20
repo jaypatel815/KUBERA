@@ -12,6 +12,8 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
+- **T117 (TLH scan, measurement-only) - Claude/Cowork** - claimed 2026-08-20.
+- **T118 (earnings preview composition) - Claude/Cowork** - claimed 2026-08-20.
 (none)
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
@@ -209,6 +211,17 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
 - [x] T067b — built 2026-08-18, see Awaiting review at top. (FOMO-into-late-
   RVOL deliberately NOT built — needs an intraday clock on every fill; named
   in every report and re-filed as T067c below.)
+- [ ] T119 - Thesis view (adopted from equity-research thesis-tracker,
+  docs/research/anthropic-fsi-plugins-review-2026-08-20.md): one composition
+  per symbol joining watchlist note (thesis text) + latest journal entries +
+  exit plan invalidation + upcoming catalysts (earnings/FOMC/releases).
+  Pieces all exist; this is the unified read. UX-adjacent - build when chat
+  usage shows the distributed answers annoy the owner.
+- [ ] T120 - Package KUBERA's chat surface as a Claude plugin
+  (.claude-plugin/plugin.json + commands/, per claude-plugins-official
+  conventions). Caveat recorded: MCP config is machine-local (venv path) -
+  manifest must template it; install_mcp_config.py logic becomes the
+  plugin's setup command. Makes the T045 surface installable by URL.
 - [ ] T067c — FOMO-into-late-RVOL-spike detection (split out of T067b): flag
   entries made into a late-session volume spike. Needs BOTH an intraday
   timestamp per fill (the T016c Schwab sync now records execution times — let
