@@ -12,7 +12,11 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-(none)
+- **TASKS curation (D031) — Claude/Cowork** — claimed 2026-08-19.
+- **T115 (risk limits from settings — the T033 promise) — Claude/Cowork** — claimed 2026-08-19.
+- **T085b (fractional-Kelly advisory view in size_position) — Claude/Cowork** — claimed 2026-08-19.
+- **T093c (marginal risk contribution + effective bets) — Claude/Cowork** — claimed 2026-08-19.
+- **T087a (open-trade monitor v1 — advisory CLI, no voice/Orb) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T114 (owner-docs refresh) — AWAITING REVIEW 2026-08-19 (Claude/Cowork)**.
