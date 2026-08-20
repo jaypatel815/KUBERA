@@ -19,6 +19,37 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
 - **T114 (owner-docs refresh: README + .env.example) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T064b-rest (crisis-window stress runs — closes T064b's last buildable
+  item) — AWAITING REVIEW 2026-08-19 (Claude/Cowork)**. backtest/stress.py
+  (logic) + scripts/stress_windows.py (thin owner CLI). Named windows:
+  covid-2020 (2020-01-02..06-30, the fastest ~34% drawdown + first
+  rebound) and bear-2022 (2022-01-03..12-30, the year-long grind); gfc-2008
+  is listed IMPOSSIBLE ON THIS FEED by name (IEX history doesn't reach it)
+  — the ticket's own words, never silently substituted. slice_window
+  enforces COVERAGE: feed starting >7 days after the window opens, ending
+  >7 days early, or leaving <30 bars all REFUSE with the feed's dates (a
+  partial crash is an easier test, not the same test). stress_template
+  runs the template, the SAME template at 2x costs (T109b house rule), and
+  buy-and-hold of the SAME window as the honest comparator, reporting
+  drawdown_saved_frac ('did it protect, or track the crash with extra
+  steps?'). MEASUREMENT ONLY, stated in the payload note: recorded
+  nowhere; neither promotes nor demotes (live demotion stays T093 CUSUM).
+  CLI prints per-window tables + a protected/tracked/did-WORSE verdict
+  line, NOT CONFIGURED and FEED UNREACHABLE named degradations (exit 2).
+  EVIDENCE (D027): test_stress.py 5 tests — inclusive slice with
+  positional integrity; all three coverage refusals matched by name;
+  momentum-vs-holding on a rise→crash→flat fixture (momentum's drawdown
+  strictly smaller, drawdown_saved positive, 2x-cost never better,
+  zero-cost b&h equals pure arithmetic to 1e-9 and 5bps strictly worse);
+  window/impossible-list pins; unknown template refused. Live sandbox run:
+  named FEED UNREACHABLE, real exit code 2 verified without the pipe.
+  1016 passed; pyrefly canary 1; gate PASS at batch close.
+  D028: my first fixture was too short and the coverage guard REFUSED MY
+  OWN TEST (truncated-episode error) — the guard demonstrated itself;
+  fixture lengthened, guard unchanged. The remaining T064b leftovers stay
+  parked BY DESIGN: promote-via-chat needs the deliberate-act confirmation
+  design (CLI stays the promotion instrument).
+
 - **T063b (journal calibration v2) — AWAITING REVIEW 2026-08-19
   (Claude/Cowork)**. analysis/calibration.py (pure, deterministic): the
   three questions v1's single hit-rate can't answer. (1) CONFIDENCE CURVE —
@@ -616,16 +647,12 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
   PWA push delivery (Phase 5), ET-aware "today" windows (T036b), scheduled
   auto-generation (Task Scheduler hitting /api/brief + TTS).
 - [x] T063b — BUILT 2026-08-19, see Awaiting review (ships thin-data-honest now; grows informative as the journal ages).
-- [~] T064b — Rigor follow-ups, core DONE 2026-08-14 (Claude/Cowork):
-  run_backtest tool output now carries `trades` (full TradeStats), `calmar`,
-  and a `promotion` block (is_promoted + latest T092 stability verdict via new
-  ledger.latest_stability + the expiry/sweep pointers in a note). PROMOTION
-  EXPIRY: is_promoted takes max_age_days (default 180, PROMOTION_MAX_AGE_DAYS)
-  — a stale pass silently stops counting, the loop's gate refuses until
-  re-promoted (backdated-row test proves it; naive-ts safe). REMAINING:
-  crisis-window stress runs (2020/2022 where IEX reaches; 2008 impossible on
-  this feed — say so), promote-via-chat (needs the deliberate-act confirmation
-  design; parked intentionally, CLI stays the promotion instrument).
+- [x] T064b — Rigor follow-ups COMPLETE 2026-08-19: core (richer
+  run_backtest + promotion expiry) DONE 2026-08-14; crisis-window stress
+  runs BUILT 2026-08-19 (see T064b-rest in Awaiting review; 2008 named
+  impossible on this feed). Promote-via-chat stays parked by design — the
+  deliberate-act confirmation design doesn't exist yet; CLI remains the
+  promotion instrument.
 - [x] T065 — Risk engine v2 COMPLETE 2026-08-19 across two tickets: sector-exposure measurement + disable-symbol (T065, PASSED at 05dfe35-era review) and the order-frequency rail (T065b, see Awaiting review). Cancel-all deliberately unbuilt — nothing rests (market orders only); hard sector CAPS wait on owner-ratified limits (T061) by design.
 
 ## Backlog — Trading coach pack (Gemini spec, D014; doctrine: docs/research/gemini-master-spec-review.md)
