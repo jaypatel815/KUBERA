@@ -140,6 +140,88 @@ def run_isolated(strategy_source: str, func_name: str,
         stray_stdout_bytes=stray, duration_s=duration)
 
 
+_BOOTSTRAP_JSON = r"""
+import json, sys
+payload = json.loads(sys.stdin.read())
+out = {}
+try:
+    ns = {}
+    exec(compile(payload["source"], "<research>", "exec"), ns)
+    fn = ns[payload["func"]]
+    result = fn(payload["payload"])
+    if not isinstance(result, dict):
+        raise TypeError(f"function returned {type(result).__name__}, expected dict")
+    out["result"] = result
+except BaseException as e:  # noqa: BLE001 — the parent gets the NAME, always
+    out["error"] = f"{type(e).__name__}: {e}"
+print("KUBERA_ISOLATION_RESULT:" + json.dumps(out))
+"""
+
+
+@dataclass(frozen=True)
+class JsonCallResult:
+    """One JSON-shaped call across the boundary (T122b) — same guarantees
+    as IsolationResult, richer payload. The model-venv seam: `python=`
+    points at an interpreter that HAS the research deps (torch, kronos);
+    -I still scrubs PYTHONPATH/user-site, the env allowlist still strips
+    keys, cwd is still an empty temp dir, the sentinel is still the only
+    result channel."""
+
+    result: dict | None
+    error: str | None
+    stray_stdout_bytes: int
+    duration_s: float
+
+
+def run_isolated_json(source: str, func_name: str, payload: dict, *,
+                      timeout_s: float = 60.0,
+                      python: str | None = None) -> JsonCallResult:
+    """Execute self-contained source across the boundary, one call:
+    func(payload_dict) -> dict. Everything non-JSON-serializable refuses
+    in the CHILD with a named error — the parent never guesses."""
+    body = json.dumps({"source": source, "func": func_name,
+                       "payload": payload})
+    env = {k: os.environ[k] for k in _ENV_ALLOWLIST if k in os.environ}
+    started = time.monotonic()
+    with tempfile.TemporaryDirectory(prefix="kubera-iso-") as workdir:
+        try:
+            proc = subprocess.run(
+                [python or sys.executable, "-I", "-c", _BOOTSTRAP_JSON],
+                input=body, capture_output=True, text=True,
+                encoding="utf-8", errors="replace",
+                env=env, cwd=workdir, timeout=timeout_s,
+            )
+        except subprocess.TimeoutExpired:
+            return JsonCallResult(
+                result=None,
+                error=f"timeout: research call exceeded {timeout_s}s and "
+                      "was killed — a budget attempt, not a hang (D029)",
+                stray_stdout_bytes=0,
+                duration_s=time.monotonic() - started)
+    duration = time.monotonic() - started
+
+    result_line, stray = None, 0
+    for line in proc.stdout.splitlines():
+        if line.startswith(SENTINEL):
+            result_line = line[len(SENTINEL):]
+        else:
+            stray += len(line.encode("utf-8"))
+    if result_line is None:
+        return JsonCallResult(
+            result=None,
+            error=(f"child produced no result line (exit {proc.returncode}); "
+                   f"stderr: {proc.stderr[:200]!r}"),
+            stray_stdout_bytes=stray, duration_s=duration)
+    try:
+        out = json.loads(result_line)
+    except ValueError:
+        return JsonCallResult(result=None,
+                              error="result line was not valid JSON",
+                              stray_stdout_bytes=stray, duration_s=duration)
+    return JsonCallResult(result=out.get("result"), error=out.get("error"),
+                          stray_stdout_bytes=stray, duration_s=duration)
+
+
 def run_inprocess(strategy_source: str, func_name: str,
                   closes: list[float]) -> list[float]:
     """The parity reference: same exec, same progressive feed, no boundary.

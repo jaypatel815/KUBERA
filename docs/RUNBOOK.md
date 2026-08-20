@@ -122,6 +122,14 @@ FIX:
     # attempts left, the pre-registration doc states the contamination
     # rule, and the isolation boundary holds parity with the env canary.
 
+The kronos-v1 campaign (T122b) runs through its own gated CLI, in order:
+
+    py scripts\kronos_run.py start          # gate must be OPEN; spends 1 of 3 attempts
+    py scripts\kronos_run.py forecast --model-file <adapter.py> --python <model-venv\python.exe>
+                                            # each session in the window, AS MADE
+    py scripts\kronos_run.py score          # dry read any time AFTER the window
+    py scripts\kronos_run.py score --consume  # ONCE, at window end — the verdict is forever
+
 ---
 
 ## Scheduled tasks (Windows Task Scheduler) — the full set

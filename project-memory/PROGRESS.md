@@ -37,6 +37,24 @@ pyrefly 0 errors; python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3
    archived verbatim to `archive/TASKS-archive-2026-08-20.md`, keeping `TASKS.md` within budget (~450 lines).
 Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
 
+## 2026-08-20 — Claude/Cowork — T122b: the Kronos runner (campaign machinery)
+Owner confirmed GATE OPEN on his machine (T127 acceptance), then the
+runner shipped: ResearchForecast + migration a3d9e8c1f5b7 (scratch-proven,
+live DB migrated), run_isolated_json (JSON seam, same T110b guarantees,
+model venv via python=), kronos_runner.py (log-as-made with re-forecast
+refused, paper-forward enforced AT THE SEAM - history reaching the target
+date refuses, hand-computed coverage + equal-weight toy-rule scorer,
+UNSCORABLE never consumes, consume-once via real custody), kronos_run.py
+CLI (start spends 1 of 3 attempts only if the gate subprocess prints
+OPEN; forecast has NO built-in model by design; score --consume once with
+2x-T090 default costs). Verified: 14 new tests incl. real boundary
+subprocesses; CLI smoked live - the smoke FOUND a raw traceback on
+missing table (named to NOT CONFIGURED exit 2) and the pipe-eats-exit-
+codes trap tried me again (caught, codes re-measured bare). Gate PASS
+1,119. Remaining before attempt one (owner): model download + write the
+adapter file (forecast(payload)->dict against Kronos) - seeded as T122c.
+Window opens Mon 2026-08-24.
+
 ## 2026-08-20 — Claude/Cowork — T122 pre-registration: PHASE 7 GATE IS OPEN
 Owner picked Kronos as the next front. Executed the registration in the
 pre-committed order: (1) docs/research/experiments/kronos-v1.md written

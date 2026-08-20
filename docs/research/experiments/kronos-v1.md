@@ -41,6 +41,15 @@ registration time, so no result can leak into these choices.
    else flat, one decision per day per symbol, T090 costs at 2x) must not
    lose to buy-and-hold SPY over the same window. This is a floor, not a
    promotion — promotion has its own gate.
+   AGGREGATION CLARIFICATION (added 2026-08-20, PRE-WINDOW — before any
+   forecast exists, so still registration, not revision): the toy rule is
+   ONE equal-weight portfolio across the three symbols (a flat leg
+   contributes zero), costs charged per position change split across the
+   legs, compounded daily; the comparison is that portfolio's total
+   return vs SPY buy-and-hold. Realized move per forecast = close of the
+   forecast session divided by the model's own basis close, minus one.
+   Implemented exactly this way in research/kronos_runner.py, tested
+   hand-computed.
 3. BOTH must hold, or the verdict is FAIL and it is written down. A FAIL
    here is a real answer (AI-Trader's live benchmark — D037 — says FAIL
    is the base rate; measuring it ourselves is the point).

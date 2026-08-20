@@ -138,3 +138,36 @@ def test_parent_env_untouched_by_scrub():
     before = dict(os.environ)
     run_isolated(MOMENTUM_SRC, "momentum", [1.0, 2.0])
     assert dict(os.environ) == before
+
+
+# --- T122b: the JSON seam — same boundary, richer payload ---------------------
+
+def test_json_seam_roundtrip_and_env_stripping(monkeypatch):
+    from research.isolation import run_isolated_json
+
+    monkeypatch.setenv("KUBERA_JSON_CANARY", "planted")
+    src = """
+import os
+def f(payload):
+    return {"echo": payload["x"] * 2,
+            "saw_canary": bool(os.environ.get("KUBERA_JSON_CANARY"))}
+"""
+    res = run_isolated_json(src, "f", {"x": 21}, timeout_s=30.0)
+    assert res.error is None
+    assert res.result == {"echo": 42, "saw_canary": False}  # boundary held
+
+
+def test_json_seam_refuses_non_dict_in_the_child():
+    from research.isolation import run_isolated_json
+
+    res = run_isolated_json("def f(p):\n    return [1, 2]", "f", {},
+                            timeout_s=30.0)
+    assert res.result is None and "expected dict" in (res.error or "")
+
+
+def test_json_seam_names_child_exceptions():
+    from research.isolation import run_isolated_json
+
+    res = run_isolated_json("def f(p):\n    raise ValueError('boom')", "f",
+                            {}, timeout_s=30.0)
+    assert res.result is None and "ValueError: boom" in (res.error or "")

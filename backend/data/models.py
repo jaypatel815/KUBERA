@@ -383,3 +383,30 @@ class ExperimentBudget(Base):
     max_attempts: Mapped[int] = mapped_column(Integer)
     attempts_json: Mapped[str] = mapped_column(String(8000), default="[]")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
+class ResearchForecast(Base):
+    """T122b — a research candidate's forecast, logged AS MADE (the
+    paper-forward discipline): made_at is stamped before the outcome
+    exists, and rows are never updated — scoring at consumption reads
+    them back and compares against what actually happened. One row per
+    (revision, symbol, forecast_date): a re-forecast of the same day is
+    a protocol violation, refused by the unique constraint."""
+
+    __tablename__ = "research_forecasts"
+    __table_args__ = (
+        UniqueConstraint("revision", "symbol", "forecast_date",
+                         name="uq_research_forecast"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    revision: Mapped[str] = mapped_column(String(64))
+    symbol: Mapped[str] = mapped_column(String(16))
+    forecast_date: Mapped[str] = mapped_column(String(10))  # ISO; the session being forecast
+    made_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    basis_close: Mapped[float] = mapped_column(Float)        # last close the model saw
+    p05_frac: Mapped[float] = mapped_column(Float)           # next-day return percentiles
+    p50_frac: Mapped[float] = mapped_column(Float)
+    p95_frac: Mapped[float] = mapped_column(Float)
+    up_odds: Mapped[float] = mapped_column(Float)
+    source_note: Mapped[str] = mapped_column(String(200), default="")

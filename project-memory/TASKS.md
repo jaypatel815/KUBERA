@@ -12,16 +12,48 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T122b (Kronos runner) - Claude/Cowork** - claimed 2026-08-20, after
-  the owner CONFIRMED the gate on his machine (GATE OPEN, all four rails,
-  isolation 0.13s - the T127 acceptance run). Scope: ResearchForecast
-  table + migration on e1a7c4f9b2d3; runner module (forecasts logged AS
-  MADE, coverage + toy-rule scorer, consume-once via custody);
-  run_isolated_json boundary extension (same guarantees, JSON payload -
-  the model venv rides the existing `python=` injection point);
-  gate-checked CLI; pre-window aggregation clarification in kronos-v1.md.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T122b: Kronos runner - AWAITING REVIEW 2026-08-20 (Claude/Cowork;
+  SHA on this commit per D033).** Owner confirmed the gate on his
+  machine first (GATE OPEN, all four rails - the T127 acceptance run).
+  BUILT: data/models.py ResearchForecast + migration a3d9e8c1f5b7 (new
+  single head; proven on a scratch DB AND applied to the live DB);
+  research/isolation.py run_isolated_json - the JSON seam with the SAME
+  boundary guarantees (scrubbed env, -I, temp cwd, sentinel channel),
+  the model venv rides the existing python= injection point;
+  research/kronos_runner.py - forecasts logged AS MADE (unique per
+  revision/symbol/date, re-forecast REFUSED by name), call_model refuses
+  history reaching the target date (paper-forward at the seam),
+  malformed/partial distributions refused, coverage + toy-rule scorer
+  pure and hand-computed (equal-weight, costs per position change,
+  compounded), UNSCORABLE never consumes, consume-once through real
+  custody with the hash recomputed from what was ACTUALLY scored;
+  scripts/kronos_run.py - start (gate subprocess must print OPEN;
+  records 1 of 3 attempts), forecast (NO built-in model by design - a
+  stub would be fabricated data; --model-file + --python for the model
+  venv), score (--consume once; costs default 2x live T090 estimate,
+  --cost-bps override); RUNBOOK section 8 extended; kronos-v1.md gains
+  the PRE-WINDOW aggregation clarification (added before any forecast
+  exists - registration, not revision).
+  EVIDENCE (D027): test_kronos_runner.py 11 tests (real boundary
+  subprocess for call_model; every refusal matched by message; scorer
+  hand-computed incl. boundary-counts-as-inside and the 100%-coverage-
+  is-FAIL case; consume-once proven twice) + test_isolation.py +3 (JSON
+  seam roundtrip with env canary stripped, non-dict refused in child,
+  child exceptions named). RAN the CLI live: absent DB exit 2; missing
+  model file REFUSED exit 1; out-of-window date REFUSED exit 1;
+  missing-table crash found by the smoke -> named NOT CONFIGURED exit 2
+  + live DB migrated. Full gate PASS (1,119 passed, pyrefly 0).
+  D028 objections: (1) run_isolated_json with a model venv python DOES
+  give the child that venv's site-packages - the boundary still strips
+  env/cwd/PYTHONPATH but a malicious adapter could import anything the
+  venv has; same honest threat model as T110b (process isolation, not a
+  jail), now stated here too. (2) an attempt is spent at campaign START -
+  an owner who runs `start` twice by accident spends two; acceptable
+  because that is exactly what failures-count means, and the receipt
+  says remaining. (3) score fetches ~4x250 bars serially - fine for a
+  once-per-window read. (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
@@ -163,17 +195,19 @@ was RED from the deleted .python-version — FIXED, see I032; next push confirms
   strategy. (6) D035 stands: forecasts are internal signals; the owner
   hears odds and ranges, never "the model says 770". Fine-tuning on the
   owner's fills: REFUSED (D037).
-- [ ] T122b - Kronos runner (next build ticket, unblocked by the OPEN
-  gate): backend/research/kronos_runner.py - loads the model BEHIND the
-  T110b boundary, produces per-symbol next-day distributions, LOGS each
-  forecast as made (paper-forward discipline: no scoring until window
-  end), records every attempt via record_attempt (failures count), and a
-  consumption scorer that runs ONCE at window end against the frozen
-  definition (coverage + toy-rule-vs-b&h, per kronos-v1.md). Buildable
-  agent-side against a FAKE model interface with the real model as an
-  injection point (sandbox cannot download 400MB; the owner's machine
-  runs the real attempts). Every surface labels output EXPERIMENTAL,
-  odds-and-ranges only (D035).
+- [x] T122b - BUILT 2026-08-20, see Awaiting review at top (runner +
+  migration + JSON seam + gated CLI; 14 tests; live DB migrated).
+- [ ] T122c - the Kronos ADAPTER (last piece before attempt one): a
+  self-contained kronos_adapter.py defining forecast(payload)->dict
+  {p05_frac,p50_frac,p95_frac,up_odds} that loads NeoQuasar/Kronos-base
+  and maps its output distribution to next-day return percentiles.
+  Runs ONLY on the owner's machine (model venv with torch; ~400MB
+  weights) through kronos_run.py's --model-file/--python seam. Agent
+  half: write the adapter + a shape-check script the owner runs before
+  `start`; owner half: create the model venv, download weights, run the
+  shape check. NOTE the D028 objection recorded on T122b: the adapter
+  executes with the model venv's full site-packages - keep it small
+  enough to READ before running it.
 - [x] T119 - BUILT 2026-08-20 (tool #44 get_thesis_view), REVIEWED PASS by
   Gemini (batch #4; archive/TASKS-archive-2026-08-20.md). Stale seed closed.
 - [x] T120 - BUILT 2026-08-20 (.claude-plugin + commands/, owner installed
