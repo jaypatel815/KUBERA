@@ -75,7 +75,7 @@
   #port-panel { width: 0; overflow: hidden; transition: width 0.22s ease;
     display: flex; flex-direction: column; background: #0d0d14;
     border-left: 1px solid #1a1a24; flex-shrink: 0; }
-  #port-panel.open { width: 220px; }
+  #port-panel.open { width: 264px; } /* widened for the monitor's days lens (T087) */
   #port-hdr { display: flex; align-items: center; justify-content: space-between;
     padding: 14px 12px 10px; border-bottom: 1px solid #1a1a24; flex-shrink: 0; }
   #port-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #8a815f; }
@@ -92,6 +92,16 @@
   .ppr-sym { color: #c8c4b4; font-size: 11px; font-weight: 600; }
   .ppr-pl { font-size: 10.5px; }
   #port-asof { font-size: 10px; color: #3a3830; margin-top: 10px; }
+
+  /* ── open-trade monitor block (T087) — same judgment as scripts/monitor.py ── */
+  .mon-row  { padding: 6px 0; border-bottom: 1px solid #14141c; }
+  .mon-sym  { color: #c8c4b4; font-size: 11px; font-weight: 600; }
+  .mon-days { color: #c9a227; font-size: 10.5px; line-height: 1.45; margin: 2px 0; }
+  .mon-line { color: #8a815f; font-size: 10px; line-height: 1.45; }
+  .mon-alert { color: #b07070; font-size: 10.5px; }
+  .mon-watch { color: #a89050; font-size: 10.5px; }
+  .mon-quiet { color: #5aaa88; font-size: 10px; }
+  #mon-foot { font-size: 9.5px; color: #3a3830; margin-top: 8px; line-height: 1.5; }
 
   /* ── floating toggle buttons ── */
   #btn-sidebar, #btn-port {
@@ -150,6 +160,9 @@
       <div class="pl">Positions</div>
       <div id="port-positions"></div>
       <div id="port-asof"></div>
+      <div class="pl">Open-trade monitor</div>
+      <div id="mon-body"><div class="mon-line">loading&hellip;</div></div>
+      <div id="mon-foot"></div>
     </div>
   </div>
 
@@ -452,7 +465,7 @@ btnPort.addEventListener("click", () => {
   const opening = !portPanel.classList.contains("open");
   portPanel.classList.toggle("open");
   btnPort.title = opening ? "Close portfolio" : "Portfolio snapshot";
-  if (opening) loadPortfolio();
+  if (opening) { loadPortfolio(); loadMonitor(); }
 });
 
 function fmtUSD(n) {
@@ -512,10 +525,68 @@ async function loadPortfolio() {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════
+// T087 — OPEN-TRADE MONITOR PANEL: renders GET /api/monitor, the exact
+// same fetch-and-judge the owner's scripts/monitor.py runs (T087c —
+// one implementation, two surfaces). Advisory only, in its own words.
+// ════════════════════════════════════════════════════════════════════
+const monBodyEl = document.getElementById("mon-body");
+const monFootEl = document.getElementById("mon-foot");
+
+function esc(s) { return String(s == null ? "" : s).replace(/</g, "&lt;"); }
+
+async function loadMonitor() {
+  try {
+    const r = await fetch("/api/monitor");
+    if (!r.ok) {
+      let detail = r.status === 503 ? "not configured" : "broker/data unreachable";
+      try { detail = (await r.json()).detail || detail; } catch (_) {}
+      monBodyEl.innerHTML = `<div class="mon-line">${esc(detail).slice(0, 160)}</div>`;
+      monFootEl.textContent = "";
+      return;
+    }
+    const d = await r.json();
+    if ((d.positions || []).length === 0) {
+      monBodyEl.innerHTML =
+        '<div class="mon-line">no open positions — nothing to monitor ' +
+        "(that is an answer, not an error)</div>";
+      monFootEl.textContent = "";
+      return;
+    }
+    monBodyEl.innerHTML = d.positions.map(p => {
+      const alerts = (p.alerts || []).map(a =>
+        `<div class="${a.severity === "alert" ? "mon-alert" : "mon-watch"}">` +
+        `${a.severity === "alert" ? "!!" : "~"} [${esc(a.kind)}] ${esc(a.detail)}</div>`).join("");
+      const spots = (p.blind_spots || []).map(n =>
+        `<div class="mon-line">. blind spot: ${esc(n)}</div>`).join("");
+      const week = p.week_change_frac == null ? "?"
+        : ((p.week_change_frac >= 0 ? "+" : "") + (p.week_change_frac * 100).toFixed(2) + "%");
+      return `<div class="mon-row">
+        <span class="mon-sym">${esc(p.symbol)}</span>
+        <span class="mon-line"> qty ${esc(p.qty)} · week ${week}</span>
+        <div class="mon-days">${esc(p.days_lens)}</div>
+        <div class="mon-line">${esc(p.structure)}</div>
+        ${p.context_note ? `<div class="mon-line">(${esc(p.context_note)})</div>` : ""}
+        ${alerts}${spots}
+        ${p.quiet ? '<div class="mon-quiet">. quiet — plan intact, volume normal</div>' : ""}
+      </div>`;
+    }).join("");
+    const s = d.summary || {};
+    monFootEl.textContent =
+      `${s.positions} position(s): ${s.alerts} alert(s), ${s.watches} watch(es), ` +
+      `${s.blind_spots} blind spot(s) · ${d.advisory || ""}` +
+      (d.calendar_note ? ` · calendar degraded: ${d.calendar_note}` : "");
+  } catch (_) {
+    monBodyEl.innerHTML = '<div class="mon-line">monitor unavailable (server starting?)</div>';
+  }
+}
+
 // ── init ──
 loadConversations();
-// Portfolio polls every 60 s while the panel is visible.
-setInterval(() => { if (portPanel.classList.contains("open")) loadPortfolio(); }, 60_000);
+// Portfolio + monitor poll every 60 s while the panel is visible.
+setInterval(() => {
+  if (portPanel.classList.contains("open")) { loadPortfolio(); loadMonitor(); }
+}, 60_000);
 </script>
 </body>
 </html>
