@@ -23,7 +23,7 @@ BACKEND = Path(__file__).resolve().parents[1] / "backend"
 sys.path.insert(0, str(BACKEND))
 
 from data.db import make_engine, make_session_factory  # noqa: E402
-from risk.engine import RiskEngine  # noqa: E402
+from risk.engine import RiskEngine, RiskLimits  # noqa: E402
 from risk.persistence import persist_risk_state, restore_risk_state  # noqa: E402
 from settings import get_settings  # noqa: E402
 
@@ -38,7 +38,7 @@ def main() -> int:
     engine = make_engine(get_settings().database_url)
     factory = make_session_factory(engine)
     with factory() as session:
-        risk = RiskEngine()
+        risk = RiskEngine(limits=RiskLimits.from_settings(get_settings()))
         restore_risk_state(session, risk)
         current = set(risk.disabled_symbols)
         before = sorted(current)

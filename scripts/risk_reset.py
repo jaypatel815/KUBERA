@@ -15,8 +15,9 @@ BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend"
 sys.path.insert(0, str(BACKEND_DIR))
 
 from data.db import make_engine, make_session_factory  # noqa: E402
-from risk.engine import LockoutActiveError, RiskEngine  # noqa: E402
+from risk.engine import LockoutActiveError, RiskEngine, RiskLimits  # noqa: E402
 from risk.persistence import persist_risk_state, restore_risk_state  # noqa: E402
+from settings import get_settings  # noqa: E402
 
 
 def main() -> int:
@@ -26,7 +27,7 @@ def main() -> int:
 
     engine = make_engine()
     factory = make_session_factory(engine)
-    risk = RiskEngine()
+    risk = RiskEngine(limits=RiskLimits.from_settings(get_settings()))
     with factory() as db:
         existed = restore_risk_state(db, risk)
         if not existed:

@@ -51,6 +51,21 @@ class RiskLimits:
     # path must pass. Sells are exempt — reducing risk is never blocked.
     max_buys_per_day: int = 5
 
+    @classmethod
+    def from_settings(cls, settings) -> "RiskLimits":
+        """T115 — the T033 promise ('owner tunes via config later'): build
+        limits from the settings object. Duck-typed so this module stays
+        import-pure; __post_init__ validates, so a bad .env value fails
+        LOUDLY at construction with the allowed range — never clamped."""
+        return cls(
+            max_position_frac=settings.risk_max_position_frac,
+            daily_loss_limit_frac=settings.risk_daily_loss_limit_frac,
+            cooldown_hours=settings.risk_cooldown_hours,
+            risk_per_trade_frac=settings.risk_per_trade_frac,
+            stop_atr_multiple=settings.risk_stop_atr_multiple,
+            max_buys_per_day=settings.risk_max_buys_per_day,
+        )
+
     def __post_init__(self):
         if not 1 <= self.max_buys_per_day <= 100:
             raise ValueError(

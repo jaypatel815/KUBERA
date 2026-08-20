@@ -22,7 +22,8 @@ from backtest.strategies import TEMPLATES, build_strategy  # noqa: E402
 from data.alpaca import AlpacaClient  # noqa: E402
 from data.db import make_engine, make_session_factory  # noqa: E402
 from data.market_data import MarketDataClient  # noqa: E402
-from risk.engine import RiskEngine  # noqa: E402
+from risk.engine import RiskEngine, RiskLimits  # noqa: E402
+from settings import get_settings  # noqa: E402
 
 
 def main() -> int:
@@ -55,7 +56,7 @@ def main() -> int:
     strategy = build_strategy(args.strategy)
     engine = make_engine()
     factory = make_session_factory(engine)
-    risk = RiskEngine()  # per-process; trip state persistence is future work (see T032 notes)
+    risk = RiskEngine(limits=RiskLimits.from_settings(get_settings()))  # T115: limits from .env
 
     # T076: fetch the release calendar once at startup (dates don't move intraday).
     # T076b: FOMC decision days come from the published table — no key needed,

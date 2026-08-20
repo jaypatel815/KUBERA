@@ -153,6 +153,37 @@ class KuberaSettings(BaseSettings):
         validation_alias=AliasChoices("FMP_BASE_URL", "KUBERA_FMP_BASE_URL"),
     )
 
+    # Risk limits (T115 — the T033 promise "owner tunes via config later").
+    # These are RAILS: raising one is a decision, not a tweak. Values are
+    # validated by RiskLimits itself at engine construction — a bad .env
+    # value fails LOUDLY at startup with the allowed range, never silently
+    # clamped. Defaults here MUST mirror risk/engine.RiskLimits defaults
+    # (pinned by test so they cannot drift apart).
+    risk_daily_loss_limit_frac: float = Field(
+        default=0.03,
+        validation_alias=AliasChoices("KUBERA_DAILY_LOSS_LIMIT_FRAC"),
+    )
+    risk_max_position_frac: float = Field(
+        default=0.20,
+        validation_alias=AliasChoices("KUBERA_MAX_POSITION_FRAC"),
+    )
+    risk_cooldown_hours: float = Field(
+        default=20.0,
+        validation_alias=AliasChoices("KUBERA_COOLDOWN_HOURS"),
+    )
+    risk_per_trade_frac: float = Field(
+        default=0.01,
+        validation_alias=AliasChoices("KUBERA_RISK_PER_TRADE_FRAC"),
+    )
+    risk_stop_atr_multiple: float = Field(
+        default=2.0,
+        validation_alias=AliasChoices("KUBERA_STOP_ATR_MULTIPLE"),
+    )
+    risk_max_buys_per_day: int = Field(
+        default=5,
+        validation_alias=AliasChoices("KUBERA_MAX_BUYS_PER_DAY"),
+    )
+
     # SEC EDGAR (T083b, D030/D034) — free and keyless, probe-verified
     # 2026-08-18 (46 earnings 8-Ks for the probe symbol, 46/46 with
     # acceptance timestamps). The SEC requires a CONTACT ADDRESS in the

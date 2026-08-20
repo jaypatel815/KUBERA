@@ -97,6 +97,7 @@ from risk.engine import RiskEngine, RiskLimits
 from risk.persistence import restore_risk_state
 from risk.sizing import volatility_parity_notional
 from risk.tiers import current_tier
+from settings import get_settings
 
 
 class ToolError(RuntimeError):
@@ -636,7 +637,7 @@ def _get_risk_status(ctx: ToolContext, _: NoArgs) -> dict:
     db = ctx.require("db")
     alpaca: AlpacaClient = ctx.require("alpaca")
     acct = alpaca.get_account()
-    engine = RiskEngine()
+    engine = RiskEngine(limits=RiskLimits.from_settings(get_settings()))
     restore_risk_state(db, engine)
     tier_info = None
     if engine.day_start_equity is not None:
@@ -1107,7 +1108,7 @@ def _size_position(ctx: ToolContext, p: SymbolArgs) -> dict:
     trade = market.get_latest_trade(symbol)
     price = trade.price
 
-    engine = RiskEngine()
+    engine = RiskEngine(limits=RiskLimits.from_settings(get_settings()))
     restore_risk_state(db, engine)
     limits = engine.limits
 

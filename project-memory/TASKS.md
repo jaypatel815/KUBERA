@@ -12,12 +12,30 @@ still writing "CI is dark" is repeating a stale claim: CI RUNS, and it is
 was RED from the deleted .python-version — FIXED, see I032; next push confirms.)
 
 ## In progress
-- **T115 (risk limits from settings — the T033 promise) — Claude/Cowork** — claimed 2026-08-19.
 - **T085b (fractional-Kelly advisory view in size_position) — Claude/Cowork** — claimed 2026-08-19.
 - **T093c (marginal risk contribution + effective bets) — Claude/Cowork** — claimed 2026-08-19.
 - **T087a (open-trade monitor v1 — advisory CLI, no voice/Orb) — Claude/Cowork** — claimed 2026-08-19.
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T115 (risk limits from settings — the T033 promise) — AWAITING REVIEW
+  2026-08-19 (Claude/Cowork)**. T033's docstring said "owner tunes via
+  config later" — later arrived. All six RiskLimits knobs now read from
+  .env (KUBERA_DAILY_LOSS_LIMIT_FRAC / MAX_POSITION_FRAC / COOLDOWN_HOURS /
+  RISK_PER_TRADE_FRAC / STOP_ATR_MULTIPLE / MAX_BUYS_PER_DAY) via
+  RiskLimits.from_settings() — duck-typed so engine.py stays import-pure;
+  __post_init__ validates, so a bad .env value REFUSES AT STARTUP with the
+  allowed range, never silently clamped. ALL SIX RiskEngine() construction
+  sites now pass settings-built limits (paper loop, both status/sizing
+  tools, brief risk section, risk_reset, risk_symbols) — the loop that
+  ENFORCES and the payloads that DISPLAY read the same numbers.
+  .env.example documents the block with the rails-not-tweaks warning.
+  EVIDENCE (D027): test_risk_settings.py 3 tests — defaults CANNOT drift
+  (settings-built == RiskLimits() pinned); env values flow through
+  (monkeypatched KUBERA_* honored, untouched fields stay default); three
+  bad values refuse with their ranges named. 1019 passed; ruff caught 4
+  missing get_settings imports MY import-smoke-test could not (function
+  bodies) — fixed before anything shipped; pyrefly canary 1; gate PASS at
+  batch close.
 - **TASKS curation (D031) — AWAITING REVIEW 2026-08-19 (Claude/Cowork)**.
   15 double-signed AWAITING entries (T114, T064b-rest, T063b, T065b, T110b,
   T084, T074a, T084a, T110a, T062c+delta, T065, T072b, T083c, T076b) moved

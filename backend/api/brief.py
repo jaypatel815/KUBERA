@@ -38,15 +38,16 @@ from data.history import equity_history
 from data.market_data import MarketDataClient
 from data.models import SignalLog, Transaction
 from risk.dqs import score_decisions
-from risk.engine import RiskEngine
+from risk.engine import RiskEngine, RiskLimits
 from risk.persistence import restore_risk_state
 from risk.tiers import current_tier
+from settings import get_settings
 
 PENDING_NOTES: list[str] = []  # T076b delivered the last standing note
 
 
 def _risk_section(db: Session, equity: float) -> dict:
-    engine = RiskEngine()
+    engine = RiskEngine(limits=RiskLimits.from_settings(get_settings()))
     restore_risk_state(db, engine)
     tier = None
     if engine.day_start_equity is not None:
