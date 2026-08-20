@@ -272,3 +272,51 @@ def test_cli_status_shows_counts_never_outcomes(tmp_path, capsys):
     # the anti-peek pin: no price, return, or coverage figure appears
     for banned in ("coverage", "%", "101", "200.0"):
         assert banned not in out
+
+
+# --- accidental-restart guard (observed live 2026-08-20) ---------------------
+
+
+def test_start_refuses_restart_without_explicit_flag(tmp_path, capsys,
+                                                     monkeypatch):
+    """The owner re-ran `start` minutes after attempt 1; only an argparse
+    error stopped attempt 2 being spent. Now the guard refuses — and
+    proves it spent NOTHING — unless --another-attempt is explicit."""
+    import importlib.util
+    from pathlib import Path as _P
+    from types import SimpleNamespace
+
+    from research.custody import open_budget, record_attempt
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from data.models import Base
+
+    dbfile = tmp_path / "kubera.sqlite3"
+    engine = create_engine(f"sqlite:///{dbfile.as_posix()}")
+    Base.metadata.create_all(engine)
+    with sessionmaker(bind=engine)() as s:
+        freeze_holdout(s, "kronos-v1-fwd", ["SPY"],
+                       "2026-08-24", "2026-10-02")
+        open_budget(s, "kronos-v1", max_attempts=3)
+        record_attempt(s, "kronos-v1", outcome="started")  # attempt 1 spent
+    engine.dispose()
+
+    script = _P(__file__).resolve().parents[2] / "scripts" / "kronos_run.py"
+    spec = importlib.util.spec_from_file_location("kronos_run_guard", script)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    # the gate subprocess is not under test here — pretend it printed OPEN
+    monkeypatch.setattr(mod.subprocess, "run",
+                        lambda *a, **k: SimpleNamespace(returncode=0,
+                                                        stdout="", stderr=""))
+
+    assert mod.cmd_start(dbfile) == 1
+    out = capsys.readouterr().out
+    assert "ALREADY STARTED" in out and "--another-attempt" in out
+    assert mod.cmd_status(dbfile) == 0
+    assert "1/3 attempts used" in capsys.readouterr().out  # NOTHING spent
+
+    # the explicit flag is the legitimate path: attempt 2 records
+    assert mod.cmd_start(dbfile, another_attempt=True) == 0
+    assert "ATTEMPT 2 recorded" in capsys.readouterr().out

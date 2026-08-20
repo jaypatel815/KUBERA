@@ -61,7 +61,7 @@ def _session(db: Path):
     return engine, sessionmaker(bind=engine)()
 
 
-def cmd_start(db: Path) -> int:
+def cmd_start(db: Path, another_attempt: bool = False) -> int:
     gate = subprocess.run(
         [sys.executable, str(REPO_ROOT / "scripts" / "phase7_gate.py"),
          "--revision", REVISION, "--db", str(db)],
@@ -73,6 +73,27 @@ def cmd_start(db: Path) -> int:
         return 1
     engine, s = _session(db)
     try:
+        # The accidental-restart guard (observed live 2026-08-20: the owner
+        # re-ran `start` minutes after attempt 1; only an argparse error
+        # stopped attempt 2 being spent — luck is not a rail). A second
+        # start with attempts already used must be EXPLICIT.
+        import json as _json
+
+        from sqlalchemy import select
+
+        from data.models import ExperimentBudget
+
+        row = s.execute(select(ExperimentBudget)
+                        .where(ExperimentBudget.revision == REVISION)
+                        ).scalars().first()
+        used = len(_json.loads(row.attempts_json or "[]")) if row else 0
+        if used > 0 and not another_attempt:
+            print(f"REFUSED: attempt {used} is already recorded — the "
+                  "campaign is ALREADY STARTED; re-running `start` would "
+                  "spend another of your attempts for nothing. If you "
+                  "truly mean to begin a NEW attempt (after a failed "
+                  "campaign), run:  start --another-attempt")
+            return 1
         receipt = record_attempt(s, REVISION, outcome="started",
                                  note="campaign start via kronos_run.py")
         print(f"ATTEMPT {receipt.attempt_number} recorded "
@@ -284,7 +305,10 @@ def main(argv: list[str] | None = None) -> int:
         description="kronos-v1 campaign runner (T122b) — paper-forward only.")
     ap.add_argument("--db", type=Path, default=DEFAULT_DB)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("start")
+    st = sub.add_parser("start")
+    st.add_argument("--another-attempt", action="store_true",
+                    help="explicitly spend a NEW attempt when one is "
+                         "already recorded (after a failed campaign)")
     sub.add_parser("status")
     f = sub.add_parser("forecast")
     f.add_argument("--model-file", type=Path, required=True)
@@ -309,7 +333,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     try:
         if args.cmd == "start":
-            return cmd_start(args.db)
+            return cmd_start(args.db, another_attempt=args.another_attempt)
         if args.cmd == "status":
             return cmd_status(args.db)
         if args.cmd == "forecast":
