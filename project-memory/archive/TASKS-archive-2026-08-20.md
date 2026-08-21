@@ -1630,3 +1630,55 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
       - T145 (PASS): Read `README.md` updates regarding company name lookups, phone installation, and Kronos runbook CLI quick-reference.
       - RAN full verify gate: 1,155 passed, 3 skipped, pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
     concerns: none.
+
+## Curation #12 (2026-08-21) — batch #11 (PASS at ead9bdc)
+
+- **Batch #11: curation #11 + T146 + T147 + T148 - AWAITING REVIEW
+  2026-08-21 (Claude/Cowork; independent units, D038 sized). SHAs per
+  D033: 19617cb (curation #11) / c6bff8f (T146) / 145df84 (T147) /
+  4d45d74 (T148) / close SHA on this commit.**
+  CURATION #11 at 19617cb: batch #10 (PASS 43bb0e7) + I038 fix (PASS
+  d727e80) -> archive with verdicts; TASKS back to ~360 working lines.
+  T146 - DRIFT PIN at c6bff8f: owner's newer pydantic-settings emits a
+  FastMCP 'lifespan' forward-ref warning our sandbox never sees - the
+  warning is THIRD-PARTY and cosmetic (finding recorded, not "fixed"),
+  but unbounded version drift across three environments is how
+  I038-class surprises breed -> capped >=2.2,<3 with a reason comment,
+  matching mcp's and pyrefly's load-bearing pins; verified 2.15.0 still
+  installs under the cap. + weekly review's computed-then-discarded
+  week_ago removed.
+  T147 - THE BELL at 145df84 (Phase 5): monitor alerts become OS
+  notifications via the Notification API. Bell in the panel header;
+  permission requested on the click (a gesture, as browsers require);
+  fires only on NEW symbol+kind transitions, tracked EVERY poll so
+  enabling never bursts what is already on screen; persisting alert
+  notifies once, cleared-then-returned re-notifies; alerts only, watches
+  stay in-panel. Honest scope in the tooltip itself: only while the
+  panel is open, no push server - the PWA push gap stays NAMED.
+  T148 - BACKUP WATCH at 4d45d74: restore_check proves a backup
+  RESTORES; check_backup proves they keep HAPPENING - newest *.sqlite3
+  mtime >30h (or missing/empty backups/) -> named problem telling the
+  owner what to DO; wired into run_checks + --max-backup-age, so the
+  every-5-min toast covers it.
+  EVIDENCE (D027): full gate PASS - 1,163 passed (+5 from batch #10
+  close: 4 backup tests + 1 notification pin test... counted: test_ops
+  13->17, test_orb_panel +1), pyrefly exactly 0, budgets in bounds,
+  node --check on Orb JS exit 0, pip resolve under the new cap verified
+  live (2.15.0).
+  D028 objections: (1) check_backup trusts mtime - a touch(1) would fool
+  it; accepted, the threat model is "job stopped", not "job forged".
+  (2) T147 notification content includes the alert detail text - it
+  renders in the OS notification center; no account NUMBERS ride alerts
+  (they carry kind+detail prose), and the panel is local-only. (3) The
+  bell state does not persist across reloads (no localStorage by house
+  rule) - re-enabling is one click; stated here rather than silently
+  bolted on.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 38b4ad8 (SHAs: 19617cb, c6bff8f, 145df84, 4d45d74, 38b4ad8) — PASS
+    aligned: Batch #11 — Curation #11 (memory archiving), pydantic-settings version capping & brief cleanup (T146), Orb monitor alert OS notifications (T147), backup freshness check (T148).
+    checked:
+      - Curation #11 (PASS): Verified archive file `TASKS-archive-2026-08-20.md` with Batch #10 and I038 fix double-signed records.
+      - T146 (PASS): Read `backend/requirements.txt` (pydantic-settings capped `>=2.2,<3` to eliminate cross-environment drift) and `backend/api/brief.py` (unused `week_ago` removed).
+      - T147 (PASS): Read `apps/web/orb.html` and `backend/tests/test_orb_panel.py`. Ran `node --check` on extracted JS (exit 0). Verified `#btn-notify` element, Notification permission request on user gesture, per-symbol+kind transition tracking, and honest tooltip scope.
+      - T148 (PASS): Read `scripts/health_check.py` and `backend/tests/test_ops.py`. Tested `check_backup` live in Python across missing dir, empty dir, fresh backup, and stale backup states. Verified `--max-backup-age` argument integration. 4 unit tests pass.
+      - RAN full verify gate: 1,163 passed, 3 skipped, pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
+    concerns: none.
