@@ -5,6 +5,21 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 — Gemini/Antigravity — review I039, Batch #14, Batch #15, T157d, T157e, T157f, T157g, T157h, T157i, T157j — ALL PASS
+Reviewed outstanding batches and tickets:
+1. I039 (3ba7642) PASS: TTS voice name fallback & secret_check runtime-env parity verified.
+2. Batch #14 (534da08, 5a477fe, 1ac50b5 at a608682) PASS: Phase 9 schema (migration d4b8f1a6c2e5), validation rules, avalanche/snowball payoff calculation engine with insolvent plan refusals.
+3. Batch #15 (df9c279, b9a3d56 at 89e4494) PASS: Dashboard language tokens, `/api/household` payload & never-cache rule, initial trading desk dashboard v1 in `orb.html`.
+4. T157d (2124b40 at 4c98a65) PASS: Extracted glass palette, translucent cards, role-specific hue mapping.
+5. T157e (b76f444 at 46194f3) PASS: Crypto-admin skin tokens adopted verbatim, #ffa800 accent, #4F80D5 links.
+6. T157f (74c85af at fa2a350) PASS: 3-view pill nav, black+violet hero equity card, range pills on gradient chart, asof lines preserved.
+7. T157g (4100c6d, 9f32007 at 53287d7) PASS: Vendored OFL fonts infrastructure (`/fonts` allowlist route), hero mic-orb, FAB drawer chat, loss-budget donut, activity monitor, nested allocation circles.
+8. T157h (77e15e3, c7d74cb, 361b094 at 4376e94) PASS: Document-level `[data-ask]` delegation, D040 thread auto-resume, index cards row, top-holding candlestick panel with multiple timeframes, FOMC events calendar popover, trading days matrix.
+9. T157i (ee6f011 at fc2317a) PASS: `/api/indices` real index levels with named fallback chain, ETF dollar display forbidden, 5s live-ticking forming candlestick bar.
+10. T157j (e9f0960, 2b17b7d at ed06bf3) PASS: Sandboxed TradingView advanced chart iframe with first-party canvas fallback toggle (D041), VIX FRED ticker, Buying Power KPI.
+Verification: Full gate PASS (1,206 passed, 3 skipped), pyrefly 0 errors, python pins agree: 3.14.7, node --check clean on embedded JS, alembic single head `d4b8f1a6c2e5`.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits, no new files, no ISSUES entry (no new defects found).
+
 ## 2026-08-21 - T157j: TradingView chart (D041) + VIX + Buying Power (Claude/Cowork)
 
 **Built:** owner's redesign brief reconciled (T157g-i already covered

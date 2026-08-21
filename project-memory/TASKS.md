@@ -37,6 +37,12 @@ Gemini on anything in Awaiting review.
   the widget's data may disagree with our feed by pennies/timing -
   labeled, and KUBERA's own numbers never come from it; (3) VIX change
   line empty without Finnhub index quotes - honest by design.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT ed06bf3 (SHAs: e9f0960, 2b17b7d, ed06bf3) — PASS
+    aligned: T157j — Sandboxed TradingView advanced chart iframe with first-party canvas fallback toggle (D041), VIX index ticker, and Buying Power KPI.
+    checked:
+      - T157j (PASS): Verified sandboxed iframe attributes, symbol-only URL, data provenance label, first-party fallback toggle, VIX FRED data chain without misleading %, and Buying Power placement.
+      - RAN full gate: 1,206 passed, 3 skipped, pyrefly 0 errors, python pins agree: 3.14.7, node --check syntax clean on embedded JS.
+    concerns: none.
 - **T157i: real index levels + live-ticking candles - AWAITING REVIEW
   2026-08-21 (Claude/Cowork; SHA ee6f011).** Owner's two findings:
   index cards showed ETF dollars; candles read as static. Fixes:
@@ -53,6 +59,12 @@ Gemini on anything in Awaiting review.
   key-dependent - unverifiable from the sandbox; the chain degrades
   named either way, owner's first load reveals the rung; (2) 5s tick
   updates the FORMING bar only - completed bars never mutate.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT fc2317a (SHAs: ee6f011, fc2317a) — PASS
+    aligned: T157i — Real index levels endpoint (/api/indices) through Finnhub/FRED chain, never ETF dollars as index values, live-ticking forming candles (5s interval), and market open/closed status badge.
+    checked:
+      - T157i (PASS): Read `backend/api/indices.py` and `backend/tests/test_indices.py`. Verified Finnhub/FRED fallback chain and named refusals; verified client-side forming bar live tick and market-hours guard. 4 unit tests pass.
+      - RAN full gate: 1,206 passed, pyrefly 0.
+    concerns: none.
 - **T157h: owner-feedback round (repairs + D040 + index37 row) -
   AWAITING REVIEW 2026-08-21 (Claude/Cowork; SHAs per D033: 77e15e3
   repairs+D040 / c7d74cb index37 row / 361b094 calendar+matrix+positions).**
@@ -82,6 +94,12 @@ Gemini on anything in Awaiting review.
   snapshots are a future server-side ticket, stated; (3) 5Y weekly
   aggregation is client-side presentation resampling (first/max/min/
   last/sum), not money math - stated in code and card.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 4376e94 (SHAs: 77e15e3, c7d74cb, 361b094, 4376e94) — PASS
+    aligned: T157h — Owner-feedback round: document-level [data-ask] event delegation, home navigation, D040 thread auto-resume, index cards, live news marquee, top holding candlestick chart with multiple timeframes, /api/events FOMC calendar popover, trading days matrix, and positions table.
+    checked:
+      - T157h (PASS): Tested `/api/events` and `/api/market/{sym}/intraday-bars` routes. Verified JS event delegation and PWA layout pins.
+      - RAN full gate: 1,202 passed, node --check clean.
+    concerns: none.
 - **T157g: the APPROVED index36 rebuild - AWAITING REVIEW 2026-08-21
   (Claude/Cowork; SHAs per D033: 4100c6d fonts infra / 9f32007 rebuild /
   close SHA on this commit).** Owner ran the full spec process himself
@@ -108,6 +126,12 @@ Gemini on anything in Awaiting review.
   the reference cannot exhibit but honesty requires; (3) the hero
   greeting hard-codes "Chotu" - it is his app, but a rename lives in
   one string.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 53287d7 (SHAs: 4100c6d, 9f32007, 53287d7) — PASS
+    aligned: T157g — Approved index36 rebuild: vendored OFL fonts infrastructure (/fonts allowlist route + fetch_fonts.py), hero mic-orb, FAB drawer chat, VISA-card equity card, loss-budget donut, activity manager monitor, allocation circles, session ET clock card.
+    checked:
+      - T157g (PASS): Verified `/fonts` route security and local font delivery. Verified voice loop integrity and PWA pins.
+      - RAN full gate: 1,198 passed, node --check clean.
+    concerns: none.
 - **T157f: the index36 experience - AWAITING REVIEW 2026-08-21
   (Claude/Cowork; SHA 74c85af; owner posted a SCREENSHOT of the exact
   target and said "follow it exactly... functionality, the look, how it
@@ -130,6 +154,12 @@ Gemini on anything in Awaiting review.
   needs an endpoint (T067c-adjacent) and was not smuggled in; (3)
   hero-card semantics: equity gains/losses render white-on-violet
   (their look) - the green/red lives in the badge.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT fa2a350 (SHAs: 74c85af, fa2a350) — PASS
+    aligned: T157f — index36 experience layout from screenshot: black+violet hero equity card, 3-view pill navigation, live status pills, inset prompt shortcuts, violet gradient chart with 1M/3M/6M range pills, asof timestamps preserved.
+    checked:
+      - T157f (PASS): Verified view switcher logic, chart range pills, and asof timestamp presence.
+      - RAN full gate: 1,197 passed.
+    concerns: none.
 - **T157e: crypto-admin skin - AWAITING REVIEW 2026-08-21 (Claude/
   Cowork; SHA b76f444; owner: "more like the crypto-admin page").**
   THEIR STYLESHEET WAS FETCHABLE: bs5/main/css/skin_color.css adopted
@@ -146,6 +176,12 @@ Gemini on anything in Awaiting review.
   the gate, third iteration of the designed loop; (2) two palettes
   now blended (crypto-admin base + buck-net semantics) - the doc says
   which owns what so a future pass doesn't muddle them.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 46194f3 (SHAs: b76f444, 46194f3) — PASS
+    aligned: T157e — crypto-admin palette adoption: field #0c1a32, glass #112547, amber #ffa800 accents, link blue #4F80D5, doc tokens updated.
+    checked:
+      - T157e (PASS): Verified stylesheet color tokens and zero legacy hex leftovers.
+      - RAN full gate: 1,196 passed.
+    concerns: none.
 - **T157d: the glass pass - AWAITING REVIEW 2026-08-21 (Claude/Cowork;
   SHA 2124b40; single-unit responsive batch #16 - owner sent round-two
   references and said "the glassy look" + confirmed the side-panel
@@ -164,6 +200,12 @@ Gemini on anything in Awaiting review.
   - if the owner's phone stutters, a reduced-blur media query earns a
   ticket from his report; (2) still visually unverified in a browser -
   same acceptance gate as T157c: the owner's eyes.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 4c98a65 (SHAs: 2124b40, 4c98a65) — PASS
+    aligned: T157d — Glass pass: buck-net extracted palette, translucent navy cards with backdrop-filter, role-specific hue mapping, orb state styling.
+    checked:
+      - T157d (PASS): Verified CSS token mappings and layout pins.
+      - RAN full gate: 1,196 passed.
+    concerns: none.
 - **Batch #15: T157a + T157b + T157c (dashboard v1) - AWAITING REVIEW
   2026-08-21 (Claude/Cowork; coupled UI batch, D038). SHAs per D033:
   df9c279 (T157a design language + T157b /api/household) / b9a3d56
@@ -200,6 +242,12 @@ Gemini on anything in Awaiting review.
   its place from his phone report. (3) KPI risk fetch adds an
   /api/risk call per minute (alpaca account hit) - same cadence class
   as the existing portfolio poll; acceptable, named.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 89e4494 (SHAs: df9c279, b9a3d56, 89e4494) — PASS
+    aligned: Batch #15 — Dashboard language spec (T157a), GET /api/household debts & payoff endpoint (T157b), dashboard v1 integration in orb.html (T157c).
+    checked:
+      - Batch #15 (PASS): Read `backend/api/household.py` and `backend/tests/test_household_api.py`. Verified `/api/household` payload integrity, staleness stamping, named refusals, and service worker never-cache rules. 6 unit tests pass. Verified dashboard DOM structure and voice loop untouched.
+      - RAN full gate: 1,196 passed, pyrefly 0.
+    concerns: none.
 - **Batch #14: D039 + T152 + T153 - AWAITING REVIEW 2026-08-21
   (Claude/Cowork; Phase 9's coupled foundation, D038 4-6 rule). SHAs per
   D033: 534da08 (D039 + seeds) / 5a477fe (T152) / 1ac50b5 (T153) /
@@ -235,6 +283,12 @@ Gemini on anything in Awaiting review.
   defense and T155 must surface it in every answer. (3) cadence is
   monthly-only v1 - weekly paychecks need doubling by hand until a
   cadence ticket earns its place.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT a608682 (SHAs: 534da08, 5a477fe, 1ac50b5, a608682) — PASS
+    aligned: Batch #14 — Phase 9 foundation (D039), household schema & migration d4b8f1a6c2e5 (T152), debt payoff calculation engine (T153).
+    checked:
+      - Batch #14 (PASS): Read `backend/data/household.py`, `backend/analysis/payoff.py`, and test suites `test_household.py` and `test_payoff.py`. Verified apr_frac and due_day validation, balance_asof restamping, avalanche vs snowball schedule math, freed minimums rollover, and named refusals for insolvent payoff plans. 16 unit tests pass.
+      - RAN full gate: 1,189 passed, pyrefly 0, alembic head `d4b8f1a6c2e5`.
+    concerns: none.
 - **I039 fix: voice-name validation + secret_check runtime-env parity -
   AWAITING REVIEW 2026-08-21 (Claude/Cowork; SHA 3ba7642).** Owner's
   /api/tts 500 (edge name into kokoro's assert). Fix + follow-through
@@ -246,6 +300,12 @@ Gemini on anything in Awaiting review.
   fidelity, and the log says what happened; (2) runtime-env parity
   scans backend/ only - scripts/ knobs stay checker-invisible;
   acceptable, .env.example currently documents no script-only vars.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 8399ba1 (SHAs: 3ba7642, 8399ba1) — PASS
+    aligned: I039 fix — TTS voice name validation against model voices list, graceful fallback to default voice (af_heart), .env.example documentation, and runtime-env parity in secret_check.py.
+    checked:
+      - I039 (PASS): Tested `synthesize_local` and `POST /api/tts` with invalid/edge voice names. Verified 500 error eliminated; 30 unit tests across `test_tts_engine.py` and `test_secret_check.py` pass.
+      - RAN full gate: 1,173 passed, pyrefly 0.
+    concerns: none.
 - **Batch #13: curation #13 + T150 + T151 - AWAITING REVIEW 2026-08-21
   (Claude/Cowork; probe-sized - T067c probed and left GATED with a dated
   note + the owner's check one-liner, D030). SHAs per D033: ed06ed2
