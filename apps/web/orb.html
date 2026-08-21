@@ -8,346 +8,551 @@
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <title>KUBERA</title>
 <style>
-  /* ══ T157f — the index36 look, built FROM THE OWNER'S SCREENSHOT ══
-     (his image is the first pixel ground truth: matte near-black cards,
-     radius 20, on pure black; VIOLET is the accent — gradients on the
-     hero card, active chart bar, buttons; green/red delta badges; inset
-     sub-boxes with corner arrows; pill nav in the top bar. Functionality
-     mapped to REAL KUBERA data; asof lines stay — doctrine.) */
+  /* ══ T157g — index36 REBUILT PER APPROVED SPEC (owner's screenshot is
+     the pixel authority; template css2 type system; amber #FFA800 is the
+     one accent; cards matte on pure black; asof survives everywhere) ══ */
+  @font-face { font-family: "IBM Plex Sans"; font-weight: 400; font-display: swap;
+    src: local("IBM Plex Sans"), url("/fonts/ibm-plex-sans-400.woff2") format("woff2"); }
+  @font-face { font-family: "IBM Plex Sans"; font-weight: 500; font-display: swap;
+    src: local("IBM Plex Sans Medium"), url("/fonts/ibm-plex-sans-500.woff2") format("woff2"); }
+  @font-face { font-family: "IBM Plex Sans"; font-weight: 600; font-display: swap;
+    src: local("IBM Plex Sans SemiBold"), url("/fonts/ibm-plex-sans-600.woff2") format("woff2"); }
+  @font-face { font-family: "IBM Plex Sans"; font-weight: 700; font-display: swap;
+    src: local("IBM Plex Sans Bold"), url("/fonts/ibm-plex-sans-700.woff2") format("woff2"); }
+  @font-face { font-family: "Rubik"; font-weight: 500; font-display: swap;
+    src: local("Rubik Medium"), url("/fonts/rubik-500.woff2") format("woff2"); }
+  @font-face { font-family: "Rubik"; font-weight: 600; font-display: swap;
+    src: local("Rubik SemiBold"), url("/fonts/rubik-600.woff2") format("woff2"); }
+  @font-face { font-family: "Rubik"; font-weight: 700; font-display: swap;
+    src: local("Rubik Bold"), url("/fonts/rubik-700.woff2") format("woff2"); }
+
+  :root {
+    --bg: #050505; --card: #0B0B0E; --inset: #14141A; --chip: #17171B;
+    --line: rgba(255,255,255,0.05); --amber: #FFA800; --amber-deep: #C57F00;
+    --amber-tint: rgba(255,168,0,0.12); --txt: #FFFFFF; --mut: #8E8E96;
+    --dim: #5A5A62; --up: #34C77B; --dn: #FF4D4F;
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { height: 100%; color: #FFFFFF; overflow: hidden;
-    background: #050507;
-    font-family: "Segoe UI", Inter, -apple-system, system-ui, sans-serif; }
-  body { background:
-      radial-gradient(700px 380px at 20% -10%, rgba(140,124,248,0.10), transparent 60%),
-      radial-gradient(900px 500px at 105% 15%, rgba(109,92,224,0.08), transparent 60%),
-      #050507; }
+  html, body { height: 100%; background: var(--bg); color: var(--txt); overflow: hidden;
+    font-family: "IBM Plex Sans", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 14px; }
+  .rub { font-family: Rubik, "IBM Plex Sans", "Segoe UI", sans-serif; }
+  button { font-family: inherit; }
 
-  /* ── top bar: logo chip + pill nav + bell + user chip ── */
-  #topbar { position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 300;
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    padding: 0 14px; background: rgba(8,8,11,0.85); border-bottom: 1px solid rgba(255,255,255,0.06);
-    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-  #brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-  #logo { width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
-    background: linear-gradient(135deg, #A08BFC, #6D5BE2);
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-weight: 700; font-size: 15px; }
-  #wordmark { color: #FFFFFF; font-size: 14px; letter-spacing: 3px; font-weight: 600; }
-  #brand-sub { color: #5E5E6A; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
-  #nav { display: flex; align-items: center; gap: 4px; background: #0D0D13;
-    border: 1px solid rgba(255,255,255,0.06); border-radius: 999px; padding: 4px; }
-  .navp { border: none; background: none; color: #8E8E9A; font-size: 12px;
-    padding: 7px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap;
-    transition: background 0.15s, color 0.15s; }
-  .navp:hover { color: #E4E4EC; }
-  .navp.active { background: #1A1A22; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.07); }
-  #top-right { display: flex; align-items: center; gap: 8px; }
-  .iconbtn { width: 34px; height: 34px; border-radius: 999px; background: #0D0D13;
-    border: 1px solid rgba(255,255,255,0.07); color: #8E8E9A; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; font-size: 14px; }
-  .iconbtn:hover { color: #FFFFFF; border-color: rgba(160,139,252,0.5); }
-  #btn-notify.on { color: #A99BFB; border-color: rgba(160,139,252,0.6); }
-  #userchip { display: flex; align-items: center; gap: 8px; background: #0D0D13;
-    border: 1px solid rgba(255,255,255,0.07); border-radius: 999px; padding: 4px 12px 4px 4px; }
-  #avatar { width: 26px; height: 26px; border-radius: 999px;
-    background: linear-gradient(135deg, #A08BFC, #6D5BE2); color: #fff;
-    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
-  #uname { font-size: 11.5px; color: #E4E4EC; line-height: 1.1; }
-  #uname small { display: block; color: #5E5E6A; font-size: 9px; }
-  #top-date { color: #5E5E6A; font-size: 10.5px; letter-spacing: 0.5px; }
+  /* ── header (64px) ── */
+  #topbar { position: fixed; top: 0; left: 0; right: 0; height: 64px; z-index: 300;
+    display: flex; align-items: center; gap: 14px; padding: 0 24px;
+    background: var(--bg); border-bottom: 1px solid var(--line); }
+  #brand { display: flex; align-items: center; gap: 10px; }
+  #logo { width: 34px; height: 34px; border-radius: 999px; border: 2px solid var(--amber);
+    color: var(--amber); display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px; }
+  #wordmark { font-family: Rubik, sans-serif; font-weight: 700; font-size: 17px; }
+  #brand-sub { display: none; }
+  #left-chips { display: flex; gap: 10px; margin-left: 10px; }
+  .hchip { width: 40px; height: 40px; border-radius: 12px; background: var(--chip);
+    border: 1px solid var(--line); color: var(--amber); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .hchip:hover { background: #1d1d23; }
+  .hchip.active { background: var(--amber-tint); }
+  #top-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+  #cmd { width: 230px; height: 40px; background: #131317; border: 1px solid var(--line);
+    border-radius: 10px; color: var(--txt); padding: 0 14px; font-size: 12.5px;
+    outline: none; }
+  #cmd::placeholder { color: var(--dim); }
+  #cmd:focus { border-color: var(--amber); }
+  #btn-notify.on { background: var(--amber-tint); }
+  #syspop { position: fixed; top: 70px; right: 24px; z-index: 400; display: none;
+    background: var(--inset); border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px 14px; font-size: 11.5px; color: var(--mut); max-width: 260px; }
+  #syspop b { color: var(--txt); }
 
-  #shell { position: fixed; inset: 56px 0 0 0; display: flex; flex-direction: row; }
-  #main { flex: 1; min-width: 0; overflow-y: auto; padding: 14px; }
+  /* ── hero strip ── */
+  #hero { position: fixed; top: 64px; left: 0; right: 0; height: 150px; z-index: 200;
+    display: grid; grid-template-columns: 300px 1fr 120px; align-items: center;
+    padding: 0 24px; background: var(--bg); }
+  #hero-left { display: flex; flex-direction: column; gap: 10px; }
+  #hero-date-row { display: flex; align-items: center; gap: 10px; }
+  #hero-day { width: 56px; height: 56px; border: 1.5px solid rgba(255,255,255,0.6);
+    border-radius: 14px; display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 700; font-family: Rubik, sans-serif; }
+  #hero-date { color: var(--mut); font-size: 13px; line-height: 1.3; }
+  #hero-cta { display: flex; align-items: center; gap: 10px; }
+  .apill { height: 40px; padding: 0 18px; border: none; border-radius: 999px;
+    background: var(--amber); color: #fff; font-weight: 600; font-size: 12.5px;
+    cursor: pointer; }
+  .apill:hover { background: #ffb52a; }
+  #hero-cal { width: 42px; height: 42px; border-radius: 12px; background: #fff;
+    color: #000; border: none; cursor: pointer; font-size: 16px; position: relative; }
+  #hero-cal::after { content: ""; position: absolute; top: 6px; right: 6px; width: 7px;
+    height: 7px; border-radius: 999px; background: #FF3B30; }
+  #greet { text-align: center; }
+  #greet .g1 { font-family: Rubik, sans-serif; font-size: 34px; font-weight: 700; }
+  #greet .g2 { color: var(--mut); font-size: 25px; font-weight: 500; margin-top: 2px; }
+  #micwrap { width: 74px; height: 74px; border-radius: 999px; background: #fff;
+    justify-self: end; cursor: pointer; position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; }
+  #orb { width: 74px; height: 74px; position: absolute; inset: 0; cursor: pointer; }
+  #micglyph { width: 22px; height: 22px; pointer-events: none; }
+  #status { display: none; }
+
+  /* ── content ── */
+  #shell { position: fixed; inset: 214px 0 0 0; display: flex; }
+  #main { flex: 1; min-width: 0; overflow-y: auto; padding: 4px 24px 24px; }
   #main::-webkit-scrollbar { width: 4px; }
-  #main::-webkit-scrollbar-thumb { background: #26262E; border-radius: 3px; }
+  #main::-webkit-scrollbar-thumb { background: #222; border-radius: 3px; }
   .view[hidden] { display: none; }
 
-  /* ── stat cards (their Balance/Profit/Loss/Trade row) ── */
-  #kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 12px; margin-bottom: 12px; }
-  .kpi { background: #0D0D13; border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 20px; padding: 14px 16px; min-height: 108px; position: relative; }
-  .kpi.hero { background: linear-gradient(135deg, #8C7CF8 0%, #5B49C9 100%);
-    border-color: rgba(255,255,255,0.14); }
-  .kpi.hero .kl, .kpi.hero .kfoot { color: rgba(255,255,255,0.75); }
-  .kpi.hero .kv { color: #FFFFFF; }
-  .krow { display: flex; align-items: center; gap: 8px; }
-  .kic { width: 26px; height: 26px; border-radius: 8px; background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center;
-    justify-content: center; font-size: 12px; color: #C9BFFF; flex-shrink: 0; }
-  .kpi.hero .kic { background: rgba(255,255,255,0.18); color: #fff; }
-  .kl { color: #8E8E9A; font-size: 11px; letter-spacing: 0.4px; }
-  .kv { color: #FFFFFF; font-size: 24px; font-weight: 700; margin-top: 8px;
-    font-variant-numeric: tabular-nums; }
-  .kv.pos { color: #34C77B; } .kv.neg { color: #FF5063; }
-  .kpi.hero .kv.pos, .kpi.hero .kv.neg { color: #FFFFFF; }
-  .kb { display: inline-flex; align-items: center; gap: 4px; margin-top: 7px;
-    font-size: 10.5px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
-  .kb.pos { color: #34C77B; background: rgba(52,199,123,0.12); }
-  .kb.neg { color: #FF5063; background: rgba(255,80,99,0.12); }
-  .kb.na  { color: #8E8E9A; background: rgba(255,255,255,0.06); }
-  .kpi.hero .kb { background: rgba(255,255,255,0.18); color: #fff; }
-  .kfoot { color: #5E5E6A; font-size: 9.5px; margin-top: 6px; line-height: 1.4; }
-  .kbar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 999px;
-    margin-top: 8px; overflow: hidden; }
-  #kpi-budget-fill { height: 100%; width: 0%;
-    background: linear-gradient(90deg, #A08BFC, #6D5BE2);
-    border-radius: 999px; transition: width 0.4s ease; }
-
-  /* ── cards + their inset sub-boxes + status pills ── */
-  #cards, .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 12px; }
-  .grid2 { margin-top: 12px; }
-  .card { background: #0D0D13; border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 20px; padding: 14px 16px; min-width: 0; }
-  .ch { display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    margin-bottom: 10px; }
-  .ct { color: #E4E4EC; font-size: 12.5px; font-weight: 600; display: flex;
-    align-items: center; gap: 8px; }
-  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 10px;
-    padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.08);
-    color: #8E8E9A; background: rgba(255,255,255,0.04); white-space: nowrap; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+    padding: 20px; min-width: 0; }
+  .ct { font-family: Rubik, sans-serif; font-size: 15px; font-weight: 600; }
+  .lbl { color: var(--mut); font-size: 12px; }
+  .fine { color: var(--dim); font-size: 10px; margin-top: 6px; }
+  .inset { background: var(--inset); border-radius: 14px; padding: 12px 14px;
+    position: relative; }
+  .chipdd { background: var(--chip); border: 1px solid var(--line); color: var(--mut);
+    border-radius: 10px; padding: 6px 12px; font-size: 11.5px; cursor: pointer;
+    white-space: nowrap; }
+  .cicon { width: 40px; height: 40px; border-radius: 999px; background: var(--chip);
+    color: var(--amber); display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0; }
+  .acirc { width: 34px; height: 34px; border-radius: 999px; background: var(--amber);
+    color: #fff; border: none; cursor: pointer; font-size: 13px; flex-shrink: 0; }
+  .dpill { height: 40px; padding: 0 18px; border-radius: 999px; background: var(--chip);
+    border: 1px solid var(--line); color: var(--txt); font-size: 12.5px; cursor: pointer; }
+  .wpill { height: 40px; padding: 0 20px; border-radius: 999px; background: #fff;
+    border: none; color: #000; font-weight: 600; font-size: 12.5px; cursor: pointer; }
+  .dollar { color: var(--amber); }
+  .pos { color: var(--up); } .neg { color: var(--dn); }
+  .go { position: absolute; top: 10px; right: 10px; width: 24px; height: 24px;
+    border-radius: 8px; border: 1px solid var(--line); background: var(--card);
+    color: var(--mut); cursor: pointer; font-size: 11px; }
+  .go:hover { color: var(--amber); }
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px;
+    padding: 3px 10px; border-radius: 999px; background: var(--chip);
+    border: 1px solid var(--line); color: var(--mut); white-space: nowrap; }
   .pill::before { content: ""; width: 5px; height: 5px; border-radius: 999px;
-    background: #8E8E9A; }
-  .pill.ok  { color: #34C77B; } .pill.ok::before  { background: #34C77B; }
-  .pill.bad { color: #FF5063; } .pill.bad::before { background: #FF5063; }
-  .pill.vio { color: #A99BFB; } .pill.vio::before { background: #A99BFB; }
-  .inset { background: #15151C; border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 12px; padding: 9px 11px; margin-top: 8px; position: relative; }
-  .inset .il { color: #8E8E9A; font-size: 9.5px; letter-spacing: 0.3px; }
-  .inset .iv { color: #FFFFFF; font-size: 13.5px; font-weight: 600; margin-top: 2px;
+    background: var(--mut); }
+  .pill.ok { color: var(--up); } .pill.ok::before { background: var(--up); }
+  .pill.bad { color: var(--dn); } .pill.bad::before { background: var(--dn); }
+  .pill.amb { color: var(--amber); } .pill.amb::before { background: var(--amber); }
+
+  /* row 1 */
+  #kpis { display: grid; grid-template-columns: 4fr 2.6fr 1.4fr 3fr; gap: 20px;
+    margin-bottom: 20px; align-items: stretch; }
+  #acct-card .brandrow { display: flex; align-items: center; justify-content: space-between; }
+  #acct-brand { font-family: Rubik, sans-serif; font-weight: 700; font-size: 15px;
+    letter-spacing: 1px; }
+  #acct-card .kv { font-size: 24px; font-weight: 700; margin-top: 4px;
     font-variant-numeric: tabular-nums; }
-  .go { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px;
-    border-radius: 7px; border: 1px solid rgba(255,255,255,0.08); background: #0D0D13;
-    color: #8E8E9A; cursor: pointer; font-size: 11px; line-height: 1; }
-  .go:hover { color: #A99BFB; border-color: rgba(160,139,252,0.5); }
+  .kb { display: inline-flex; margin-top: 6px; font-size: 10.5px; padding: 2px 9px;
+    border-radius: 999px; font-weight: 600; }
+  .kb.pos { color: var(--up); background: rgba(52,199,123,0.12); }
+  .kb.neg { color: var(--dn); background: rgba(255,77,79,0.12); }
+  .kb.na { color: var(--mut); background: rgba(255,255,255,0.06); }
+  #acct-btns { display: flex; gap: 10px; margin: 14px 0; }
+  #acct-div { border-top: 1px solid var(--line); margin: 4px 0 12px; }
+  #acct-foot { display: flex; align-items: center; justify-content: space-between; }
+  #edit-link { display: flex; align-items: center; gap: 8px; color: var(--txt);
+    font-size: 12px; cursor: pointer; background: none; border: none; text-align: left; }
+  #edit-link small { display: block; color: var(--mut); }
 
-  /* monitor + household lines inside cards */
-  .mon-row  { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-  .mon-sym  { color: #FFFFFF; font-size: 12px; font-weight: 600; }
-  .mon-days { color: #A99BFB; font-size: 10.5px; line-height: 1.45; margin: 2px 0; }
-  .mon-line { color: #8E8E9A; font-size: 10px; line-height: 1.45; }
-  .mon-alert { color: #FF5063; font-size: 10.5px; }
-  .mon-watch { color: #FFB524; font-size: 10.5px; }
-  .mon-quiet { color: #34C77B; font-size: 10px; }
-  #mon-foot { font-size: 9.5px; color: #5E5E6A; margin-top: 8px; line-height: 1.5; }
-  .house-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-  .house-name { color: #FFFFFF; font-size: 12px; font-weight: 600; }
-  .house-num  { font-size: 10.5px; color: #8E8E9A; font-variant-numeric: tabular-nums; }
-  .house-stale { color: #FF7A45; }
-  .util-bar { height: 3px; background: rgba(255,255,255,0.07); border-radius: 999px;
-    overflow: hidden; margin-top: 6px; }
-  .util-fill { height: 100%; background: #8C7CF8; border-radius: 999px; }
-  .util-hot  { background: #FF5063; }
+  #income-card { display: flex; flex-direction: column; gap: 12px; }
+  .flowrow { display: flex; align-items: center; gap: 12px; }
+  .flowrow .fr-txt { flex: 1; min-width: 0; }
+  .flowrow .fr-val { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  #income-foot { margin-top: auto; display: flex; align-items: center; gap: 8px;
+    justify-content: flex-end; color: var(--txt); font-size: 12px; }
 
-  /* chart card */
-  #range { display: flex; gap: 4px; }
-  .rp { border: 1px solid rgba(255,255,255,0.07); background: #15151C; color: #8E8E9A;
-    font-size: 10.5px; border-radius: 999px; padding: 4px 11px; cursor: pointer; }
-  .rp.active { background: linear-gradient(135deg, #A08BFC, #6D5BE2); color: #fff;
-    border-color: transparent; }
+  #circle-col { display: flex; flex-direction: column; gap: 20px; }
+  .circlecard { background: var(--card); border: 1px solid var(--line);
+    border-radius: 999px; aspect-ratio: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px; text-align: center;
+    padding: 10px; }
+  .circlecard .big { font-size: 20px; }
+  .circlecard .lbl { font-size: 10.5px; }
+  #donut-wrap { position: relative; width: 92px; height: 92px; }
+  #donut { width: 92px; height: 92px; }
+  #donut-pct { position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+  #donut-pct small { font-size: 8.5px; color: var(--mut); font-weight: 400; }
+
+  #perf-col { display: flex; flex-direction: column; gap: 20px; }
+  #perf-card { cursor: pointer; }
+  #chart-topval { text-align: right; font-size: 19px; font-weight: 700; }
+  #spark { width: 100%; height: 76px; display: block; margin: 6px 0; }
+  #perf-title-row { display: flex; align-items: center; justify-content: space-between; }
+  #disc-card .q { font-family: Rubik, sans-serif; font-size: 17px; font-weight: 600;
+    margin: 6px 0 10px; }
+
+  /* row 2 */
+  #cards { display: grid; grid-template-columns: 4.6fr 2.4fr 2.4fr; gap: 20px; }
+  #mon-hdr { display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px; }
+  #mon-hdr .right { display: flex; align-items: center; gap: 8px; }
+  #mon-search-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  #mon-search { flex: 1; height: 42px; background: var(--inset); border: 1px solid
+    var(--line); border-radius: 12px; color: var(--txt); padding: 0 14px;
+    font-size: 12.5px; outline: none; }
+  #mon-search:focus { border-color: var(--amber); }
+  #mon-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 14px; }
+  .mon-row { background: var(--inset); border-radius: 14px; padding: 10px 12px;
+    margin-bottom: 10px; }
+  .mon-sym { font-weight: 700; font-size: 13px; }
+  .mon-days { color: var(--amber); font-size: 10.5px; line-height: 1.45; margin: 3px 0; }
+  .mon-line { color: var(--mut); font-size: 10px; line-height: 1.45; }
+  .mon-alert { color: var(--dn); font-size: 10.5px; }
+  .mon-watch { color: var(--amber); font-size: 10.5px; }
+  .mon-quiet { color: var(--up); font-size: 10px; }
+  #mon-foot { font-size: 10px; color: var(--dim); margin-top: 10px; line-height: 1.5; }
+  #plbars { width: 100%; height: 120px; display: block; margin-top: 8px; }
+  #plbars-val { font-size: 19px; font-weight: 700; }
+  #house-body .hline { color: var(--mut); font-size: 11px; margin: 3px 0; }
+  #house-body .house-stale { color: #FF7A45; }
+  #alloc { display: block; margin: 8px auto 0; }
+  #pins-grid { background:
+      radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1.5px);
+    background-size: 16px 16px; border-radius: 14px; padding: 18px 14px;
+    display: flex; justify-content: space-around; align-items: flex-end; height: 110px; }
+  .pin { display: flex; flex-direction: column; align-items: center; gap: 6px;
+    cursor: pointer; background: none; border: none; }
+  .pin .stem { width: 3px; height: 34px; border-radius: 3px; background: #3a3a42; }
+  .pin.active .stem { background: var(--amber); }
+  .pin .yr { padding: 5px 14px; border-radius: 999px; font-weight: 600; font-size: 12px;
+    background: #fff; color: #000; }
+  .pin.active .yr { background: var(--amber); color: #fff; }
+  #sess-big { font-family: Rubik, sans-serif; font-size: 21px; font-weight: 700;
+    margin-top: 6px; }
+  #sess-sub { color: var(--mut); font-size: 11px; margin-bottom: 10px; }
+  #sess-dots { display: flex; flex-wrap: wrap; gap: 5px; }
+  #sess-dots i { width: 9px; height: 9px; border-radius: 999px; background: #2a2a30; }
+  #sess-dots i.lit { background: var(--amber); }
+
+  /* secondary views */
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px; }
+  #range { display: flex; gap: 6px; }
+  .rp { border: 1px solid var(--line); background: var(--inset); color: var(--mut);
+    font-size: 11px; border-radius: 999px; padding: 5px 13px; cursor: pointer; }
+  .rp.active { background: var(--amber); color: #fff; border-color: transparent; }
   #chartwrap { position: relative; }
   #bench-chart { display: block; width: 100%; }
   #bench-tip { position: absolute; display: none; pointer-events: none;
-    background: #1A1A22; border: 1px solid rgba(160,139,252,0.5); color: #E4E4EC;
+    background: var(--inset); border: 1px solid var(--amber); color: var(--txt);
     font-size: 10.5px; padding: 4px 9px; border-radius: 8px; white-space: nowrap;
     transform: translate(-50%, -130%); }
-  .bench-you { color: #A99BFB; }
-  .bench-spy { color: #8E8E9A; }
-  #bench-foot { font-size: 10px; line-height: 1.5; margin-top: 4px; }
-
-  /* purple gradient panel (their Trading Overview) */
-  .vpanel { background: linear-gradient(160deg, rgba(140,124,248,0.35), rgba(91,73,201,0.18));
-    border: 1px solid rgba(160,139,252,0.35); border-radius: 20px; padding: 14px 16px; }
+  .bench-you { color: var(--amber); } .bench-spy { color: var(--mut); }
+  #bench-foot { font-size: 10px; line-height: 1.5; margin-top: 6px; color: var(--mut); }
+  .vpanel { background: linear-gradient(160deg, rgba(255,168,0,0.16), rgba(255,168,0,0.05));
+    border: 1px solid rgba(255,168,0,0.3); border-radius: 18px; padding: 20px; }
   .vrow { display: flex; align-items: center; justify-content: space-between;
-    background: rgba(13,13,19,0.5); border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 12px; padding: 9px 12px; margin-top: 8px; }
-  .vrow .vl { color: #E4E4EC; font-size: 11.5px; display: flex; align-items: center; gap: 8px; }
-  .vrow .vv { color: #FFFFFF; font-size: 13px; font-weight: 700;
-    font-variant-numeric: tabular-nums; }
-
-  /* history tables (their Trading History / Billing) */
+    background: rgba(11,11,14,0.6); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 13px; margin-top: 8px; }
+  .vrow .vl { color: var(--txt); font-size: 12px; }
+  .vrow .vv { font-weight: 700; font-variant-numeric: tabular-nums; }
   table.t { width: 100%; border-collapse: collapse; }
-  table.t th { color: #8E8E9A; font-size: 10px; text-transform: uppercase;
-    letter-spacing: 0.5px; text-align: left; padding: 8px 8px;
-    border-bottom: 1px solid rgba(255,255,255,0.07); }
-  table.t td { color: #E4E4EC; font-size: 11.5px; padding: 9px 8px;
-    border-bottom: 1px solid rgba(255,255,255,0.05); font-variant-numeric: tabular-nums; }
-  td.pos { color: #34C77B; } td.neg { color: #FF5063; }
+  table.t th { color: var(--mut); font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.5px; text-align: left; padding: 8px; border-bottom: 1px solid
+    var(--line); }
+  table.t td { font-size: 11.5px; padding: 9px 8px; border-bottom: 1px solid var(--line);
+    font-variant-numeric: tabular-nums; }
+  td.pos { color: var(--up); } td.neg { color: var(--dn); }
 
-  /* ── conversation dock ── */
-  #dock { width: 340px; flex-shrink: 0; display: flex; flex-direction: column;
-    background: rgba(8,8,11,0.8); border-left: 1px solid rgba(255,255,255,0.06);
-    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); padding: 10px 12px; }
-  #hint { text-align: center; font-size: 10.5px; color: #5E5E6A; letter-spacing: 0.6px;
-    padding: 2px 0 6px; transition: color 0.3s; }
-  #stage { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
-  #orb { cursor: pointer; width: 170px; height: 170px; }
-  #status { margin-top: 2px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
-    color: #8E8E9A; user-select: none; text-align: center; }
-  #log { flex: 1; overflow-y: auto; font-size: 13px; line-height: 1.5; margin: 8px 0;
-    -webkit-mask-image: linear-gradient(transparent, black 12%);
-    mask-image: linear-gradient(transparent, black 12%); }
+  /* chat FAB + drawer */
+  #fab { position: fixed; right: 24px; bottom: 24px; z-index: 500; width: 52px;
+    height: 52px; border-radius: 16px; border: none; background: var(--amber);
+    color: #fff; font-size: 20px; cursor: pointer;
+    box-shadow: 0 10px 26px rgba(255,168,0,0.35); }
+  #dock { position: fixed; top: 0; right: 0; bottom: 0; width: 380px; z-index: 600;
+    background: #0A0A0D; border-left: 1px solid var(--line); padding: 14px 16px;
+    display: flex; flex-direction: column; transform: translateX(105%);
+    transition: transform 0.25s ease; }
+  #dock.open { transform: translateX(0); }
+  #dock-hdr { display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 4px; }
+  #dock-title { font-family: Rubik, sans-serif; font-weight: 600; font-size: 14px; }
+  #dock-close { background: none; border: none; color: var(--mut); font-size: 16px;
+    cursor: pointer; }
+  #hint { text-align: center; font-size: 10.5px; color: var(--dim); padding: 2px 0 6px; }
+  #log { flex: 1; overflow-y: auto; font-size: 13px; line-height: 1.5; margin: 6px 0;
+    -webkit-mask-image: linear-gradient(transparent, black 10%);
+    mask-image: linear-gradient(transparent, black 10%); }
   #log::-webkit-scrollbar { width: 3px; }
-  #log::-webkit-scrollbar-thumb { background: #26262E; border-radius: 3px; }
+  #log::-webkit-scrollbar-thumb { background: #222; border-radius: 3px; }
   .turn { margin: 10px 0; }
-  .you { color: #A99BFB; }
-  .kub { color: #E4E4EC; }
+  .you { color: var(--amber); } .kub { color: #E7E7EC; }
   .chips { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 5px; }
-  .chip { display: inline-block; font-size: 10.5px; letter-spacing: 1px; color: #8E8E9A;
-    border: 1px solid #2A2A34; border-radius: 999px; padding: 1px 9px; }
-  .chip-live  { border-color: #1C6B45; color: #34C77B; }
-  .chip-last  { border-color: rgba(160,139,252,0.5); color: #C9BFFF; }
+  .chip { display: inline-block; font-size: 10.5px; letter-spacing: 1px;
+    color: var(--mut); border: 1px solid #26262c; border-radius: 999px; padding: 1px 9px; }
+  .chip-live { border-color: #1C6B45; color: var(--up); }
+  .chip-last { border-color: rgba(255,168,0,0.5); color: var(--amber); }
   .chip-stale { border-color: #8A3A1E; color: #FF7A45; }
-  .chip-old   { border-color: #7A2430; color: #FF5063; }
-  #bar { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
-  #typed { flex: 1; background: #0D0D13; border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 999px; color: #FFFFFF; padding: 9px 14px; font-size: 13px;
+  .chip-old { border-color: #7A2430; color: var(--dn); }
+  #bar { display: flex; gap: 8px; align-items: center; }
+  #typed { flex: 1; background: var(--inset); border: 1px solid var(--line);
+    border-radius: 999px; color: var(--txt); padding: 10px 14px; font-size: 13px;
     outline: none; min-width: 0; }
-  #typed:focus { border-color: #8C7CF8; }
-  label.cf { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: #8E8E9A;
-    user-select: none; white-space: nowrap; }
-  input[type=checkbox] { accent-color: #8C7CF8; }
-  #err { text-align: center; font-size: 10.5px; color: #FF5063; min-height: 15px;
-    padding-top: 3px; flex-shrink: 0; }
+  #typed:focus { border-color: var(--amber); }
+  label.cf { display: flex; align-items: center; gap: 6px; font-size: 10.5px;
+    color: var(--mut); user-select: none; white-space: nowrap; }
+  input[type=checkbox] { accent-color: var(--amber); }
+  #err { text-align: center; font-size: 10.5px; color: var(--dn); min-height: 15px;
+    padding-top: 3px; }
 
-  /* ── history sidebar (drawer) ── */
-  #sidebar { width: 0; overflow: hidden; transition: width 0.22s ease;
-    display: flex; flex-direction: column; background: #0A0A0E;
-    border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
-  #sidebar.open { width: 240px; }
+  /* history drawer (left) */
+  #sidebar { position: fixed; top: 64px; left: 0; bottom: 0; width: 0; z-index: 550;
+    overflow: hidden; transition: width 0.22s ease; background: #0A0A0D;
+    border-right: 1px solid var(--line); display: flex; flex-direction: column; }
+  #sidebar.open { width: 250px; }
   #sidebar-hdr { display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
-  #sidebar-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #8E8E9A; }
-  #btn-new { font-size: 11px; color: #A99BFB; cursor: pointer; letter-spacing: 1px;
-    background: none; border: none; padding: 2px 6px; border-radius: 4px; }
-  #btn-new:hover { background: rgba(140,124,248,0.12); }
+    padding: 14px 12px 10px; border-bottom: 1px solid var(--line); }
+  #sidebar-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--mut); }
+  #btn-new { font-size: 11px; color: var(--amber); cursor: pointer; background: none;
+    border: none; padding: 2px 6px; border-radius: 4px; }
+  #btn-new:hover { background: var(--amber-tint); }
   #sidebar-list { flex: 1; overflow-y: auto; padding: 6px 0; }
-  #sidebar-list::-webkit-scrollbar { width: 3px; }
-  #sidebar-list::-webkit-scrollbar-thumb { background: #26262E; border-radius: 3px; }
-  .srow { padding: 9px 12px; cursor: pointer; border-left: 3px solid transparent;
-    transition: background 0.12s; }
+  .srow { padding: 9px 12px; cursor: pointer; border-left: 3px solid transparent; }
   .srow:hover { background: rgba(255,255,255,0.04); }
-  .srow.active { border-left-color: #8C7CF8; background: rgba(140,124,248,0.10); }
-  .srow-snip { font-size: 12px; color: #E4E4EC; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
-  .srow-meta { font-size: 10px; color: #5E5E6A; margin-top: 3px; letter-spacing: 0.4px; }
+  .srow.active { border-left-color: var(--amber); background: var(--amber-tint); }
+  .srow-snip { font-size: 12px; color: #E7E7EC; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; }
+  .srow-meta { font-size: 10px; color: var(--dim); margin-top: 3px; }
 
-  /* legacy shared styles still used by the positions list */
-  .pl  { color: #8E8E9A; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
-    margin-top: 10px; margin-bottom: 2px; }
-  .pv  { color: #E4E4EC; } .pv.pos { color: #34C77B; } .pv.neg { color: #FF5063; }
-  .ppr { display: flex; justify-content: space-between; align-items: baseline;
-    padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-  .ppr-sym { color: #FFFFFF; font-size: 11.5px; font-weight: 600; }
-  .ppr-pl { font-size: 10.5px; }
-  .pos { color: #34C77B; } .neg { color: #FF5063; }
-  #port-asof { font-size: 9.5px; color: #5E5E6A; margin-top: 6px; }
+  /* positions + legacy shared */
+  .ppr { display: flex; justify-content: space-between; padding: 6px 0;
+    border-bottom: 1px solid var(--line); }
+  .ppr-sym { font-weight: 600; font-size: 12px; }
+  .ppr-pl { font-size: 11px; }
+  #port-asof { font-size: 10px; color: var(--dim); margin-top: 8px; }
+  .util-bar { height: 3px; background: rgba(255,255,255,0.07); border-radius: 999px;
+    overflow: hidden; margin-top: 6px; }
+  .util-fill { height: 100%; background: var(--amber); border-radius: 999px; }
+  .util-hot { background: var(--dn); }
+  .house-stale { color: #FF7A45; }
+  .kbar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 999px;
+    margin-top: 8px; overflow: hidden; }
+  #kpi-budget-fill { height: 100%; width: 0%; background: var(--amber);
+    border-radius: 999px; transition: width 0.4s ease; }
+
+  @media (max-width: 1200px) {
+    #kpis { grid-template-columns: 1fr 1fr; }
+    #cards { grid-template-columns: 1fr 1fr; }
+    #greet .g1 { font-size: 26px; } #greet .g2 { font-size: 18px; }
+  }
+  @media (max-width: 760px) {
+    #kpis, #cards { grid-template-columns: 1fr; }
+    #hero { grid-template-columns: 1fr 90px; }
+    #hero-left { display: none; }
+    #greet { text-align: left; }
+    #cmd { display: none; }
+    #dock { width: 100%; }
+  }
 </style>
+
 </head>
 <body>
 
-<!-- ════ TOP BAR (their chrome: logo chip · pill nav · bell · user) ════ -->
+<!-- ════ HEADER: logo · icon chips · command box · icon chips ════ -->
 <div id="topbar">
-  <div id="brand">
-    <div id="logo">K</div>
-    <div><span id="wordmark">KUBERA</span><br><span id="brand-sub">personal financial advisor</span></div>
+  <div id="brand"><div id="logo">K</div><span id="wordmark">KUBERA</span>
+    <span id="brand-sub">personal financial advisor</span></div>
+  <div id="left-chips">
+    <button class="hchip" id="btn-sidebar" title="Conversation history">&#9776;</button>
+    <button class="hchip" id="btn-drawer" title="Chat with KUBERA">&#128172;</button>
+    <button class="hchip vchip" data-view="performance" title="Trading Overview">&#128200;</button>
+    <button class="hchip vchip" data-view="history" title="Transactions">&#129534;</button>
   </div>
-  <nav id="nav">
-    <button class="navp active" data-view="overview">Account Overview</button>
-    <button class="navp" data-view="performance">Trading Overview</button>
-    <button class="navp" data-view="history">Transactions</button>
-  </nav>
   <div id="top-right">
-    <span id="top-date"></span>
-    <button id="btn-notify" class="iconbtn" title="alert notifications OFF">&#x1F515;</button>
-    <button id="btn-sidebar" class="iconbtn" title="Conversation history">&#9776;</button>
-    <div id="userchip"><div id="avatar">C</div>
-      <div id="uname">Chotu<small>paper account</small></div></div>
+    <input id="cmd" placeholder="Ask KUBERA anything&hellip;" autocomplete="off">
+    <button class="hchip" id="btn-full" title="Fullscreen">&#x26F6;</button>
+    <button class="hchip" id="btn-notify" title="alert notifications OFF">&#x1F515;</button>
+    <button class="hchip" id="btn-user" title="Chotu &middot; paper account">&#128100;</button>
+    <button class="hchip" id="btn-sys" title="System status">&#9881;</button>
+  </div>
+</div>
+<div id="syspop"></div>
+
+<!-- ════ HERO: date · CTA · greeting · the mic-orb ════ -->
+<div id="hero">
+  <div id="hero-left">
+    <div id="hero-date-row">
+      <div id="hero-day">21</div>
+      <div id="hero-date">Fri,<br>August</div>
+    </div>
+    <div id="hero-cta">
+      <button class="apill" data-ask="give me my morning brief">Morning Brief &rarr;</button>
+      <button id="hero-cal" data-ask="what scheduled events and earnings are coming up for my holdings?" title="Upcoming events">&#128197;</button>
+    </div>
+  </div>
+  <div id="greet">
+    <div class="g1">Hey, Chotu &#128075;</div>
+    <div class="g2">Just ask me anything!</div>
+  </div>
+  <div id="micwrap" title="click the orb or hold SPACE to talk">
+    <canvas id="orb" width="520" height="520"></canvas>
+    <svg id="micglyph" viewBox="0 0 24 24" fill="#000"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
   </div>
 </div>
 
-<div id="shell">
-
-  <!-- ════ LEFT: conversation history drawer (T082) ════ -->
-  <div id="sidebar">
-    <div id="sidebar-hdr">
-      <span id="sidebar-title">History</span>
-      <button id="btn-new" title="Start a new conversation">+ new</button>
-    </div>
-    <div id="sidebar-list"></div>
+<!-- ════ LEFT: history drawer (T082) ════ -->
+<div id="sidebar">
+  <div id="sidebar-hdr">
+    <span id="sidebar-title">History</span>
+    <button id="btn-new" title="Start a new conversation">+ new</button>
   </div>
+  <div id="sidebar-list"></div>
+</div>
 
-  <!-- ════ CENTER: the views (index36 anatomy, KUBERA data) ════ -->
+<div id="shell">
   <main id="main">
 
-    <!-- ── VIEW 1: Account Overview ── -->
+    <!-- ── VIEW 1: the index36 replica ── -->
     <div id="view-overview" class="view">
       <div id="kpis">
-        <div class="kpi hero"><div class="krow"><span class="kic">$</span>
-            <span class="kl">Equity</span></div>
+
+        <section class="card" id="acct-card">
+          <div class="brandrow"><span id="acct-brand"><span class="dollar">ALPACA</span> &middot; PAPER</span>
+            <button class="chipdd" id="pos-chip">All Positions &#9662;</button></div>
+          <div class="lbl" style="margin-top:12px;">Your paper account equity</div>
           <div class="kv" id="port-equity">&mdash;</div>
           <span class="kb na" id="kpi-equity-badge">&mdash;</span>
-          <div class="kfoot" id="port-asof"></div></div>
-        <div class="kpi"><div class="krow"><span class="kic">&#8645;</span>
-            <span class="kl">Day P&amp;L</span></div>
-          <div class="kv" id="port-daypnl">&mdash;</div>
-          <div class="kfoot">vs day start &middot; paper</div></div>
-        <div class="kpi"><div class="krow"><span class="kic">&#9650;</span>
-            <span class="kl">vs SPY &middot; 90d</span></div>
-          <div class="kv" id="kpi-excess">&mdash;</div>
-          <div class="kfoot" id="kpi-excess-note">excess cumulative return</div></div>
-        <div class="kpi"><div class="krow"><span class="kic">&#9878;</span>
-            <span class="kl">Total Debt</span></div>
-          <div class="kv" id="kpi-debt">&mdash;</div>
-          <span class="kb na" id="kpi-debt-badge">&mdash;</span>
-          <div class="kfoot" id="kpi-debt-note">tell KUBERA your debts to track them</div></div>
-      </div>
-
-      <div id="cards">
-        <section class="card">
-          <div class="ch"><span class="ct">Risk Limits</span>
-            <span class="pill" id="risk-pill">loading</span></div>
-          <div class="inset"><div class="il">Risk Tier</div>
-            <div class="iv" id="kpi-tier">&mdash;</div>
-            <div class="kbar"><div id="kpi-budget-fill"></div></div>
-            <div class="kfoot" id="kpi-tier-note">daily loss budget</div>
-            <button class="go" data-ask="explain my risk status">&#8599;</button></div>
-          <div class="inset"><div class="il">Decision Quality</div>
-            <div class="iv" id="kpi-dqs">&mdash;</div>
-            <div class="kfoot" id="kpi-dqs-note">process, not outcome</div>
-            <button class="go" data-ask="how is my decision quality trending?">&#8599;</button></div>
-          <div class="inset"><div class="il">New Buys Today</div>
-            <div class="iv" id="risk-buys">&mdash;</div>
-            <div class="kfoot">order-frequency rail &middot; sells always allowed</div></div>
+          <div id="acct-btns">
+            <button class="dpill" data-ask="give me my morning brief">Brief</button>
+            <button class="wpill" id="btn-ask">Ask</button>
+          </div>
+          <div id="acct-div"></div>
+          <div id="acct-foot">
+            <div><div class="lbl">Day P&amp;L</div>
+              <div style="font-size:17px;font-weight:700;" id="port-daypnl">&mdash;</div></div>
+            <button id="edit-link" data-ask="how are my positions doing?">
+              <span class="acirc">&#9998;</span>
+              <span>View<br><small>positions detail</small></span></button>
+          </div>
+          <div id="port-asof"></div>
+          <div id="port-positions" style="margin-top:8px;"></div>
         </section>
 
+        <section class="card" id="income-card">
+          <div class="inset"><div class="flowrow">
+            <span class="cicon">&#8593;</span>
+            <div class="fr-txt"><div class="lbl">vs SPY &middot; excess</div>
+              <div class="fr-val" id="kpi-excess">&mdash;</div></div>
+            <button class="chipdd" id="range-chip">90d &#9662;</button></div>
+            <div class="fine" id="kpi-excess-note">excess cumulative return</div></div>
+          <div class="inset"><div class="flowrow">
+            <span class="cicon">&#8645;</span>
+            <div class="fr-txt"><div class="lbl">Day P&amp;L</div>
+              <div class="fr-val" id="inc-day">&mdash;</div></div>
+            <span class="chipdd">today</span></div></div>
+          <div class="inset"><div class="flowrow">
+            <span class="cicon">&#9878;</span>
+            <div class="fr-txt"><div class="lbl">Total Debt</div>
+              <div class="fr-val" id="kpi-debt">&mdash;</div></div>
+            <span class="kb na" id="kpi-debt-badge">&mdash;</span></div>
+            <div class="fine" id="kpi-debt-note">tell KUBERA your debts to track them</div></div>
+          <div id="income-foot" class="vchip" data-view="performance" style="cursor:pointer;">
+            <span class="acirc" style="display:inline-flex;align-items:center;justify-content:center;">&#8599;</span>
+            <span>View<br><small class="lbl">Performance chart</small></span></div>
+        </section>
+
+        <div id="circle-col">
+          <div class="circlecard"><div class="big">&#128274;</div>
+            <div class="lbl">Risk Rails</div>
+            <span class="pill" id="risk-pill">loading</span></div>
+          <div class="circlecard"><div id="donut-wrap">
+            <canvas id="donut" width="184" height="184"></canvas>
+            <div id="donut-pct"><span id="donut-num">&mdash;</span>
+              <small>loss budget<br>used</small></div></div>
+            <div class="kbar" style="display:none;"><div id="kpi-budget-fill"></div></div></div>
+        </div>
+
+        <div id="perf-col">
+          <section class="card vchip" id="perf-card" data-view="performance">
+            <div id="chart-topval">&mdash;</div>
+            <canvas id="spark" width="600" height="152"></canvas>
+            <div id="perf-title-row">
+              <div><div class="ct">Performance</div>
+                <div class="lbl">vs SPY &middot; <span id="spark-days">90</span>d</div></div>
+              <span class="kb na" id="perf-pill">&mdash;</span></div>
+            <div class="fine" id="spark-foot"></div>
+          </section>
+          <section class="card" id="disc-card">
+            <div class="lbl">Review &middot; coaching</div>
+            <div class="q">How is your trading discipline?</div>
+            <div style="display:flex;align-items:baseline;gap:10px;">
+              <span style="font-size:26px;font-weight:700;" id="kpi-dqs">&mdash;</span>
+              <span class="lbl" id="kpi-dqs-note">process, not outcome</span></div>
+          </section>
+        </div>
+      </div>
+
+      <!-- row 2 -->
+      <div id="cards">
         <section class="card">
-          <div class="ch"><span class="ct">Open-Trade Monitor</span>
-            <span class="pill" id="mon-pill">loading</span></div>
-          <div id="mon-body"><div class="mon-line">loading&hellip;</div></div>
+          <div id="mon-hdr">
+            <span class="ct">Activity &middot; Open-Trade Monitor</span>
+            <div class="right">
+              <span class="pill" id="mon-pill">loading</span>
+              <button class="chipdd" id="flt">&#9776; Filter: all</button>
+            </div>
+          </div>
+          <div id="mon-search-row">
+            <input id="mon-search" placeholder="&#128269; Ask about any symbol&hellip; (Enter)">
+            <span class="pill" id="tag-pos">&mdash;</span>
+            <span class="pill amb" id="tag-watch">&mdash;</span>
+          </div>
+          <div id="mon-grid">
+            <div><div class="lbl" style="margin-bottom:6px;">Held positions</div>
+              <div id="mon-body"><div class="mon-line">loading&hellip;</div></div></div>
+            <div><div id="plbars-val"><span id="pl-total">&mdash;</span> <span class="lbl">unrealized</span></div>
+              <canvas id="plbars" width="440" height="240"></canvas>
+              <div class="fine">per-position unrealized P&amp;L</div></div>
+            <div class="inset" id="house-card">
+              <div style="text-align:center;padding:4px 0 8px;"><span class="cicon" style="margin:0 auto;">&#9878;</span></div>
+              <div class="ct" style="text-align:center;">Debt Payoff Plan</div>
+              <div id="house-body"><div class="mon-line">loading&hellip;</div></div>
+              <button class="apill" style="width:100%;margin-top:10px;"
+                data-ask="build my debt payoff plan and compare avalanche vs snowball">Plan my payoff</button>
+            </div>
+          </div>
           <div id="mon-foot"></div>
         </section>
 
         <section class="card">
-          <div class="ch"><span class="ct">Household &middot; Debt Payoff</span>
-            <span class="pill vio">advisory</span></div>
-          <div id="house-body"><div class="mon-line">loading&hellip;</div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="ct">Portfolio Allocation</span>
+            <span class="chipdd">by value</span></div>
+          <canvas id="alloc" width="520" height="440" style="width:100%;max-width:260px;"></canvas>
+          <div class="fine" id="alloc-foot">top holdings + cash &middot; area &#8733; value</div>
         </section>
 
-        <section class="card">
-          <div class="ch"><span class="ct">Positions</span></div>
-          <div id="port-positions"></div>
-        </section>
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <section class="card">
+            <div class="ct" style="margin-bottom:10px;">Chart Range</div>
+            <div id="pins-grid">
+              <button class="pin" data-days="30"><span class="stem"></span><span class="yr">1M</span></button>
+              <button class="pin active" data-days="90"><span class="stem"></span><span class="yr">3M</span></button>
+            </div>
+          </section>
+          <section class="card">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="cicon" style="width:32px;height:32px;font-size:13px;">&#128337;</span>
+              <span class="lbl">Market session &middot; ET</span></div>
+            <div id="sess-big">&mdash;</div>
+            <div id="sess-sub"></div>
+            <div id="sess-dots"></div>
+          </section>
+        </div>
       </div>
     </div>
 
     <!-- ── VIEW 2: Trading Overview ── -->
     <div id="view-performance" class="view" hidden>
-      <div class="grid2" style="margin-top:0;">
+      <div class="grid2">
         <section class="card" style="grid-column: 1 / -1;">
-          <div class="ch"><span class="ct">Total Equity vs SPY</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span class="ct">Total Equity vs SPY</span>
             <div id="range">
               <button class="rp" data-days="30">1M</button>
               <button class="rp active" data-days="90">3M</button>
@@ -360,28 +565,39 @@
           <div id="bench-foot"><div class="mon-line">loading&hellip;</div></div>
         </section>
         <section class="vpanel">
-          <div class="ch"><span class="ct" style="color:#fff;">Decision Quality</span>
-            <span class="pill vio" id="dqs-window">window</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span class="ct">Decision Quality</span>
+            <span class="pill amb" id="dqs-window">window</span></div>
           <div id="dqs-rows"></div>
         </section>
         <section class="card">
-          <div class="ch"><span class="ct">Performance Metrics</span></div>
+          <div class="ct">Performance Metrics</div>
           <div id="perf-rows"></div>
+        </section>
+        <section class="card">
+          <div class="ct">Risk Detail</div>
+          <div class="inset" style="margin-top:10px;"><div class="lbl">Risk Tier</div>
+            <div style="font-size:15px;font-weight:600;" id="kpi-tier">&mdash;</div>
+            <div class="fine" id="kpi-tier-note">daily loss budget</div>
+            <button class="go" data-ask="explain my risk status">&#8599;</button></div>
+          <div class="inset" style="margin-top:10px;"><div class="lbl">New Buys Today</div>
+            <div style="font-size:15px;font-weight:600;" id="risk-buys">&mdash;</div>
+            <div class="fine">order-frequency rail &middot; sells always allowed</div></div>
         </section>
       </div>
     </div>
 
     <!-- ── VIEW 3: Transactions / records ── -->
     <div id="view-history" class="view" hidden>
-      <div class="grid2" style="margin-top:0;">
+      <div class="grid2">
         <section class="card" style="grid-column: 1 / -1;">
-          <div class="ch"><span class="ct">Conversations</span></div>
+          <div class="ct" style="margin-bottom:8px;">Conversations</div>
           <table class="t"><thead><tr><th>SN</th><th>Last message</th>
             <th>Turns</th><th>Tool calls</th><th>When</th></tr></thead>
             <tbody id="conv-table"></tbody></table>
         </section>
         <section class="card" style="grid-column: 1 / -1;">
-          <div class="ch"><span class="ct">Debts on Record</span></div>
+          <div class="ct" style="margin-bottom:8px;">Debts on Record</div>
           <table class="t"><thead><tr><th>Name</th><th>Kind</th><th>Balance</th>
             <th>APR</th><th>Min/mo</th><th>Stated</th></tr></thead>
             <tbody id="debt-table"></tbody></table>
@@ -390,29 +606,29 @@
     </div>
 
   </main>
-
-  <!-- ════ RIGHT: conversation dock — the orb as companion ════ -->
-  <aside id="dock">
-    <div id="hint">click the orb or hold SPACE to talk &nbsp;&middot;&nbsp; type below if you must</div>
-    <div id="stage">
-      <canvas id="orb" width="520" height="520"></canvas>
-      <div id="status">idle</div>
-    </div>
-    <div id="log"></div>
-    <div id="bar">
-      <input id="typed" placeholder="&hellip;or type to KUBERA" autocomplete="off">
-      <label class="cf"><input type="checkbox" id="confirm"> confirm this turn</label>
-    </div>
-    <div id="err"></div>
-  </aside>
-
 </div><!-- #shell -->
+
+<!-- ════ chat FAB + conversation drawer (the reference's chat widget, REAL) ════ -->
+<button id="fab" title="Chat with KUBERA">&#128172;</button>
+<aside id="dock">
+  <div id="dock-hdr"><span id="dock-title">KUBERA &middot; conversation</span>
+    <button id="dock-close">&#10005;</button></div>
+  <div id="hint">click the orb or hold SPACE to talk &nbsp;&middot;&nbsp; type below if you must</div>
+  <div id="status">idle</div>
+  <div id="log"></div>
+  <div id="bar">
+    <input id="typed" placeholder="&hellip;or type to KUBERA" autocomplete="off">
+    <label class="cf"><input type="checkbox" id="confirm"> confirm this turn</label>
+  </div>
+  <div id="err"></div>
+</aside>
+
 
 <script>
 // ------------------------------------------------------------------ state
 const S = { mode: "idle", conversationId: null, amp: 0, t: 0 };
-const COLORS = { idle: [140,124,248], listening: [52,199,123], thinking: [109,92,224],
-                 speaking: [169,155,251] };  // index36 violet family (T157f)
+const COLORS = { idle: [255,168,0], listening: [52,199,123], thinking: [197,127,0],
+                 speaking: [255,181,36] };  // index36 amber family (T157g)
 const statusEl = document.getElementById("status");
 const errEl    = document.getElementById("err");
 const hintEl   = document.getElementById("hint");
@@ -421,8 +637,19 @@ function setMode(m) { S.mode = m; statusEl.textContent = m; }
 // ------------------------------------------------------------------ orb
 const canvas = document.getElementById("orb"), ctx = canvas.getContext("2d");
 const CX = 260, CY = 260;
+const micGlyph = document.getElementById("micglyph");
+const micWrap = document.getElementById("micwrap");
 function drawOrb() {
   S.t += 0.016;
+  if (S.mode === "idle") {   // the reference's white mic button IS the idle orb
+    ctx.clearRect(0, 0, 520, 520);
+    micGlyph.style.display = "block";
+    micWrap.style.background = "#fff";
+    requestAnimationFrame(drawOrb);
+    return;
+  }
+  micGlyph.style.display = "none";
+  micWrap.style.background = "#0B0B0E";
   ctx.clearRect(0, 0, 520, 520);
   const [r, g, b] = COLORS[S.mode] || COLORS.idle;
   const breathe = 1 + 0.035 * Math.sin(S.t * (S.mode === "thinking" ? 4.2 : 1.6));
@@ -569,6 +796,7 @@ function trackAmplitude(audio) {
 }
 
 async function send(text) {
+  openDock();
   errEl.textContent = "";
   addTurn("you", text);
   setMode("thinking");
@@ -710,9 +938,7 @@ const portAsofEl   = document.getElementById("port-asof");
 
 // the dashboard has no open/close — everything loads at start
 // (pinned): loadPortfolio(); loadMonitor(); loadBench(true); loadRisk(); loadHousehold();
-document.getElementById("top-date").textContent =
-  new Date().toLocaleDateString("en-US",
-    { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+// (T157g: the hero strip owns the date now — see updateSession/hero block)
 
 function fmtUSD(n) {
   if (n == null || isNaN(n)) return "—";
@@ -753,14 +979,25 @@ async function loadPortfolio() {
 
     const positions = (d.positions || [])
       .slice()
-      .sort((a, b) => Math.abs(b.market_value || 0) - Math.abs(a.market_value || 0))
-      .slice(0, 3);
+      .sort((a, b) => Math.abs(b.market_value || 0) - Math.abs(a.market_value || 0));
+    window._positions = positions;
+    document.getElementById("pos-chip").textContent =
+      `All Positions (${positions.length}) \u25BE`;
+    document.getElementById("inc-day").textContent =
+      (dayPnl >= 0 ? "+" : "") + fmtUSD(dayPnl);
+    document.getElementById("inc-day").className =
+      "fr-val " + (dayPnl >= 0 ? "pos" : "neg");
+    document.getElementById("chart-topval").textContent = fmtUSD(equity);
+    const totalPl = positions.reduce((a, p) => a + parseFloat(p.unrealized_pl || 0), 0);
+    const plT = document.getElementById("pl-total");
+    plT.textContent = (totalPl >= 0 ? "+" : "") + fmtUSD(totalPl);
+    plT.className = totalPl >= 0 ? "pos" : "neg";
 
     if (positions.length === 0) {
       portPosEl.innerHTML =
-        '<div style="font-size:11px;color:#4C6390;padding:4px 0;">No open positions</div>';
+        '<div style="font-size:11px;color:#5A5A62;padding:4px 0;">No open positions</div>';
     } else {
-      portPosEl.innerHTML = positions.map(p => {
+      portPosEl.innerHTML = positions.slice(0, 3).map(p => {
         const pl = parseFloat(p.unrealized_pl || 0);
         return `<div class="ppr">
           <span class="ppr-sym">${p.symbol}</span>
@@ -768,6 +1005,8 @@ async function loadPortfolio() {
         </div>`;
       }).join("");
     }
+    drawPLBars(positions);
+    drawAlloc(positions, parseFloat(acct.cash || 0));
 
     portAsofEl.textContent = "as of " + new Date(d.asof).toLocaleTimeString("en-US",
       { hour: "2-digit", minute: "2-digit", timeZoneName: "short" });
@@ -932,6 +1171,14 @@ async function loadBench(force) {
     benchCvs.style.display = "block";
     benchLast = { dates: d.dates || [], port, spy };
     drawBench(port, spy);
+    drawSpark(port);
+    document.getElementById("spark-days").textContent = String(benchDays);
+    const pp = document.getElementById("perf-pill");
+    pp.textContent = ((m0 => (m0 >= 0 ? "+" : "") + (m0 * 100).toFixed(1) + "%")(
+      (d.metrics || {}).excess_return || 0));
+    pp.className = "kb " + (((d.metrics || {}).excess_return || 0) >= 0 ? "pos" : "neg");
+    document.getElementById("spark-foot").textContent =
+      `asof ${(d.asof || "").slice(0, 10)} \u00b7 ${d.source || ""}`;
     const m = d.metrics || {}, pm = m.portfolio || {}, bm = m.benchmark || {};
     const pct = v => (v == null ? "?"
       : (v >= 0 ? "+" : "") + (v * 100).toFixed(2) + "%");
@@ -986,14 +1233,14 @@ function drawBench(port, spy) {
   };
   // violet gradient area under YOUR curve (their chart treatment)
   const fill = ctx.createLinearGradient(0, 0, 0, H);
-  fill.addColorStop(0, "rgba(140,124,248,0.35)");
-  fill.addColorStop(1, "rgba(140,124,248,0.0)");
+  fill.addColorStop(0, "rgba(255,168,0,0.30)");
+  fill.addColorStop(1, "rgba(255,168,0,0.0)");
   ctx.beginPath();
   port.forEach((v, i) => i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)));
   ctx.lineTo(x(port.length - 1), H); ctx.lineTo(x(0), H); ctx.closePath();
   ctx.fillStyle = fill; ctx.fill();
-  line(spy, "#5E5E6A", 1);     // benchmark: quiet gray
-  line(port, "#A99BFB", 1.8);  // you: index36 violet
+  line(spy, "#5A5A62", 1);     // benchmark: quiet gray
+  line(port, "#FFA800", 1.8);  // you: index36 amber
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -1017,6 +1264,8 @@ async function loadRisk() {
       kTier.className = "kv" + (d.tier.level >= 2 ? " neg" : "");
       const usedPct = Math.min(100, Math.round((d.tier.budget_consumed_frac || 0) * 100));
       document.getElementById("kpi-budget-fill").style.width = usedPct + "%";
+      drawDonut(usedPct);
+      document.getElementById("donut-num").textContent = usedPct + "%";
       kNote.textContent = usedPct + "% of daily loss budget · asof " +
         (d.asof || "").slice(11, 16) + "Z";
     } else {
@@ -1107,29 +1356,17 @@ async function loadHousehold() {
       const staleTag = x.stale
         ? ` <span class="house-stale">as you told me on ${esc(x.balance_asof)}</span>`
         : "";
-      return `<div class="inset"><div class="house-row">` +
-        `<span class="house-name">${esc(x.name)}</span>` +
-        `<span class="house-num">${fmtUSD(x.balance)} · ${(x.apr_frac * 100).toFixed(1)}%` +
-        `${staleTag}</span></div>${utilBar}` +
-        `<button class="go" data-ask="how should I pay off ${esc(x.name)}?">\u2197</button>` +
-        `</div>`;
+      return `<div class="hline">- ${esc(x.name)}: ${fmtUSD(x.balance)} \u00b7 ` +
+        `${(x.apr_frac * 100).toFixed(1)}%${staleTag}</div>${utilBar}`;
     }).join("");
-    const dt = document.getElementById("debt-table");
-    dt.innerHTML = d.debts.map(x =>
-      `<tr><td>${esc(x.name)}</td><td>${esc(x.kind)}</td>` +
-      `<td>${fmtUSD(x.balance)}</td><td>${(x.apr_frac * 100).toFixed(1)}%</td>` +
-      `<td>${fmtUSD(x.min_payment)}</td>` +
-      `<td${x.stale ? ' class="neg"' : ""}>${esc(x.balance_asof)}${x.stale ? " (stale)" : ""}</td></tr>`
-    ).join("") || '<tr><td colspan="6" class="mon-line">no debts recorded</td></tr>';
     let plan = "";
     if (d.payoff && d.payoff.available) {
       const av = d.payoff.avalanche;
-      plan = `<div class="mon-line" style="margin-top:6px;">avalanche: debt-free in ` +
-        `${av.months} mo · ${fmtUSD(av.total_interest)} interest` +
-        ` · saves ${fmtUSD(d.payoff.interest_saved_by_avalanche)} vs snowball</div>` +
-        `<div class="mon-line">${esc(d.payoff.note)}</div>`;
-    } else if (d.payoff) {
-      plan = `<div class="mon-line" style="margin-top:6px;">${esc(d.payoff.why || "")}</div>`;
+      plan = `<div class="hline">- avalanche: debt-free in ${av.months} mo</div>` +
+        `<div class="hline">- saves ${fmtUSD(d.payoff.interest_saved_by_avalanche)}` +
+        ` vs snowball</div>`;
+    } else if (d.payoff && d.payoff.why) {
+      plan = `<div class="hline">- ${esc(d.payoff.why)}</div>`;
     }
     body.innerHTML = rows + plan;
   } catch (_) {
@@ -1169,14 +1406,15 @@ function showView(name) {
   ["overview", "performance", "history"].forEach(v => {
     document.getElementById("view-" + v).hidden = (v !== name);
   });
-  document.querySelectorAll(".navp").forEach(x =>
+  document.querySelectorAll(".vchip").forEach(x =>
     x.classList.toggle("active", x.dataset.view === name));
+  if (name === "overview") window.scrollTo(0, 0);
   if (name === "performance") loadBench(true);
   if (name === "history") loadConversations();
 }
-document.getElementById("nav").addEventListener("click", (ev) => {
-  const b = ev.target.closest(".navp");
-  if (b) showView(b.dataset.view);
+document.addEventListener("click", (ev) => {
+  const b = ev.target.closest(".vchip");
+  if (b && b.dataset.view) showView(b.dataset.view);
 });
 
 // their corner ↗ arrows, made REAL: the question goes to KUBERA
@@ -1186,6 +1424,213 @@ document.getElementById("main").addEventListener("click", (ev) => {
   showView("overview");
   send(b.dataset.ask);
 });
+
+// ════════════════════════════════════════════════════════════════════
+// T157g — reference behaviors on real data: chat drawer + FAB, command
+// box, fullscreen, system popover, session card, donut, allocation
+// circles, P&L bars, sparkline, range chip.
+// ════════════════════════════════════════════════════════════════════
+const dockEl = document.getElementById("dock");
+function openDock() { dockEl.classList.add("open"); }
+function closeDock() { dockEl.classList.remove("open"); }
+document.getElementById("fab").addEventListener("click", () => {
+  dockEl.classList.contains("open") ? closeDock() : (openDock(), typedEl.focus());
+});
+document.getElementById("btn-drawer").addEventListener("click", () => {
+  openDock(); typedEl.focus();
+});
+document.getElementById("dock-close").addEventListener("click", closeDock);
+
+const cmdEl = document.getElementById("cmd");
+cmdEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && cmdEl.value.trim()) {
+    send(cmdEl.value.trim()); cmdEl.value = "";
+  }
+});
+document.getElementById("btn-ask").addEventListener("click", () => {
+  openDock(); typedEl.focus();
+});
+
+document.getElementById("btn-full").addEventListener("click", () => {
+  document.fullscreenElement ? document.exitFullscreen()
+    : document.documentElement.requestFullscreen().catch(() => {});
+});
+
+const sysPop = document.getElementById("syspop");
+document.getElementById("btn-sys").addEventListener("click", async () => {
+  if (sysPop.style.display === "block") { sysPop.style.display = "none"; return; }
+  sysPop.style.display = "block";
+  sysPop.textContent = "checking /health…";
+  try {
+    const d = await (await fetch("/health")).json();
+    sysPop.innerHTML = `<b>KUBERA server</b>: ${esc(d.status || "ok")}<br>` +
+      `brain: ${esc(d.llm_provider || "?")} · tools: ${esc(d.tool_count ?? "?")}<br>` +
+      `keys: ${esc(String(d.alpaca_configured ?? ""))}`;
+  } catch (_) { sysPop.textContent = "server unreachable"; }
+});
+document.getElementById("btn-user").addEventListener("click", () => {
+  sysPop.style.display = "block";
+  sysPop.innerHTML = "<b>Chotu</b><br>paper account · advisory only<br>" +
+    "money math is tested code, never the model";
+  setTimeout(() => { sysPop.style.display = "none"; }, 3500);
+});
+
+// hero date
+(function () {
+  const now = new Date();
+  document.getElementById("hero-day").textContent = String(now.getDate());
+  document.getElementById("hero-date").innerHTML =
+    now.toLocaleDateString("en-US", { weekday: "short" }) + ",<br>" +
+    now.toLocaleDateString("en-US", { month: "long" });
+})();
+
+// income-card range chip cycles the REAL days param
+const RANGE_STEPS = [30, 90, 180];
+document.getElementById("range-chip").addEventListener("click", () => {
+  const i = (RANGE_STEPS.indexOf(benchDays) + 1) % RANGE_STEPS.length;
+  benchDays = RANGE_STEPS[i];
+  document.getElementById("range-chip").textContent = benchDays + "d ▾";
+  document.querySelectorAll(".rp").forEach(x =>
+    x.classList.toggle("active", parseInt(x.dataset.days, 10) === benchDays));
+  document.querySelectorAll(".pin").forEach(x =>
+    x.classList.toggle("active", parseInt(x.dataset.days, 10) === benchDays));
+  loadBench(true);
+});
+document.querySelectorAll(".pin").forEach(b => b.addEventListener("click", () => {
+  benchDays = parseInt(b.dataset.days, 10) || 90;
+  document.querySelectorAll(".pin").forEach(x => x.classList.toggle("active", x === b));
+  document.getElementById("range-chip").textContent = benchDays + "d ▾";
+  loadBench(true);
+}));
+
+// monitor: symbol quick-ask + filter toggle
+let monFilter = "all";
+document.getElementById("mon-search").addEventListener("keydown", (e) => {
+  const v = e.target.value.trim();
+  if (e.key === "Enter" && v) {
+    send(`give me a briefing on ${v}`); e.target.value = "";
+  }
+});
+document.getElementById("flt").addEventListener("click", () => {
+  monFilter = monFilter === "all" ? "alerts" : "all";
+  document.getElementById("flt").innerHTML =
+    "☰ Filter: " + (monFilter === "all" ? "all" : "alerts only");
+  loadMonitor();
+});
+
+// ── canvas drawings (all real numbers) ──
+function drawDonut(pct) {
+  const c = document.getElementById("donut"), g = c.getContext("2d");
+  const W = c.width, R = W / 2 - 12;
+  g.clearRect(0, 0, W, W);
+  g.lineWidth = 14; g.lineCap = "round";
+  g.strokeStyle = "#26262c";
+  g.beginPath(); g.arc(W / 2, W / 2, R, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = "#FFA800";
+  g.beginPath();
+  g.arc(W / 2, W / 2, R, -Math.PI / 2, -Math.PI / 2 + (pct / 100) * Math.PI * 2);
+  g.stroke();
+}
+
+function drawPLBars(positions) {
+  const c = document.getElementById("plbars"), g = c.getContext("2d");
+  const W = c.width, H = c.height;
+  g.clearRect(0, 0, W, H);
+  const vals = positions.map(p => parseFloat(p.unrealized_pl || 0));
+  if (!vals.length) return;
+  const maxAbs = Math.max(...vals.map(Math.abs), 1e-9);
+  const base = H * 0.6, bw = Math.min(26, (W - 10) / vals.length - 6);
+  vals.forEach((v, i) => {
+    const h = Math.abs(v) / maxAbs * (H * 0.5);
+    const x = 8 + i * (bw + 6);
+    g.fillStyle = v >= 0 ? "#FFA800" : "rgba(255,77,79,0.85)";
+    g.beginPath();
+    g.roundRect(x, v >= 0 ? base - h : base, bw, Math.max(3, h), 4);
+    g.fill();
+  });
+  g.fillStyle = "rgba(255,255,255,0.12)";
+  g.fillRect(4, base, W - 8, 1);
+}
+
+function drawAlloc(positions, cash) {
+  const c = document.getElementById("alloc"), g = c.getContext("2d");
+  const W = c.width, H = c.height;
+  g.clearRect(0, 0, W, H);
+  const parts = positions.slice(0, 3).map(p => ({
+    label: p.symbol, v: Math.abs(parseFloat(p.market_value || 0)) }));
+  if (cash > 0) parts.push({ label: "cash", v: cash });
+  parts.sort((a, b) => b.v - a.v);
+  if (!parts.length || parts.every(x => x.v <= 0)) {
+    g.fillStyle = "#5A5A62"; g.font = "20px sans-serif";
+    g.fillText("no holdings yet", W / 2 - 70, H / 2);
+    return;
+  }
+  const maxV = parts[0].v;
+  const maxR = H / 2 - 12;
+  const alphas = [0.16, 0.32, 0.55, 1.0];
+  parts.forEach((x, i) => {
+    const r = Math.max(22, Math.sqrt(x.v / maxV) * maxR);
+    const cy = H - r - 8;
+    g.fillStyle = `rgba(255,168,0,${alphas[Math.min(i, 3)]})`;
+    g.beginPath(); g.arc(W / 2, cy, r, 0, Math.PI * 2); g.fill();
+    g.fillStyle = i >= 2 ? "#1a1206" : "#fff";
+    g.font = "600 17px sans-serif"; g.textAlign = "center";
+    g.fillText(`${x.label} · $${Math.round(x.v).toLocaleString()}`,
+      W / 2, H - 2 * r + 26 > 30 ? H - 2 * r + 26 : 30);
+  });
+}
+
+function drawSpark(port) {
+  const c = document.getElementById("spark"), g = c.getContext("2d");
+  const W = c.width, H = c.height;
+  g.clearRect(0, 0, W, H);
+  if (!port || port.length < 2) return;
+  let lo = Math.min(...port), hi = Math.max(...port);
+  if (hi - lo < 1e-9) { hi += 1e-9; }
+  const x = i => 2 + i / (port.length - 1) * (W - 4);
+  const y = v => H - 6 - (v - lo) / (hi - lo) * (H - 14);
+  const fill = g.createLinearGradient(0, 0, 0, H);
+  fill.addColorStop(0, "rgba(255,168,0,0.35)");
+  fill.addColorStop(1, "rgba(255,168,0,0)");
+  g.beginPath();
+  port.forEach((v, i) => i ? g.lineTo(x(i), y(v)) : g.moveTo(x(i), y(v)));
+  g.lineTo(x(port.length - 1), H); g.lineTo(x(0), H); g.closePath();
+  g.fillStyle = fill; g.fill();
+  g.beginPath();
+  port.forEach((v, i) => i ? g.lineTo(x(i), y(v)) : g.moveTo(x(i), y(v)));
+  g.strokeStyle = "#FFA800"; g.lineWidth = 2.2; g.stroke();
+}
+
+// session card: time to close on the REAL ET clock (T111 semantics, client-side)
+function updateSession() {
+  const fmt = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York",
+    weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+  const parts = Object.fromEntries(fmt.formatToParts(new Date())
+    .map(p => [p.type, p.value]));
+  const wd = parts.weekday, mins = parseInt(parts.hour, 10) * 60 +
+    parseInt(parts.minute, 10);
+  const open = 9 * 60 + 30, close = 16 * 60;
+  const big = document.getElementById("sess-big");
+  const sub = document.getElementById("sess-sub");
+  const weekend = wd === "Sat" || wd === "Sun";
+  if (!weekend && mins >= open && mins < close) {
+    const left = close - mins;
+    big.textContent = `${Math.floor(left / 60)}h ${left % 60}m`;
+    sub.textContent = "until the close · market OPEN";
+  } else {
+    big.textContent = "Closed";
+    sub.textContent = weekend ? "reopens Monday 9:30 ET" : "regular session 9:30–4:00 ET";
+  }
+  const dayIdx = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4 }[wd];
+  const weekFrac = weekend ? (wd === "Sat" ? 1 : 0)
+    : Math.min(1, (dayIdx + Math.min(1, Math.max(0, (mins - open) / (close - open)))) / 5);
+  const dots = document.getElementById("sess-dots");
+  dots.innerHTML = Array.from({ length: 20 }, (_, i) =>
+    `<i${i < Math.round(weekFrac * 20) ? ' class="lit"' : ""}></i>`).join("");
+  sub.textContent += " · week " + Math.round(weekFrac * 100) + "%";
+}
+updateSession();
+setInterval(updateSession, 60_000);
 
 // ── T136: PWA registration (feature-detected; failure is silent because
 // the app works identically unregistered — the SW only caches the shell,

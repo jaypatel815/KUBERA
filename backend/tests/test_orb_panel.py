@@ -72,8 +72,15 @@ def test_index36_views_and_behaviors_are_wired():
     text = ORB.read_text(encoding="utf-8")
     for el in ('id="view-overview"', 'id="view-performance"', 'id="view-history"',
                'id="risk-pill"', 'id="mon-pill"', 'id="conv-table"',
-               'id="debt-table"', 'id="bench-tip"', 'class="kpi hero"'):
+               'id="debt-table"', 'id="bench-tip"', 'id="acct-card"',
+               # T157g: reference chrome + behaviors (owner-approved spec)
+               'id="hero"', 'id="micwrap"', 'id="fab"', 'id="cmd"',
+               'id="donut"', 'id="alloc"', 'id="plbars"', 'id="sess-dots"',
+               'id="mon-search"'):
         assert el in text, f"missing {el}"
+    assert "Just ask me anything!" in text          # the hero greeting IS the product
+    assert 'data-ask="give me my morning brief"' in text  # amber CTA is real
+    assert "openDock();" in text                    # every ask opens the drawer
     assert "showView(" in text
     assert 'data-ask="explain my risk status"' in text  # arrows are REAL asks
     assert "send(b.dataset.ask)" in text
