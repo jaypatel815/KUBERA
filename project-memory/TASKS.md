@@ -15,6 +15,18 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
+- **Batch #10 (5 units, probe-sized; claimed 2026-08-20, Claude/Cowork;
+  review queue is EMPTY - everything through T141 double-signed):**
+  curation #10 (archive the signed T141 / batch #9 / batch #7 records),
+  T142 (D021 countdown: within 10 days of the Sept-12 revisit the weekly
+  review prints the reminder + the evidence command - a packet nobody is
+  told to run arrives unread), T143 (Orb benchmark panel: /api/benchmark
+  probed - dates/portfolio_norm/benchmark_norm/metrics - rendered as an
+  inline no-CDN canvas chart; "am I beating the market" on the phone,
+  Phase 5 continues), T144 (persona CORE_RULES gains the find_symbol
+  resolution rule - resolve names deterministically, ambiguity is asked
+  not assumed), T145 (README delta: ask-by-company-name, phone install,
+  campaign quick-ref).
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T141: symbol universe + find_symbol - AWAITING REVIEW 2026-08-20
   (Claude/Cowork; SHA 3f45129). ALSO in queue: T074b re-review at
