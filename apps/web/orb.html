@@ -299,26 +299,6 @@
   #err { text-align: center; font-size: 10.5px; color: var(--dn); min-height: 15px;
     padding-top: 3px; }
 
-  /* history drawer (left) */
-  #sidebar { position: fixed; top: 64px; left: 0; bottom: 0; width: 0; z-index: 550;
-    overflow: hidden; transition: width 0.22s ease; background: #0A0A0D;
-    border-right: 1px solid var(--line); display: flex; flex-direction: column; }
-  #sidebar.open { width: 250px; }
-  #sidebar-hdr { display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 12px 10px; border-bottom: 1px solid var(--line); }
-  #sidebar-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
-    color: var(--mut); }
-  #btn-new { font-size: 11px; color: var(--amber); cursor: pointer; background: none;
-    border: none; padding: 2px 6px; border-radius: 4px; }
-  #btn-new:hover { background: var(--amber-tint); }
-  #sidebar-list { flex: 1; overflow-y: auto; padding: 6px 0; }
-  .srow { padding: 9px 12px; cursor: pointer; border-left: 3px solid transparent; }
-  .srow:hover { background: rgba(255,255,255,0.04); }
-  .srow.active { border-left-color: var(--amber); background: var(--amber-tint); }
-  .srow-snip { font-size: 12px; color: #E7E7EC; white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis; }
-  .srow-meta { font-size: 10px; color: var(--dim); margin-top: 3px; }
-
   /* positions + legacy shared */
   .ppr { display: flex; justify-content: space-between; padding: 6px 0;
     border-bottom: 1px solid var(--line); }
@@ -355,10 +335,10 @@
 
 <!-- ════ HEADER: logo · icon chips · command box · icon chips ════ -->
 <div id="topbar">
-  <div id="brand"><div id="logo">K</div><span id="wordmark">KUBERA</span>
+  <div id="brand" class="vchip" data-view="overview" style="cursor:pointer;" title="Account Overview"><div id="logo">K</div><span id="wordmark">KUBERA</span>
     <span id="brand-sub">personal financial advisor</span></div>
   <div id="left-chips">
-    <button class="hchip" id="btn-sidebar" title="Conversation history">&#9776;</button>
+    <button class="hchip vchip active" data-view="overview" title="Account Overview">&#8962;</button>
     <button class="hchip" id="btn-drawer" title="Chat with KUBERA">&#128172;</button>
     <button class="hchip vchip" data-view="performance" title="Trading Overview">&#128200;</button>
     <button class="hchip vchip" data-view="history" title="Transactions">&#129534;</button>
@@ -395,14 +375,7 @@
   </div>
 </div>
 
-<!-- ════ LEFT: history drawer (T082) ════ -->
-<div id="sidebar">
-  <div id="sidebar-hdr">
-    <span id="sidebar-title">History</span>
-    <button id="btn-new" title="Start a new conversation">+ new</button>
-  </div>
-  <div id="sidebar-list"></div>
-</div>
+<!-- D040: no history UI — KUBERA auto-resumes the latest thread silently -->
 
 <div id="shell">
   <main id="main">
@@ -590,12 +563,7 @@
     <!-- ── VIEW 3: Transactions / records ── -->
     <div id="view-history" class="view" hidden>
       <div class="grid2">
-        <section class="card" style="grid-column: 1 / -1;">
-          <div class="ct" style="margin-bottom:8px;">Conversations</div>
-          <table class="t"><thead><tr><th>SN</th><th>Last message</th>
-            <th>Turns</th><th>Tool calls</th><th>When</th></tr></thead>
-            <tbody id="conv-table"></tbody></table>
-        </section>
+        <!-- Conversations table removed (D040) — positions table arrives in C3 -->
         <section class="card" style="grid-column: 1 / -1;">
           <div class="ct" style="margin-bottom:8px;">Debts on Record</div>
           <table class="t"><thead><tr><th>Name</th><th>Kind</th><th>Balance</th>
@@ -831,7 +799,7 @@ async function send(text) {
       // Voice is a convenience; the reply is already on screen. Never lose the turn.
       errEl.textContent = "voice unavailable — reply shown above (" + (voiceErr.message || voiceErr) + ")";
       setMode("idle");
-      loadConversations();
+      autoResumeThread();
       return;
     }
     audio.onerror = () => {
@@ -845,33 +813,19 @@ async function send(text) {
     setMode("idle");
   }
   // Refresh sidebar so newly created threads appear immediately.
-  loadConversations();
+  autoResumeThread();
 }
 
 // ════════════════════════════════════════════════════════════════════
 // T082 (a) — CONVERSATIONS SIDEBAR
 // ════════════════════════════════════════════════════════════════════
-const sidebarEl   = document.getElementById("sidebar");
-const sidebarList = document.getElementById("sidebar-list");
-const btnSidebar  = document.getElementById("btn-sidebar");
-
-btnSidebar.addEventListener("click", () => {
-  const opening = !sidebarEl.classList.contains("open");
-  sidebarEl.classList.toggle("open");
-  btnSidebar.title = opening ? "Close history" : "Conversation history";
-  if (opening) loadConversations();
-});
-
-document.getElementById("btn-new").addEventListener("click", () => {
-  S.conversationId = null;
-  sidebarList.querySelectorAll(".srow.active").forEach(r => r.classList.remove("active"));
-  flashHint("↩ new conversation — start talking");
-});
-
+// D040 — AMBIENT CONVERSATION: no history UI. On load, KUBERA silently
+// resumes the most recent thread so it "just remembers", like a person you
+// talk to every day. The full record still exists server-side (/api/chat/{id}).
 function flashHint(msg, ms = 3200) {
   const orig = hintEl.textContent, origColor = hintEl.style.color;
   hintEl.textContent = msg;
-  hintEl.style.color = "#C9A96B";
+  hintEl.style.color = "#C57F00";
   setTimeout(() => { hintEl.textContent = orig; hintEl.style.color = origColor; }, ms);
 }
 
@@ -883,50 +837,17 @@ function fmtAgo(isoStr) {
   return Math.floor(diff / 86400) + "d ago";
 }
 
-async function loadConversations() {
+async function autoResumeThread() {
+  if (S.conversationId !== null) return;
   try {
-    const r = await fetch("/api/conversations?limit=50");
+    const r = await fetch("/api/conversations?limit=1");
     if (!r.ok) return;
-    const data = await r.json();
-    const rows = data.conversations || [];
-    sidebarList.innerHTML = "";
-    if (rows.length === 0) {
-      sidebarList.innerHTML =
-        '<div style="padding:12px;font-size:11px;color:#4C6390;">' +
-        'No conversations yet.<br>Start talking to KUBERA.</div>';
-      return;
-    }
-    const ct = document.getElementById("conv-table");
-    if (ct) {
-      ct.innerHTML = rows.slice(0, 25).map((c, i) =>
-        `<tr><td>${String(i + 1).padStart(2, "0")}</td>` +
-        `<td>${(c.snippet || "(empty)").replace(/</g, "&lt;").slice(0, 80)}</td>` +
-        `<td>${c.message_count}</td><td>${c.tool_calls}</td>` +
-        `<td>${fmtAgo(c.last_activity_at)}</td></tr>`).join("") ||
-        '<tr><td colspan="5" class="mon-line">no conversations yet</td></tr>';
-    }
-    rows.forEach(conv => {
-      const div = document.createElement("div");
-      div.className = "srow" + (conv.id === S.conversationId ? " active" : "");
-      div.dataset.id = String(conv.id);
-      div.innerHTML =
-        `<div class="srow-snip">${(conv.snippet || "(empty)").replace(/</g, "&lt;")}</div>` +
-        `<div class="srow-meta">${fmtAgo(conv.last_activity_at)} &nbsp;·&nbsp; ` +
-        `${conv.message_count} turns &nbsp;·&nbsp; ${conv.tool_calls} calls</div>`;
-      div.addEventListener("click", () => resumeConversation(conv.id));
-      sidebarList.appendChild(div);
-    });
-  } catch (_) {
-    // Non-critical; server may be starting up — silent failure.
-  }
+    const rows = (await r.json()).conversations || [];
+    if (rows.length) S.conversationId = rows[0].id;  // silent continuity
+  } catch (_) { /* a fresh thread is fine too */ }
 }
 
-function resumeConversation(id) {
-  S.conversationId = id;
-  sidebarList.querySelectorAll(".srow").forEach(r =>
-    r.classList.toggle("active", parseInt(r.dataset.id, 10) === id));
-  flashHint("↩ resumed conversation — ask your next question");
-}
+// (resumeConversation removed with the history UI — D040)
 
 // ════════════════════════════════════════════════════════════════════
 // T082 (b) — PORTFOLIO DATA → the KPI row (T157c: always visible now)
@@ -1149,7 +1070,8 @@ let benchLast = null;               // {dates, port, spy} for the hover tooltip
 const BENCH_REFRESH_MS = 600_000; // daily-bar data — 10 min is generous
 
 async function loadBench(force) {
-  if (!force && Date.now() - benchLastMs < BENCH_REFRESH_MS) return;
+  const perfVisible = !document.getElementById("view-performance").hidden;
+  if (!force && !perfVisible && Date.now() - benchLastMs < BENCH_REFRESH_MS) return;
   benchLastMs = Date.now();
   try {
     const r = await fetch(`/api/benchmark?days=${benchDays}`);
@@ -1410,7 +1332,7 @@ function showView(name) {
     x.classList.toggle("active", x.dataset.view === name));
   if (name === "overview") window.scrollTo(0, 0);
   if (name === "performance") loadBench(true);
-  if (name === "history") loadConversations();
+  if (name === "history") autoResumeThread();
 }
 document.addEventListener("click", (ev) => {
   const b = ev.target.closest(".vchip");
@@ -1418,11 +1340,10 @@ document.addEventListener("click", (ev) => {
 });
 
 // their corner ↗ arrows, made REAL: the question goes to KUBERA
-document.getElementById("main").addEventListener("click", (ev) => {
-  const b = ev.target.closest(".go");
+document.addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-ask]");
   if (!b || !b.dataset.ask) return;
-  showView("overview");
-  send(b.dataset.ask);
+  send(b.dataset.ask);   // send() opens the drawer; the view stays put
 });
 
 // ════════════════════════════════════════════════════════════════════
@@ -1640,7 +1561,7 @@ if ("serviceWorker" in navigator) {
 }
 
 // ── init ── (pinned: the dashboard loads everything at start)
-loadConversations();
+autoResumeThread();
 loadPortfolio(); loadMonitor(); loadBench(true); loadRisk(); loadHousehold();
 // Portfolio + monitor poll every 60 s while the panel is visible.
 setInterval(() => {

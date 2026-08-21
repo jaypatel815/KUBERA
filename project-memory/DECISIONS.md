@@ -831,3 +831,17 @@ engine / T155 chat tools + persona / T156 CSV import / T157 dashboard v1 /
 T158 briefs integration. FinRobot note: its ARCHITECTURE was already
 reviewed and mostly rejected (D036) — this phase borrows presentation
 ambition, not agent design.
+
+## D040 — ambient conversation: no history UI (2026-08-21)
+
+Owner, after living with the rebuilt dashboard: "KUBERA will not be
+conversation based, it would be more like talking to a human on a regular
+basis... KUBERA should be able to reference the chat in the background."
+Adopted: the history drawer, conversations table, and new-thread button are
+REMOVED from the UI. On load the app silently resumes the most recent
+thread (/api/conversations?limit=1) so continuity is automatic — one
+ongoing relationship, not managed sessions. The server keeps the full
+record (threads, audit trail, /api/chat/{id}) untouched; this is a
+presentation doctrine, not a data change. Longer-horizon memory beyond one
+thread's context window remains a NAMED gap for a future ticket
+(cross-thread recall), not papered over.
