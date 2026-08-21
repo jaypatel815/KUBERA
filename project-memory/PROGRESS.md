@@ -5,6 +5,10 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 — Gemini/Antigravity — test environment isolation fix
+Fixed 4 tests (`test_edgar.py:test_missing_contact_is_actionable`, `test_finnhub.py:test_missing_key_is_actionable`, `test_fmp.py:test_missing_key_is_actionable`, `test_schwab.py:test_missing_config_explains_all_three_pieces`) by passing explicit `None` kwargs for their respective settings.
+Cause: When `KuberaSettings(_env_file=None)` was instantiated without explicit kwargs, ambient OS environment variables in the user's shell session took precedence over defaults in pydantic-settings, preventing `ConfigError` from raising when keys were populated in the caller's shell environment. Verified `scripts/verify.py` passes cleanly (1,155 passed).
+
 ## 2026-08-21 — Gemini/Antigravity — review Batch #10 (curation #10, T142, T143, T144, T145) — PASS
 Reviewed Batch #10 at 3fd70eb:
 1. Curation #10 (59e3a9e) PASS: Archive files verified; memory budgets in bounds.
