@@ -320,7 +320,24 @@ return stated — run `scripts\sync.py` daily so it has history to draw.
 gated — the full CLI sequence lives in `docs/RUNBOOK.md`: `kronos_shape_check`
 once, `kronos_run.py start` once (guarded against accidental re-runs), daily
 `forecast` during 2026-08-24..2026-10-02, `score --consume` ONCE after the
-window closes. Three attempts total; a FAIL is a real answer.
+window closes. Three attempts total; a FAIL is a real answer. During the
+window your **morning brief carries the campaign line** — attempts used,
+forecast days logged, days remaining, and a nudge if today's forecast hasn't
+landed. Counts and dates only: outcomes stay sealed until the one-time scoring.
+
+**Ring the bell.** The Orb's portfolio panel has a 🔕 in its header — flip it
+on (your browser will ask permission once) and any NEW monitor alert becomes a
+real OS notification with the alert's own words. Only new ones — enabling it
+never spams what's already on screen — and only while the panel is open: there
+is no push server, so a closed app stays silent, honestly.
+
+**The health check now watches your backups too.** If the newest file in
+`backups\` is over 30 hours old — or the folder is empty — the every-5-minute
+toast says so and names the fix. A nightly backup job that quietly stopped is
+worthless exactly when you need it; now it can't stop quietly. And the weekly
+review lists the week's **risk events** (tier changes, breaker trips, recorded
+as they happen) — a quiet week is stated as a fact, because for the Sept-12
+risk decision an uneventful week is evidence too.
 
 When you ask "which way will SPY go this week", the days-lens answer now also
 NAMES any scheduled event standing inside its window (FOMC from the published
