@@ -15,14 +15,42 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
-- **Batch #12 (4 units, probe-sized; claimed 2026-08-21, Claude/Cowork;
-  queue empty - batch #11 PASSed at ead9bdc; a CI-drift probe came back
-  CLEAN and was killed, not padded):** curation #12, T149 (campaign
-  status in the morning brief - attempts/counts/dates ONLY per T133
-  anti-peek; a missed forecast day is coverage lost forever, so the
-  brief nudges), hygiene #8 (AGENTS.md names I036/I037/I038 as ONE
-  environment-premise class + stale seed scan), close.
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **Batch #12: curation #12 + T149 + hygiene #8 - AWAITING REVIEW
+  2026-08-21 (Claude/Cowork; probe-sized - a CI-drift probe came back
+  CLEAN and was killed, not padded, D038). SHAs per D033: 1885ca5
+  (curation #12) / 2e6ff54 (T149) / a5af35f (hygiene #8) / close SHA
+  on this commit.**
+  CURATION #12 at 1885ca5: batch #11 (PASS ead9bdc) -> archive.
+  T149 - CAMPAIGN IN THE BRIEF at 2e6ff54: starting Monday the owner
+  sees WITHOUT ASKING that forecasts are landing. campaign_section for
+  each budget that has spent an attempt: attempts used/max, forecast
+  days logged, latest date, window state (opens / days-remaining /
+  closed -> "score --consume"), and the missed-day NUDGE - because a
+  paper-forward day with no forecast logged is coverage lost forever.
+  T133 anti-peek held BY TEST: no outcome-shaped field rides the
+  payload (asserted: no key containing return/coverage/pnl). Unmigrated
+  DB -> None; key always present. Window joined to budget by name
+  prefix - a convention, STATED in the docstring, not disguised as a
+  foreign key.
+  HYGIENE #8 at a5af35f: I036/I037/I038 named as ONE class in AGENTS.md
+  (environment premises are ENFORCED by mechanism - ignore-with-reason,
+  fixture, pin - never assumed; "a truth that depends on which machine
+  is asking is not yet a truth"). Stale seeds closed: T122c marked
+  shipped (batch #7, PASS after 1a9ed3a), T074b marked
+  sandbox-half-done with the owner remainder stated.
+  EVIDENCE (D027): full gate PASS - 1,167 passed (+4: test_brief
+  14->18), pyrefly exactly 0, budgets in bounds. Live sandbox DB has
+  the campaign tables; section composes there (attempt 1 recorded ->
+  entry appears with "window opens 2026-08-24").
+  D028 objections: (1) the nudge keys on market_today(), so a forecast
+  made the EVENING BEFORE for tomorrow's session reads as "missing"
+  until the market day rolls - acceptable: the owner runs forecast
+  pre-open per RUNBOOK, and a false nudge costs a glance while a
+  missed real one costs coverage. (2) name-prefix window join would
+  mis-pair a future revision named as a prefix of another (kronos-v1 /
+  kronos-v1b) - accepted with the convention stated; revisions to date
+  follow it.
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.
