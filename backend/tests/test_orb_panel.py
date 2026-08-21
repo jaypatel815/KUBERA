@@ -31,6 +31,19 @@ def test_monitor_panel_escapes_untrusted_text():
         assert f"esc({field})" in text
 
 
+def test_alert_notifications_are_wired():
+    """T147 — the bell: local OS notifications on NEW alert transitions."""
+    text = ORB.read_text(encoding="utf-8")
+    assert 'id="btn-notify"' in text
+    assert "Notification.requestPermission()" in text  # permission on gesture
+    assert "notifyAlertTransitions" in text
+    # transitions tracked every poll (enabling never bursts), alerts only
+    assert 'a.severity === "alert"' in text
+    assert "seenAlertKeys = new Set(current.map(c => c.key))" in text
+    # the honest scope is stated where the user reads it
+    assert "only while this panel is open (no push server)" in text
+
+
 def test_benchmark_panel_is_wired():
     """T143 — performance vs SPY: /api/benchmark drawn inline, no chart lib."""
     text = ORB.read_text(encoding="utf-8")

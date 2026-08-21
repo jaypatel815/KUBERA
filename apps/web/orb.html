@@ -106,6 +106,11 @@
   .mon-quiet { color: #5aaa88; font-size: 10px; }
   #mon-foot { font-size: 9.5px; color: #3a3830; margin-top: 8px; line-height: 1.5; }
 
+  /* ── alert-notification bell (T147) ── */
+  #btn-notify { background: none; border: none; cursor: pointer; float: right;
+    font-size: 13px; opacity: 0.55; padding: 0 2px; }
+  #btn-notify.on { opacity: 1; }
+
   /* ── performance vs SPY block (T143) — /api/benchmark drawn inline ── */
   #bench-chart { display: block; width: 100%; margin: 4px 0 2px; }
   .bench-you { color: #c9a227; }
@@ -160,6 +165,7 @@
   <div id="port-panel">
     <div id="port-hdr">
       <span id="port-title">Portfolio</span>
+      <button id="btn-notify" title="alert notifications OFF">&#x1F515;</button>
     </div>
     <div id="port-body">
       <div class="pl">Equity</div>
@@ -588,10 +594,69 @@ async function loadMonitor() {
       `${s.positions} position(s): ${s.alerts} alert(s), ${s.watches} watch(es), ` +
       `${s.blind_spots} blind spot(s) · ${d.advisory || ""}` +
       (d.calendar_note ? ` · calendar degraded: ${d.calendar_note}` : "");
+    // T147: only severity "alert" reaches the OS — watches stay in-panel
+    const currentAlerts = [];
+    d.positions.forEach(p => (p.alerts || []).forEach(a => {
+      if (a.severity === "alert") {
+        currentAlerts.push({ key: p.symbol + "|" + a.kind,
+                             symbol: p.symbol, kind: a.kind,
+                             detail: String(a.detail || "") });
+      }
+    }));
+    notifyAlertTransitions(currentAlerts);
   } catch (_) {
     monBodyEl.innerHTML = '<div class="mon-line">monitor unavailable (server starting?)</div>';
   }
 }
+
+// ════════════════════════════════════════════════════════════════════
+// T147 — LOCAL ALERT NOTIFICATIONS: the bell. When ON, a NEW monitor
+// alert (per symbol+kind transition, tracked every poll so enabling
+// never bursts the alerts already on screen) becomes an OS notification
+// via the Notification API. Honest scope: this works only while KUBERA
+// is open with the panel polling — there is NO push server, and a
+// closed app stays silent (that gap is named in project memory, not
+// papered over). Alerts only; watches stay in-panel.
+// ════════════════════════════════════════════════════════════════════
+const btnNotify = document.getElementById("btn-notify");
+let notifyOn = false;
+let seenAlertKeys = new Set();
+
+function notifyAlertTransitions(current) {
+  if (notifyOn && "Notification" in window &&
+      Notification.permission === "granted") {
+    current.forEach(c => {
+      if (!seenAlertKeys.has(c.key)) {
+        try {
+          new Notification("KUBERA · " + c.symbol, {
+            body: "[" + c.kind + "] " + c.detail.slice(0, 140),
+            icon: "/icon.svg", tag: c.key });
+        } catch (_) { /* notification failure never breaks the panel */ }
+      }
+    });
+  }
+  seenAlertKeys = new Set(current.map(c => c.key));
+}
+
+btnNotify.addEventListener("click", async () => {
+  if (!("Notification" in window)) {
+    btnNotify.title = "notifications not supported in this browser";
+    return;
+  }
+  if (!notifyOn && Notification.permission !== "granted") {
+    const p = await Notification.requestPermission(); // needs this user gesture
+    if (p !== "granted") {
+      btnNotify.title = "permission denied - re-enable in browser site settings";
+      return;
+    }
+  }
+  notifyOn = !notifyOn;
+  btnNotify.textContent = notifyOn ? "🔔" : "🔕";
+  btnNotify.classList.toggle("on", notifyOn);
+  btnNotify.title = notifyOn
+    ? "alert notifications ON - only while this panel is open (no push server)"
+    : "alert notifications OFF";
+});
 
 // ════════════════════════════════════════════════════════════════════
 // T143 — PERFORMANCE vs SPY: /api/benchmark (T021 compare + T060 math)
