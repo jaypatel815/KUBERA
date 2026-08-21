@@ -76,7 +76,12 @@ DEPOSIT_ROW = {
 
 def test_missing_config_explains_all_three_pieces():
     with pytest.raises(ConfigError) as e:
-        KuberaSettings(_env_file=None).require_schwab()
+        KuberaSettings(
+            _env_file=None,
+            schwab_app_key=None,
+            schwab_app_secret=None,
+            schwab_refresh_token=None,
+        ).require_schwab()
     msg = str(e.value)
     for name in ("SCHWAB_APP_KEY", "SCHWAB_APP_SECRET", "SCHWAB_REFRESH_TOKEN"):
         assert name in msg
