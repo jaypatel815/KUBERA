@@ -109,6 +109,20 @@ def test_index37_row_is_wired():
     assert "weekly candles (aggregated for readability)" in text
 
 
+def test_calendar_matrix_and_positions_are_wired():
+    """T157h — the working calendar, trading-days matrix, positions table."""
+    text = ORB.read_text(encoding="utf-8")
+    for el in ('id="calpop"', 'id="cal-grid"', 'id="days-grid"',
+               'id="pos-table"'):
+        assert el in text, f"missing {el}"
+    assert 'fetch(`/api/events' in text          # real event dates, not decor
+    assert "renderTradingDays" in text
+    # matrix colors come from REAL daily equity changes, and say so
+    assert "green = your equity rose that" in text
+    # an event day click asks KUBERA about that date
+    assert "that could affect my portfolio?" in text
+
+
 def test_benchmark_panel_is_wired():
     """T143 — performance vs SPY: /api/benchmark drawn inline, no chart lib."""
     text = ORB.read_text(encoding="utf-8")

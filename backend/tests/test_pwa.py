@@ -81,3 +81,17 @@ def test_intraday_bars_route_shape():
     if r.status_code == 200:
         body = r.json()
         assert body["symbol"] == "SPY" and "bars" in body
+
+
+def test_events_route_serves_fomc_and_named_notes():
+    """T157h — /api/events: the published FOMC table always answers."""
+    from fastapi.testclient import TestClient
+
+    from api.main import app
+    r = TestClient(app).get("/api/events")
+    assert r.status_code == 200
+    d = r.json()
+    kinds = {e["kind"] for e in d["events"]}
+    assert "fomc" in kinds
+    assert "published calendar" in d["note"]
+    assert all(len(e["date"]) == 10 for e in d["events"])  # ISO dates only

@@ -210,17 +210,6 @@
   #house-body .hline { color: var(--mut); font-size: 11px; margin: 3px 0; }
   #house-body .house-stale { color: #FF7A45; }
   #alloc { display: block; margin: 8px auto 0; }
-  #pins-grid { background:
-      radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1.5px);
-    background-size: 16px 16px; border-radius: 14px; padding: 18px 14px;
-    display: flex; justify-content: space-around; align-items: flex-end; height: 110px; }
-  .pin { display: flex; flex-direction: column; align-items: center; gap: 6px;
-    cursor: pointer; background: none; border: none; }
-  .pin .stem { width: 3px; height: 34px; border-radius: 3px; background: #3a3a42; }
-  .pin.active .stem { background: var(--amber); }
-  .pin .yr { padding: 5px 14px; border-radius: 999px; font-weight: 600; font-size: 12px;
-    background: #fff; color: #000; }
-  .pin.active .yr { background: var(--amber); color: #fff; }
   #sess-big { font-family: Rubik, sans-serif; font-size: 21px; font-weight: 700;
     margin-top: 6px; }
   #sess-sub { color: var(--mut); font-size: 11px; margin-bottom: 10px; }
@@ -396,6 +385,35 @@
     #cndl-body { grid-template-columns: 1fr; }
     #cndl-rail { border-left: none; padding-left: 0; }
   }
+
+  /* ── T157h: real calendar popover + trading-days matrix ── */
+  #calpop { position: fixed; top: 214px; left: 24px; z-index: 650; display: none;
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 14px; width: 280px; }
+  #cal-hdr { display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; }
+  #cal-title { font-family: Rubik, sans-serif; font-weight: 600; font-size: 13px; }
+  .calnav { background: var(--chip); border: 1px solid var(--line); color: var(--mut);
+    border-radius: 8px; width: 24px; height: 24px; cursor: pointer; }
+  #cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
+    text-align: center; font-size: 11px; }
+  #cal-grid .dow { color: var(--dim); font-size: 9px; padding: 3px 0; }
+  .cday { padding: 6px 0; border-radius: 8px; color: var(--txt); position: relative;
+    cursor: default; }
+  .cday.other { color: #2f2f36; }
+  .cday.today { outline: 1.5px solid var(--amber); }
+  .cday.ev { cursor: pointer; }
+  .cday.ev::after { content: ""; position: absolute; bottom: 2px; left: 50%;
+    transform: translateX(-50%); width: 5px; height: 5px; border-radius: 999px;
+    background: var(--amber); }
+  .cday.ev:hover { background: var(--amber-tint); }
+  #cal-note { color: var(--dim); font-size: 9px; margin-top: 8px; line-height: 1.4; }
+  #days-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px;
+    margin-top: 4px; }
+  #days-grid i { aspect-ratio: 1; border-radius: 6px; background: #202027; }
+  #days-grid i.up { background: rgba(52,199,123,0.75); }
+  #days-grid i.dn { background: rgba(255,77,79,0.75); }
+  #days-grid i.tod { outline: 1.5px solid var(--amber); }
 </style>
 
 </head>
@@ -420,6 +438,13 @@
   </div>
 </div>
 <div id="syspop"></div>
+<div id="calpop">
+  <div id="cal-hdr"><button class="calnav" id="cal-prev">&#8249;</button>
+    <span id="cal-title"></span>
+    <button class="calnav" id="cal-next">&#8250;</button></div>
+  <div id="cal-grid"></div>
+  <div id="cal-note"></div>
+</div>
 
 <!-- ════ HERO: date · CTA · greeting · the mic-orb ════ -->
 <div id="hero">
@@ -430,7 +455,7 @@
     </div>
     <div id="hero-cta">
       <button class="apill" data-ask="give me my morning brief">Morning Brief &rarr;</button>
-      <button id="hero-cal" data-ask="what scheduled events and earnings are coming up for my holdings?" title="Upcoming events">&#128197;</button>
+      <button id="hero-cal" title="Calendar &middot; FOMC + your earnings dates">&#128197;</button>
     </div>
   </div>
   <div id="greet">
@@ -632,11 +657,12 @@
 
         <div style="display:flex;flex-direction:column;gap:20px;">
           <section class="card">
-            <div class="ct" style="margin-bottom:10px;">Chart Range</div>
-            <div id="pins-grid">
-              <button class="pin" data-days="30"><span class="stem"></span><span class="yr">1M</span></button>
-              <button class="pin active" data-days="90"><span class="stem"></span><span class="yr">3M</span></button>
-            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="ct">Trading Days</span>
+              <span class="chipdd">last 20 sessions</span></div>
+            <div id="days-grid"></div>
+            <div class="fine" id="days-foot">green = your equity rose that
+              session, red = fell &middot; from daily snapshots</div>
           </section>
           <section class="card">
             <div style="display:flex;align-items:center;gap:8px;">
@@ -693,7 +719,12 @@
     <!-- ── VIEW 3: Transactions / records ── -->
     <div id="view-history" class="view" hidden>
       <div class="grid2">
-        <!-- Conversations table removed (D040) — positions table arrives in C3 -->
+        <section class="card" style="grid-column: 1 / -1;">
+          <div class="ct" style="margin-bottom:8px;">Positions</div>
+          <table class="t"><thead><tr><th>Symbol</th><th>Qty</th>
+            <th>Market value</th><th>Unrealized P&amp;L</th></tr></thead>
+            <tbody id="pos-table"></tbody></table>
+        </section>
         <section class="card" style="grid-column: 1 / -1;">
           <div class="ct" style="margin-bottom:8px;">Debts on Record</div>
           <table class="t"><thead><tr><th>Name</th><th>Kind</th><th>Balance</th>
@@ -1034,6 +1065,7 @@ async function loadPortfolio() {
       .sort((a, b) => Math.abs(b.market_value || 0) - Math.abs(a.market_value || 0));
     window._positions = positions;
     setCandleSymbol();
+    renderPosTable();
     document.getElementById("pos-chip").textContent =
       `All Positions (${positions.length}) \u25BE`;
     document.getElementById("inc-day").textContent =
@@ -1226,6 +1258,7 @@ async function loadBench(force) {
     benchLast = { dates: d.dates || [], port, spy };
     drawBench(port, spy);
     drawSpark(port);
+    renderTradingDays();
     document.getElementById("spark-days").textContent = String(benchDays);
     const pp = document.getElementById("perf-pill");
     pp.textContent = ((m0 => (m0 >= 0 ? "+" : "") + (m0 * 100).toFixed(1) + "%")(
@@ -1545,16 +1578,9 @@ document.getElementById("range-chip").addEventListener("click", () => {
   document.getElementById("range-chip").textContent = benchDays + "d ▾";
   document.querySelectorAll(".rp").forEach(x =>
     x.classList.toggle("active", parseInt(x.dataset.days, 10) === benchDays));
-  document.querySelectorAll(".pin").forEach(x =>
-    x.classList.toggle("active", parseInt(x.dataset.days, 10) === benchDays));
   loadBench(true);
 });
-document.querySelectorAll(".pin").forEach(b => b.addEventListener("click", () => {
-  benchDays = parseInt(b.dataset.days, 10) || 90;
-  document.querySelectorAll(".pin").forEach(x => x.classList.toggle("active", x === b));
-  document.getElementById("range-chip").textContent = benchDays + "d ▾";
-  loadBench(true);
-}));
+// (pin slider replaced by the Trading Days matrix — range lives on the chip + rp pills)
 
 // monitor: symbol quick-ask + filter toggle
 let monFilter = "all";
@@ -1931,6 +1957,93 @@ function setCandleSymbol() {
   const top = (window._positions || [])[0];
   const sym = top ? top.symbol : "SPY";
   if (sym !== candleSym) { candleSym = sym; loadCandles(); }
+}
+
+// ── T157h: the REAL calendar (month grid + event dots from /api/events) ──
+const calPop = document.getElementById("calpop");
+let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
+let calEvents = {};   // "YYYY-MM-DD" -> [labels]
+
+async function loadEvents() {
+  try {
+    const held = (window._positions || []).map(p => p.symbol).join(",");
+    const r = await fetch(`/api/events${held ? "?symbols=" + held : ""}`);
+    if (!r.ok) return;
+    const d = await r.json();
+    calEvents = {};
+    (d.events || []).forEach(e => {
+      (calEvents[e.date] = calEvents[e.date] || []).push(e.label);
+    });
+    document.getElementById("cal-note").textContent = d.note || "";
+    renderCal();
+  } catch (_) { /* calendar renders without dots */ }
+}
+
+function renderCal() {
+  const first = new Date(calYear, calMonth, 1);
+  document.getElementById("cal-title").textContent =
+    first.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const startDow = first.getDay();
+  const daysIn = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date();
+  const cells = ["S", "M", "T", "W", "T", "F", "S"]
+    .map(d => `<span class="dow">${d}</span>`);
+  for (let i = 0; i < startDow; i++) cells.push('<span class="cday other"></span>');
+  for (let d = 1; d <= daysIn; d++) {
+    const iso = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-` +
+      String(d).padStart(2, "0");
+    const evs = calEvents[iso];
+    const isToday = d === today.getDate() && calMonth === today.getMonth() &&
+      calYear === today.getFullYear();
+    cells.push(`<span class="cday${evs ? " ev" : ""}${isToday ? " today" : ""}"` +
+      (evs ? ` data-date="${iso}" title="${esc(evs.join(", "))}"` : "") +
+      `>${d}</span>`);
+  }
+  document.getElementById("cal-grid").innerHTML = cells.join("");
+}
+document.getElementById("hero-cal").addEventListener("click", () => {
+  const showing = calPop.style.display === "block";
+  calPop.style.display = showing ? "none" : "block";
+  if (!showing) { renderCal(); loadEvents(); }
+});
+document.getElementById("cal-prev").addEventListener("click", () => {
+  calMonth -= 1; if (calMonth < 0) { calMonth = 11; calYear -= 1; } renderCal();
+});
+document.getElementById("cal-next").addEventListener("click", () => {
+  calMonth += 1; if (calMonth > 11) { calMonth = 0; calYear += 1; } renderCal();
+});
+document.getElementById("cal-grid").addEventListener("click", (ev) => {
+  const d = ev.target.closest(".cday.ev");
+  if (d) { calPop.style.display = "none";
+    send(`what's happening on ${d.dataset.date} that could affect my portfolio?`); }
+});
+
+// ── Trading Days matrix: last 20 sessions, green/red from REAL daily equity ──
+function renderTradingDays() {
+  if (!benchLast || benchLast.port.length < 2) return;
+  const port = benchLast.port, dates = benchLast.dates;
+  const cells = [];
+  const n = Math.min(20, port.length - 1);
+  for (let i = port.length - n; i < port.length; i++) {
+    const chg = port[i] - port[i - 1];
+    const cls = chg > 1e-9 ? "up" : (chg < -1e-9 ? "dn" : "");
+    const tod = i === port.length - 1 ? " tod" : "";
+    cells.push(`<i class="${cls}${tod}" title="${esc(dates[i] || "")} ` +
+      `${(chg >= 0 ? "+" : "")}${(chg * 100).toFixed(2)}%"></i>`);
+  }
+  document.getElementById("days-grid").innerHTML = cells.join("");
+}
+
+// ── positions table (Transactions view) ──
+function renderPosTable() {
+  const tb = document.getElementById("pos-table");
+  const rows = window._positions || [];
+  tb.innerHTML = rows.map(p => {
+    const pl = parseFloat(p.unrealized_pl || 0);
+    return `<tr><td>${esc(p.symbol)}</td><td>${esc(p.qty)}</td>` +
+      `<td>${fmtUSD(parseFloat(p.market_value || 0))}</td>` +
+      `<td class="${pl >= 0 ? "pos" : "neg"}">${pl >= 0 ? "+" : ""}${fmtUSD(pl)}</td></tr>`;
+  }).join("") || '<tr><td colspan="4" class="mon-line">no open positions</td></tr>';
 }
 
 // ── T136: PWA registration (feature-detected; failure is silent because

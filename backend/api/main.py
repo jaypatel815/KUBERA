@@ -326,6 +326,40 @@ def market_bars(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/events")
+def calendar_events(symbols: str | None = None,
+                    session=Depends(get_db_session)) -> dict:
+    """T157h — dates for the dashboard calendar: FOMC decisions (the
+    transcribed published schedule) + recorded earnings dates for the given
+    symbols (the T083 store — only dates that were actually observed/backfilled;
+    an empty store is stated, not guessed)."""
+    from analysis.fomc import FOMC_DECISION_DATES, fomc_staleness_note
+    from data.earnings_store import stored_events
+
+    events = [{"date": d, "kind": "fomc", "label": "FOMC decision"}
+              for d in FOMC_DECISION_DATES]
+    syms = [s.strip().upper() for s in (symbols or "").split(",") if s.strip()]
+    earn_note = None
+    for sym in syms[:10]:
+        try:
+            for row in stored_events(session, sym):
+                events.append({"date": row.event_date, "kind": "earnings",
+                               "label": f"{sym} earnings"})
+        except OperationalError:
+            earn_note = "earnings store not initialized (alembic upgrade head)"
+            break
+    from datetime import date as _date
+    events.sort(key=lambda e: e["date"])
+    return {
+        "events": events,
+        "asof": datetime.now(timezone.utc).isoformat(),
+        "note": " · ".join(x for x in (
+            "FOMC from the Fed's published calendar",
+            "earnings limited to dates KUBERA has recorded",
+            fomc_staleness_note(_date.today()), earn_note) if x),
+    }
+
+
 @app.get("/api/market/{symbol}/intraday-bars")
 def market_intraday_bars(
     symbol: str,
