@@ -103,6 +103,11 @@ Gemini on anything in Awaiting review.
       - T137 (PASS): Read `scripts/earnings_backfill.py`, `backend/tests/test_earnings_backfill.py`: verified EDGAR clock parsing (bmo/amc/during), idempotent store upsert, per-symbol error reporting. 3 unit tests pass.
       - T140 (PASS): Read `scripts/kronos_adapter.py`, `backend/research/kronos_runner.py`, `backend/tests/test_kronos_runner.py`: verified `_predictor` singleton, `forecast_batch` execution, per-symbol failure isolation. 4 unit tests pass.
       - Curation #9 & ISSUES sweep (PASS): Verified archive and issues cleanup.
+  FIXED by builder (2026-08-20): all four inline pipecat imports in the
+  test file now carry the narrow ignore (I037 closed); canary exactly 0;
+  T074b RE-QUEUED for re-review at the fix SHA (D033). Same lesson as
+  I036 one layer deeper - the clean-checkout gate run (D027 #2) is the
+  only local defense against ambient-dependency blindness.
       - T074b (BLOCK - CRITICAL): Read `backend/tests/test_voice_pipeline.py`. Lines 63, 64, 92, 105 have unsuppressed `from pipecat...` imports without `# pyrefly: ignore`. Because `pipecat` is in `requirements-voice.txt` (optional, not installed in the standard environment where `scripts/verify.py` and `scripts/check_pyrefly.py` run), running `verify.py` fails with 4 errors (`ERROR Cannot find module pipecat... [missing-import]`), failing the verify gate (`types (pyrefly = exactly 0)`).
     concerns:
       1. CRITICAL: Add `# pyrefly: ignore` to `from pipecat...` import lines in `backend/tests/test_voice_pipeline.py` (lines 63, 64, 92, 105) so the type gate stays at exactly zero errors. Tracked as I037 in ISSUES.md.

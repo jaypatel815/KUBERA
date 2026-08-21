@@ -4,7 +4,7 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
-- I037 [FOUND 2026-08-20 — while reviewing Batch #9 / T074b] pyrefly reports
+- I037 [FIXED 2026-08-20 — all four test-file imports carry the narrow ignore; the SAME environment-class miss as I036, now in a test: the module was fixed proactively, the tests were forgotten] [was: FOUND 2026-08-20 — while reviewing Batch #9 / T074b] pyrefly reports
   missing-import errors on `backend/tests/test_voice_pipeline.py` (lines 63, 64,
   92, 105) for `from pipecat...` imports. `pipecat` is in `requirements-voice.txt`
   (optional, not in base `requirements.txt` / standard venv). While

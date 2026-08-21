@@ -60,8 +60,13 @@ def _capture(processor):
 
 def test_transcription_becomes_a_chat_turn_with_voice_and_thread():
     vp = _mod()
-    from pipecat.frames.frames import TextFrame, TranscriptionFrame
-    from pipecat.processors.frame_processor import FrameDirection
+    from pipecat.frames.frames import (  # pyrefly: ignore  # I037: voice-only dep
+        TextFrame,
+        TranscriptionFrame,
+    )
+    from pipecat.processors.frame_processor import (  # pyrefly: ignore  # I037: voice-only dep
+        FrameDirection,
+    )
 
     client = FakeClient([
         {"reply": "SPY closed up about one percent.", "conversation_id": 7},
@@ -89,7 +94,7 @@ def test_transcription_becomes_a_chat_turn_with_voice_and_thread():
 def test_server_failure_becomes_a_spoken_named_degradation():
     vp = _mod()
     import httpx
-    from pipecat.frames.frames import TextFrame
+    from pipecat.frames.frames import TextFrame  # pyrefly: ignore  # I037: voice-only dep
 
     p = vp.KuberaChatProcessor(
         client=FakeClient([httpx.ConnectError("refused")]))
@@ -102,7 +107,7 @@ def test_server_failure_becomes_a_spoken_named_degradation():
 
 def test_empty_reply_is_named_not_silent():
     vp = _mod()
-    from pipecat.frames.frames import TextFrame
+    from pipecat.frames.frames import TextFrame  # pyrefly: ignore  # I037: voice-only dep
 
     p = vp.KuberaChatProcessor(client=FakeClient([{"reply": "",
                                                    "conversation_id": 1}]))
