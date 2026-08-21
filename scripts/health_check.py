@@ -7,6 +7,9 @@ Checks, in order:
 4. Snapshot-vs-broker reconciliation drift (T093b)
 5. Market-data FEED reachable + fresh (T129, Phase 8 "data feed outages":
    SPY probe through the T036b staleness lens; quiet when unconfigured)
+6. Backup freshness (T148): the restore drill (restore_check.py) proves a
+   backup RESTORES; this proves backups keep HAPPENING — a nightly job
+   that quietly stopped three weeks ago is worthless exactly when needed
 
 Prints one line per problem, exits 0 (healthy) / 1 (problems found), and — best
 effort, Windows only — pops a toast notification so you notice without watching a
@@ -70,6 +73,33 @@ def check_sync_freshness(
     age_min = (now - asof).total_seconds() / 60
     if age_min > max_age_minutes:
         return [f"last snapshot is {age_min:.0f} min old (threshold {max_age_minutes:.0f})"]
+    return []
+
+
+DEFAULT_BACKUP_DIR = Path(__file__).resolve().parents[1] / "backups"
+BACKUP_MAX_AGE_HOURS = 30.0  # nightly cadence + slack; override with --max-backup-age
+
+
+def check_backup(backup_dir: Path | None = None,
+                 max_age_hours: float = BACKUP_MAX_AGE_HOURS,
+                 now: datetime | None = None) -> list[str]:
+    """T148 — is the nightly backup still RUNNING? Freshness by file mtime
+    (backups are local copies, so mtime IS creation time; the filename stamp
+    would say the same thing with more parsing). Quiet when fresh."""
+    backup_dir = backup_dir or DEFAULT_BACKUP_DIR
+    backups = sorted(backup_dir.glob("*.sqlite3")) if backup_dir.is_dir() else []
+    if not backups:
+        return [f"no backups found in {backup_dir} — schedule scripts/backup_db.py "
+                "nightly (one-liner in its docstring; restore drill in RUNBOOK.md)"]
+    now = now or datetime.now(timezone.utc)
+    newest = max(backups, key=lambda p: p.stat().st_mtime)
+    made = datetime.fromtimestamp(newest.stat().st_mtime, tz=timezone.utc)
+    age_h = (now - made).total_seconds() / 3600
+    if age_h > max_age_hours:
+        return [f"newest backup ({newest.name}) is {age_h:.0f}h old (threshold "
+                f"{max_age_hours:.0f}h) — the nightly backup_db job may have "
+                "stopped; a backup that stops quietly is worthless exactly "
+                "when it is needed"]
     return []
 
 
@@ -164,12 +194,14 @@ def check_feed(settings=None, market=None, alpaca=None,
     return []
 
 
-def run_checks(base_url: str, db: Session, max_sync_age_min: float) -> list[str]:
+def run_checks(base_url: str, db: Session, max_sync_age_min: float,
+               max_backup_age_hours: float = BACKUP_MAX_AGE_HOURS) -> list[str]:
     problems = check_server(base_url)
     problems += check_breaker(db)
     problems += check_sync_freshness(db, max_sync_age_min)
     problems += check_reconciliation(base_url, db)
     problems += check_feed()
+    problems += check_backup(max_age_hours=max_backup_age_hours)
     return problems
 
 
@@ -177,12 +209,15 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="KUBERA health check.")
     ap.add_argument("--url", default=DEFAULT_URL)
     ap.add_argument("--max-sync-age", type=float, default=30.0, help="minutes")
+    ap.add_argument("--max-backup-age", type=float, default=BACKUP_MAX_AGE_HOURS,
+                    help="hours (T148 backup freshness)")
     ap.add_argument("--notify", action="store_true", help="Windows toast on problems")
     args = ap.parse_args()
 
     engine = make_engine(get_settings().database_url)
     with Session(engine) as db:
-        problems = run_checks(args.url, db, args.max_sync_age)
+        problems = run_checks(args.url, db, args.max_sync_age,
+                              args.max_backup_age)
     engine.dispose()
 
     if not problems:

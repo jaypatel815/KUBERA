@@ -236,3 +236,53 @@ def test_check_feed_wallclock_fallback_without_broker_clock():
         market=_Market(trade=_trade(5 * 24 * 3600, now)), now=now)
     assert len(problems) == 1 and "FEED STALE" in problems[0]
     assert "market state unknown" in problems[0]
+
+
+# --- T148: backup freshness ---------------------------------------------------
+# The restore drill proves a backup RESTORES; these prove the health check
+# notices when backups stop HAPPENING. Frozen `now`, tmp dirs, mtime-based.
+
+def test_check_backup_names_the_missing_dir(tmp_path):
+    problems = health_check.check_backup(backup_dir=tmp_path / "nope")
+    assert len(problems) == 1
+    assert "no backups found" in problems[0]
+    assert "backup_db.py" in problems[0]  # the message says what to DO
+
+
+def test_check_backup_empty_dir_is_also_missing(tmp_path):
+    (tmp_path / "backups").mkdir()
+    problems = health_check.check_backup(backup_dir=tmp_path / "backups")
+    assert problems and "no backups found" in problems[0]
+
+
+def test_check_backup_fresh_is_quiet_and_stale_is_loud(tmp_path):
+    import os
+    d = tmp_path / "backups"
+    d.mkdir()
+    f = d / "kubera-20260821-020000.sqlite3"
+    f.write_bytes(b"not-a-real-db")  # freshness check reads mtime, not content
+    made = datetime.now(timezone.utc)
+    os.utime(f, (made.timestamp(), made.timestamp()))
+    # 1h later: quiet
+    assert health_check.check_backup(backup_dir=d,
+                                     now=made + timedelta(hours=1)) == []
+    # 40h later: loud, with age and threshold in the message
+    problems = health_check.check_backup(backup_dir=d,
+                                         now=made + timedelta(hours=40))
+    assert len(problems) == 1
+    assert "40h old" in problems[0] and "threshold 30h" in problems[0]
+
+
+def test_check_backup_judges_the_newest_not_the_oldest(tmp_path):
+    import os
+    d = tmp_path / "backups"
+    d.mkdir()
+    now = datetime.now(timezone.utc)
+    old = d / "kubera-20260701-020000.sqlite3"
+    new = d / "kubera-20260821-020000.sqlite3"
+    for f, age_h in ((old, 24 * 50), (new, 2)):
+        f.write_bytes(b"x")
+        ts = (now - timedelta(hours=age_h)).timestamp()
+        os.utime(f, (ts, ts))
+    # a 50-day-old sibling does not matter while last night's exists
+    assert health_check.check_backup(backup_dir=d, now=now) == []
