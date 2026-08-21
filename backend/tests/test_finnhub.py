@@ -43,7 +43,7 @@ def _client(payload, status=200) -> FinnhubClient:
 
 def test_missing_key_is_actionable():
     with pytest.raises(ConfigError, match="FINNHUB_API_KEY"):
-        FinnhubClient(settings=KuberaSettings(_env_file=None, finnhub_api_key=None))
+        FinnhubClient(settings=KuberaSettings(_env_file=None))
 
 
 def test_surprises_parse_fail_closed_and_sorted():

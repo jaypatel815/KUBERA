@@ -55,7 +55,7 @@ def client_with(map_json=TICKER_MAP, sub_json=SUBMISSIONS,
 
 def test_missing_contact_is_actionable():
     with pytest.raises(ConfigError, match="EDGAR_CONTACT"):
-        EdgarClient(settings=KuberaSettings(_env_file=None, edgar_contact=None))
+        EdgarClient(settings=KuberaSettings(_env_file=None))
 
 
 def test_earnings_history_filters_to_item_202_and_sorts_oldest_first():

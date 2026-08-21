@@ -41,7 +41,7 @@ def client_with(json_body, status=200) -> FmpClient:
 
 def test_missing_key_is_actionable():
     with pytest.raises(ConfigError, match="FMP_API_KEY"):
-        FmpClient(settings=KuberaSettings(_env_file=None, fmp_api_key=None))
+        FmpClient(settings=KuberaSettings(_env_file=None))
 
 
 def test_calendar_parses_and_reports_unparsed():
