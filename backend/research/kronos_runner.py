@@ -137,6 +137,76 @@ def call_model(model_source: str, func_name: str, symbol: str,
     return {k: float(out[k]) for k in REQUIRED_KEYS}
 
 
+def _validate_dist(symbol: str, out: dict) -> dict:
+    missing = [k for k in REQUIRED_KEYS if not isinstance(out.get(k),
+                                                         (int, float))]
+    if missing:
+        raise RunnerError(
+            f"model returned an incomplete forecast for {symbol}: missing "
+            f"or non-numeric {missing} — refusing to log a partial row")
+    if not out["p05_frac"] <= out["p50_frac"] <= out["p95_frac"]:
+        raise RunnerError(
+            f"model percentiles are not ordered for {symbol} "
+            f"(p05={out['p05_frac']}, p50={out['p50_frac']}, "
+            f"p95={out['p95_frac']}) — a malformed distribution is not data")
+    if not 0.0 <= out["up_odds"] <= 1.0:
+        raise RunnerError(f"up_odds {out['up_odds']} outside [0,1] for "
+                          f"{symbol}")
+    return {k: float(out[k]) for k in REQUIRED_KEYS}
+
+
+def call_model_batch(model_source: str, func_name: str,
+                     series: dict[str, dict], forecast_date: str, *,
+                     python: str | None = None,
+                     timeout_s: float = 600.0,
+                     config: dict[str, str] | None = None,
+                     ) -> tuple[dict[str, dict], dict[str, str]]:
+    """T140 — every symbol in ONE boundary call (one model load). `series`
+    maps symbol -> {"closes", "dates", "ohlcv"}. The paper-forward check
+    runs per symbol BEFORE anything crosses. Returns
+    (validated_dists_by_symbol, named_errors_by_symbol) — a symbol's
+    failure never poisons its neighbors; raises only when EVERY symbol
+    failed or the call itself did."""
+    for sym, s in series.items():
+        if len(s["closes"]) != len(s["dates"]):
+            raise RunnerError(f"closes and dates must align for {sym}")
+        if not s["closes"]:
+            raise RunnerError(f"no history supplied for {sym}")
+        if max(str(d)[:10] for d in s["dates"]) >= forecast_date:
+            raise RunnerError(
+                f"history for {sym} reaches {max(s['dates'])} but the "
+                f"forecast target is {forecast_date} — the model may only "
+                "see strictly earlier sessions (paper-forward discipline)")
+    res = run_isolated_json(
+        model_source, func_name,
+        {"forecast_date": forecast_date,
+         "config": config or {},
+         "series": {sym: {"closes": [float(c) for c in s["closes"]],
+                          "dates": [str(d)[:10] for d in s["dates"]],
+                          "ohlcv": s.get("ohlcv") or {}}
+                    for sym, s in series.items()}},
+        python=python, timeout_s=timeout_s)
+    if res.error is not None:
+        raise RunnerError(f"batch model call failed: {res.error}")
+    raw = res.result or {}
+    out: dict[str, dict] = {}
+    errors: dict[str, str] = {}
+    for sym in series:
+        item = raw.get(sym)
+        if not isinstance(item, dict):
+            errors[sym] = "no result returned for this symbol"
+        elif "error" in item:
+            errors[sym] = str(item["error"])
+        else:
+            try:
+                out[sym] = _validate_dist(sym, item)
+            except RunnerError as e:
+                errors[sym] = str(e)
+    if errors and not out:
+        raise RunnerError(f"every symbol failed: {errors}")
+    return out, errors
+
+
 def log_forecast(session: Session, revision: str, symbol: str,
                  forecast_date: str, basis_close: float,
                  dist: dict, source_note: str = "") -> ResearchForecast:

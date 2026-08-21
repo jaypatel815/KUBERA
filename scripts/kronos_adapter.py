@@ -35,34 +35,39 @@ TEMPERATURE = 1.0     # documented default; NOT tuned per-run (pre-registered)
 TOP_P = 0.9           # documented default; same
 
 
-def forecast(payload: dict) -> dict:
-    """kronos_run.py contract: payload in, four floats out. Any exception
-    propagates — the boundary names it and the attempt records a failure."""
+def _predictor(config: dict):
+    """Load tokenizer+model ONCE per process (T140: three symbols used to
+    mean three ~102M-param loads; now one)."""
     import sys
 
-    repo = (payload.get("config") or {}).get("kronos_repo")
+    repo = (config or {}).get("kronos_repo")
     if not repo:
         raise ValueError(
             "config.kronos_repo missing — pass "
             "--model-config kronos_repo=<path to the cloned Kronos repo>")
     sys.path.insert(0, repo)
 
-    # pandas lives in the owner's MODEL venv (Kronos requirements), not in
-    # KUBERA's root venv — same narrow suppression rationale as `model`
-    # below (I023 rule; Gemini's T122c review caught this one: the sandbox
-    # had pandas ambiently, a clean venv does not — I036).
-    import pandas as pd  # pyrefly: ignore
-
     # `model` is the Kronos REPO's package, present only in the owner's
     # model venv via the sys.path.insert above — invisible to this repo's
     # type checker by design (narrowest possible suppression, I023 rule).
     from model import Kronos, KronosPredictor, KronosTokenizer  # pyrefly: ignore
 
-    ohlcv = payload.get("ohlcv") or {}
+    tokenizer = KronosTokenizer.from_pretrained("NeoQuasar/Kronos-Tokenizer-base")
+    model = Kronos.from_pretrained("NeoQuasar/Kronos-base")
+    return KronosPredictor(model, tokenizer, max_context=512)
+
+
+def _one_symbol(predictor, ohlcv: dict, dates: list, forecast_date: str) -> dict:
+    # pandas lives in the owner's MODEL venv (Kronos requirements), not in
+    # KUBERA's root venv — same narrow suppression rationale as `model`
+    # (I023 rule; Gemini's T122c review caught this: the sandbox had
+    # pandas ambiently, a clean venv does not — I036).
+    import pandas as pd  # pyrefly: ignore
+
     for col in ("open", "high", "low", "close"):
         if not ohlcv.get(col):
-            raise ValueError(f"payload.ohlcv.{col} missing — the runner "
-                             "must send full bars")
+            raise ValueError(f"ohlcv.{col} missing — the runner must send "
+                             "full bars")
     n = len(ohlcv["close"])
     lo = max(0, n - LOOKBACK)
     x_df = pd.DataFrame({
@@ -70,15 +75,8 @@ def forecast(payload: dict) -> dict:
         "low": ohlcv["low"][lo:], "close": ohlcv["close"][lo:],
         "volume": (ohlcv.get("volume") or [0.0] * n)[lo:],
     })
-    x_ts = pd.Series(pd.to_datetime(payload["dates"][lo:]))
-    # the next session's timestamp: the target date the runner supplied
-    # (weekends/holidays already handled upstream by real bar dates)
-    y_ts = pd.Series(pd.to_datetime([payload["forecast_date"]]))
-
-    tokenizer = KronosTokenizer.from_pretrained("NeoQuasar/Kronos-Tokenizer-base")
-    model = Kronos.from_pretrained("NeoQuasar/Kronos-base")
-    predictor = KronosPredictor(model, tokenizer, max_context=512)
-
+    x_ts = pd.Series(pd.to_datetime(dates[lo:]))
+    y_ts = pd.Series(pd.to_datetime([forecast_date]))
     basis = float(ohlcv["close"][-1])
     sampled: list[float] = []
     for _ in range(N_PATHS):
@@ -86,7 +84,6 @@ def forecast(payload: dict) -> dict:
                                  pred_len=1, T=TEMPERATURE, top_p=TOP_P,
                                  sample_count=1)
         sampled.append(float(pred["close"].iloc[0]) / basis - 1.0)
-
     sampled.sort()
 
     def pct(q: float) -> float:
@@ -94,9 +91,31 @@ def forecast(payload: dict) -> dict:
         idx = min(len(sampled) - 1, max(0, round(q * (len(sampled) - 1))))
         return sampled[idx]
 
-    return {
-        "p05_frac": pct(0.05),
-        "p50_frac": pct(0.50),
-        "p95_frac": pct(0.95),
-        "up_odds": sum(1 for r in sampled if r > 0.0) / len(sampled),
-    }
+    return {"p05_frac": pct(0.05), "p50_frac": pct(0.50),
+            "p95_frac": pct(0.95),
+            "up_odds": sum(1 for r in sampled if r > 0.0) / len(sampled)}
+
+
+def forecast(payload: dict) -> dict:
+    """Single-symbol contract (shape check uses this): four floats out."""
+    predictor = _predictor(payload.get("config") or {})
+    return _one_symbol(predictor, payload.get("ohlcv") or {},
+                       payload["dates"], payload["forecast_date"])
+
+
+def forecast_batch(payload: dict) -> dict:
+    """T140 — all symbols, ONE model load. payload.series maps symbol ->
+    {ohlcv, dates}; the documented predict_batch is deliberately NOT used
+    (it demands equal history lengths across symbols — forcing alignment
+    would silently truncate the longer series; the win we want is the
+    single load, and this delivers it). Per-symbol failures are named in
+    the result, never silent."""
+    predictor = _predictor(payload.get("config") or {})
+    out: dict = {}
+    for sym, series in (payload.get("series") or {}).items():
+        try:
+            out[sym] = _one_symbol(predictor, series.get("ohlcv") or {},
+                                   series["dates"], payload["forecast_date"])
+        except Exception as e:  # noqa: BLE001 — named per symbol, not fatal
+            out[sym] = {"error": f"{type(e).__name__}: {e}"}
+    return out

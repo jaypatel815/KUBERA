@@ -36,7 +36,7 @@ sys.path.insert(0, str(REPO_ROOT / "backend"))
 from research.custody import CustodyError, record_attempt  # noqa: E402
 from research.kronos_runner import (  # noqa: E402
     RunnerError,
-    call_model,
+    call_model_batch,
     consume_with_result,
     forecasts,
     load_definition,
@@ -133,6 +133,7 @@ def cmd_forecast(db: Path, model_file: Path, func: str,
             print(f"NOT CONFIGURED: {e}")
             return 2
         failures = 0
+        series: dict[str, dict] = {}
         with market:
             for symbol in defn.symbols:
                 try:
@@ -141,32 +142,54 @@ def cmd_forecast(db: Path, model_file: Path, func: str,
                             if str(b.date)[:10] < target]
                     if not kept:
                         raise RunnerError(f"no pre-{target} history")
-                    dates = [str(b.date)[:10] for b in kept]
                     closes = [float(b.close) for b in kept]
                     # T122c: the real Kronos consumes OHLCV, not closes —
                     # the full bars ride the payload (same dates, aligned)
-                    ohlcv = {
-                        "open": [float(b.open) for b in kept],
-                        "high": [float(b.high) for b in kept],
-                        "low": [float(b.low) for b in kept],
-                        "close": closes,
-                        "volume": [float(b.volume) for b in kept],
+                    series[symbol] = {
+                        "closes": closes,
+                        "dates": [str(b.date)[:10] for b in kept],
+                        "ohlcv": {
+                            "open": [float(b.open) for b in kept],
+                            "high": [float(b.high) for b in kept],
+                            "low": [float(b.low) for b in kept],
+                            "close": closes,
+                            "volume": [float(b.volume) for b in kept],
+                        },
                     }
-                    dist = call_model(source, func, symbol, closes, dates,
-                                      target, python=python,
-                                      ohlcv=ohlcv, config=model_config)
-                    row = log_forecast(
-                        s, REVISION, symbol, target, closes[-1], dist,
-                        source_note=f"model={model_file.name}")
-                    print(f"{symbol} {target}: logged as made at "
-                          f"{row.made_at.isoformat()} — p05 "
-                          f"{dist['p05_frac']:+.2%} .. p95 "
-                          f"{dist['p95_frac']:+.2%}, up-odds "
-                          f"{dist['up_odds']:.0%} (internal signal, "
-                          "D035 — never narrated as a point call)")
                 except (RunnerError, MarketDataError) as e:
                     failures += 1
-                    print(f"{symbol} {target}: FAILED — {e}")
+                    print(f"{symbol} {target}: FAILED (bars) — {e}")
+        if not series:
+            print("nothing to forecast — every symbol failed at the bars")
+            return 1
+        try:
+            # T140: ONE boundary call = ONE ~102M-param model load for the
+            # whole day, and a config/venv mistake surfaces once, clearly,
+            # before any row is logged.
+            dists, errors = call_model_batch(
+                source, func, series, target, python=python,
+                config=model_config)
+        except RunnerError as e:
+            print(f"batch FAILED — {e}")
+            return 1
+        for symbol, why in errors.items():
+            failures += 1
+            print(f"{symbol} {target}: FAILED — {why}")
+        for symbol, dist in dists.items():
+            try:
+                row = log_forecast(
+                    s, REVISION, symbol, target,
+                    series[symbol]["closes"][-1], dist,
+                    source_note=f"model={model_file.name}")
+                print(f"{symbol} {target}: logged as made at "
+                      f"{row.made_at.isoformat()} — p05 "
+                      f"{dist['p05_frac']:+.2%} .. p95 "
+                      f"{dist['p95_frac']:+.2%}, up-odds "
+                      f"{dist['up_odds']:.0%} (internal signal, "
+                      "D035 — never narrated as a point call)")
+            except RunnerError as e:
+                failures += 1
+                print(f"{symbol} {target}: FAILED (log) — {e}")
         return 1 if failures else 0
     finally:
         s.close()
@@ -312,7 +335,9 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("status")
     f = sub.add_parser("forecast")
     f.add_argument("--model-file", type=Path, required=True)
-    f.add_argument("--func", default="forecast")
+    f.add_argument("--func", default="forecast_batch",
+                   help="adapter function; the batch entry point loads "
+                        "the model ONCE for all symbols (T140)")
     f.add_argument("--python", default=None,
                    help="interpreter of the venv that has the model deps")
     f.add_argument("--date", default=None, help="session being forecast")

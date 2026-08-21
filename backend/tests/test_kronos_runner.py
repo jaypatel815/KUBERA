@@ -320,3 +320,68 @@ def test_start_refuses_restart_without_explicit_flag(tmp_path, capsys,
     # the explicit flag is the legitimate path: attempt 2 records
     assert mod.cmd_start(dbfile, another_attempt=True) == 0
     assert "ATTEMPT 2 recorded" in capsys.readouterr().out
+
+
+# --- T140: one boundary call, one model load, per-symbol isolation -----------
+
+BATCH_MODEL = """
+def forecast_batch(payload):
+    out = {}
+    for sym, s in payload["series"].items():
+        if sym == "BAD":
+            out[sym] = {"error": "synthetic per-symbol failure"}
+        else:
+            out[sym] = {"p05_frac": -0.02, "p50_frac": 0.0,
+                        "p95_frac": 0.02,
+                        "up_odds": 0.6 if s["ohlcv"] else 0.4}
+    return out
+"""
+
+
+def _series(sym="SPY"):
+    return {"closes": [100.0, 101.0], "dates": ["2026-08-19", "2026-08-20"],
+            "ohlcv": {"open": [99.8, 100.5], "high": [100.2, 101.3],
+                      "low": [99.5, 100.1], "close": [100.0, 101.0],
+                      "volume": [1e6, 1.1e6]}}
+
+
+def test_batch_call_isolates_per_symbol_failures():
+    from research.kronos_runner import call_model_batch
+
+    dists, errors = call_model_batch(
+        BATCH_MODEL, "forecast_batch",
+        {"SPY": _series(), "BAD": _series(), "QQQ": _series()},
+        "2026-08-24", timeout_s=30.0)
+    assert set(dists) == {"SPY", "QQQ"}
+    assert dists["SPY"]["up_odds"] == 0.6     # ohlcv reached the child
+    assert errors == {"BAD": "synthetic per-symbol failure"}
+
+
+def test_batch_call_paper_forward_checked_before_crossing():
+    from research.kronos_runner import call_model_batch
+
+    leaky = _series()
+    leaky["dates"] = ["2026-08-20", "2026-08-24"]  # reaches the target
+    with pytest.raises(RunnerError, match="strictly earlier"):
+        call_model_batch(BATCH_MODEL, "forecast_batch",
+                         {"SPY": leaky}, "2026-08-24")
+
+
+def test_batch_call_raises_when_every_symbol_fails():
+    from research.kronos_runner import call_model_batch
+
+    with pytest.raises(RunnerError, match="every symbol failed"):
+        call_model_batch(BATCH_MODEL, "forecast_batch",
+                         {"BAD": _series()}, "2026-08-24", timeout_s=30.0)
+
+
+def test_committed_adapter_has_the_batch_entry_and_one_load():
+    from pathlib import Path
+    text = (Path(__file__).resolve().parents[2] / "scripts" /
+            "kronos_adapter.py").read_text(encoding="utf-8")
+    assert "def forecast_batch(" in text and "def forecast(" in text
+    # ONE load for the batch: _predictor called once in forecast_batch
+    batch_body = text.split("def forecast_batch(")[1]
+    assert batch_body.count("_predictor(") == 1
+    # the equal-length predict_batch constraint is refused BY NAME
+    assert "predict_batch is deliberately NOT used" in text
