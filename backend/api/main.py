@@ -552,11 +552,25 @@ def household(session=Depends(get_db_session)) -> dict:
     SERVED as its named refusal, not hidden. Advisory arithmetic on
     owner-stated balances — not tax or credit advice, and the payload says
     so."""
+    from datetime import date as _date
+
+    from analysis.budget import (
+        CardSpec,
+        DueSpec,
+        FlowSpec,
+        SpendSpec,
+        bills_due_within,
+        card_utilization,
+        month_view,
+    )
     from analysis.payoff import DebtSpec, PayoffImpossible, compare_strategies
-    from data.household import balance_is_stale, list_debts
+    from data.household import balance_is_stale, list_debts, list_flows, spending_between
 
     try:
         debts = list_debts(session)
+        flows = list_flows(session)
+        month = _date.today().strftime("%Y-%m")
+        spends = spending_between(session, f"{month}-01", f"{month}-31")
     except OperationalError:
         raise HTTPException(
             status_code=503,
@@ -587,14 +601,33 @@ def household(session=Depends(get_db_session)) -> dict:
             }
         except PayoffImpossible as e:
             payoff = {"available": False, "why": str(e)}
+    # T154 — the budget engine owns every derived number below
+    budget = month_view(
+        [FlowSpec(f.name, f.direction, f.amount, f.category) for f in flows],
+        [SpendSpec(s.date, s.amount, s.category) for s in spends],
+        month)
+    utilization = card_utilization([
+        CardSpec(d.name, d.balance, d.credit_limit, d.balance_asof)
+        for d in debts if d.kind == "credit_card"])
+    caution_by_name = {c["name"]: c["above_caution"]
+                       for c in utilization["cards"]}
+    for r in rows:
+        r["above_caution"] = caution_by_name.get(r["name"], False)
+    bills = bills_due_within([
+        DueSpec(d.name, d.due_day, d.min_payment)
+        for d in debts if d.due_day is not None])
     return {
         "debts": rows,
         "total_balance": round(sum(d.balance for d in debts), 2),
         "any_stale": any(r["stale"] for r in rows),
         "payoff": payoff,
+        "budget": budget,
+        "utilization": utilization,
+        "bills_due_7d": bills,
         "asof": datetime.now(timezone.utc).isoformat(),
         "note": ("owner-stated balances; arithmetic, not tax or credit "
-                 "advice; stale = older than one statement cycle"),
+                 "advice; stale = older than one statement cycle; statement "
+                 "dates are not tracked — only due days are"),
     }
 
 

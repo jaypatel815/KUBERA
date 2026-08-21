@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from api import main as main_module
-from data.household import upsert_debt
+from data.household import log_spending, upsert_debt, upsert_flow
 from data.models import Base
 
 
@@ -105,3 +105,49 @@ def test_household_is_never_cached_by_the_service_worker():
 def test_wrong_method_is_405_not_a_mutation(client_db):
     client, _ = client_db
     assert client.post("/api/household").status_code == 405
+
+
+def test_household_serves_budget_utilization_and_bills(client_db):
+    """T154 — the engine's numbers ride the payload; nothing derived inline."""
+    from datetime import date, timedelta
+
+    client, db = client_db
+    upsert_debt(db, name="Visa", kind="credit_card", balance=3200.0,
+                apr_frac=0.249, min_payment=96.0, credit_limit=5000.0,
+                due_day=(date.today() + timedelta(days=3)).day
+                if (date.today() + timedelta(days=3)).day <= 28 else 1,
+                balance_asof=date.today().isoformat())
+    upsert_flow(db, name="salary", direction="income", amount=5000.0,
+                category="salary")
+    upsert_flow(db, name="rent", direction="expense", amount=1500.0,
+                category="housing")
+    log_spending(db, amount=200.0, category="groceries")
+    d = client.get("/api/household").json()
+    # budget: current-month view straight from the T154 engine
+    b = d["budget"]
+    assert b["income_planned"] == 5000.0
+    assert b["recurring_expense_planned"] == 1500.0
+    assert b["actual_by_category"] == {"groceries": 200.0}
+    assert b["leftover"] == 3300.0
+    assert "pace" in b and b["pace"]["discretionary_budget"] == 3500.0
+    # utilization: 3200/5000 = 0.64, above the 30% caution line, flagged
+    u = d["utilization"]
+    assert u["cards"][0]["utilization_frac"] == pytest.approx(0.64)
+    assert u["cards"][0]["above_caution"] is True
+    assert u["caution_line_frac"] == 0.30
+    visa = next(x for x in d["debts"] if x["name"] == "Visa")
+    assert visa["above_caution"] is True
+    # bills: a due day within the window appears with its date, or the list
+    # is empty when the clamped fallback day already passed — never invented
+    assert isinstance(d["bills_due_7d"], list)
+    # the statement-dates gap is NAMED, not approximated (D039 honesty)
+    assert "statement dates are not tracked" in d["note"]
+
+
+def test_empty_household_still_serves_budget_frame(client_db):
+    client, _ = client_db
+    d = client.get("/api/household").json()
+    assert d["budget"]["income_planned"] == 0.0
+    assert any("no recurring flows" in n for n in d["budget"]["notes"])
+    assert d["utilization"]["cards"] == []
+    assert d["bills_due_7d"] == []

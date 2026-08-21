@@ -64,6 +64,10 @@ def test_dashboard_shell_and_household_card_are_wired():
     assert "esc(x.name)" in text and "esc(x.balance_asof)" in text
     # the voice loop survived the re-layout (the dock keeps the orb alive)
     assert 'id="orb"' in text and 'id="typed"' in text
+    # T154 — the budget line phrases ENGINE numbers (never recomputes them)
+    assert "houseBudgetHtml" in text
+    assert "bills_due_7d" in text
+    assert "of month gone" in text
 
 
 def test_index36_views_and_behaviors_are_wired():

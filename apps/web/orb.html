@@ -1430,6 +1430,23 @@ const HOUSE_EMPTY =
   '<div class="mon-line">no debts recorded — say "add my Visa: $3,200 ' +
   'balance, 24.9% APR, $35 minimum" and KUBERA will keep the plan</div>';
 
+// T154 — the budget line: engine numbers only, phrased here, never recomputed
+function houseBudgetHtml(d) {
+  const b = d && d.budget, p = b && b.pace;
+  if (!b || !p || !(b.income_planned > 0 || b.actual_total > 0)) return "";
+  const pct = Math.round(p.elapsed_frac * 100);
+  const paceTag = p.over_pace ? ' <span class="house-stale">over pace</span>' : "";
+  let h = `<div class="hline">- budget (${esc(b.month)}): ${fmtUSD(b.actual_total)}` +
+    ` of ${fmtUSD(p.discretionary_budget)} discretionary · ${pct}% of month gone${paceTag}</div>`;
+  const bills = d.bills_due_7d || [];
+  if (bills.length) {
+    h += `<div class="hline">- due next 7d: ` + bills.map(x =>
+      `${esc(x.name)} ${fmtUSD(x.min_payment)} on ${esc(x.due_date)}`).join(" · ") +
+      `</div>`;
+  }
+  return h;
+}
+
 async function loadHousehold() {
   const body  = document.getElementById("house-body");
   const kDebt = document.getElementById("kpi-debt");
@@ -1446,7 +1463,7 @@ async function loadHousehold() {
     if (!d.debts.length) {
       kDebt.textContent = "$0";
       kNote.textContent = "tell KUBERA your debts to track them";
-      body.innerHTML = HOUSE_EMPTY;
+      body.innerHTML = HOUSE_EMPTY + houseBudgetHtml(d);
       return;
     }
     kDebt.textContent = fmtUSD(d.total_balance);
@@ -1479,7 +1496,7 @@ async function loadHousehold() {
     } else if (d.payoff && d.payoff.why) {
       plan = `<div class="hline">- ${esc(d.payoff.why)}</div>`;
     }
-    body.innerHTML = rows + plan;
+    body.innerHTML = rows + plan + houseBudgetHtml(d);
   } catch (_) {
     body.innerHTML = '<div class="mon-line">household unavailable (server starting?)</div>';
   }
