@@ -425,3 +425,58 @@ class ResearchForecast(Base):
     p95_frac: Mapped[float] = mapped_column(Float)
     up_odds: Mapped[float] = mapped_column(Float)
     source_note: Mapped[str] = mapped_column(String(200), default="")
+
+
+class Debt(Base):
+    """T152 (D039) — a household liability AS THE OWNER STATES IT. Manual
+    data gets manual-data honesty: balance_asof is the date he told us, and
+    everything downstream frames it "as you told me on <date>" — a month-old
+    self-reported balance is never presented as current (the statement cycle
+    makes it stale, same doctrine as quotes)."""
+
+    __tablename__ = "debts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(80), unique=True)
+    kind: Mapped[str] = mapped_column(String(16))  # credit_card | loan | other
+    balance: Mapped[float] = mapped_column(Float)
+    apr_frac: Mapped[float] = mapped_column(Float)  # 0.249 == 24.9% APR
+    min_payment: Mapped[float] = mapped_column(Float)
+    credit_limit: Mapped[float | None] = mapped_column(Float, default=None)
+    due_day: Mapped[int | None] = mapped_column(Integer, default=None)  # 1..28
+    balance_asof: Mapped[str] = mapped_column(String(10))  # ISO date, owner-stated
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
+class RecurringFlow(Base):
+    """T152 — a monthly income or expense the owner declares (rent, salary,
+    subscriptions). v1 cadence is monthly-only, stated rather than faked."""
+
+    __tablename__ = "recurring_flows"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(80), unique=True)
+    direction: Mapped[str] = mapped_column(String(8))  # income | expense
+    amount: Mapped[float] = mapped_column(Float)
+    cadence: Mapped[str] = mapped_column(String(16), default="monthly")
+    category: Mapped[str] = mapped_column(String(40), default="uncategorized")
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
+class SpendingEntry(Base):
+    """T152 — one spend, entered by chat or imported from a card CSV.
+    import_key is the CSV idempotency handle (T156): re-importing the same
+    export changes zero rows; SQLite's UNIQUE ignores the NULLs manual
+    entries carry."""
+
+    __tablename__ = "spending_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    date: Mapped[str] = mapped_column(String(10))  # ISO
+    amount: Mapped[float] = mapped_column(Float)
+    category: Mapped[str] = mapped_column(String(40), default="uncategorized")
+    note: Mapped[str | None] = mapped_column(String(200), default=None)
+    source: Mapped[str] = mapped_column(String(8), default="manual")  # manual | csv
+    import_key: Mapped[str | None] = mapped_column(String(120), unique=True,
+                                                   default=None)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
