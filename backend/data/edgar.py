@@ -166,6 +166,7 @@ class EdgarClient:
                                  timeout=30.0, transport=transport,
                                  follow_redirects=True)
         self._cik_by_ticker: dict[str, int] | None = None
+        self._directory: list[tuple[str, str, int]] | None = None  # T141
 
     def close(self) -> None:
         self._data.close()
@@ -194,25 +195,47 @@ class EdgarClient:
         except ValueError as e:
             raise EdgarError(f"EDGAR {what} returned non-JSON") from e
 
+    def _load_ticker_map(self) -> None:
+        """Fetch company_tickers.json once; keep BOTH the CIK map and the
+        full (ticker, title, cik) directory (T141 — the symbol universe:
+        every US SEC registrant, keyless)."""
+        data = self._get_json(self._www, "/files/company_tickers.json",
+                              "company_tickers.json")
+        if not isinstance(data, dict):
+            raise EdgarError("company_tickers.json is not an object — "
+                             "shape changed; refusing to guess")
+        mapping: dict[str, int] = {}
+        directory: list[tuple[str, str, int]] = []
+        for row in data.values():
+            if isinstance(row, dict) and row.get("ticker") and \
+                    row.get("cik_str") is not None:
+                try:
+                    ticker = str(row["ticker"]).upper()
+                    cik = int(row["cik_str"])
+                except (TypeError, ValueError):
+                    continue
+                mapping[ticker] = cik
+                directory.append((ticker, str(row.get("title") or ""), cik))
+        if not mapping:
+            raise EdgarError("company_tickers.json parsed to an empty map")
+        self._cik_by_ticker = mapping
+        self._directory = directory
+
+    def ticker_directory(self) -> list[tuple[str, str, int]]:
+        """(ticker, company name, cik) for every SEC registrant — the
+        universe find_symbol resolves against. ~10k entries, one fetch per
+        client lifetime; ETFs/trusts that don't register may be absent
+        (the tool labels that case)."""
+        if self._directory is None:
+            self._load_ticker_map()
+        assert self._directory is not None  # _load_ticker_map set it or raised
+        return list(self._directory)
+
     def cik_for(self, symbol: str) -> int:
         """Resolve ticker -> CIK from company_tickers.json (fetched once)."""
         if self._cik_by_ticker is None:
-            data = self._get_json(self._www, "/files/company_tickers.json",
-                                  "company_tickers.json")
-            if not isinstance(data, dict):
-                raise EdgarError("company_tickers.json is not an object — "
-                                 "shape changed; refusing to guess")
-            mapping: dict[str, int] = {}
-            for row in data.values():
-                if isinstance(row, dict) and row.get("ticker") and \
-                        row.get("cik_str") is not None:
-                    try:
-                        mapping[str(row["ticker"]).upper()] = int(row["cik_str"])
-                    except (TypeError, ValueError):
-                        continue
-            if not mapping:
-                raise EdgarError("company_tickers.json parsed to an empty map")
-            self._cik_by_ticker = mapping
+            self._load_ticker_map()
+        assert self._cik_by_ticker is not None  # _load set it or raised
         cik = self._cik_by_ticker.get(symbol.upper())
         if cik is None:
             raise EdgarError(

@@ -2855,3 +2855,87 @@ def _get_earnings_release(ctx: ToolContext, a: EarningsReleaseArgs) -> dict:
         "asof": rel.asof,
         "source": rel.source,
     }
+
+
+class FindSymbolArgs(BaseModel):
+    query: str = Field(min_length=1, max_length=80,
+                       description="Company name or ticker, e.g. 'Palantir' or 'PLTR'")
+
+
+@registry.tool(
+    "find_symbol",
+    "T141 - resolve a company NAME or uncertain ticker to real symbols, "
+    "deterministically, from the SEC's registrant directory (every US "
+    "public company; keyless, fetched live). USE THIS FIRST whenever the "
+    "user names a company rather than a ticker, or you are not certain of "
+    "a ticker - NEVER guess tickers from memory (the I007 wrong-symbol "
+    "incident). Returns scored candidates with names and CIKs; for "
+    "ticker-shaped queries absent from the SEC map (ETFs/trusts often "
+    "are), a labeled live-quote probe says whether the symbol trades "
+    "anyway. Ambiguity is returned as candidates for the user to choose - "
+    "not silently resolved.",
+    FindSymbolArgs,
+)
+def _find_symbol(ctx: ToolContext, p: FindSymbolArgs) -> dict:
+    edgar = ctx.edgar
+    if edgar is None:
+        raise ToolError(
+            "symbol resolution needs the EDGAR client - set EDGAR_CONTACT "
+            "in .env (one free line; see .env.example)")
+    q = p.query.strip()
+    qU = q.upper()
+    directory = edgar.ticker_directory()
+
+    exact = [(t, n, c) for t, n, c in directory if t == qU]
+    scored: list[tuple[int, str, str, int]] = []
+    qL = q.lower()
+    for t, n, c in directory:
+        nL = n.lower()
+        if t == qU:
+            continue  # already in exact
+        if nL.startswith(qL):
+            scored.append((0, t, n, c))
+        elif any(w.startswith(qL) for w in nL.split()):
+            scored.append((1, t, n, c))
+        elif qL in nL:
+            scored.append((2, t, n, c))
+    scored.sort(key=lambda x: (x[0], len(x[2]), x[1]))
+    matches = ([{"symbol": t, "name": n, "cik": c} for t, n, c in exact] +
+               [{"symbol": t, "name": n, "cik": c}
+                for _, t, n, c in scored[:8]])
+
+    tradable_note = None
+    if not matches and qU.isalnum() and len(qU) <= 5:
+        # ticker-shaped miss: the SEC map omits many ETFs/trusts - a live
+        # quote answers the "does it trade at all" question, labeled
+        if ctx.market is not None:
+            try:
+                quote = ctx.market.get_latest_trade(qU)
+                tradable_note = (
+                    f"'{qU}' is not in the SEC registrant map but a live "
+                    f"quote answers ({quote.price}) - it trades (likely an "
+                    "ETF/trust, which often has no CIK)")
+                matches = [{"symbol": qU, "name": "(not an SEC registrant - "
+                            "likely ETF/trust)", "cik": None}]
+            except Exception as e:  # noqa: BLE001 — probe degrades, named
+                tradable_note = (f"'{qU}' is not in the SEC map and the "
+                                 f"live-quote probe could not answer "
+                                 f"({type(e).__name__}) - unresolved, do "
+                                 "not assume it exists")
+        else:
+            tradable_note = (f"'{qU}' is not in the SEC map and no market "
+                             "client is available to probe - unresolved")
+
+    return {
+        "query": q,
+        "exact_ticker_match": bool(exact),
+        "matches": matches,
+        "match_count": len(matches),
+        "universe": ("SEC company_tickers.json - every US public company "
+                     f"({len(directory):,} entries); ETFs/foreign listings "
+                     "may be absent"),
+        "tradable_note": tradable_note,
+        "note": ("deterministic lookup, never a guess (I007); if several "
+                 "candidates fit, ASK the user which one they mean"),
+        "asof": datetime.now(timezone.utc).isoformat(),
+    }
