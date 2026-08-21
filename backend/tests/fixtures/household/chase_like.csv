@@ -1,0 +1,7 @@
+Transaction Date,Post Date,Description,Category,Type,Amount
+08/03/2026,08/04/2026,KROGER #123 COLUMBUS OH,Groceries,Sale,-45.10
+08/05/2026,08/06/2026,SHELL OIL 5771,Gas,Sale,-38.00
+08/05/2026,08/06/2026,SHELL OIL 5771,Gas,Sale,-38.00
+08/07/2026,08/08/2026,MYSTERY MERCHANT LLC,Shopping,Sale,-12.34
+08/10/2026,08/11/2026,Payment Thank You - Web,,Payment,250.00
+notadate,08/12/2026,BROKEN ROW,,Sale,-1.00

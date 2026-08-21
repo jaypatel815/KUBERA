@@ -34,7 +34,9 @@ models/
 private/
 *.pdf
 *.csv
-!backend/tests/fixtures/**/*.csv     # redacted test fixtures stay tracked
+# redacted test fixtures stay tracked (inline comments are NOT valid
+# gitignore syntax - this negation was dead until batch #16 fixed it)
+!backend/tests/fixtures/**/*.csv
 
 # The live Claude Desktop config belongs in %APPDATA%\Claude\, not here. A copy
 # in the repo root is a sign someone edited the wrong file — ignored so it cannot
