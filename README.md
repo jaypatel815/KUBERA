@@ -77,6 +77,23 @@ http://127.0.0.1:8000/api/brief?type=morning                your day, composed: 
                                                             decisions + reasons) and type=weekly (you vs SPY,
                                                             discipline, lessons). Best enjoyed by voice: ask
                                                             the Orb "give me my morning brief"
+http://127.0.0.1:8000/api/household                         your household money (Phase 9): debts with "as you
+                                                            told me on DATE" staleness, avalanche-vs-snowball
+                                                            payoff from the tested engine, this month's budget
+                                                            (income vs recurring vs logged spending + pace),
+                                                            per-card utilization vs the 30% caution line, bills
+                                                            due in 7 days. Statement dates are NOT tracked —
+                                                            due days only, and the payload says so. By voice:
+                                                            "my Visa is at 3200", "rent is 1500 a month",
+                                                            "spent 40 on gas" — KUBERA records them; then ask
+                                                            "how's my budget?"
+python scripts\import_spending.py                           import card CSV exports (drop them in
+                                                            private\spending\) — categories from the owner-
+                                                            editable private\spending_rules.json map, unknown
+                                                            merchants land as "uncategorized" and are listed so
+                                                            you can extend the map; re-imports never duplicate.
+                                                            Exports that write charges as negatives: --negate
+                                                            (the report tells you when it suspects this)
 http://127.0.0.1:8000/api/macro                             the macro weather: yield-curve inversion, VIX
                                                             bucket, real rates, fed funds — cautionary signals
                                                             counted, each series dated. Needs a free

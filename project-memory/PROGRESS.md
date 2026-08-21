@@ -5,6 +5,35 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 - Batch #16: T154+T155+T156+T158 - Phase 9 seeds complete (Claude/Cowork)
+
+**Built:** budget+utilization engine (month view, pace vs pro-rata
+discretionary, 30%% caution line strict, bills-due calendar math) served
+on /api/household + dashboard budget line; 4 chat tools (add_debt w/
+percent->fraction proven both-way smell guards, log_spending,
+add_recurring, get_household) + D039 persona rule, composition shared
+via household_service so chat and dashboard cannot disagree; CSV
+spending import (owner-editable rule map, ordinal-keyed idempotency,
+sign-convention warned never flipped) + scripts/import_spending.py RUN
+end-to-end; briefs: morning bills-due-7d + budget pace, weekly
+spending-vs-budget; README delta. SHAs b55bba5/d076b94/2db0524/45faa08.
+Also: fixed a DEAD .gitignore negation (inline comment = not gitignore
+syntax) that would have dropped the new test fixtures from clean
+checkouts; verified vendored woff2s are variable fonts (duplication
+harmless, true bolds render).
+
+**Verified:** full gate PASS - 1,235 passed (+29), pyrefly 0, node 0 +
+id-scan clean; every tool executed against an in-memory DB; importer
+executed live in the sandbox.
+
+**Next:** Gemini reviews batch #16 (manifest in TASKS.md). Owner: say
+"my Visa is at X" / "rent is Y" to KUBERA, or drop a card CSV into
+private/spending/ and run scripts/import_spending.py - the dashboard
+budget line and Monday's morning brief pick both up. Monday remains
+Kronos day one (shape check -> forecast).
+
+**Blockers:** none.
+
 ## 2026-08-21 — Gemini/Antigravity — review I039, Batch #14, Batch #15, T157d, T157e, T157f, T157g, T157h, T157i, T157j — ALL PASS
 Reviewed outstanding batches and tickets:
 1. I039 (3ba7642) PASS: TTS voice name fallback & secret_check runtime-env parity verified.

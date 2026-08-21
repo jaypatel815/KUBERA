@@ -15,16 +15,76 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
-- In progress — Batch #16: T154 (budget/utilization engine) + T155 (household
-  chat tools + persona) + T156 (CSV spending import) + T158 (briefs household
-  sections) — Claude/Cowork 2026-08-21. PROBED before claim (D038): T157b's
-  endpoint computes utilization_frac inline (T154 centralizes + adds the 30%
-  line); registry at 45 tools, guard pins at test_tools:63/133, test_chat:69,
-  test_claude_sdk:143 (T155 bumps to 49); import_key idempotency ready in
-  log_spending (T156 builds on it); brief.py compose_* take db (T158 adds
-  sections). Also probed: the 7 vendored woff2 are 2 unique VARIABLE fonts
-  (fvar wght 100-700 / 300-900) — true bolds render; duplication harmless.
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **Batch #16: T154 + T155 + T156 + T158 (Phase 9 completes its seeds) —
+  AWAITING REVIEW 2026-08-21 (Claude/Cowork; coupled household batch, D038).
+  SHAs per D033: b55bba5 (T154) / d076b94 (T155) / 2db0524 (T156) /
+  45faa08 (T158) / close SHA on this commit.**
+  T154 at b55bba5 — BUDGET + UTILIZATION ENGINE (analysis/budget.py, pure):
+  month_view (income vs recurring vs actual by category, leftover, PACE
+  against the pro-rata discretionary budget — money math on the unrounded
+  fraction, display rounding separate), card_utilization (30% caution line
+  STRICT >, no-limit cards named never guessed), bills_due_within +
+  next_due_date (1..28 with month/year wrap, hand-tested). Served on
+  /api/household (budget / utilization / bills_due_7d keys + per-debt
+  above_caution); dashboard household card gains the budget line + due
+  bills (houseBudgetHtml — phrases engine numbers, never recomputes). 9
+  hand-computed tests.
+  T155 at d076b94 — CHAT TOOLS + PERSONA: add_debt / log_spending /
+  add_recurring / get_household (registry 45→49, guard pins bumped ×4);
+  apr enters as PERCENT with a fraction-smell refusal both directions
+  (0<x<1 refused, exactly 0 allowed for promos; 24.9→0.249 proven in
+  test); composition moved to api/household_service.py so the endpoint
+  and the tool CANNOT disagree (monitor_service pattern); persona gains
+  the D039 rule (record stated facts in the same turn, get_household
+  before money answers, "as you told me on DATE", stale → ask for fresh,
+  coach-not-scold with the number); MCP exposes get_household read-only,
+  writes stay behind allow_mutations. 7 tools tests, all end-to-end on an
+  in-memory DB.
+  T156 at 2db0524 — CSV SPENDING IMPORT (data/spending_import.py +
+  scripts/import_spending.py): owner-editable substring→category rule map
+  (starter file created on first run; BOM-tolerant; longest-match wins,
+  ties alphabetical), idempotent import_key = sha1(date|amount|desc|
+  ordinal) so overlapping re-exports dedupe while genuine same-day
+  duplicates survive, credits/payments skipped and counted, unparseable
+  rows counted with reasons, sign convention NEVER auto-flipped (--negate
+  is the owner's statement; >60% negative without it warns loudly).
+  Chase-like + simple fixtures; 8 tests. ALSO: fixed a DEAD .gitignore
+  negation (inline comment after the pattern is not gitignore syntax) —
+  without the fix the committed fixtures would vanish from clean
+  checkouts (the I016/I018 class, caught before commit).
+  T158 at 45faa08 — BRIEFS: morning gains household (bills_due_7d, budget
+  pace, total debt, stale-balance names to re-ask); weekly gains
+  spending-vs-budget (pace, top categories, leftover, the double-count
+  hazard verbatim); statement dates NAMED as not tracked — never
+  approximated from due days; tables-missing degrades available:False
+  with the alembic hint. 3 tests.
+  EVIDENCE (D027): full gate PASS — 1,235 passed, 3 skipped (+29: budget
+  9, household_api +2, tools 7, import 8, brief +3), pyrefly exactly 0,
+  ruff clean, node --check 0 + missing-id scan clean on orb.html,
+  alembic single head unchanged (no migration in this batch — schema was
+  T152's). RAN THE THING: import_spending.py executed end-to-end in the
+  sandbox (created starter rules + spending dir, clean exit); every tool
+  executed against an in-memory DB, not just registered. Also verified:
+  the 7 vendored woff2 are 2 unique VARIABLE fonts (fvar wght 100–700 /
+  300–900) — true bolds render; the 7-way duplication is ~190KB of
+  harmless redundancy, recorded here so nobody re-investigates.
+  D028 objections, strongest first: (1) T155's household writes are NOT
+  confirmation-gated (update_watchlist precedent; update_ips stays the
+  only gate) — a model mishearing "3200" as "32000" writes a wrong fact;
+  defenses are strict validation, the recorded figure echoed back in the
+  same turn, and upsert-by-name making correction one sentence. (2) The
+  budget's double-count hazard (a bill logged as a spend) is NAMED in
+  every payload but not DETECTED — flow↔spend category reconciliation
+  earns a ticket from real use. (3) T156's header detection covers
+  common US card shapes; exotic exports refuse loudly by design rather
+  than guess. (4) briefs now read household tables every compose — three
+  small SQLite queries, acceptable; the "-31" lexical month upper bound
+  is safe because no stored ISO date exceeds a real month end.
+  Batch-shared surface: everything rides T152's schema + T154's
+  month_view — a defect there propagates to /api/household,
+  get_household, both briefs, and the dashboard budget line, which is
+  exactly why the composition lives in ONE service.
 - **T157j: TradingView chart (D041) + VIX + Buying Power - AWAITING
   REVIEW 2026-08-21 (Claude/Cowork; SHA e9f0960).** Owner's formal
   redesign brief reconciled honestly (most mandates already shipped in
@@ -349,29 +409,29 @@ Gemini on anything in Awaiting review.
       - RAN full verify gate: 1,169 passed, 3 skipped, pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
     concerns: none.
 ## Backlog — Phase 9: Household finance + dashboard (D039, owner-directed 2026-08-21)
-- [ ] T152 — household schema: debts (kind incl. credit_card + credit_limit,
+- [x] T152 — DONE (batch #14, REVIEWED PASS at a608682). Was: household schema: debts (kind incl. credit_card + credit_limit,
   balance, apr, min_payment, due_day, balance_asof), recurring_flows
   (income|expense, amount, cadence, category), spending_entries (date,
   amount, category, source manual|csv). Migration + store + tests.
-- [ ] T153 — payoff planner: avalanche vs snowball, APR/12 accrual, extra
+- [x] T153 — DONE (batch #14, REVIEWED PASS at a608682). Was: payoff planner: avalanche vs snowball, APR/12 accrual, extra
   payment, per-strategy payoff date + total interest, hand-computed tests;
   impossible plans (payment <= interest) refused by name.
-- [ ] T154 — budget + utilization engine: month view of income vs planned
+- [x] T154 — BUILT 2026-08-21 (batch #16, see Awaiting review; SHA b55bba5). Was: budget + utilization engine: month view of income vs planned
   recurring vs actual spending by category; leftover; per-card utilization
   (balance/limit) with the 30% caution line; pure + tested.
-- [ ] T155 — chat tools + persona: add_debt / log_spending / add_recurring /
+- [x] T155 — BUILT 2026-08-21 (batch #16, see Awaiting review; SHA d076b94). Was: chat tools + persona: add_debt / log_spending / add_recurring /
   get_household (composed view); manual-data recency rule ("as you told me
   on DATE", stale after ~35 days); coach-not-scold phrasing (D014); guard
   bumps.
-- [ ] T156 — CSV spending import: card exports in private/ -> categorized
+- [x] T156 — BUILT 2026-08-21 (batch #16, see Awaiting review; SHA 2db0524). Was: CSV spending import: card exports in private/ -> categorized
   spending_entries via owner-editable rule map; unknown -> "uncategorized",
   never guessed; idempotent re-import.
-- [ ] T157 — dashboard v1 (owner chose ONE SURFACE): the Orb's panel area
+- [x] T157 — DONE across T157a-j (batch #15 + the owner-driven index36/37 iterations, ALL REVIEWED PASS by 7e1f5de). Was: dashboard v1 (owner chose ONE SURFACE): the Orb's panel area
   becomes the full dashboard grid — KPI cards (equity, day P&L, vs SPY,
   tier/budget, DQS), monitor, benchmark chart, household cards (total debt,
   payoff date under current plan, utilization, budget bar). Dark glass
   aesthetic; asof on EVERY card; esc() everywhere; no CDN (pinned).
-- [ ] T158 — briefs integration: morning gains bills-due-7d + statement
+- [x] T158 — BUILT 2026-08-21 (batch #16, see Awaiting review; SHA 45faa08). Was: briefs integration: morning gains bills-due-7d + statement
   dates + budget pace; weekly gains spending-vs-budget summary.
 
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
