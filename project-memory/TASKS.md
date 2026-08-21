@@ -15,6 +15,13 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
+- **Batch #12 (4 units, probe-sized; claimed 2026-08-21, Claude/Cowork;
+  queue empty - batch #11 PASSed at ead9bdc; a CI-drift probe came back
+  CLEAN and was killed, not padded):** curation #12, T149 (campaign
+  status in the morning brief - attempts/counts/dates ONLY per T133
+  anti-peek; a missed forecast day is coverage lost forever, so the
+  brief nudges), hygiene #8 (AGENTS.md names I036/I037/I038 as ONE
+  environment-premise class + stale seed scan), close.
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **Batch #11: curation #11 + T146 + T147 + T148 - AWAITING REVIEW
   2026-08-21 (Claude/Cowork; independent units, D038 sized). SHAs per
