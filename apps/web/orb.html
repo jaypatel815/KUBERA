@@ -106,6 +106,12 @@
   .mon-quiet { color: #5aaa88; font-size: 10px; }
   #mon-foot { font-size: 9.5px; color: #3a3830; margin-top: 8px; line-height: 1.5; }
 
+  /* ── performance vs SPY block (T143) — /api/benchmark drawn inline ── */
+  #bench-chart { display: block; width: 100%; margin: 4px 0 2px; }
+  .bench-you { color: #c9a227; }
+  .bench-spy { color: #8b8fa3; }
+  #bench-foot { font-size: 10px; line-height: 1.5; }
+
   /* ── floating toggle buttons ── */
   #btn-sidebar, #btn-port {
     position: fixed; top: 18px; z-index: 200;
@@ -166,6 +172,9 @@
       <div class="pl">Open-trade monitor</div>
       <div id="mon-body"><div class="mon-line">loading&hellip;</div></div>
       <div id="mon-foot"></div>
+      <div class="pl">Performance vs SPY (90d)</div>
+      <canvas id="bench-chart" width="240" height="96"></canvas>
+      <div id="bench-foot"><div class="mon-line">loading&hellip;</div></div>
     </div>
   </div>
 
@@ -468,7 +477,7 @@ btnPort.addEventListener("click", () => {
   const opening = !portPanel.classList.contains("open");
   portPanel.classList.toggle("open");
   btnPort.title = opening ? "Close portfolio" : "Portfolio snapshot";
-  if (opening) { loadPortfolio(); loadMonitor(); }
+  if (opening) { loadPortfolio(); loadMonitor(); loadBench(true); }
 });
 
 function fmtUSD(n) {
@@ -584,6 +593,77 @@ async function loadMonitor() {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════
+// T143 — PERFORMANCE vs SPY: /api/benchmark (T021 compare + T060 math)
+// drawn as two normalized curves, no chart library. Both start at 1.0 on
+// the first common date; the gold line is you, the gray line is SPY, the
+// dotted line is where you started. Excess return is the honest number.
+// ════════════════════════════════════════════════════════════════════
+const benchCvs = document.getElementById("bench-chart");
+const benchFootEl = document.getElementById("bench-foot");
+let benchLastMs = 0;
+const BENCH_REFRESH_MS = 600_000; // daily-bar data — 10 min is generous
+
+async function loadBench(force) {
+  if (!force && Date.now() - benchLastMs < BENCH_REFRESH_MS) return;
+  benchLastMs = Date.now();
+  try {
+    const r = await fetch("/api/benchmark?days=90");
+    if (!r.ok) {
+      let detail = "unavailable";
+      try { detail = (await r.json()).detail || detail; } catch (_) {}
+      benchCvs.style.display = "none";
+      benchFootEl.innerHTML = `<div class="mon-line">${esc(detail).slice(0, 140)}</div>`;
+      return;
+    }
+    const d = await r.json();
+    const port = d.portfolio_norm || [], spy = d.benchmark_norm || [];
+    if (port.length < 2 || port.length !== spy.length) {
+      benchCvs.style.display = "none";
+      benchFootEl.innerHTML = '<div class="mon-line">fewer than 2 aligned ' +
+        "days of equity history — run scripts/sync.py daily</div>";
+      return;
+    }
+    benchCvs.style.display = "block";
+    drawBench(port, spy);
+    const m = d.metrics || {}, pm = m.portfolio || {}, bm = m.benchmark || {};
+    const pct = v => (v == null ? "?"
+      : (v >= 0 ? "+" : "") + (v * 100).toFixed(2) + "%");
+    benchFootEl.innerHTML =
+      `<div class="mon-line"><span class="bench-you">you ${pct(pm.cumulative_return)}</span>` +
+      ` &middot; <span class="bench-spy">SPY ${pct(bm.cumulative_return)}</span>` +
+      ` &middot; excess ${pct(m.excess_return)}</div>` +
+      `<div class="mon-line">${(d.dates || []).length} aligned days &middot; ` +
+      `asof ${esc((d.asof || "").slice(0, 10))}</div>`;
+  } catch (_) {
+    benchFootEl.innerHTML =
+      '<div class="mon-line">benchmark unavailable (server starting?)</div>';
+  }
+}
+
+function drawBench(port, spy) {
+  const ctx = benchCvs.getContext("2d");
+  const W = benchCvs.width, H = benchCvs.height;
+  ctx.clearRect(0, 0, W, H);
+  const all = port.concat(spy);
+  let lo = Math.min.apply(null, all), hi = Math.max.apply(null, all);
+  if (hi - lo < 1e-9) { hi += 5e-10; lo -= 5e-10; } // flat week: still drawable
+  const x = i => 2 + (i / (port.length - 1)) * (W - 4);
+  const y = v => H - 4 - ((v - lo) / (hi - lo)) * (H - 8);
+  if (lo <= 1.0 && 1.0 <= hi) { // the where-you-started line
+    ctx.setLineDash([2, 3]); ctx.strokeStyle = "#4a4436"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(2, y(1.0)); ctx.lineTo(W - 2, y(1.0)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  const line = (arr, color, width) => {
+    ctx.beginPath();
+    arr.forEach((v, i) => i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)));
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
+  };
+  line(spy, "#8b8fa3", 1);    // the benchmark: quiet gray
+  line(port, "#c9a227", 1.6); // you: the orb's gold, drawn on top
+}
+
 // ── T136: PWA registration (feature-detected; failure is silent because
 // the app works identically unregistered — the SW only caches the shell,
 // NEVER money: see sw.js) ──
@@ -595,7 +675,9 @@ if ("serviceWorker" in navigator) {
 loadConversations();
 // Portfolio + monitor poll every 60 s while the panel is visible.
 setInterval(() => {
-  if (portPanel.classList.contains("open")) { loadPortfolio(); loadMonitor(); }
+  if (portPanel.classList.contains("open")) {
+    loadPortfolio(); loadMonitor(); loadBench(false); // bench self-throttles to 10 min
+  }
 }, 60_000);
 </script>
 </body>
