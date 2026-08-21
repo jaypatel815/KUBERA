@@ -5,6 +5,14 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 — Gemini/Antigravity — T159–T168 filed, T157k (TV Widget API), T157l (remove canvas fallback)
+
+**Filed:** Phase 9b UI polish tickets T159–T168 in `TASKS.md` following owner's crypto-admin / index37 reference designs (glassmorphism, ticker tape, Robinhood-style equity strip, TV symbol linking, top 5 holding tiles, win/loss calendar upgrade, top 5 movers panel, 2-col live news feed, budget widget, command palette).
+**Built:**
+1. T157k (`cff174d`): Switched TradingView embed in `orb.html` to `new TradingView.widget()` via `tv.js` matching index37.html exactly. D041 amended in `DECISIONS.md`. Test pin in `test_orb_panel.py` updated to verify exactly 1 permitted `<script src=` tag (`tv.js`).
+2. T157l (`0fc20f6`): Removed obsolete `<div id="cndl-body">` canvas chart, its fallback buttons, its CSS selectors, and all fallback JS routines (`loadCandles`, `liveTick`, `aggWeekly`, etc.). Streamlined timeframe pill switching to directly update TradingView widget interval.
+**Verified:** `scripts/verify.py` full gate PASS (1,235 passed, 3 skipped, 1 warning, pyrefly 0 errors, ruff clean).
+
 ## 2026-08-21 - Batch #16: T154+T155+T156+T158 - Phase 9 seeds complete (Claude/Cowork)
 
 **Built:** budget+utilization engine (month view, pace vs pro-rata
