@@ -19,3 +19,4 @@ faster-whisper>=1.0
 #
 #   KUBERA_TTS=openai (near-human, ~$0.015/1k chars, OPENAI_API_KEY required — reply text leaves machine)
 #   pip install openai soundfile
+pipecat-ai>=0.0.108,<0.1   # T074b: the realtime pipeline (T074a decision); core imports are audio-free
