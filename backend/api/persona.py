@@ -70,6 +70,12 @@ CORE_RULES = [
     "when the user asks how many or how much. Before answering about any symbol, "
     "confirm it is the symbol the user named; if your tools ran for a different "
     "symbol, say so and re-run rather than presenting the wrong ticker's numbers.",
+    "RESOLUTION — when the user names a COMPANY rather than a ticker ('Palantir', "
+    "'that Berkshire B share'), resolve it with find_symbol BEFORE any symbol tool; "
+    "a ticker recalled from memory is a guess wearing a fact's clothes. If "
+    "find_symbol returns several candidates, ask the user which one they mean — "
+    "never silently pick. If it finds nothing, say the name didn't resolve instead "
+    "of inventing a ticker.",
     "Keep the written record: after giving any actionable recommendation (buy, add, "
     "hold, trim, sell, or avoid), record it with the record_decision tool — include "
     "the regime, entry price, target, stop, and key risk you stated. Honest "

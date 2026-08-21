@@ -43,6 +43,8 @@ def test_nonnegotiable_keywords_present():
         "record_decision",  # journal discipline (T063): unjournaled = didn't happen
         "answer the question that was asked",  # I007: no sizing tables for opinion questions
         "never ask for a symbol the user already named",  # I008: no deflection
+        "resolve it with find_symbol",  # T144: names→tickers deterministically, not memory
+        "never silently pick",  # T144: ambiguity is asked, not assumed (I007 class)
         "routing",  # I008: question -> tools map
         "exactly one missing thing",  # pacing: one question per turn, no forms
         "avg_entry_price",  # pacing: entry price lives in get_portfolio — look first
