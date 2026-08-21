@@ -1682,3 +1682,49 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
       - T148 (PASS): Read `scripts/health_check.py` and `backend/tests/test_ops.py`. Tested `check_backup` live in Python across missing dir, empty dir, fresh backup, and stale backup states. Verified `--max-backup-age` argument integration. 4 unit tests pass.
       - RAN full verify gate: 1,163 passed, 3 skipped, pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
     concerns: none.
+
+## Curation #13 (2026-08-21) — batch #12 (PASS at 5941459)
+
+- **Batch #12: curation #12 + T149 + hygiene #8 - AWAITING REVIEW
+  2026-08-21 (Claude/Cowork; probe-sized - a CI-drift probe came back
+  CLEAN and was killed, not padded, D038). SHAs per D033: 1885ca5
+  (curation #12) / 2e6ff54 (T149) / a5af35f (hygiene #8) / close SHA
+  on this commit.**
+  CURATION #12 at 1885ca5: batch #11 (PASS ead9bdc) -> archive.
+  T149 - CAMPAIGN IN THE BRIEF at 2e6ff54: starting Monday the owner
+  sees WITHOUT ASKING that forecasts are landing. campaign_section for
+  each budget that has spent an attempt: attempts used/max, forecast
+  days logged, latest date, window state (opens / days-remaining /
+  closed -> "score --consume"), and the missed-day NUDGE - because a
+  paper-forward day with no forecast logged is coverage lost forever.
+  T133 anti-peek held BY TEST: no outcome-shaped field rides the
+  payload (asserted: no key containing return/coverage/pnl). Unmigrated
+  DB -> None; key always present. Window joined to budget by name
+  prefix - a convention, STATED in the docstring, not disguised as a
+  foreign key.
+  HYGIENE #8 at a5af35f: I036/I037/I038 named as ONE class in AGENTS.md
+  (environment premises are ENFORCED by mechanism - ignore-with-reason,
+  fixture, pin - never assumed; "a truth that depends on which machine
+  is asking is not yet a truth"). Stale seeds closed: T122c marked
+  shipped (batch #7, PASS after 1a9ed3a), T074b marked
+  sandbox-half-done with the owner remainder stated.
+  EVIDENCE (D027): full gate PASS - 1,167 passed (+4: test_brief
+  14->18), pyrefly exactly 0, budgets in bounds. Live sandbox DB has
+  the campaign tables; section composes there (attempt 1 recorded ->
+  entry appears with "window opens 2026-08-24").
+  D028 objections: (1) the nudge keys on market_today(), so a forecast
+  made the EVENING BEFORE for tomorrow's session reads as "missing"
+  until the market day rolls - acceptable: the owner runs forecast
+  pre-open per RUNBOOK, and a false nudge costs a glance while a
+  missed real one costs coverage. (2) name-prefix window join would
+  mis-pair a future revision named as a prefix of another (kronos-v1 /
+  kronos-v1b) - accepted with the convention stated; revisions to date
+  follow it.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 2a0f114 (SHAs: 1885ca5, 2e6ff54, a5af35f, 2a0f114) — PASS
+    aligned: Batch #12 — Curation #12 (memory archiving), morning brief research campaign tracking & forward-coverage nudge (T149), environment-premise class doctrine & stale seeds cleanup (Hygiene #8).
+    checked:
+      - Curation #12 (PASS): Verified archive file `TASKS-archive-2026-08-20.md` with Batch #11 double-signed record.
+      - T149 (PASS): Read `backend/api/brief.py` and `backend/tests/test_brief.py`. Tested `campaign_section` live in Python across 0 attempts, pre-window, in-window without forecast (nudge present), in-window with forecast (nudge absent), and post-window states. Verified anti-peek property holds (no outcome keys present). 4 unit tests pass.
+      - Hygiene #8 (PASS): Read `AGENTS.md` environment-premise doctrine (I036/I037/I038 lessons) and verified closed seeds for T122c and T074b in `TASKS.md`.
+      - RAN full verify gate: 1,167 passed, 3 skipped, pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
+    concerns: none.
