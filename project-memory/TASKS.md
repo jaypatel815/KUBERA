@@ -15,14 +15,32 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
-- **Batch #13 (4 units, probe-sized; claimed 2026-08-21, Claude/Cowork;
-  batch #12 PASSed at 5941459; T067c probed and left GATED - its own
-  ticket forbids building against date-only rows and the time-stamped
-  fills accumulate only on the owner's machine):** curation #13, T150
-  (weekly review surfaces the week's risk events - the D021 trail
-  visible where the owner reads), T151 (README delta: bell / backup
-  watch / campaign line), close.
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **Batch #13: curation #13 + T150 + T151 - AWAITING REVIEW 2026-08-21
+  (Claude/Cowork; probe-sized - T067c probed and left GATED with a dated
+  note + the owner's check one-liner, D030). SHAs per D033: ed06ed2
+  (curation #13 + T067c note) / 0c051a2 (T150) / 31a7c32 (T151) / close
+  SHA on this commit.**
+  T150 - RISK EVENTS IN THE WEEKLY at 0c051a2: T135 records tier changes
+  and breaker trips as they happen; that history surfaced only in
+  scripts/d021_evidence.py - evidence the owner would meet for the FIRST
+  time at the Sept-12 revisit. Now the weekly review carries
+  risk_events_week (counts, last event verbatim) and - deliberately - a
+  quiet week as a STATED fact, because for the D021 decision an
+  uneventful week is evidence too. Tests: quiet-week statement; counts +
+  last-event quote.
+  T151 - README DELTA at 31a7c32: campaign line (counts-only anti-peek
+  stated), the bell (only-while-open stated), backup watch, weekly risk
+  events. Each with its honest limit in the same sentence as the
+  feature.
+  EVIDENCE (D027): full gate PASS - 1,169 passed (+2 test_brief 18->20),
+  pyrefly exactly 0, budgets in bounds.
+  D028 objections: (1) risk_events_week uses a rolling 7x24h window
+  (datetime.now - 7d), not market weeks - matches equity_history's
+  7-day convention in the same review; stated here. (2) The quiet-week
+  fact could go stale-confusing if recording ever breaks silently -
+  accepted: the risk section OBSERVES on every brief run, so a broken
+  recorder would also break briefs loudly.
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.
