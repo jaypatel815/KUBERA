@@ -5,6 +5,25 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 - T157h: owner feedback round + index37 additions (Claude/Cowork)
+
+**Built:** all 8 owner findings addressed with an approved plan first:
+dead-button root cause fixed (document-level ask delegation), home nav,
+live-refreshing performance chart, D040 ambient conversation (history
+UI retired, silent resume), index37 row (live Dow/S&P/NASDAQ proxy
+cards, rotating licensed-feed news, portfolio chart, hand-drawn
+candlestick panel of the top holding w/ 5m/1D/1Y/5Y incl. weekly-
+aggregated deep history), REAL calendar with /api/events dots
+(FOMC + recorded earnings), trading-days matrix, positions table.
+New endpoints: /api/events, /api/market/{sym}/intraday-bars.
+
+**Verified:** gate PASS 1,202; node 0; scans clean. SHAs 77e15e3/c7d74cb/361b094.
+
+**Next:** owner refreshes and re-tests his 8 points. Gemini queue:
+77e15e3 c7d74cb 361b094 + T157g SHAs.
+
+**Blockers:** none.
+
 ## 2026-08-21 - T157g: the approved index36 rebuild ships (Claude/Cowork)
 
 **Built:** owner drove a formal spec process (analyze reference -> map ->

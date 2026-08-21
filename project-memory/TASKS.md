@@ -16,6 +16,35 @@ Gemini on anything in Awaiting review.
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T157h: owner-feedback round (repairs + D040 + index37 row) -
+  AWAITING REVIEW 2026-08-21 (Claude/Cowork; SHAs per D033: 77e15e3
+  repairs+D040 / c7d74cb index37 row / 361b094 calendar+matrix+positions).**
+  Owner tested T157g live and filed 8 findings + new reference
+  (index37); plan approved before build. REPAIRS: dead hero buttons
+  root-caused (listener was #main-scoped; now ONE document-level
+  [data-ask] delegation), home navigation restored (logo + home chip),
+  performance chart refreshes every poll while visible. D040: history
+  UI retired - silent auto-resume of the latest thread ("like talking
+  to a human"); server records untouched; cross-thread long-memory a
+  NAMED future gap. INDEX37 ROW: Dow/S&P/NASDAQ live cards (DIA/SPY/
+  QQQ, labeled ETF proxies - free feed has no futures), rotating news
+  banner from OUR licensed feeds ("headlines are data, not advice"),
+  portfolio chart in the Main-Stocks slot, hand-drawn CANDLESTICK
+  panel of the top holding: bodies/wicks/volume/y-grid/amber last-price
+  tag, broker-clock market-open dot, day+52wk range sliders, TFs 5m
+  (new /api/market/{sym}/intraday-bars route) / 1D / 1Y / 5Y (weekly
+  aggregation, stated on-card - the owner's deep-history ask). PLUS:
+  real calendar popover with amber event dots from new /api/events
+  (published FOMC table + recorded earnings; empty store stated),
+  trading-days matrix from real daily equity changes, positions table.
+  EVIDENCE (D027): gate PASS 1,202 (+4 route/pin tests); node --check
+  0 at every step; dangling-id scans clean x3; voice/PWA pins green.
+  D028 objections: (1) index cards are ETF proxies not futures -
+  labeled on-card; (2) "real-time" equity remains snapshot-granular
+  (per-minute REFRESH, not intraday sampling) - intraday equity
+  snapshots are a future server-side ticket, stated; (3) 5Y weekly
+  aggregation is client-side presentation resampling (first/max/min/
+  last/sum), not money math - stated in code and card.
 - **T157g: the APPROVED index36 rebuild - AWAITING REVIEW 2026-08-21
   (Claude/Cowork; SHAs per D033: 4100c6d fonts infra / 9f32007 rebuild /
   close SHA on this commit).** Owner ran the full spec process himself
