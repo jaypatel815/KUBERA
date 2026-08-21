@@ -47,7 +47,11 @@ def forecast(payload: dict) -> dict:
             "--model-config kronos_repo=<path to the cloned Kronos repo>")
     sys.path.insert(0, repo)
 
-    import pandas as pd
+    # pandas lives in the owner's MODEL venv (Kronos requirements), not in
+    # KUBERA's root venv — same narrow suppression rationale as `model`
+    # below (I023 rule; Gemini's T122c review caught this one: the sandbox
+    # had pandas ambiently, a clean venv does not — I036).
+    import pandas as pd  # pyrefly: ignore
 
     # `model` is the Kronos REPO's package, present only in the owner's
     # model venv via the sys.path.insert above — invisible to this repo's
