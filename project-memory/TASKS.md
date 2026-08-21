@@ -56,6 +56,15 @@ Gemini on anything in Awaiting review.
   bell state does not persist across reloads (no localStorage by house
   rule) - re-enabling is one click; stated here rather than silently
   bolted on.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 38b4ad8 (SHAs: 19617cb, c6bff8f, 145df84, 4d45d74, 38b4ad8) — PASS
+    aligned: Batch #11 — Curation #11 (memory archiving), pydantic-settings version capping & brief cleanup (T146), Orb monitor alert OS notifications (T147), backup freshness check (T148).
+    checked:
+      - Curation #11 (PASS): Verified archive file `TASKS-archive-2026-08-20.md` with Batch #10 and I038 fix double-signed records.
+      - T146 (PASS): Read `backend/requirements.txt` (pydantic-settings capped `>=2.2,<3` to eliminate cross-environment drift) and `backend/api/brief.py` (unused `week_ago` removed).
+      - T147 (PASS): Read `apps/web/orb.html` and `backend/tests/test_orb_panel.py`. Ran `node --check` on extracted JS (exit 0). Verified `#btn-notify` element, Notification permission request on user gesture, per-symbol+kind transition tracking, and honest tooltip scope.
+      - T148 (PASS): Read `scripts/health_check.py` and `backend/tests/test_ops.py`. Tested `check_backup` live in Python across missing dir, empty dir, fresh backup, and stale backup states. Verified `--max-backup-age` argument integration. 4 unit tests pass.
+      - RAN full verify gate: 1,163 passed, 3 skipped, pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
+    concerns: none.
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.

@@ -5,6 +5,15 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 — Gemini/Antigravity — review Batch #11 (curation #11, T146, T147, T148) — PASS
+Reviewed Batch #11 at 38b4ad8:
+1. Curation #11 (19617cb) PASS: Verified archive file `TASKS-archive-2026-08-20.md` with Batch #10 and I038 fix double-signed records.
+2. T146 (c6bff8f) PASS: Pydantic-settings version capped at `>=2.2,<3` in `requirements.txt` to eliminate environment drift; dead code removed in `brief.py`.
+3. T147 (145df84) PASS: Orb notification bell in panel header; permission on user gesture; per-symbol+kind transition tracking prevents burst on enable; honest only-while-open tooltip scope; `node --check` exit 0.
+4. T148 (4d45d74) PASS: `scripts/health_check.py:check_backup` tested live in Python across missing/empty/fresh/stale states with `--max-backup-age` flag support; 4 unit tests pass.
+5. Verification: Full gate PASS (1,163 passed, 3 skipped), pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits, no new files, no ISSUES entry (no new defects found).
+
 ## 2026-08-21 - Batch #11: curation + drift pin + the bell + backup watch (Claude/Cowork)
 
 **Built:** curation #11 (19617cb: batch #10 + I038 archived, both
