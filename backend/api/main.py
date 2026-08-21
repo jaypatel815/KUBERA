@@ -326,6 +326,98 @@ def market_bars(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+_INDICES = (
+    ("Dow Index", "^DJI", "DJIA", "DIA"),
+    ("S&P 500 Index", "^GSPC", "SP500", "SPY"),
+    ("NASDAQ Index", "^IXIC", "NASDAQCOM", "QQQ"),
+)
+
+
+def compose_index_cards(finnhub, fred, market) -> list[dict]:
+    """T157i — REAL index levels, provider chain per index:
+    Finnhub live quote -> FRED official close (dated) -> level UNAVAILABLE by
+    name. The day-change %% may come from the tracking ETF (labeled) when the
+    live index quote is missing — percentage tracking is tight; DOLLAR levels
+    from an ETF are not, and are never shown as the index."""
+    cards = []
+    for name, fh_sym, fred_series, etf in _INDICES:
+        card: dict = {"name": name, "level": None, "level_source": None,
+                      "change_pct": None, "change_abs": None,
+                      "change_source": None}
+        if finnhub is not None:
+            try:
+                q = finnhub.quote(fh_sym)
+                card.update(level=q["price"], level_source="finnhub-live",
+                            change_pct=q["change_pct"], change_abs=q["change"],
+                            change_source="finnhub-live")
+            except Exception as e:  # noqa: BLE001 — chain falls through, named
+                card["finnhub_note"] = str(e)[:120]
+        if card["level"] is None and fred is not None:
+            try:
+                obs = fred.latest(fred_series)
+                card.update(level=obs.value,
+                            level_source=f"fred-close {obs.date}")
+            except Exception as e:  # noqa: BLE001
+                card["fred_note"] = str(e)[:120]
+        if card["change_pct"] is None and market is not None:
+            try:
+                bars = market.get_daily_bars(etf, days=5).bars
+                trade = market.get_latest_trade(etf)
+                prev = bars[-2].close if len(bars) >= 2 else (
+                    bars[-1].close if bars else None)
+                if prev:
+                    card["change_pct"] = round(
+                        (trade.price - prev) / prev * 100, 2)
+                    card["change_source"] = f"{etf} ETF proxy (%% only)"
+                    if card["level"]:
+                        # index points implied by the tracked %% move
+                        card["change_abs"] = round(
+                            card["level"] * card["change_pct"] /
+                            (100 + card["change_pct"]), 2)
+            except Exception:  # noqa: BLE001 — change line degrades silently
+                pass
+        if card["level"] is None:
+            card["why"] = ("no index feed on this key — Finnhub/FRED "
+                           "unavailable; an ETF dollar price is NOT the "
+                           "index and will not be shown as one")
+        cards.append(card)
+    return cards
+
+
+@app.get("/api/indices")
+def index_levels(
+    market: MarketDataClient = Depends(get_market_client),
+    s: KuberaSettings = Depends(get_settings),
+) -> dict:
+    """T157i — Dow / S&P 500 / NASDAQ levels for the ticker cards."""
+    finnhub = None
+    fred = None
+    try:
+        if s.finnhub_api_key is not None:
+            from data.finnhub import FinnhubClient as _F
+            finnhub = _F(settings=s)
+    except Exception:  # noqa: BLE001
+        finnhub = None
+    try:
+        if s.fred_api_key is not None:
+            fred = FredClient(settings=s)
+    except Exception:  # noqa: BLE001
+        fred = None
+    try:
+        cards = compose_index_cards(finnhub, fred, market)
+    finally:
+        for c in (finnhub, fred):
+            try:
+                if c is not None:
+                    c.close()
+            except Exception:  # noqa: BLE001
+                pass
+    return {"indices": cards,
+            "asof": datetime.now(timezone.utc).isoformat(),
+            "note": "levels: finnhub-live or official FRED close (dated); "
+                    "%% change may ride the tracking ETF, labeled"}
+
+
 @app.get("/api/events")
 def calendar_events(symbols: str | None = None,
                     session=Depends(get_db_session)) -> dict:

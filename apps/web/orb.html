@@ -477,19 +477,19 @@
     <div id="view-overview" class="view">
       <!-- ── index37 top rows (T157h): live index cards · news · candles ── -->
       <div id="tickers">
-        <div class="tick" data-sym="DIA"><span class="ic">DJI</span>
+        <div class="tick" data-idx="Dow Index"><span class="ic">DJI</span>
           <div style="flex:1;"><div class="nm">Dow Index</div>
-            <div class="sub">via DIA ETF proxy</div></div>
+            <div class="sub">loading&hellip;</div></div>
           <div style="text-align:right;"><div class="px">&mdash;</div>
             <div class="chg lbl">loading&hellip;</div></div></div>
-        <div class="tick" data-sym="SPY"><span class="ic">SPX</span>
+        <div class="tick" data-idx="S&amp;P 500 Index"><span class="ic">SPX</span>
           <div style="flex:1;"><div class="nm">S&amp;P 500 Index</div>
-            <div class="sub">via SPY ETF proxy</div></div>
+            <div class="sub">loading&hellip;</div></div>
           <div style="text-align:right;"><div class="px">&mdash;</div>
             <div class="chg lbl">loading&hellip;</div></div></div>
-        <div class="tick" data-sym="QQQ"><span class="ic">NDQ</span>
+        <div class="tick" data-idx="NASDAQ Index"><span class="ic">NDQ</span>
           <div style="flex:1;"><div class="nm">NASDAQ Index</div>
-            <div class="sub">via QQQ ETF proxy</div></div>
+            <div class="sub">loading&hellip;</div></div>
           <div style="text-align:right;"><div class="px">&mdash;</div>
             <div class="chg lbl">loading&hellip;</div></div></div>
       </div>
@@ -519,6 +519,7 @@
       <section class="card" id="candle-card">
         <div id="cndl-hdr">
           <div><span class="ct" id="cndl-title">&mdash;</span>
+            <span class="pill" id="live-badge">&mdash;</span>
             <span id="cndl-ohlc"></span></div>
           <div id="tf">
             <button class="tfp" data-tf="5m">5m</button>
@@ -1718,30 +1719,41 @@ setInterval(updateSession, 60_000);
 // holding: 5m session bars / 250 daily / 1Y daily / 5Y weekly-aggregated.
 // ════════════════════════════════════════════════════════════════════
 async function loadTickers() {
-  for (const card of document.querySelectorAll("#tickers .tick")) {
-    const sym = card.dataset.sym;
-    const pxEl = card.querySelector(".px"), chEl = card.querySelector(".chg");
-    try {
-      const [lr, br] = await Promise.all([
-        fetch(`/api/market/${sym}/latest`),
-        fetch(`/api/market/${sym}/bars?days=5`)]);
-      if (!lr.ok || !br.ok) throw new Error("feed");
-      const lat = await lr.json(), bars = (await br.json()).bars || [];
-      const price = (lat.trade && lat.trade.price) ?? lat.price;
-      const prev = bars.length >= 2 ? bars[bars.length - 2].close
-                 : bars.length ? bars[bars.length - 1].close : null;
-      pxEl.textContent = Number(price).toLocaleString("en-US",
-        { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      if (prev) {
-        const chg = price - prev, pct = chg / prev * 100;
-        chEl.textContent = `${chg >= 0 ? "+" : ""}${chg.toFixed(2)} · ` +
-          `${pct.toFixed(2)}% ${chg >= 0 ? "▲" : "▼"}`;
-        chEl.className = "chg " + (chg >= 0 ? "pos" : "neg");
+  // T157i: REAL index levels via /api/indices (finnhub-live -> FRED official
+  // close -> named unavailable). An ETF dollar price is never shown as the
+  // index — the owner's rule, and the honest one.
+  try {
+    const r = await fetch("/api/indices");
+    if (!r.ok) throw new Error("indices " + r.status);
+    const d = await r.json();
+    for (const card of document.querySelectorAll("#tickers .tick")) {
+      const idx = (d.indices || []).find(x =>
+        card.dataset.idx.replace("&amp;", "&") === x.name);
+      const pxEl = card.querySelector(".px"), chEl = card.querySelector(".chg");
+      const subEl = card.querySelector(".sub");
+      if (!idx) continue;
+      if (idx.level != null) {
+        pxEl.textContent = Number(idx.level).toLocaleString("en-US",
+          { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        subEl.textContent = idx.level_source === "finnhub-live"
+          ? "live · Finnhub" : esc(idx.level_source || "");
+      } else {
+        pxEl.textContent = "—";
+        subEl.textContent = "level unavailable — needs FINNHUB_API_KEY or FRED_API_KEY";
       }
-    } catch (_) {
-      pxEl.textContent = "—"; chEl.textContent = "feed unreachable";
-      chEl.className = "chg lbl";
+      if (idx.change_pct != null) {
+        const up = idx.change_pct >= 0;
+        chEl.textContent =
+          (idx.change_abs != null ? `${up ? "+" : ""}${Number(idx.change_abs).toFixed(2)} · ` : "") +
+          `${up ? "+" : ""}${Number(idx.change_pct).toFixed(2)}% ${up ? "▲" : "▼"}` +
+          (idx.change_source && idx.change_source !== "finnhub-live" ? " *" : "");
+        chEl.className = "chg " + (up ? "pos" : "neg");
+        chEl.title = idx.change_source || "";
+      } else { chEl.textContent = "—"; chEl.className = "chg lbl"; }
     }
+  } catch (_) {
+    document.querySelectorAll("#tickers .sub").forEach(x =>
+      x.textContent = "index feed unreachable (server starting?)");
   }
 }
 
@@ -1944,6 +1956,54 @@ function drawCandles(bars) {
   g.fillStyle = "#000"; g.textAlign = "left";
   g.fillText(lastC.toFixed(2), W - padR + 6, y(lastC) + 3);
 }
+
+// T157i — LIVE TICK: while the market is open and the panel is on
+// screen, poll the latest trade every 5s and update the FORMING bar
+// (close moves, high/low stretch, the amber tag follows). After the
+// close, candles legitimately stand still — the badge says so instead
+// of letting stillness read as a bug. Free REST feed, ~12 req/min.
+let liveTimer = null, marketOpen = null;
+
+function setLiveBadge() {
+  const b = document.getElementById("live-badge");
+  if (marketOpen === true) { b.textContent = "LIVE · 5s"; b.className = "pill ok"; }
+  else if (marketOpen === false) {
+    b.textContent = "market closed — candles resume at the open";
+    b.className = "pill";
+  } else { b.textContent = "checking market…"; b.className = "pill"; }
+}
+
+async function liveTick() {
+  if (document.hidden || !candleSym || !window._candleBars ||
+      !window._candleBars.length) return;
+  if (document.getElementById("view-overview").hidden) return;
+  try {
+    const r = await fetch(`/api/market/${candleSym}/latest`);
+    if (!r.ok) return;
+    const d = await r.json();
+    const wasOpen = marketOpen;
+    marketOpen = d.session ? !!d.session.market_open : null;
+    setLiveBadge();
+    if (marketOpen === false) return;      // nothing truthful to move
+    const price = (d.trade && d.trade.price);
+    if (!price) return;
+    const bars = window._candleBars, last = bars[bars.length - 1];
+    last.close = price;
+    if (price > last.high) last.high = price;
+    if (price < last.low) last.low = price;
+    drawCandles(bars);
+    document.getElementById("cndl-ohlc").innerHTML =
+      ` O <b>${last.open.toFixed(2)}</b> H <b>${last.high.toFixed(2)}</b>` +
+      ` L <b>${last.low.toFixed(2)}</b> C <b>${last.close.toFixed(2)}</b>`;
+    const rp = document.getElementById("rail-px");
+    rp.innerHTML = Number(price).toLocaleString("en-US",
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "<small> USD</small>";
+    rp.style.color = "#FFA800";
+    setTimeout(() => { rp.style.color = ""; }, 400);
+    if (wasOpen === false && marketOpen === true) loadCandles(); // fresh open
+  } catch (_) { /* one missed tick is nothing */ }
+}
+liveTimer = setInterval(liveTick, 5000);
 
 document.getElementById("tf").addEventListener("click", (ev) => {
   const b = ev.target.closest(".tfp");

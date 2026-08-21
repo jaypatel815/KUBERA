@@ -115,6 +115,24 @@ class FinnhubClient:
         except ValueError as e:
             raise FinnhubError(f"Finnhub {what} returned non-JSON") from e
 
+    def quote(self, symbol: str) -> dict:
+        """T157i — /quote for one symbol (works for indices like ^DJI/^GSPC on
+        keys that carry them). Finnhub answers c=0 for symbols it will not
+        serve — that is a REFUSAL, raised by name, never rendered as a price
+        of zero."""
+        data = self._get("/quote", {"symbol": symbol}, f"quote({symbol})")
+        c = data.get("c")
+        if not c:
+            raise FinnhubError(
+                f"Finnhub has no quote for '{symbol}' on this key (c=0) — "
+                "index quotes may not be included in the free tier")
+        return {
+            "price": float(c),
+            "change": float(data.get("d") or 0.0),
+            "change_pct": float(data.get("dp") or 0.0),
+            "prev_close": (float(data["pc"]) if data.get("pc") else None),
+        }
+
     def earnings_surprises(self, symbol: str) -> SurprisesResult:
         """Probed shape: a LIST of {actual, estimate, period, symbol, ...};
         the free tier returned 4 quarters. Fail-closed: a row without a

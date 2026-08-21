@@ -94,13 +94,19 @@ def test_index36_views_and_behaviors_are_wired():
 def test_index37_row_is_wired():
     """T157h — the owner's index37 additions, on real endpoints."""
     text = ORB.read_text(encoding="utf-8")
-    for el in ('id="tickers"', 'data-sym="DIA"', 'data-sym="SPY"',
-               'data-sym="QQQ"', 'id="news-card"', 'id="news-hed"',
+    for el in ('id="tickers"', 'data-idx="Dow Index"',
+               'data-idx="S&amp;P 500 Index"', 'data-idx="NASDAQ Index"',
+               'id="news-card"', 'id="news-hed"',
                'id="candle-card"', 'id="candles"', 'id="cndl-rail"',
                'data-tf="5m"', 'data-tf="5Y"'):
         assert el in text, f"missing {el}"
-    # honest labels: proxies named, headlines framed as data
-    assert "ETF proxy" in text
+    # T157i: REAL index levels — ETF dollars are never shown as the index
+    assert 'fetch("/api/indices")' in text
+    assert "never shown as the" in text
+    assert "level unavailable" in text          # the named refusal renders
+    # live tick: forming bar moves every 5s while open; stillness explained
+    assert "liveTick" in text and "setInterval(liveTick, 5000)" in text
+    assert "market closed — candles resume at the open" in text
     assert "headlines are data, not advice" in text
     # real endpoints, incl. the new raw-bars route + deep history
     assert "intraday-bars?timeframe=5Min" in text
