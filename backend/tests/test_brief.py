@@ -419,3 +419,69 @@ def test_weekly_risk_events_counts_and_quotes_the_last(db):
     assert "daily loss limit hit" in rw["last_event"]
     assert any("1 tier change(s), 1 breaker trip(s)" in f
                for f in out["facts_for_lessons"])
+
+
+# ── T158: briefs carry the household (D039) ─────────────────────────────
+
+def test_morning_brief_household_bills_and_pace(db):
+    from datetime import date, timedelta
+
+    from data.household import upsert_debt, upsert_flow
+
+    # a due day within the next 7 days that is always storable (<= 28):
+    # any 7-day window contains at least one such calendar day
+    cand = next(date.today() + timedelta(days=x) for x in range(7)
+                if (date.today() + timedelta(days=x)).day <= 28)
+    upsert_debt(db, name="Visa", kind="credit_card", balance=3200.0,
+                apr_frac=0.249, min_payment=96.0, credit_limit=5000.0,
+                due_day=cand.day)
+    upsert_flow(db, name="salary", direction="income", amount=5000.0,
+                category="salary")
+    _seed_day(db)
+    alpaca, market = clients(route())
+    with alpaca, market:
+        b = compose_morning_brief(db, alpaca, market)
+    hh = b["household"]
+    assert hh["available"] is True
+    assert hh["total_debt"] == 3200.0
+    visa = next(x for x in hh["bills_due_7d"] if x["name"] == "Visa")
+    assert visa["due_date"] == cand.isoformat()   # real calendar math (T154)
+    assert visa["min_payment"] == 96.0
+    assert hh["budget_pace"]["discretionary_budget"] == 5000.0
+    # the statement-dates gap is NAMED, never approximated from due days
+    assert "statement dates are not tracked" in hh["note"]
+
+
+def test_weekly_review_spending_vs_budget(db):
+    from data.household import log_spending, upsert_flow
+
+    upsert_flow(db, name="salary", direction="income", amount=5000.0,
+                category="salary")
+    upsert_flow(db, name="rent", direction="expense", amount=1500.0,
+                category="housing")
+    log_spending(db, amount=200.0, category="groceries")
+    _seed_day(db)
+    alpaca, market = clients(route())
+    with alpaca, market:
+        out = compose_weekly_review(db, alpaca, market)
+    hh = out["household"]
+    assert hh["available"] is True
+    assert hh["spending_vs_budget"]["discretionary_budget"] == 3500.0
+    assert hh["actual_by_category_top"] == {"groceries": 200.0}
+    assert hh["income_planned"] == 5000.0
+    assert hh["leftover_if_month_ended_now"] == 3300.0
+    # the double-count hazard rides the payload verbatim
+    assert "double-counted" in hh["note"]
+
+
+def test_household_sections_name_missing_tables():
+    from api.brief import household_morning_section, household_weekly_section
+
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False},
+                           poolclass=StaticPool)  # NO create_all
+    with Session(engine) as s:
+        for section in (household_morning_section, household_weekly_section):
+            out = section(s)
+            assert out["available"] is False
+            assert "alembic" in out["why"]
+    engine.dispose()

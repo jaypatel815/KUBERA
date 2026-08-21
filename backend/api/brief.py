@@ -22,6 +22,7 @@ from datetime import date as _date
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from analysis.attribution import (
@@ -29,6 +30,7 @@ from analysis.attribution import (
     decompose_costs,
     fifo_attribution,
 )
+from analysis.budget import DueSpec, FlowSpec, SpendSpec, bills_due_within, month_view
 from analysis.expected_move import expected_move
 from analysis.levels import find_levels
 from analysis.liquidity import spread_bps
@@ -306,6 +308,75 @@ def _base_rates_summary(db: Session | None, market: MarketDataClient,
                 "why": f"base rates unavailable ({type(e).__name__})"}
 
 
+def _household_facts(db: Session) -> dict:
+    """T158 — shared loader for both brief sections. available=False with a
+    named why when the tables are missing — the brief never dies for a
+    household problem."""
+    from data.household import balance_is_stale, list_debts, list_flows, spending_between
+
+    try:
+        debts = list_debts(db)
+        flows = list_flows(db)
+        month = _date.today().strftime("%Y-%m")
+        spends = spending_between(db, f"{month}-01", f"{month}-31")
+    except OperationalError:
+        return {"available": False,
+                "why": ("household tables not initialized — run: alembic -c "
+                        "backend/alembic.ini upgrade head")}
+    view = month_view(
+        [FlowSpec(f.name, f.direction, f.amount, f.category) for f in flows],
+        [SpendSpec(s.date, s.amount, s.category) for s in spends],
+        month)
+    bills = bills_due_within([
+        DueSpec(d.name, d.due_day, d.min_payment)
+        for d in debts if d.due_day is not None])
+    stale = [f"{d.name} (as told on {d.balance_asof})"
+             for d in debts if balance_is_stale(d)]
+    return {"available": True, "month": month, "view": view, "bills": bills,
+            "stale": stale,
+            "total_debt": round(sum(d.balance for d in debts), 2)}
+
+
+def household_morning_section(db: Session) -> dict:
+    """T158 — bills due within 7 days + budget pace for the morning brief.
+    Statement dates are NOT tracked (only due days are) — the gap is named
+    here rather than approximated from due days."""
+    f = _household_facts(db)
+    if not f["available"]:
+        return f
+    return {
+        "available": True,
+        "month": f["month"],
+        "bills_due_7d": f["bills"],
+        "budget_pace": f["view"]["pace"],
+        "total_debt": f["total_debt"],
+        "stale_balances": f["stale"],  # ask the owner to restate these
+        "note": ("owner-stated figures; statement dates are not tracked — "
+                 "due days only"),
+    }
+
+
+def household_weekly_section(db: Session) -> dict:
+    """T158 — spending-vs-budget for the weekly review: month-to-date actual
+    against the pro-rata discretionary budget, top categories, leftover."""
+    f = _household_facts(db)
+    if not f["available"]:
+        return f
+    view = f["view"]
+    return {
+        "available": True,
+        "month": f["month"],
+        "spending_vs_budget": view["pace"],
+        "actual_by_category_top": dict(
+            list(view["actual_by_category"].items())[:5]),
+        "recurring_expense_planned": view["recurring_expense_planned"],
+        "income_planned": view["income_planned"],
+        "leftover_if_month_ended_now": view["leftover"],
+        "stale_balances": f["stale"],
+        "note": view["notes"][1],  # the double-count hazard, stated verbatim
+    }
+
+
 def campaign_section(db: Session, today: _date) -> dict | None:
     """T149 — the research-campaign line for the morning brief: COUNTS AND
     DATES ONLY (T133's anti-peek doctrine — outcomes stay sealed until
@@ -401,6 +472,8 @@ def compose_morning_brief(db: Session, alpaca: AlpacaClient,
         "earnings_risk": earnings,
         # T149: None when no campaign has spent an attempt — key always present
         "research_campaign": campaign_section(db, market_today()),
+        # T158: bills due this week + budget pace (D039)
+        "household": household_morning_section(db),
         "notes": PENDING_NOTES,
         "source": acct.source,
     }
@@ -645,6 +718,8 @@ def compose_weekly_review(db: Session, alpaca: AlpacaClient,
             "rejected": len(rejected), "tier_restrictions": tier_notes,
         },
         "facts_for_lessons": facts,
+        # T158: spending vs budget, month to date (D039)
+        "household": household_weekly_section(db),
         "narration_rule": ("lessons and next priorities are narrated from these "
                            "facts only — never invent numbers"),
         "source": acct.source,
