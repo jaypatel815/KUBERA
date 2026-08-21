@@ -298,6 +298,30 @@ and the Phase 7 pre-flight (`python scripts\phase7_gate.py --revision <name>` �
 OPEN only when custody refuses, the budget is pre-registered, the contamination
 rule is written down, and the isolation boundary holds parity).
 
+**Ask by company name.** "What do you think of Palantir?" now resolves the
+NAME to the ticker deterministically — `find_symbol` looks it up in the SEC's
+own registrant directory (every US public company, ~10k entries, fetched live
+and keyless) instead of trusting the model's memory. Two Apples? KUBERA asks
+which one you mean. An ETF like SPY (absent from the SEC map) gets a labeled
+live-quote check rather than vanishing. The data tools were always universal —
+any US-listed symbol on demand; this closes the last gap, which was guessing
+tickers.
+
+**Put KUBERA on your phone.** The Orb is now an installable app: open it in
+your phone's browser (same wifi: `http://<your-pc-ip>:8000/`) and the browser
+offers **Install** / "Add to Home Screen". The app shell loads instantly; every
+number still comes from the network — prices, portfolio, and health are NEVER
+cached, because a cached price is stale money presented as current. And the
+portfolio panel (▣) now answers "am I beating the market": your equity curve
+vs SPY over 90 days drawn inline (gold = you, gray = SPY), with the excess
+return stated — run `scripts\sync.py` daily so it has history to draw.
+
+**The Kronos experiment (Phase 7's first campaign)** is pre-registered and
+gated — the full CLI sequence lives in `docs/RUNBOOK.md`: `kronos_shape_check`
+once, `kronos_run.py start` once (guarded against accidental re-runs), daily
+`forecast` during 2026-08-24..2026-10-02, `score --consume` ONCE after the
+window closes. Three attempts total; a FAIL is a real answer.
+
 When you ask "which way will SPY go this week", the days-lens answer now also
 NAMES any scheduled event standing inside its window (FOMC from the published
 table; your symbol's recorded earnings dates): "these bands are drawn from
