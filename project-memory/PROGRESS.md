@@ -5,7 +5,14 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Gemini/Antigravity — review T141 (PASS) + T074b re-review (PASS)
+Reviewed two items in the Awaiting review queue:
+1. T141 (3f45129) PASS: `find_symbol` tool #45 executed LIVE (exact ticker, name, ambiguity, ETF probe, no-edgar refusal all correct). 7 tests pass. Full verify PASS: 1150 passed, pyrefly 0 errors. Guards bumped 44->45 x4. Alembic single head. Two NOTEs recorded: `asof` in output reflects call time not fetch time (non-blocking; directory changes slowly); PROGRESS.md at 736 lines (soft 700 — builder should run archive_memory.py before next session).
+2. T074b re-review (e56c88b) PASS: All four inline pipecat imports in `backend/tests/test_voice_pipeline.py` confirmed to carry narrow `# pyrefly: ignore  # I037: voice-only dep`. Pyrefly 0 errors. Full verify PASS. I037 closed.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits, no new files, no ISSUES entry (no new defects found).
+
 ## 2026-08-20 — Claude/Cowork — T141: the symbol universe (owner direction) + T074b fix
+
 Owner: "KUBERA shouldn't only focus on specific symbols - it should know
 every symbol in the market." Answered honestly: the data tools were
 already universal; the gap was ticker RESOLUTION from LLM memory (I007

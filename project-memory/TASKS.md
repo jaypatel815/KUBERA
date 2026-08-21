@@ -45,6 +45,20 @@ Gemini on anything in Awaiting review.
   as-candidates design means the user corrects, which beats a wrong
   fuzzy pick. (2) The SEC map's ETF gap is handled by probe, but the
   probe proves EXISTENCE only, not identity - the label says so.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 3f45129 — PASS
+    aligned: owner's direction "KUBERA shouldn't only focus on specific symbols" — close the I007 ticker-from-LLM-memory gap with deterministic resolution from the SEC's own registrant directory.
+    checked:
+      - RAN `python -m pytest backend/tests/test_find_symbol.py -v`: 7 passed, 0 failed. Exact ticker win, name resolution, ambiguity as candidates, ETF probe alive, ETF probe dead/no-market, name-shaped miss not probed, missing-edgar refusal — all correct.
+      - EXECUTED `find_symbol` LIVE against in-memory fake directory: exact ticker `PLTR` returned correct name+cik; name `Palantir` resolved to PLTR; `Apple` returned both `AAPL` and `APLE` as candidates (ambiguity, not silent pick); no-edgar raised ToolError with correct message.
+      - VERIFIED pyrefly: 0 errors (`python scripts/check_pyrefly.py` exit 0).
+      - RAN full verify gate: VERIFY PASS — 1150 passed, 3 skipped, pyrefly 0 errors, python pins 3.14.7 agree.
+      - CONFIRMED tool counts bumped: `test_tools.py`, `test_chat.py`, `test_claude_sdk.py` all updated 44->45, confirmed pass.
+      - `find_symbol` registered in `mcp_server.py` READ_ONLY_TOOLS set; alembic single head `c8e4f2a91d63`.
+      - D028 objections read and assessed: (1) simple scoring over fuzzy is the right call — an ambiguity-as-candidates design is more truthful than a fuzzy pick; (2) ETF probe labels existence not identity — the output says so, correct.
+    concerns:
+      1. NOTE: The `asof` timestamp in find_symbol output reflects when the tool was called, not when the SEC map was fetched. The SEC map can be minutes old by the time `asof` prints. This is fine for a directory (data doesn't change moment to moment) but is a slight inaccuracy the owner should know about. Non-blocking.
+      2. NOTE: PROGRESS.md is at 736 lines — over the soft budget of 700. The builder should run `python scripts/archive_memory.py` before the next session or the hard gate (1000 lines) will block verify. Non-blocking for this ticket.
+
 
 - **Batch #9: T122c-fix + curation#9 + T136 + T137 + T140 +
   T074b-headless + ISSUES-sweep - AWAITING REVIEW 2026-08-20
@@ -130,6 +144,15 @@ Gemini on anything in Awaiting review.
       - T074b (BLOCK - CRITICAL): Read `backend/tests/test_voice_pipeline.py`. Lines 63, 64, 92, 105 have unsuppressed `from pipecat...` imports without `# pyrefly: ignore`. Because `pipecat` is in `requirements-voice.txt` (optional, not installed in the standard environment where `scripts/verify.py` and `scripts/check_pyrefly.py` run), running `verify.py` fails with 4 errors (`ERROR Cannot find module pipecat... [missing-import]`), failing the verify gate (`types (pyrefly = exactly 0)`).
     concerns:
       1. CRITICAL: Add `# pyrefly: ignore` to `from pipecat...` import lines in `backend/tests/test_voice_pipeline.py` (lines 63, 64, 92, 105) so the type gate stays at exactly zero errors. Tracked as I037 in ISSUES.md.
+  REVIEWED (re-review) 2026-08-20 by Gemini/Antigravity AT e56c88b — PASS
+    aligned: T074b BLOCK resolution — four inline pipecat imports in test_voice_pipeline.py each receive narrow `# pyrefly: ignore  # I037: voice-only dep` comment so verify gate stays at exactly 0 errors.
+    checked:
+      - READ `git show e56c88b -- backend/tests/test_voice_pipeline.py`: confirmed all four problematic import lines (TranscriptionFrame, FrameDirection on lines ~63-64; TextFrame on ~94 and ~107) now carry the narrow ignore with the issue reference. Ruff hand-reformatted correctly per builder note.
+      - CONFIRMED pyrefly gate: `python scripts/check_pyrefly.py` exit 0 — `pyrefly: 0 errors — the canary is exactly zero (I023)`.
+      - RAN full verify gate: VERIFY PASS — 1150 passed, 3 skipped, 0 errors, python pins 3.14.7 agree.
+      - I037 confirmed CLOSED in ISSUES.md by the builder's commit.
+    concerns: none. The fix is mechanically correct and minimal — only the four import lines were changed, no logic touched.
+
 
 - **Batch #7: T122c + T133 + curation #8 - AWAITING REVIEW 2026-08-20
   (Claude/Cowork; honestly sized at 3 - the backlog held no more
