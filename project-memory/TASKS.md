@@ -16,6 +16,17 @@ Gemini on anything in Awaiting review.
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **I039 fix: voice-name validation + secret_check runtime-env parity -
+  AWAITING REVIEW 2026-08-21 (Claude/Cowork; SHA 3ba7642).** Owner's
+  /api/tts 500 (edge name into kokoro's assert). Fix + follow-through
+  above in ISSUES.md I039. EVIDENCE (D027): incident reproduced as a
+  test verbatim (edge name -> WAV with default voice, never 500); gate
+  PASS 1,173 (+4); secret_check live run CLEAN with the new doc line.
+  D028 objections: (1) fallback changes the VOICE the owner hears
+  rather than erroring - deliberate: speech continuity beats cosmetic
+  fidelity, and the log says what happened; (2) runtime-env parity
+  scans backend/ only - scripts/ knobs stay checker-invisible;
+  acceptable, .env.example currently documents no script-only vars.
 - **Batch #13: curation #13 + T150 + T151 - AWAITING REVIEW 2026-08-21
   (Claude/Cowork; probe-sized - T067c probed and left GATED with a dated
   note + the owner's check one-liner, D030). SHAs per D033: ed06ed2

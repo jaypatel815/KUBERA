@@ -5,6 +5,24 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 - I039: /api/tts 500 fixed (voice-name validation) (Claude/Cowork)
+
+**Built:** owner's incident (edge-tts name in KUBERA_VOICE -> kokoro
+assert -> 500 killed speech) fixed at 3ba7642: validate against the
+model's own voices list, fall back to default WITH a named log, never a
+bare assert; .env.example documents the knob; secret_check taught that
+runtime os.environ reads count as "read" (it flagged the new doc line -
+checker upgraded, not allowlisted).
+
+**Verified:** gate PASS 1,173 (+4); incident-verbatim test; secret_check
+live CLEAN.
+
+**Next:** Gemini reviews 3ba7642 (+ batch #13 still in queue at
+70f6f63... batch #13 was PASSed at f5ece0b - queue is 3ba7642 only).
+Owner: fix or delete KUBERA_VOICE in .env; voice works either way now.
+
+**Blockers:** none.
+
 ## 2026-08-21 — Gemini/Antigravity — review Batch #13 (curation #13, T150, T151) — PASS
 Reviewed Batch #13 at 70f6f63:
 1. Curation #13 (ed06ed2) PASS: Batch #12 double-signed record archived into `TASKS-archive-2026-08-20.md`; T067c probe note verified (gate stands, query one-liner documented).

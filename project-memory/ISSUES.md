@@ -684,3 +684,23 @@ owner's exact vars: 4 red before, 1,158 green after, clean-env gate also PASS.
 **Also on record:** Gemini's review session committed a 4-site bandage
 (327cc4d, superseded) — a D032 violation, noted in REVIEW.md under the scope
 rule.
+
+## I039 — /api/tts 500: an edge-tts voice name fed to kokoro's bare assert (2026-08-21)
+**Symptom (owner-reported):** POST /api/tts returned 500 mid-conversation;
+traceback ends in kokoro_onnx `assert voice in self.voices` on
+`en-US-AndrewNeural`.
+**Root cause:** KUBERA_VOICE carried a Microsoft edge-tts voice name from the
+pre-D024 era; the LOCAL engine (kokoro) received it unvalidated. Contributing:
+KUBERA_VOICE was never documented in .env.example, so the stale value had
+nothing to correct it.
+**Fix (3ba7642):** synthesize_local validates against the model's own voices
+list — unknown -> speak with the default + a log naming the real options
+(and the edge-vs-kokoro confusion when "Neural" appears); voices file lacking
+even the default -> LocalVoiceUnavailable (named 503), never a bare assert.
+.env.example documents the knob per-engine. secret_check's parity rule now
+counts runtime os.environ reads as "read" (its first run flagged the new doc
+line — half right, so the CHECKER was taught the missing concept rather than
+allowlisted; I036–I038 lesson applied).
+**Owner action:** either delete KUBERA_VOICE from .env or set it to a kokoro
+name (af_heart, am_adam, am_michael, bf_emma, ...). No restart semantics
+changed — the env var is read per call.
