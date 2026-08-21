@@ -795,3 +795,39 @@ docs/agent-briefs.md):
 5. THE MECHANISM (D031's lesson): before the verdict commit, `git status
    --short` must show only the three memory files; any `??` path = drift —
    delete it and continue. The verdict commit is by pathspec.
+
+## D039 — Phase 9: household finance + the dashboard surface (2026-08-21)
+
+Owner direction (his words: "improve the UI completely... futuristic with
+more data and visuals like finrobot" + four features: total debt balance &
+payoff plans, credit cards, monthly spending tracking, monthly budget vs
+income). Owner picked, via direct questions:
+1. BOTH as one phase — engines and dashboard interleave; math lands first,
+   the UI renders TESTED numbers, never the reverse.
+2. Entry = chat/voice AND CSV import (bank aggregation stays a later
+   paid/privacy decision, D034 class — named gap, not papered).
+3. ONE SURFACE — the Orb page's side panel grows into the full dashboard
+   (owner chose this over a second page, knowing the conversation stage
+   shrinks; the voice loop itself is untouched).
+
+Doctrine carried into the phase:
+- Every dashboard card carries asof + source, stale flagged — a beautiful
+  number with no date is exactly what KUBERA refuses to be (priority 1).
+- MANUAL-DATA RECENCY: user-entered balances get asof = entry date and go
+  STALE after a statement cycle (~35 days) — "as you told me on DATE" is
+  the honest framing; KUBERA never presents an old manual balance as
+  current.
+- No CDN libraries in the Orb (pinned by test since T143); charts stay
+  hand-drawn canvas. Framer et al. are aesthetic references only — a
+  hosted builder is wrong-shaped for a local private money app.
+- Payoff/budget/utilization math = deterministic tested code (the
+  founding rule, unchanged). Coaching stays process-based, no shame
+  (D014).
+- Household data lives in the local gitignored DB like everything else;
+  CSVs go to private/ (the statements convention).
+
+Tickets: T152 schema / T153 payoff planner / T154 budget+utilization
+engine / T155 chat tools + persona / T156 CSV import / T157 dashboard v1 /
+T158 briefs integration. FinRobot note: its ARCHITECTURE was already
+reviewed and mostly rejected (D036) — this phase borrows presentation
+ambition, not agent design.

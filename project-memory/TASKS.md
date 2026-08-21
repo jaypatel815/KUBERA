@@ -15,6 +15,10 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
+- **Batch #14 (coupled foundation, D038 4-6 rule; claimed 2026-08-21,
+  Claude/Cowork): D039 record + Phase 9 seeds + T152 schema + T153
+  payoff engine.** UI batches follow once the math is signed.
+
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **I039 fix: voice-name validation + secret_check runtime-env parity -
   AWAITING REVIEW 2026-08-21 (Claude/Cowork; SHA 3ba7642).** Owner's
@@ -60,6 +64,32 @@ Gemini on anything in Awaiting review.
       - T151 (PASS): Read `README.md` updates regarding campaign brief line, notification bell, backup watch, and weekly risk events (all with honest constraints stated).
       - RAN full verify gate: 1,169 passed, 3 skipped, pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
     concerns: none.
+## Backlog — Phase 9: Household finance + dashboard (D039, owner-directed 2026-08-21)
+- [ ] T152 — household schema: debts (kind incl. credit_card + credit_limit,
+  balance, apr, min_payment, due_day, balance_asof), recurring_flows
+  (income|expense, amount, cadence, category), spending_entries (date,
+  amount, category, source manual|csv). Migration + store + tests.
+- [ ] T153 — payoff planner: avalanche vs snowball, APR/12 accrual, extra
+  payment, per-strategy payoff date + total interest, hand-computed tests;
+  impossible plans (payment <= interest) refused by name.
+- [ ] T154 — budget + utilization engine: month view of income vs planned
+  recurring vs actual spending by category; leftover; per-card utilization
+  (balance/limit) with the 30% caution line; pure + tested.
+- [ ] T155 — chat tools + persona: add_debt / log_spending / add_recurring /
+  get_household (composed view); manual-data recency rule ("as you told me
+  on DATE", stale after ~35 days); coach-not-scold phrasing (D014); guard
+  bumps.
+- [ ] T156 — CSV spending import: card exports in private/ -> categorized
+  spending_entries via owner-editable rule map; unknown -> "uncategorized",
+  never guessed; idempotent re-import.
+- [ ] T157 — dashboard v1 (owner chose ONE SURFACE): the Orb's panel area
+  becomes the full dashboard grid — KPI cards (equity, day P&L, vs SPY,
+  tier/budget, DQS), monitor, benchmark chart, household cards (total debt,
+  payoff date under current plan, utilization, budget bar). Dark glass
+  aesthetic; asof on EVERY card; esc() everywhere; no CDN (pinned).
+- [ ] T158 — briefs integration: morning gains bills-due-7d + statement
+  dates + budget pace; weekly gains spending-vs-budget summary.
+
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.
