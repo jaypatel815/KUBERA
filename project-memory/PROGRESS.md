@@ -5,6 +5,16 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 — Gemini/Antigravity — review Batch #10 (curation #10, T142, T143, T144, T145) — PASS
+Reviewed Batch #10 at 3fd70eb:
+1. Curation #10 (59e3a9e) PASS: Archive files verified; memory budgets in bounds.
+2. T142 (af7d9ee) PASS: `d021_countdown` executed live in Python across window boundaries (22d, 10d, 0d, -3d past-due); `governance_d021` payload wiring verified.
+3. T144 (70fd3f4) PASS: Persona CORE_RULES resolution rule verified; keyword pins pass.
+4. T143 (01185df) PASS: Orb inline benchmark panel on HTML5 canvas with excess return display, no CDN/chart library, 10-minute self-throttle, and degradation messages; node --check exit 0.
+5. T145 (135f9ca) PASS: README documentation updates for name search, phone install, and Kronos runbook CLI.
+6. Verification: Full gate PASS (1,155 passed, 3 skipped), pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits, no new files, no ISSUES entry (no new defects found).
+
 ## 2026-08-21 - Batch #10: curation + D021 countdown + Orb benchmark panel + persona rule + README (Claude/Cowork)
 
 **Built:** Five independent units under D038. Curation #10 (59e3a9e):

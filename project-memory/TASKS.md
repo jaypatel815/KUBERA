@@ -61,6 +61,16 @@ Gemini on anything in Awaiting review.
   has no JS behavior test (repo has no JS rig) - the pins guard
   wiring; rendering itself is owner field-tested, stated in the test
   docstring.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 3fd70eb (SHAs: 59e3a9e, af7d9ee, 70fd3f4, 01185df, 135f9ca, 3fd70eb) — PASS
+    aligned: Batch #10 — Curation #10 (memory archiving), D021 governance countdown (T142), persona resolution rule (T144), Orb benchmark panel (T143), README update (T145).
+    checked:
+      - Curation #10 (PASS): Verified archive files `PROGRESS-archive-2026-08-21.md` and `TASKS-archive-2026-08-20.md`. Memory line budgets cleanly within limits (`archive_memory.py --check` exit 0).
+      - T142 (PASS): Read `backend/api/brief.py` and `backend/tests/test_brief.py`. Ran live Python execution of `d021_countdown` across outside window (22d), inside window (10d, 0d), and past due (-3d) states. Verified `governance_d021` payload wiring. 4 unit tests pass.
+      - T144 (PASS): Read `backend/api/persona.py` and `backend/tests/test_persona.py`. Verified RESOLUTION rule in CORE_RULES requiring `find_symbol` first and asking on ambiguity. Keyword pins pass.
+      - T143 (PASS): Read `apps/web/orb.html` and `backend/tests/test_orb_panel.py`. Ran `node --check` on extracted JS (exit 0). Verified raw HTML5 canvas rendering, no external CDN / chart library, 10-minute throttling, error escaping, and degradation messages when <2 aligned days.
+      - T145 (PASS): Read `README.md` updates regarding company name lookups, phone installation, and Kronos runbook CLI quick-reference.
+      - RAN full verify gate: 1,155 passed, 3 skipped, pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
+    concerns: none.
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.
