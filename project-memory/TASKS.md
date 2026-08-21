@@ -15,6 +15,15 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
+- **Batch #15 (coupled UI batch, D038; claimed 2026-08-21, Claude/Cowork):
+  T157a design language (owner sent six dribbble references; pages are
+  client-rendered so text-fetch is empty and his Chrome extension is not
+  connected - language derived from the genre + titles, provenance
+  STATED, owner's visual review is the acceptance gate) + T157b
+  /api/household + T157c dashboard v1 ("neat, not just an Orb" - the
+  page becomes the trading desk, conversation docks right, voice loop
+  untouched).**
+
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **Batch #14: D039 + T152 + T153 - AWAITING REVIEW 2026-08-21
   (Claude/Cowork; Phase 9's coupled foundation, D038 4-6 rule). SHAs per
