@@ -434,6 +434,119 @@ Gemini on anything in Awaiting review.
 - [x] T158 — BUILT 2026-08-21 (batch #16, see Awaiting review; SHA 45faa08). Was: briefs integration: morning gains bills-due-7d + statement
   dates + budget pace; weekly gains spending-vs-budget summary.
 
+## Backlog — Phase 9b: Dashboard UI polish (owner-directed 2026-08-21; all single-file orb.html; build order: T159→T160→T161→T162→T163→T164→T165→T166→T167→T168)
+- [ ] T159 — GLOBAL VISUAL POLISH: glassmorphism cards + micro-animations.
+  Replace flat card backgrounds with `backdrop-filter:blur(12px)` +
+  `background:rgba(11,11,14,0.75)`. Add staggered `fadeSlideUp` keyframe
+  on card mount (40ms delay increments). Amber `box-shadow` glow on card
+  hover (`0 0 0 1px rgba(255,168,0,0.18)`). Radial ambient glow behind the
+  hero orb (amber-tinted, 8–12% opacity). No new fonts, no new accent color.
+  Constraint: D041 sandboxed TV iframe untouched; pure CSS only.
+
+- [ ] T160 — SCROLLING TICKER TAPE: fixed 28px strip at `top:64px` (between
+  topbar and hero). CSS-only infinite marquee of live prices: SPY · QQQ ·
+  VIX · your top holdings · 10Y Treasury yield · BTC — pulled from existing
+  API endpoints (/api/portfolio, /api/indices). Green/red color by sign.
+  Pause on hover (`animation-play-state:paused`). Bump `#hero` top from 64px
+  to 92px and `#shell` inset-top from 214px to 242px to accommodate.
+  Amber label "MARKET PULSE" on the left edge. No new API endpoints needed.
+
+- [ ] T161 — ROBINHOOD-STYLE PORTFOLIO EQUITY STRIP: full-width card inserted
+  between the 4-index ticker row and the news row. Layout:
+  `grid-template-columns:1fr 2fr; height:120px`. Left: equity in 38px Rubik
+  bold + day P&L delta (e.g. "+$412 · +0.41%") in green/red 16px. Right:
+  intraday canvas sparkline (auto-refresh every 30s during RTH, accumulates
+  snapshots locally). Gradient fill under the line: green-tinted when equity
+  > open-of-day, red-tinted below. Uses existing `/api/portfolio` payload
+  (`equity`, `daypnl`, `daypnl_pct`). Loading state shows `—` never invented
+  numbers (AGENTS.md priority 1). No new backend endpoints.
+
+- [ ] T162 — TRADINGVIEW SYMBOL LINKING: when user types a ticker in
+  `#mon-search` and presses Enter, OR clicks any position row in `#mon-body`,
+  the TradingView iframe src updates to that symbol (via `loadTVChart(sym,tf)`
+  which rebuilds the iframe src — existing pattern from T157j). Add an inline
+  amber "Chart →" micro-pill (10px, no border, `cursor:pointer`) beside each
+  position row. Clicking it: (1) calls `loadTVChart(sym)`, (2) smooth-scrolls
+  to `#candle-card`, (3) fires a brief amber pulse animation on the card
+  border (`@keyframes pulse-border`). The timeframe pills must map correctly:
+  5m→5, 1D→D, 1Y→W, 5Y→M. No new backend needed; no script injection into
+  the TV iframe (D041 preserved).
+
+- [ ] T163 — TOP 5 HOLDINGS TILES: new `#top5-card` section placed between
+  the portfolio equity strip (T161) and the news row. Layout:
+  `display:grid; grid-template-columns:repeat(5,1fr); gap:12px`. Each tile
+  (compact card): ticker in 15px Rubik bold, company name in 10px muted,
+  current price in 17px tabular-nums, a 60×28px canvas mini-sparkline (5
+  trailing closes — green line if price > 5d-ago, red otherwise), position
+  value in 12px amber, unrealized P&L pill (green/red badge). Click tile →
+  `loadTVChart(symbol)` + smooth scroll to chart. Data from `/api/portfolio`
+  positions array (already available). Degrade gracefully if < 5 positions
+  (show however many exist). No new backend.
+
+- [ ] T164 — PER-DAY WIN/LOSS TRACKER UPGRADE: expand the `#days-grid`
+  trading-days matrix from 20 to 30 dots. Increase dot size from 9px to
+  14×14px with `border-radius:4px`. Add hover tooltip (CSS `::after` or JS
+  popover) containing: date, equity Δ ($, %), and top 3 position
+  contributions for that day (e.g. "NVDA +$180 · AAPL −$42"). On click:
+  fire `data-ask="what happened to my portfolio on [date]?"` into the chat
+  drawer. Add a monthly P&L summary row below the dot grid:
+  "Aug: +$1,842 (+2.1%) · 12W / 8L" styled in 10px muted. Data from
+  `/api/portfolio/history` daily snapshots (already available). Loading
+  states show `—`. The per-position daily breakdown may need a new
+  lightweight backend query — if not available, tooltip shows date + equity
+  Δ only, labeled "position detail coming soon."
+
+- [ ] T165 — TOP 5 MARKET MOVERS PANEL: new `#movers-card` full-width card
+  inserted above the Activity Monitor in the overview view. Two amber pill
+  tabs: Gainers | Losers. Each tab: 5-row table with cols Symbol / Company /
+  Price / Change ($) / Change (%) / [Chart ↗ button]. Rows animate in with
+  40ms stagger on tab switch (`@keyframes rowFadeIn`). Gainers tab: subtle
+  green top-border tint (`box-shadow:inset 0 2px 0 rgba(52,199,123,0.4)`);
+  Losers tab: red tint. "Chart ↗" button fires `loadTVChart(sym)`. New
+  backend endpoint: `GET /api/market/movers` returning top 5 gainers and
+  losers by % change from FMP data (already a licensed source per D030).
+  Named refusal if FMP unavailable. Degrade: hide card, don't show stale
+  data as current.
+
+- [ ] T166 — LIVE NEWS FEED UPGRADE: upgrade the `#newsrow` left card from
+  single rotating headline to a two-column layout. Left (wider, ~65%):
+  featured headline card — 22px Rubik headline, 2-line teaser, source +
+  time-ago badge, amber "Read →" pill opening URL in new tab. Auto-rotates
+  every 8s with CSS crossfade (`opacity` transition). Right (~35%):
+  scrollable list of 4–5 secondary headlines (13px, source label, time-ago).
+  Add a market sentiment pill at the section top-right: BULLISH / BEARISH /
+  NEUTRAL derived from the ratio of positive vs negative sentiment scores in
+  the Finnhub news payload (already available; named refusal if absent).
+  Clicking any headline fires `data-ask="summarize this news and how it
+  affects my holdings: [headline text]"` in the chat drawer.
+  No new backend endpoints — uses the existing news polling already in the
+  JS. Constraint: no fabricated sentiment scores (AGENTS.md priority 1).
+
+- [ ] T167 — BUDGET / SPENDING TRACKER WIDGET: upgrade `#income-card` into
+  a two-section card. Top half (keep): SPY excess, Day P&L, Total Debt (no
+  changes). Bottom half (new): monthly budget snapshot from `/api/household`
+  (budget key, already returned by T154). Show a horizontal multi-segment
+  progress bar: Housing / Food / Transport / Remaining — widths from
+  month_view category data. Below bar: "Spent $X,XXX of $X,XXX budget this
+  month" (12px, values from month_view). If household tables are missing
+  (named 503), display a placeholder prompt: "Tell KUBERA your monthly
+  budget to start tracking spending" — NO fabricated numbers. Add a
+  "Log spending →" amber pill that fires `data-ask="I just spent $[amount]
+  on [category]"`. Depends on T154 (Phase 9, already shipped).
+
+- [ ] T168 — COMMAND PALETTE UPGRADE: keep the small `#cmd` input in the
+  topbar as a trigger. On focus or Ctrl+K (⌘K on Mac): animate a centered
+  modal overlay expanding from the input position:
+  `width:580px; border-radius:16px; background:rgba(11,11,14,0.96);
+  backdrop-filter:blur(20px); border:1px solid rgba(255,168,0,0.2)`.
+  Overlay contains: (1) full-width search input at the top. (2) Quick-action
+  chip row: [Morning Brief] [Portfolio Summary] [Risk Check] [Chart NVDA] —
+  amber pills that call `send(text)` and close the overlay. (3) Symbol
+  search: typing triggers a fetch to `/api/market/{sym}/latest` and renders
+  a dropdown row with symbol name, price, day change (green/red) — clicking
+  fires `loadTVChart(sym)`. Escape closes. Focus-trap inside the overlay.
+  No new backend endpoints needed.
+
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.
