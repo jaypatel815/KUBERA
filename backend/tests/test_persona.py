@@ -48,6 +48,8 @@ def test_nonnegotiable_keywords_present():
         "routing",  # I008: question -> tools map
         "exactly one missing thing",  # pacing: one question per turn, no forms
         "avg_entry_price",  # pacing: entry price lives in get_portfolio — look first
+        "as you told me on",  # T155: manual-data recency phrasing (D039)
+        "get_household",  # T155: budget/debt questions consult the composed view
         "agentic default",  # D022: composite questions get a silent tool fan-out
         "act first, speak once",  # D022: no tool narration, no "which check?" asks
         "one synthesized answer",  # D022: weave, don't list tool outputs

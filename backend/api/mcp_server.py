@@ -38,10 +38,12 @@ log = logging.getLogger("kubera.mcp")
 
 # Tools that are safe to expose by default over MCP.
 # These are read-only: they fetch, compute, and analyse without writing state.
-# Mutation tools (update_ips, record_decision, mark_decision, update_watchlist)
-# are excluded by default and must be explicitly opted-in via allow_mutations=True.
+# Mutation tools (update_ips, record_decision, mark_decision, update_watchlist,
+# and the T155 household writes add_debt / log_spending / add_recurring) are
+# excluded by default and must be explicitly opted-in via allow_mutations=True.
 # This is the authoritative list — update it when new read-only tools are added.
 _READ_ONLY_TOOLS: frozenset[str] = frozenset({
+    "get_household",
     "check_trade_pattern",
     "compare_benchmark",
     "estimate_risk_tolerance",

@@ -18,6 +18,7 @@ from typing import Any, Callable
 import httpx
 from pydantic import BaseModel, Field, ValidationError, field_validator
 from sqlalchemy import select
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from analysis.attribution import (
@@ -80,6 +81,14 @@ from data.flows import flow_history
 from data.fmp import FmpClient, FmpError
 from data.fred import SERIES, FredClient, FredError
 from data.history import equity_history
+from data.household import (
+    DEBT_KINDS,
+    FLOW_DIRECTIONS,
+    HouseholdError,
+    log_spending,
+    upsert_debt,
+    upsert_flow,
+)
 from data.ips import get_ips, ips_as_dict, upsert_ips
 from data.journal import (
     VERDICTS,
@@ -2939,3 +2948,175 @@ def _find_symbol(ctx: ToolContext, p: FindSymbolArgs) -> dict:
                  "candidates fit, ASK the user which one they mean"),
         "asof": datetime.now(timezone.utc).isoformat(),
     }
+
+
+# ── T155 (D039 Phase 9) — household finance tools ──────────────────────
+# The chat layer translates the owner's words into store units; the store
+# refuses anything ambiguous. Every answer carries the date the owner
+# stated a figure, so the persona can say "as you told me on DATE".
+
+
+class AddDebtArgs(LenientArgs):
+    name: str = Field(min_length=1, max_length=80,
+                      description="The owner's name for it, e.g. 'Visa'")
+    kind: str = Field(default="credit_card",
+                      description="credit_card | loan | other")
+    balance: float = Field(ge=0, description="Current balance in dollars")
+    apr_percent: float = Field(
+        ge=0, le=150,
+        description="ANNUAL rate as a PERCENT — 24.9 means 24.9% APR. "
+                    "Never send the fraction (0.249).")
+    min_payment: float = Field(ge=0, description="Monthly minimum in dollars")
+    credit_limit: float | None = Field(
+        default=None, gt=0, description="Credit limit (cards) — enables "
+        "utilization tracking")
+    due_day: int | None = Field(default=None, ge=1, le=28,
+                                description="Day of month payment is due")
+    balance_asof: str | None = Field(
+        default=None, description="ISO date the owner stated this balance "
+        "(default: today)")
+
+    @field_validator("kind", mode="after")
+    @classmethod
+    def _kind(cls, v: str) -> str:
+        v = v.strip().lower()
+        if v not in DEBT_KINDS:
+            raise ValueError(f"kind must be one of {DEBT_KINDS}, got {v!r}")
+        return v
+
+    @field_validator("apr_percent", mode="after")
+    @classmethod
+    def _apr_smell(cls, v: float) -> float:
+        # 0% promo APRs are real; 0.x% consumer APRs are not — that shape
+        # is almost always the FRACTION sent where the percent belongs.
+        if 0 < v < 1.0:
+            raise ValueError(
+                f"apr_percent={v} looks like a fraction — send 24.9 for "
+                "24.9% APR (0% promo rates are sent as exactly 0)")
+        return v
+
+
+@registry.tool(
+    "add_debt",
+    "Record or update one of the owner's debts (credit card, loan). Use "
+    "whenever he states a balance — 'my Visa is at 3200', 'I owe 9k on the "
+    "car at 6.5%'. Re-stating a balance RESTAMPS its as-of date, so ask for "
+    "current balances rather than reusing old ones. apr_percent is a "
+    "PERCENT (24.9 = 24.9% APR). Updates match by name.",
+    AddDebtArgs,
+)
+def _add_debt(ctx: ToolContext, p: AddDebtArgs) -> dict:
+    db = ctx.require("db")
+    try:
+        row = upsert_debt(
+            db, name=p.name.strip(), kind=p.kind, balance=p.balance,
+            apr_frac=round(p.apr_percent / 100.0, 6),
+            min_payment=p.min_payment, credit_limit=p.credit_limit,
+            due_day=p.due_day, balance_asof=p.balance_asof)
+    except (HouseholdError, ValueError) as e:
+        raise ToolArgumentError(str(e))
+    return {
+        "recorded": True,
+        "debt": {"name": row.name, "kind": row.kind, "balance": row.balance,
+                 "apr_frac": row.apr_frac, "min_payment": row.min_payment,
+                 "credit_limit": row.credit_limit, "due_day": row.due_day,
+                 "balance_asof": row.balance_asof},
+        "apr_note": f"{p.apr_percent}% APR stored as fraction {row.apr_frac}",
+        "note": "owner-stated; quote it back as 'as you told me on "
+                f"{row.balance_asof}'",
+        "asof": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+class LogSpendingArgs(LenientArgs):
+    amount: float = Field(gt=0, description="Dollars spent (positive)")
+    category: str = Field(default="uncategorized", max_length=40,
+                          description="e.g. groceries, dining, gas")
+    on: str | None = Field(default=None,
+                           description="ISO date (default: today)")
+    note: str | None = Field(default=None, max_length=200)
+
+
+@registry.tool(
+    "log_spending",
+    "Log one spend the owner mentions — 'spent 40 on gas', 'dropped 120 at "
+    "Costco yesterday'. Feeds the monthly budget view. Categories are free "
+    "text, lowercased; use the owner's own words.",
+    LogSpendingArgs,
+)
+def _log_spending(ctx: ToolContext, p: LogSpendingArgs) -> dict:
+    db = ctx.require("db")
+    try:
+        row = log_spending(db, amount=p.amount, category=p.category,
+                           on=p.on, note=p.note, source="manual")
+    except (HouseholdError, ValueError) as e:
+        raise ToolArgumentError(str(e))
+    assert row is not None  # manual entries carry no import_key
+    return {
+        "recorded": True,
+        "entry": {"date": row.date, "amount": row.amount,
+                  "category": row.category, "note": row.note},
+        "asof": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+class AddRecurringArgs(LenientArgs):
+    name: str = Field(min_length=1, max_length=80,
+                      description="e.g. 'salary', 'rent', 'netflix'")
+    direction: str = Field(description="income | expense")
+    amount: float = Field(gt=0, description="Dollars per MONTH (v1 is "
+                          "monthly-only; weekly needs converting first)")
+    category: str = Field(default="uncategorized", max_length=40)
+
+    @field_validator("direction", mode="after")
+    @classmethod
+    def _dir(cls, v: str) -> str:
+        v = v.strip().lower()
+        if v not in FLOW_DIRECTIONS:
+            raise ValueError(
+                f"direction must be one of {FLOW_DIRECTIONS}, got {v!r}")
+        return v
+
+
+@registry.tool(
+    "add_recurring",
+    "Record a MONTHLY recurring flow — income ('I make 5000 a month') or "
+    "expense ('rent is 1500'). These frame the budget: leftover = income - "
+    "recurring - logged spending. Weekly amounts must be converted to "
+    "monthly BY THE OWNER'S CONFIRMATION, never silently. Updates match by "
+    "name.",
+    AddRecurringArgs,
+)
+def _add_recurring(ctx: ToolContext, p: AddRecurringArgs) -> dict:
+    db = ctx.require("db")
+    try:
+        row = upsert_flow(db, name=p.name.strip(), direction=p.direction,
+                          amount=p.amount, category=p.category)
+    except (HouseholdError, ValueError) as e:
+        raise ToolArgumentError(str(e))
+    return {
+        "recorded": True,
+        "flow": {"name": row.name, "direction": row.direction,
+                 "amount": row.amount, "category": row.category},
+        "asof": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@registry.tool(
+    "get_household",
+    "The owner's household finances, composed: debts with utilization and "
+    "staleness, avalanche-vs-snowball payoff comparison from the tested "
+    "engine, this month's budget (income vs recurring vs actual, leftover, "
+    "pace), and bills due in the next 7 days. USE THIS before answering any "
+    "debt / budget / payoff / spending question. Balances are OWNER-STATED: "
+    "quote each one as 'as you told me on DATE', and when stale is true, "
+    "ask for a fresh number instead of presenting it as current.",
+    NoArgs,
+)
+def _get_household(ctx: ToolContext, _: NoArgs) -> dict:
+    from api.household_service import ALEMBIC_HINT, compose_household
+    db = ctx.require("db")
+    try:
+        return compose_household(db)
+    except OperationalError:
+        raise ToolError(ALEMBIC_HINT)
