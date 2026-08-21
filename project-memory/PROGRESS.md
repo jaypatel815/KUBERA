@@ -5,6 +5,23 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 - T157d: the glass pass (Claude/Cowork)
+
+**Built:** owner's round-two references were MINABLE - buck-net's
+tailwind.config fetched raw; its literal palette + glassmorphism applied
+across the dashboard (glass cards on a glowing navy field, one hue per
+job: amber brand / teal data / blue interaction), orb states included;
+manifest + design-doc tokens v2 with extraction provenance; crypto-admin
++ glasshome unfetchable and said so.
+
+**Verified:** gate PASS 1,196; node --check 0; zero old-hex leftovers by
+scan; all pins green.
+
+**Next:** owner opens it (his eyes = acceptance); Gemini reviews 2124b40
+(+ 89e4494 batch #15 if unsigned).
+
+**Blockers:** none.
+
 ## 2026-08-21 - Batch #15: DASHBOARD V1 ships (Claude/Cowork)
 
 **Built:** the owner sent six dribbble references ("neat, and not just

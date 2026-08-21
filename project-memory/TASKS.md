@@ -16,6 +16,24 @@ Gemini on anything in Awaiting review.
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T157d: the glass pass - AWAITING REVIEW 2026-08-21 (Claude/Cowork;
+  SHA 2124b40; single-unit responsive batch #16 - owner sent round-two
+  references and said "the glassy look" + confirmed the side-panel
+  conversation).** THIS TIME THE PALETTE IS EVIDENCE: buck-net's own
+  tailwind.config.js fetched raw and adopted literally (field #05050F,
+  ramp #9292C1/#5A5A89, neons #007DF1/#00F1E7/#7517F8/#02C751/#FFB524/
+  #F52C38); ha-component-kit = glass language; trading-vault = widget
+  anatomy; crypto-admin + glasshome pages client-rendered (empty) -
+  noted, not guessed. Glass cards (backdrop-blur 14px on translucent
+  navy) over a glowing radial field; one hue per JOB (amber brand /
+  teal data / blue interaction / purple thinking); orb states join the
+  palette; manifest colors updated; doc tokens v2 with provenance.
+  EVIDENCE (D027): gate PASS 1,196; node --check 0; automated scan for
+  old-palette hex leftovers = zero; layout/voice/PWA pins untouched
+  green. D028 objections: (1) backdrop-filter costs GPU on weak phones
+  - if the owner's phone stutters, a reduced-blur media query earns a
+  ticket from his report; (2) still visually unverified in a browser -
+  same acceptance gate as T157c: the owner's eyes.
 - **Batch #15: T157a + T157b + T157c (dashboard v1) - AWAITING REVIEW
   2026-08-21 (Claude/Cowork; coupled UI batch, D038). SHAs per D033:
   df9c279 (T157a design language + T157b /api/household) / b9a3d56
