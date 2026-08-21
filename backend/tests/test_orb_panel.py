@@ -101,32 +101,23 @@ def test_index37_row_is_wired():
     for el in ('id="tickers"', 'data-idx="Dow Index"',
                'data-idx="S&amp;P 500 Index"', 'data-idx="NASDAQ Index"',
                'id="news-card"', 'id="news-hed"',
-               'id="candle-card"', 'id="candles"', 'id="cndl-rail"',
+               'id="candle-card"',
                'data-tf="5m"', 'data-tf="5Y"'):
         assert el in text, f"missing {el}"
     # T157i: REAL index levels — ETF dollars are never shown as the index
     assert 'fetch("/api/indices")' in text
     assert "never shown as the" in text
     assert "level unavailable" in text          # the named refusal renders
-    # live tick: forming bar moves every 5s while open; stillness explained
-    assert "liveTick" in text and "setInterval(liveTick, 5000)" in text
-    assert "market closed — candles resume at the open" in text
     # T157j/D041 amended 2026-08-21: TradingView.widget() via tv.js (index37 style).
     # Primary container is a div; the widget builds its own iframe internally.
-    # Fallback canvas + toggle button retained for offline/embed failure.
+    # Canvas fallback removed 2026-08-21 (owner request) — TV widget is now the only chart.
     assert 'id="tvchart"' in text
     assert 'new TradingView.widget(' in text       # widget API, not raw iframe
     assert 'container_id' in text                  # widget config field
     assert "their feed, their" in text             # data provenance still labeled
-    assert 'id="tv-fallback"' in text and "use built-in" in text
     assert 'data-idx="VIX"' in text
     assert 'id="port-bp"' in text               # Buying Power on the acct card
     assert "headlines are data, not advice" in text
-    # real endpoints, incl. the new raw-bars route + deep history
-    assert "intraday-bars?timeframe=5Min" in text
-    assert "days=${def.days}" in text and '"5Y": { days: 1825' in text
-    # 5Y readability = weekly aggregation, stated on the card
-    assert "weekly candles (aggregated for readability)" in text
 
 
 def test_calendar_matrix_and_positions_are_wired():

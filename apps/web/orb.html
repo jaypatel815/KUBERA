@@ -351,40 +351,11 @@
   #candle-card { margin-bottom: 20px; }
   #cndl-hdr { display: flex; align-items: center; justify-content: space-between;
     gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
-  #cndl-ohlc { color: var(--mut); font-size: 11px; font-variant-numeric: tabular-nums; }
-  #cndl-ohlc b { color: var(--txt); }
   #tf { display: flex; gap: 4px; background: var(--inset); border-radius: 999px;
     padding: 3px; }
   .tfp { border: none; background: none; color: var(--mut); font-size: 11px;
     padding: 5px 12px; border-radius: 999px; cursor: pointer; }
   .tfp.active { background: var(--amber); color: #fff; }
-  #cndl-body { display: grid; grid-template-columns: 1fr 230px; gap: 16px; }
-  #candles { width: 100%; display: block; }
-  #cndl-rail { border-left: 1px solid var(--line); padding-left: 16px;
-    font-size: 11px; }
-  #rail-px { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  #rail-px small { font-size: 11px; color: var(--mut); font-weight: 400; }
-  #rail-chg { font-size: 12.5px; font-weight: 600; margin-top: 2px; }
-  #rail-state { display: flex; align-items: center; gap: 6px; color: var(--mut);
-    font-size: 10.5px; margin: 6px 0 12px; }
-  #rail-state i { width: 7px; height: 7px; border-radius: 999px; background: var(--dim); }
-  #rail-state.open i { background: var(--up); }
-  .rangebar { margin: 10px 0 14px; }
-  .rangebar .rl { display: flex; justify-content: space-between; color: var(--mut);
-    font-size: 9.5px; margin-bottom: 4px; }
-  .rangebar .tr { position: relative; height: 4px; background: #26262c;
-    border-radius: 999px; }
-  .rangebar .mk { position: absolute; top: -3px; width: 10px; height: 10px;
-    border-radius: 999px; background: var(--amber); transform: translateX(-50%); }
-  .kst { display: flex; justify-content: space-between; padding: 5px 0;
-    border-bottom: 1px solid var(--line); color: var(--mut); }
-  .kst b { color: var(--txt); font-variant-numeric: tabular-nums; }
-  @media (max-width: 1200px) {
-    #tickers { grid-template-columns: 1fr; }
-    #newsrow { grid-template-columns: 1fr; }
-    #cndl-body { grid-template-columns: 1fr; }
-    #cndl-rail { border-left: none; padding-left: 0; }
-  }
 
   /* ── T157h: real calendar popover + trading-days matrix ── */
   #calpop { position: fixed; top: 214px; left: 24px; z-index: 650; display: none;
@@ -528,9 +499,7 @@
 
       <section class="card" id="candle-card">
         <div id="cndl-hdr">
-          <div><span class="ct" id="cndl-title">&mdash;</span>
-            <span class="pill" id="live-badge">&mdash;</span>
-            <span id="cndl-ohlc"></span></div>
+          <span class="ct" id="cndl-title">&mdash;</span>
           <div id="tf">
             <button class="tfp" data-tf="5m">5m</button>
             <button class="tfp active" data-tf="D">1D</button>
@@ -546,28 +515,7 @@
                no shared globals). Chart shows TRADINGVIEW'S feed, labeled. -->
           <div id="tvchart" style="height:550px;border-radius:14px;overflow:hidden;"></div>
           <div class="fine">chart + data by TradingView (their feed, their
-            timestamps — not KUBERA's) &middot;
-            <button id="tv-fallback" class="chipdd" style="font-size:10px;padding:3px 9px;">
-              chart not loading? use built-in</button></div>
-        </div>
-        <div id="cndl-body" hidden>
-          <canvas id="candles" width="1240" height="360"></canvas>
-          <div id="cndl-rail">
-            <div id="rail-px">&mdash;<small> USD</small></div>
-            <div id="rail-chg" class="lbl">&mdash;</div>
-            <div id="rail-state"><i></i><span>market state unknown</span></div>
-            <div class="rangebar"><div class="rl"><span id="dr-lo">&mdash;</span>
-              <span>DAY'S RANGE</span><span id="dr-hi">&mdash;</span></div>
-              <div class="tr"><div class="mk" id="dr-mk" style="left:50%;"></div></div></div>
-            <div class="rangebar"><div class="rl"><span id="wr-lo">&mdash;</span>
-              <span>52WK RANGE</span><span id="wr-hi">&mdash;</span></div>
-              <div class="tr"><div class="mk" id="wr-mk" style="left:50%;"></div></div></div>
-            <div class="lbl" style="margin:8px 0 4px;">Key stats</div>
-            <div class="kst"><span>Last volume</span><b id="ks-vol">&mdash;</b></div>
-            <div class="kst"><span>Avg volume (30D)</span><b id="ks-avol">&mdash;</b></div>
-            <div class="kst"><span>Sessions shown</span><b id="ks-n">&mdash;</b></div>
-            <div class="fine" id="cndl-foot"></div>
-          </div>
+            timestamps — not KUBERA's)</div>
         </div>
       </section>
 
@@ -1841,235 +1789,30 @@ document.getElementById("news-dots").addEventListener("click", (ev) => {
 });
 
 // ── candles ──
-let candleSym = null, candleTF = "D", candleBusy = false;
-const TF_DEF = { "5m": { intraday: true }, "D": { days: 250 },
-                 "1Y": { days: 365 }, "5Y": { days: 1825, weekly: true } };
+let candleSym = null, candleTF = "D";
 
-function aggWeekly(bars) {
-  // presentation-level resample: ISO-week buckets, first open / max high /
-  // min low / last close / summed volume (readable 5Y, like index37's BTC)
-  const out = [], byWeek = new Map();
-  for (const b of bars) {
-    const d = new Date(b.date + "T00:00:00Z");
-    const y = d.getUTCFullYear();
-    const jan1 = new Date(Date.UTC(y, 0, 1));
-    const wk = y + "-" + Math.floor(((d - jan1) / 86400000 + jan1.getUTCDay()) / 7);
-    if (!byWeek.has(wk)) {
-      byWeek.set(wk, { ...b }); out.push(byWeek.get(wk));
-    } else {
-      const w = byWeek.get(wk);
-      w.high = Math.max(w.high, b.high); w.low = Math.min(w.low, b.low);
-      w.close = b.close; w.volume += b.volume; w.date = w.date;
-    }
-  }
-  return out;
-}
-
-async function loadCandles() {
-  if (!candleSym || candleBusy || tvOn) return;  // built-in only when visible
-  candleBusy = true;
-  const foot = document.getElementById("cndl-foot");
-  try {
-    const def = TF_DEF[candleTF];
-    let bars = [], label = candleTF;
-    if (def.intraday) {
-      const r = await fetch(`/api/market/${candleSym}/intraday-bars?timeframe=5Min&days=1`);
-      if (!r.ok) throw new Error((await r.json()).detail || "intraday");
-      bars = ((await r.json()).bars || []).map(b => ({
-        date: String(b.ts).slice(11, 16), open: b.open, high: b.high,
-        low: b.low, close: b.close, volume: b.volume }));
-      if (!bars.length) {
-        foot.textContent = "no session bars yet today — showing daily";
-        candleTF = "D"; candleBusy = false; return loadCandles();
-      }
-      label = "5-minute bars · today's session";
-    } else {
-      const r = await fetch(`/api/market/${candleSym}/bars?days=${def.days}`);
-      if (!r.ok) throw new Error((await r.json()).detail || "bars");
-      const d = await r.json();
-      bars = d.bars || [];
-      if (def.weekly) { bars = aggWeekly(bars); label = "weekly candles (aggregated for readability)"; }
-      else label = "daily candles";
-    }
-    window._candleBars = bars;
-    drawCandles(bars);
-    document.getElementById("cndl-title").textContent =
-      `${candleSym} · Live` ;
-    const last = bars[bars.length - 1];
-    document.getElementById("cndl-ohlc").innerHTML =
-      ` O <b>${last.open.toFixed(2)}</b> H <b>${last.high.toFixed(2)}</b>` +
-      ` L <b>${last.low.toFixed(2)}</b> C <b>${last.close.toFixed(2)}</b>`;
-    document.getElementById("ks-n").textContent = String(bars.length);
-    document.getElementById("ks-vol").textContent = fmtVol(last.volume);
-    const v30 = bars.slice(-30).reduce((a, b) => a + b.volume, 0) /
-      Math.min(30, bars.length);
-    document.getElementById("ks-avol").textContent = fmtVol(v30);
-    foot.textContent = `${label} · ${candleSym} is your largest holding · ` +
-      "free IEX feed";
-    loadCandleRail(bars);
-  } catch (e) {
-    foot.textContent = "candles unavailable: " + esc(String(e.message || e)).slice(0, 90);
-  }
-  candleBusy = false;
-}
-
-function fmtVol(v) {
-  if (v >= 1e9) return (v / 1e9).toFixed(2) + "B";
-  if (v >= 1e6) return (v / 1e6).toFixed(2) + "M";
-  if (v >= 1e3) return (v / 1e3).toFixed(1) + "K";
-  return String(Math.round(v));
-}
-
-async function loadCandleRail(bars) {
-  try {
-    const r = await fetch(`/api/market/${candleSym}/latest`);
-    const d = r.ok ? await r.json() : {};
-    const price = (d.trade && d.trade.price) ?? bars[bars.length - 1].close;
-    const prev = bars.length >= 2 ? bars[bars.length - 2].close : price;
-    const chg = price - prev, pct = prev ? chg / prev * 100 : 0;
-    document.getElementById("rail-px").innerHTML =
-      Number(price).toLocaleString("en-US", { minimumFractionDigits: 2,
-        maximumFractionDigits: 2 }) + "<small> USD</small>";
-    const rc = document.getElementById("rail-chg");
-    rc.textContent = `${chg >= 0 ? "+" : ""}${chg.toFixed(2)}  ${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`;
-    rc.className = chg >= 0 ? "pos" : "neg";
-    const st = document.getElementById("rail-state");
-    const open = d.session && d.session.market_open;
-    st.className = open ? "open" : "";
-    st.querySelector("span").textContent = open == null
-      ? "market state unknown" : (open ? "Market open" : "Market closed");
-    const today = bars[bars.length - 1];
-    setRange("dr", today.low, today.high, price);
-    const yr = bars.slice(-260);
-    setRange("wr", Math.min(...yr.map(b => b.low)),
-      Math.max(...yr.map(b => b.high)), price);
-  } catch (_) { /* rail is decoration on a dead feed */ }
-}
-function setRange(prefix, lo, hi, v) {
-  document.getElementById(prefix + "-lo").textContent = lo.toFixed(2);
-  document.getElementById(prefix + "-hi").textContent = hi.toFixed(2);
-  const frac = hi > lo ? (v - lo) / (hi - lo) : 0.5;
-  document.getElementById(prefix + "-mk").style.left =
-    (Math.max(0, Math.min(1, frac)) * 100) + "%";
-}
-
-function drawCandles(bars) {
-  const c = document.getElementById("candles"), g = c.getContext("2d");
-  const W = c.width, H = c.height, volH = 64, padR = 56;
-  g.clearRect(0, 0, W, H);
-  if (!bars.length) return;
-  const lo = Math.min(...bars.map(b => b.low));
-  const hi = Math.max(...bars.map(b => b.high));
-  const maxV = Math.max(...bars.map(b => b.volume), 1);
-  const chartH = H - volH - 14;
-  const y = v => 8 + (hi - v) / (hi - lo || 1) * (chartH - 16);
-  const n = bars.length, slot = (W - padR) / n;
-  const bw = Math.max(1, Math.min(9, slot * 0.65));
-  // y-axis grid + labels
-  g.font = "10px sans-serif"; g.textAlign = "left";
-  for (let i = 0; i <= 4; i++) {
-    const v = lo + (hi - lo) * i / 4, yy = y(v);
-    g.strokeStyle = "rgba(255,255,255,0.05)";
-    g.beginPath(); g.moveTo(0, yy); g.lineTo(W - padR, yy); g.stroke();
-    g.fillStyle = "#5A5A62";
-    g.fillText(v.toFixed(v > 1000 ? 0 : 2), W - padR + 6, yy + 3);
-  }
-  bars.forEach((b, i) => {
-    const x = i * slot + slot / 2;
-    const up = b.close >= b.open;
-    g.strokeStyle = up ? "#34C77B" : "#FF4D4F";
-    g.fillStyle = up ? "#34C77B" : "#FF4D4F";
-    g.beginPath(); g.moveTo(x, y(b.high)); g.lineTo(x, y(b.low)); g.stroke();
-    const top = y(Math.max(b.open, b.close));
-    const hgt = Math.max(1, Math.abs(y(b.open) - y(b.close)));
-    g.fillRect(x - bw / 2, top, bw, hgt);
-    // volume
-    const vh = b.volume / maxV * (volH - 6);
-    g.globalAlpha = 0.55;
-    g.fillRect(x - bw / 2, H - vh - 4, bw, vh);
-    g.globalAlpha = 1;
-  });
-  // last-price line
-  const lastC = bars[bars.length - 1].close;
-  g.setLineDash([3, 4]); g.strokeStyle = "#FFA800";
-  g.beginPath(); g.moveTo(0, y(lastC)); g.lineTo(W - padR, y(lastC)); g.stroke();
-  g.setLineDash([]);
-  g.fillStyle = "#FFA800";
-  g.fillRect(W - padR + 2, y(lastC) - 9, padR - 4, 16);
-  g.fillStyle = "#000"; g.textAlign = "left";
-  g.fillText(lastC.toFixed(2), W - padR + 6, y(lastC) + 3);
-}
-
-// T157i — LIVE TICK: while the market is open and the panel is on
-// screen, poll the latest trade every 5s and update the FORMING bar
-// (close moves, high/low stretch, the amber tag follows). After the
-// close, candles legitimately stand still — the badge says so instead
-// of letting stillness read as a bug. Free REST feed, ~12 req/min.
-let liveTimer = null, marketOpen = null;
-
-function setLiveBadge() {
-  const b = document.getElementById("live-badge");
-  if (marketOpen === true) { b.textContent = "LIVE · 5s"; b.className = "pill ok"; }
-  else if (marketOpen === false) {
-    b.textContent = "market closed — candles resume at the open";
-    b.className = "pill";
-  } else { b.textContent = "checking market…"; b.className = "pill"; }
-}
-
-async function liveTick() {
-  if (document.hidden || !candleSym || !window._candleBars ||
-      !window._candleBars.length) return;
-  if (document.getElementById("view-overview").hidden) return;
-  try {
-    const r = await fetch(`/api/market/${candleSym}/latest`);
-    if (!r.ok) return;
-    const d = await r.json();
-    const wasOpen = marketOpen;
-    marketOpen = d.session ? !!d.session.market_open : null;
-    setLiveBadge();
-    if (marketOpen === false) return;      // nothing truthful to move
-    if (tvOn) return;                      // TradingView ticks its own chart
-    const price = (d.trade && d.trade.price);
-    if (!price) return;
-    const bars = window._candleBars, last = bars[bars.length - 1];
-    last.close = price;
-    if (price > last.high) last.high = price;
-    if (price < last.low) last.low = price;
-    drawCandles(bars);
-    document.getElementById("cndl-ohlc").innerHTML =
-      ` O <b>${last.open.toFixed(2)}</b> H <b>${last.high.toFixed(2)}</b>` +
-      ` L <b>${last.low.toFixed(2)}</b> C <b>${last.close.toFixed(2)}</b>`;
-    const rp = document.getElementById("rail-px");
-    rp.innerHTML = Number(price).toLocaleString("en-US",
-      { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "<small> USD</small>";
-    rp.style.color = "#FFA800";
-    setTimeout(() => { rp.style.color = ""; }, 400);
-    if (wasOpen === false && marketOpen === true) loadCandles(); // fresh open
-  } catch (_) { /* one missed tick is nothing */ }
-}
-liveTimer = setInterval(liveTick, 5000);
-
+// TF pill → TV interval: clicking a pill rebuilds the TV widget at the new interval
 document.getElementById("tf").addEventListener("click", (ev) => {
   const b = ev.target.closest(".tfp");
   if (!b) return;
   document.querySelectorAll(".tfp").forEach(x => x.classList.toggle("active", x === b));
   candleTF = b.dataset.tf;
-  loadCandles();
+  if (candleSym) setTVChart(candleSym, candleTF);
 });
 
+
 // D041 amended 2026-08-21 — TradingView widget API (new TradingView.widget).
-// tv.js loaded at bottom of <head>; scoped to #tvchart div only.
-// TF pill → TV interval map: 5m→5, D→D, 1Y→W, 5Y→M (weekly agg, stated on card).
+// tv.js loaded before </head>; scoped to #tvchart div only.
+// TF pill → TV interval map: 5m→5, D→D, 1Y→W, 5Y→M.
 const TF_TO_TV = { "5m": "5", "D": "D", "1Y": "W", "5Y": "M" };
-let tvOn = true, _tvWidget = null;
+let _tvWidget = null;
 
 function setTVChart(sym, tf) {
   const interval = TF_TO_TV[tf || candleTF] || "D";
   const container = document.getElementById("tvchart");
   container.innerHTML = ""; // clear previous widget
-  if (!tvOn) return;
   if (typeof TradingView === "undefined") {
-    // tv.js not yet loaded — retry once after 1s, then show fallback hint
+    // tv.js not yet loaded — retry once after 1s
     setTimeout(() => setTVChart(sym, tf), 1000);
     return;
   }
@@ -2096,26 +1839,16 @@ function setTVChart(sym, tf) {
   });
 }
 
-document.getElementById("tv-fallback").addEventListener("click", () => {
-  tvOn = !tvOn;
-  document.getElementById("tvwrap").hidden = !tvOn;
-  document.getElementById("cndl-body").hidden = tvOn;
-  document.getElementById("tv-fallback").textContent =
-    tvOn ? "chart not loading? use built-in" : "back to TradingView";
-  if (tvOn) setTVChart(candleSym); // rebuild widget when re-enabling
-  else loadCandles();              // built-in engine takes over, tick included
-});
-
 function setCandleSymbol() {
   const top = (window._positions || [])[0];
   const sym = top ? top.symbol : "SPY";
   if (sym !== candleSym) {
     candleSym = sym;
     setTVChart(sym);                       // primary: TradingView widget (D041)
-    if (!tvOn) loadCandles();              // fallback engine stays in sync
     document.getElementById("cndl-title").textContent = sym + " · Live";
   }
 }
+
 
 // ── T157h: the REAL calendar (month grid + event dots from /api/events) ──
 const calPop = document.getElementById("calpop");
@@ -2217,7 +1950,7 @@ loadPortfolio(); loadMonitor(); loadBench(true); loadRisk(); loadHousehold();
 // Portfolio + monitor poll every 60 s while the panel is visible.
 setInterval(() => {
   loadPortfolio(); loadMonitor(); loadBench(false); // bench self-throttles to 10 min
-  loadRisk(); loadHousehold(); loadTickers(); loadCandles();
+  loadRisk(); loadHousehold(); loadTickers();
 }, 60_000);
 </script>
 </body>
