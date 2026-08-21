@@ -374,6 +374,60 @@ def monitor(
         raise HTTPException(status_code=502, detail=f"{type(e).__name__}: {e}")
 
 
+@app.get("/api/household")
+def household(session=Depends(get_db_session)) -> dict:
+    """T157b (D039 Phase 9) — debts + payoff plans for the dashboard.
+    Manual-data recency rides every debt (stale after a statement cycle);
+    payoff numbers come from the tested T153 engine; an impossible plan is
+    SERVED as its named refusal, not hidden. Advisory arithmetic on
+    owner-stated balances — not tax or credit advice, and the payload says
+    so."""
+    from analysis.payoff import DebtSpec, PayoffImpossible, compare_strategies
+    from data.household import balance_is_stale, list_debts
+
+    try:
+        debts = list_debts(session)
+    except OperationalError:
+        raise HTTPException(
+            status_code=503,
+            detail="household tables not initialized — run: alembic -c "
+                   "backend/alembic.ini upgrade head")
+    rows = [{
+        "name": d.name, "kind": d.kind, "balance": d.balance,
+        "apr_frac": d.apr_frac, "min_payment": d.min_payment,
+        "credit_limit": d.credit_limit,
+        "utilization_frac": (round(d.balance / d.credit_limit, 4)
+                             if d.credit_limit else None),
+        "balance_asof": d.balance_asof,
+        "stale": balance_is_stale(d),
+    } for d in debts]
+    payoff: dict = {"available": False, "why": "no debts recorded"}
+    if rows:
+        specs = [DebtSpec(d.name, d.balance, d.apr_frac, d.min_payment)
+                 for d in debts]
+        try:
+            c = compare_strategies(specs)
+            payoff = {
+                "available": True,
+                "avalanche": asdict(c["avalanche"]),
+                "snowball": asdict(c["snowball"]),
+                "interest_saved_by_avalanche": c["interest_saved_by_avalanche"],
+                "months_difference": c["months_difference"],
+                "note": c["note"],
+            }
+        except PayoffImpossible as e:
+            payoff = {"available": False, "why": str(e)}
+    return {
+        "debts": rows,
+        "total_balance": round(sum(d.balance for d in debts), 2),
+        "any_stale": any(r["stale"] for r in rows),
+        "payoff": payoff,
+        "asof": datetime.now(timezone.utc).isoformat(),
+        "note": ("owner-stated balances; arithmetic, not tax or credit "
+                 "advice; stale = older than one statement cycle"),
+    }
+
+
 def get_fred_client(s: KuberaSettings = Depends(get_settings)):
     """Yield a FRED client, or 503 with an actionable message if unconfigured."""
     try:
