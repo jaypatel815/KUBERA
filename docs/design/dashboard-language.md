@@ -25,17 +25,28 @@ talking; big-number KPIs with small delta chips; charts as thin-line areas
 with gradient fills; navigation quiet and monochrome; the AI presence is a
 **docked companion**, not the centerpiece.
 
-## Tokens
-- Canvas: `#07070c` (page) / `#0d0d14` (card base) / `#12121c` (card hover)
-- Hairlines: `#1a1a24`; inset dividers `#14141c`
-- Text: `#e8e4d8` (primary) / `#c8c4b4` (values) / `#8a815f` (labels,
-  uppercase 10px tracked) / `#55503e` (fine print) / `#3a3830` (asof lines)
-- Accent — **KUBERA gold `#c9a227`**, kept from the Orb (brand continuity
-  beats the genre's neon lime; one accent, used sparingly: active states,
-  the "you" line in charts, the wordmark)
-- Semantics: gain `#5aaa88` · loss `#b07070` · watch `#a89050` ·
-  benchmark/neutral `#8b8fa3` — all pre-existing, unchanged
-- Radius 12px cards / 999px chips; card padding 14–16px
+## Tokens (v2, T157d — EXTRACTED from the owner's references)
+Round two of references was minable: **buck-net's tailwind.config.js**
+(github.com/jbrz0/buck-net — the shot the owner called "what I was looking
+for") gave its literal palette; ha-component-kit supplied the glass-card
+language; trading-vault the widget anatomy. The crypto-admin template page
+and the glasshome blog are client-rendered (empty fetch) — noted, not
+guessed at.
+
+- Field: `#05050F` base with fixed radial glows (purple `#7517F8` @16%,
+  blue `#007DF1` @13%, teal `#00F1E7` @7%) — glass needs light to refract
+- Glass cards: `rgba(20,20,43,0.55)` + `backdrop-filter: blur(14px)` +
+  border `rgba(146,146,193,0.16)` + inset top highlight; radius 14px
+- Solids: `#0D0D1E` (sidebar), translucent `rgba(13,13,30,0.72)` (topbar)
+- Text: `#EDEDF7` primary / `#C7C9E2` values / `#9292C1` labels /
+  `#5A5A89` muted / `#565677` asof lines  (buck-net's gray ramp)
+- Roles — one hue per JOB: **amber `#FFB524` = brand** (wordmark, orb idle,
+  active row, checkbox) · **teal `#00F1E7` = data** (the "you" chart line,
+  days lens, listening state) · **blue `#007DF1` = interaction** (focus,
+  utilization, budget-bar gradient start, speaking state) · purple
+  `#7517F8` = thinking state
+- Semantics: gain `#02C751` · loss `#F52C38` · watch `#FFB524` ·
+  stale `#FF5924` · benchmark/neutral `#5A5A89`
 - Type: system stack (no webfonts — no CDN, D039); KPI values 22–26px
   tabular; labels 10px uppercase +1px tracking
 
