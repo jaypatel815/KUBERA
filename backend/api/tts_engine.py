@@ -169,9 +169,45 @@ def reset_model_cache() -> None:
     _MODEL_CACHE = None
 
 
+def _known_voices(model) -> set[str] | None:
+    """The model's own voice list, or None when it can't be read — validation
+    is skipped rather than guessed when the attribute is missing or odd."""
+    v = getattr(model, "voices", None)
+    if v is None:
+        return None
+    try:
+        names = {str(x) for x in v}
+    except TypeError:
+        return None
+    return names or None
+
+
 def synthesize_local(text: str, voice: str | None = None, directory: Path | None = None) -> bytes:
-    """Speak `text` locally and return WAV bytes. Nothing leaves the machine."""
+    """Speak `text` locally and return WAV bytes. Nothing leaves the machine.
+
+    I039: the requested voice is validated against the model's OWN list before
+    kokoro sees it. The owner's .env carried `en-US-AndrewNeural` — an
+    edge-tts name from the pre-D024 era — and kokoro's assert turned that
+    cosmetic preference into a 500 that killed the speech loop mid-
+    conversation. Wrong voice name -> speak with the default and say so in
+    the log; only a voices file that lacks even the DEFAULT is a real
+    failure, and that one is named, not asserted."""
     model = _load_model(directory)
     chosen = (voice or os.environ.get("KUBERA_VOICE") or DEFAULT_LOCAL_VOICE).strip()
+    names = _known_voices(model)
+    if names is not None and chosen not in names:
+        why = ("an edge-tts name — the LOCAL engine (D024) speaks kokoro "
+               "voices" if "Neural" in chosen else
+               "not in this model's voices file")
+        if DEFAULT_LOCAL_VOICE not in names:
+            raise LocalVoiceUnavailable(
+                f"requested voice {chosen!r} is {why}, and the default "
+                f"{DEFAULT_LOCAL_VOICE!r} is missing from the voices file "
+                f"too — available: {', '.join(sorted(names)[:12])}")
+        log.warning(
+            "voice %r is %s — speaking with %r instead; set KUBERA_VOICE to "
+            "one of: %s", chosen, why, DEFAULT_LOCAL_VOICE,
+            ", ".join(sorted(names)[:8]))
+        chosen = DEFAULT_LOCAL_VOICE
     samples, rate = model.create(text, voice=chosen, speed=1.0, lang="en-us")
     return pcm16_wav_bytes(samples, rate)

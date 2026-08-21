@@ -68,7 +68,7 @@ def test_parity_flags_dead_documentation_and_missing_credentials():
              _spec("alpaca_paper", ["ALPACA_PAPER"], False)]
     findings = sc.check_parity(specs, {"ALPACA_PAPER", "GHOST_VAR"})
     text = " ".join(findings)
-    assert "GHOST_VAR" in text and "never reads it" in text
+    assert "GHOST_VAR" in text and "nothing reads it" in text
     assert "fmp_api_key" in text and "not documented" in text
 
 
@@ -96,3 +96,18 @@ def test_the_actual_repo_is_clean():
     commit that plants a key-shaped string, documents a ghost var, or adds
     an undocumented credential turns the test suite red."""
     assert sc.main([]) == 0
+
+
+def test_runtime_env_reads_count_as_documentable(tmp_path):
+    """I039 follow-through: KUBERA_VOICE is read via os.environ at call time
+    (settings-free on purpose — switchable without restart). Documenting it
+    must not be flagged as dead; a var NOBODY reads still is."""
+    d = tmp_path / "backend"
+    d.mkdir()
+    (d / "mod.py").write_text(
+        'import os\nV = os.environ.get("KUBERA_VOICE")\n'
+        'W = os.getenv("KUBERA_TTS_SERVER", "auto")\n', encoding="utf-8")
+    rt = sc.runtime_env_vars(d)
+    assert {"KUBERA_VOICE", "KUBERA_TTS_SERVER"} <= rt
+    findings = sc.check_parity([], {"KUBERA_VOICE", "TRULY_DEAD"}, rt)
+    assert len(findings) == 1 and "TRULY_DEAD" in findings[0]

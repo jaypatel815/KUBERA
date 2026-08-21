@@ -42,9 +42,10 @@ def _model_dir(tmp_path):
     return d
 
 
-def _fake_kokoro(samples, rate=24_000):
+def _fake_kokoro(samples, rate=24_000, voices=("af_heart", "am_adam", "bf_emma")):
     instance = MagicMock()
     instance.create.return_value = (samples, rate)
+    instance.voices = set(voices)  # I039: the real model exposes its voice list
     mod = types.ModuleType("kokoro_onnx")
     setattr(mod, "Kokoro", MagicMock(return_value=instance))
     return mod, instance
@@ -157,6 +158,40 @@ def test_model_is_loaded_once_and_cached(tmp_path, monkeypatch):
         tts_engine.synthesize_local("two")
 
     assert mod.Kokoro.call_count == 1
+
+
+def test_edge_voice_name_falls_back_to_default_not_a_500(tmp_path, monkeypatch):
+    """I039 — the owner's incident verbatim: KUBERA_VOICE held an edge-tts
+    name from the pre-D024 era; kokoro's assert turned it into a 500 that
+    killed speech mid-conversation. A wrong COSMETIC preference must never
+    cost the voice loop — speak with the default and say so in the log."""
+    monkeypatch.setenv("KUBERA_KOKORO_DIR", str(_model_dir(tmp_path)))
+    tts_engine.reset_model_cache()
+    mod, instance = _fake_kokoro([0.0, 0.5])
+    with patch.dict(sys.modules, {"kokoro_onnx": mod}):
+        wav = tts_engine.synthesize_local("hello", voice="en-US-AndrewNeural")
+    assert wav[:4] == b"RIFF"  # it SPOKE
+    assert instance.create.call_args.kwargs["voice"] == tts_engine.DEFAULT_LOCAL_VOICE
+
+
+def test_unknown_plain_voice_also_falls_back(tmp_path, monkeypatch):
+    monkeypatch.setenv("KUBERA_KOKORO_DIR", str(_model_dir(tmp_path)))
+    tts_engine.reset_model_cache()
+    mod, instance = _fake_kokoro([0.0])
+    with patch.dict(sys.modules, {"kokoro_onnx": mod}):
+        tts_engine.synthesize_local("hello", voice="af_tpyo")
+    assert instance.create.call_args.kwargs["voice"] == tts_engine.DEFAULT_LOCAL_VOICE
+
+
+def test_default_missing_from_voices_file_is_named_not_asserted(tmp_path, monkeypatch):
+    """A voices file without even the default is a real failure — it gets the
+    503-with-names path (LocalVoiceUnavailable), never kokoro's bare assert."""
+    monkeypatch.setenv("KUBERA_KOKORO_DIR", str(_model_dir(tmp_path)))
+    tts_engine.reset_model_cache()
+    mod, _ = _fake_kokoro([0.0], voices=("zz_odd",))
+    with patch.dict(sys.modules, {"kokoro_onnx": mod}):
+        with pytest.raises(tts_engine.LocalVoiceUnavailable, match="zz_odd"):
+            tts_engine.synthesize_local("hello", voice="en-US-AndrewNeural")
 
 
 def test_missing_model_raises_actionable_error(tmp_path, monkeypatch):

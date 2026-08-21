@@ -126,12 +126,33 @@ def example_vars(example_text: str) -> set[str]:
     return out
 
 
-def check_parity(specs, documented: set[str]) -> list[str]:
+_RUNTIME_READ = re.compile(
+    r"""os\.(?:environ\.get|getenv)\(\s*["']([A-Z][A-Z0-9_]*)["']""")
+
+
+def runtime_env_vars(backend_dir: Path | None = None) -> set[str]:
+    """Vars the app reads at RUNTIME through os.environ (I039: the voice
+    knobs — KUBERA_VOICE and friends — are deliberately settings-free so
+    they can change without a restart). Documenting one of these is not
+    dead documentation; the parity check must know they exist."""
+    d = backend_dir or (REPO_ROOT / "backend")
+    out: set[str] = set()
+    for f in d.rglob("*.py"):
+        if "__pycache__" in f.parts or "tests" in f.parts:
+            continue
+        out.update(_RUNTIME_READ.findall(f.read_text(encoding="utf-8")))
+    return out
+
+
+def check_parity(specs, documented: set[str],
+                 runtime_read: set[str] | None = None) -> list[str]:
     findings = []
     known = {env for _, envs, _ in specs for env in envs}
+    known |= runtime_read or set()
     for var in sorted(documented - known):
         findings.append(
-            f".env.example documents {var} but settings.py never reads it "
+            f".env.example documents {var} but nothing reads it (neither "
+            "settings.py nor a runtime os.environ read in backend/) "
             "— dead documentation misleads the owner")
     for name, envs, is_secret in specs:
         if is_secret and not (set(envs) & documented):
@@ -171,7 +192,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"CANNOT RUN: no {args.example}")
         return 2
     documented = example_vars(args.example.read_text(encoding="utf-8"))
-    findings += check_parity(specs, documented)
+    findings += check_parity(specs, documented, runtime_env_vars())
     findings += check_secretstr_floor(specs)
 
     if not findings:
