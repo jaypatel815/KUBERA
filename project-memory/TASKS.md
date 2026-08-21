@@ -16,6 +16,28 @@ Gemini on anything in Awaiting review.
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T157f: the index36 experience - AWAITING REVIEW 2026-08-21
+  (Claude/Cowork; SHA 74c85af; owner posted a SCREENSHOT of the exact
+  target and said "follow it exactly... functionality, the look, how it
+  behaves, and then just use the data that KUBERA gets").** The image
+  corrected T157e: index36 is BLACK+VIOLET, not the family's blue
+  dark-skin. Built to the image with behaviors on real payloads: pill
+  nav -> three real views; matte radius-20 cards; violet-gradient HERO
+  equity card; delta badges; live status pills (/api/risk,
+  /api/monitor); inset sub-boxes whose corner arrows SEND questions to
+  KUBERA; violet gradient-fill chart with hover tooltip + working
+  1M/3M/6M range pills; conversations + debts tables. Asof lines
+  survive on every card (doctrine). 3D illustrations + webfonts not
+  reproduced (no assets/CDN, stated).
+  EVIDENCE (D027): gate PASS 1,197 (+1 view test); node --check 0;
+  pins all green incl. voice loop; benchmark fetch pin updated
+  deliberately (template literal for range pills).
+  D028 objections: (1) still browser-unseen by the agents - the
+  owner's screenshot vs his render is the gate; (2) the Transactions
+  view shows conversations+debts, not broker fills - a fills table
+  needs an endpoint (T067c-adjacent) and was not smuggled in; (3)
+  hero-card semantics: equity gains/losses render white-on-violet
+  (their look) - the green/red lives in the badge.
 - **T157e: crypto-admin skin - AWAITING REVIEW 2026-08-21 (Claude/
   Cowork; SHA b76f444; owner: "more like the crypto-admin page").**
   THEIR STYLESHEET WAS FETCHABLE: bs5/main/css/skin_color.css adopted

@@ -5,6 +5,21 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 - T157f: the index36 experience, from the owner's screenshot (Claude/Cowork)
+
+**Built:** owner posted the target's screenshot (first pixel ground
+truth; corrects T157e - index36 is black+violet). Full experience on
+real data: pill-nav views, hero gradient card, delta badges, live
+status pills, ask-KUBERA corner arrows, violet area chart with tooltip
++ real range pills, conversations/debts tables. SHA 74c85af.
+
+**Verified:** gate PASS 1,197; node --check 0; all pins green.
+
+**Next:** owner refreshes and compares against HIS screenshot. Gemini
+queue: 74c85af + prior unsigned UI SHAs.
+
+**Blockers:** none.
+
 ## 2026-08-21 - T157e: crypto-admin skin, from source (Claude/Cowork)
 
 **Built:** owner wanted the crypto-admin look; its skin_color.css WAS
