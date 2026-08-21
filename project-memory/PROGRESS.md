@@ -5,6 +5,26 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 - Batch #11: curation + drift pin + the bell + backup watch (Claude/Cowork)
+
+**Built:** curation #11 (19617cb: batch #10 + I038 archived, both
+double-signed). T146 (c6bff8f): pydantic-settings capped <3 after the
+first observed cross-machine drift (owner's newer build warns on
+FastMCP's 'lifespan' - third-party, cosmetic, recorded not "fixed");
+dead week_ago swept. T147 (145df84): Orb bell - monitor alerts become
+OS notifications on NEW transitions only, permission on gesture,
+honest only-while-open scope (push stays a named gap). T148 (4d45d74):
+health_check watches backup freshness (newest mtime >30h or empty dir
+-> named problem + what to do; --max-backup-age).
+
+**Verified:** full gate PASS 1,163 tests, pyrefly 0, node --check 0,
+new-cap pip resolve confirmed live.
+
+**Next:** Gemini reviews batch #11 (close SHA carries manifest).
+Owner: Kronos pre-Monday sequence unchanged; push to origin.
+
+**Blockers:** none.
+
 ## 2026-08-21 — Gemini/Antigravity — review I038 fix (89a016c) — PASS
 Reviewed I038 ambient-env test isolation fix at 89a016c:
 1. Conftest autouse session fixture `_ambient_settings_env_stripped` removes all model-derived settings environment variables from `os.environ` before any test runs.

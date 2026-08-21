@@ -15,18 +15,47 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
-- **Batch #11 (5 units, probe-sized; claimed 2026-08-21, Claude/Cowork;
-  queue empty - I038 fix PASSed at d727e80, batch #10 PASSed at 43bb0e7):**
-  curation #11 (archive both signed blocks), T146 (cap pydantic-settings
-  <3 - first observed cross-machine drift: owner's newer version emits a
-  FastMCP 'lifespan' forward-ref warning our sandbox never sees; the
-  warning itself is third-party and cosmetic, the DRIFT is ours to stop;
-  + dead week_ago sweep in brief.py), T147 (Orb local alert
-  notifications: NEW-transition-only, permission on gesture, honest
-  only-while-open scope - PWA push stays a named gap), T148
-  (health_check check_backup: the restore drill proves a backup
-  restores, nothing watches that backups keep HAPPENING), close.
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **Batch #11: curation #11 + T146 + T147 + T148 - AWAITING REVIEW
+  2026-08-21 (Claude/Cowork; independent units, D038 sized). SHAs per
+  D033: 19617cb (curation #11) / c6bff8f (T146) / 145df84 (T147) /
+  4d45d74 (T148) / close SHA on this commit.**
+  CURATION #11 at 19617cb: batch #10 (PASS 43bb0e7) + I038 fix (PASS
+  d727e80) -> archive with verdicts; TASKS back to ~360 working lines.
+  T146 - DRIFT PIN at c6bff8f: owner's newer pydantic-settings emits a
+  FastMCP 'lifespan' forward-ref warning our sandbox never sees - the
+  warning is THIRD-PARTY and cosmetic (finding recorded, not "fixed"),
+  but unbounded version drift across three environments is how
+  I038-class surprises breed -> capped >=2.2,<3 with a reason comment,
+  matching mcp's and pyrefly's load-bearing pins; verified 2.15.0 still
+  installs under the cap. + weekly review's computed-then-discarded
+  week_ago removed.
+  T147 - THE BELL at 145df84 (Phase 5): monitor alerts become OS
+  notifications via the Notification API. Bell in the panel header;
+  permission requested on the click (a gesture, as browsers require);
+  fires only on NEW symbol+kind transitions, tracked EVERY poll so
+  enabling never bursts what is already on screen; persisting alert
+  notifies once, cleared-then-returned re-notifies; alerts only, watches
+  stay in-panel. Honest scope in the tooltip itself: only while the
+  panel is open, no push server - the PWA push gap stays NAMED.
+  T148 - BACKUP WATCH at 4d45d74: restore_check proves a backup
+  RESTORES; check_backup proves they keep HAPPENING - newest *.sqlite3
+  mtime >30h (or missing/empty backups/) -> named problem telling the
+  owner what to DO; wired into run_checks + --max-backup-age, so the
+  every-5-min toast covers it.
+  EVIDENCE (D027): full gate PASS - 1,163 passed (+5 from batch #10
+  close: 4 backup tests + 1 notification pin test... counted: test_ops
+  13->17, test_orb_panel +1), pyrefly exactly 0, budgets in bounds,
+  node --check on Orb JS exit 0, pip resolve under the new cap verified
+  live (2.15.0).
+  D028 objections: (1) check_backup trusts mtime - a touch(1) would fool
+  it; accepted, the threat model is "job stopped", not "job forged".
+  (2) T147 notification content includes the alert detail text - it
+  renders in the OS notification center; no account NUMBERS ride alerts
+  (they carry kind+detail prose), and the panel is local-only. (3) The
+  bell state does not persist across reloads (no localStorage by house
+  rule) - re-enabling is one click; stated here rather than silently
+  bolted on.
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.
