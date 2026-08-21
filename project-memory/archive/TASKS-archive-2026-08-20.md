@@ -1247,3 +1247,84 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
     concerns: none.
 
 
+
+## Curation #9 (2026-08-20) - T122d and Batch #8, double-signed (Gemini PASS at 89ca9cf and 4430e61, review 1d7892f), moved verbatim by Claude/Cowork (D031)
+
+- **T122d: accidental-restart guard - AWAITING REVIEW 2026-08-20
+  (Claude/Cowork; SHA 89ca9cf).** Observed LIVE minutes after attempt 1:
+  the owner correctly hit the out-of-window forecast refusal, then re-ran
+  `start` - only an argparse error on a wrong flag stopped attempt 2
+  being spent (the exact D028 objection recorded on T122b, now proven
+  real). `start` with attempts already used now REFUSES by name and
+  requires an explicit `--another-attempt` (the legitimate restart-after-
+  failure path). EVIDENCE: test proves the refusal spends NOTHING
+  (status still 1/3) and the flag records attempt 2; live-proven against
+  the real DB (guard refused, 1/3 intact). Gate PASS bare-exit (I035
+  rule). Both of the owner's error outputs were rails working: the
+  forecast refusal is paper-forward doing its job.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 89ca9cf — PASS
+    aligned: T122d (Accidental-restart guard) — protects attempt budget from unintentional re-runs of `start` subcommand.
+    checked:
+      - Read `scripts/kronos_run.py` & `backend/tests/test_kronos_runner.py`: verified that `start` refuses when attempts already spent unless explicit `--another-attempt` flag is supplied; refusal leaves budget count unchanged.
+      - Tested live: `kronos_run.py start --revision kronos-v1` refuses by name when attempt count is 1/3.
+    concerns: none.
+
+- **Batch #8: T134+T135 + hygiene#7 + briefs-refresh - AWAITING REVIEW
+  2026-08-20 (Claude/Cowork; probe-sized at 3+1: the probe SPLIT a
+  fourth ticket out of T134 when it found the evidence gap). SHAs per
+  D033: 3032c73 (T134+T135, shared seam) / 49bb5c8 (hygiene#7 + briefs)
+  / d6acfba (close) / 4430e61 (DELTA - review at THIS tip: a type
+  annotation fix the close commit sailed past via the pipe trap, now
+  ISSUE I035 with a one-line repro; the gate re-ran BARE and passed at
+  this SHA - the first close under the I035 rule).**
+  T135 (split from T134 by probe): tier/breaker HISTORY was not
+  persisted anywhere - the Sept-12 revisit would have arrived
+  evidence-less. risk_events table (migration c8e4f2a91d63, new single
+  head, live DB migrated) + data/risk_events.py with observation-based
+  recording wired into the brief's _risk_section (the risk ENGINE stays
+  a pure state machine - no DB coupling). DEDUPED: tier_change only on
+  level change (first row = starting tier), breaker_trip only on a new
+  reason - a trip observed by five brief runs is ONE event. Named
+  limitation: ts is observation time; the trip's own clock lives in the
+  recorded reason text.
+  T134: scripts/d021_evidence.py - the packet assembles EXACTLY the
+  three metrics D021 named: weekly DQS trend (same scorer as the brief,
+  so trend and weekly can never disagree), override rate from
+  compute_calibration over the journal (UNKNOWN when unmarked, never
+  zero), risk-event history with "recording began 2026-08-20" stated -
+  absence of earlier events is absence of RECORDING, not of incidents.
+  RECOMMENDS NOTHING: D021 is the owner's call; the packet makes it an
+  informed one.
+  HYGIENE #7 + BRIEFS at 49bb5c8: TASKS header replaced (was
+  recommending a build order shipped a week ago and reporting a fixed
+  CI incident as news) with the actual state (campaign sequence, D021
+  date + command, owner unlocks incl. PUSH - local is ~14 commits ahead
+  of origin); agent-briefs.md gains the doctrine-deltas card (pyrefly-
+  zero gate, D034-D038, two-strikes) and the safe-pairs table stops
+  recommending shipped tickets.
+  EVIDENCE (D027): test_risk_events.py 5 tests (tier dedupe incl.
+  change-back, breaker dedupe by reason, window bounds, thin-data
+  packet names EVERY gap, hand-built week windows + trip in the
+  packet); RAN LIVE: d021_evidence.py against the real DB (found 1
+  journaled decision, all gaps named, exit 0); migration proven on the
+  live DB (single head c8e4f2a91d63); full gate PASS at close.
+  D028 objections: (1) observation-based recording only records when a
+  BRIEF runs - a tier change between two brief runs that reverts is
+  invisible; acceptable because D021's question is about persistent
+  states, and instant-grade capture would need engine hooks this
+  deliberately avoids. (2) The SignalLog test fixture cost two strikes
+  (NOT NULL columns discovered one at a time) before the rule kicked in
+  and a working constructor was copied from test_attribution - the
+  two-strikes stop worked as written. (3) The packet counts the FIRST
+  tier row as an observation, not a change - stated in its output, but
+  a reviewer should check the wording lands.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 4430e61 (SHAs: 3032c73, 49bb5c8, d6acfba, 4430e61) — PASS
+    aligned: Batch #8 (D021 revisit evidence machinery + doc refresh) — T135 (`risk_events` observation recording & table), T134 (`scripts/d021_evidence.py` packet), and hygiene #7 + briefs refresh.
+    checked:
+      - Read `backend/alembic/versions/c8e4f2a91d63_t135_risk_events.py`, `backend/data/models.py`, `backend/data/risk_events.py`: verified `risk_events` table and observation-based deduplicated recording in brief's `_risk_section`. Single alembic head `c8e4f2a91d63`.
+      - Read `scripts/d021_evidence.py` & `backend/tests/test_risk_events.py`: verified 3-metric packet (weekly DQS trend, override rate, risk-event history with start date stated). 5 unit tests pass.
+      - Read `agent-briefs.md` & `TASKS.md` header: verified doc sync with current doctrines.
+      - Tested live: ran `python scripts/d021_evidence.py` against live DB (exit 0).
+      - Note on I035: type annotation fix at 4430e61 verified.
+    concerns: none.
+
