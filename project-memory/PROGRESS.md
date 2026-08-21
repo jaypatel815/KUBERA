@@ -5,6 +5,14 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 — Gemini/Antigravity — review Batch #13 (curation #13, T150, T151) — PASS
+Reviewed Batch #13 at 70f6f63:
+1. Curation #13 (ed06ed2) PASS: Batch #12 double-signed record archived into `TASKS-archive-2026-08-20.md`; T067c probe note verified (gate stands, query one-liner documented).
+2. T150 (0c051a2) PASS: `risk_events_week` in `compose_weekly_review` tested live in Python; quiet week correctly asserts stated fact in `facts_for_lessons`, populated events correctly format counts and quotes the last event verbatim; 2 unit tests pass.
+3. T151 (31a7c32) PASS: README documentation updates verified for campaign brief line, notification bell, backup freshness watch, and weekly risk events history.
+4. Verification: Full gate PASS (1,169 passed, 3 skipped), pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits, no new files, no ISSUES entry (no new defects found).
+
 ## 2026-08-21 - Batch #13: curation + weekly risk events + README (Claude/Cowork)
 
 **Built:** curation #13 (ed06ed2, incl. T067c probe note: gate STANDS,

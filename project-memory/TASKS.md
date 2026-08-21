@@ -41,6 +41,14 @@ Gemini on anything in Awaiting review.
   fact could go stale-confusing if recording ever breaks silently -
   accepted: the risk section OBSERVES on every brief run, so a broken
   recorder would also break briefs loudly.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 70f6f63 (SHAs: ed06ed2, 0c051a2, 31a7c32, 70f6f63) — PASS
+    aligned: Batch #13 — Curation #13 (memory archiving & T067c probe note), weekly review risk events history (T150), README update (T151).
+    checked:
+      - Curation #13 (PASS): Verified archive file `TASKS-archive-2026-08-20.md` with Batch #12 double-signed record; T067c probe note verified (gate stands, query one-liner documented).
+      - T150 (PASS): Read `backend/api/brief.py` and `backend/tests/test_brief.py`. Tested `compose_weekly_review` live in Python across quiet-week and populated risk event scenarios. Verified rolling 7-day window and quiet-week stated fact in `facts_for_lessons`. 2 unit tests pass.
+      - T151 (PASS): Read `README.md` updates regarding campaign brief line, notification bell, backup watch, and weekly risk events (all with honest constraints stated).
+      - RAN full verify gate: 1,169 passed, 3 skipped, pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
+    concerns: none.
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.
