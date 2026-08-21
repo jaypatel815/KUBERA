@@ -385,3 +385,37 @@ def test_morning_brief_carries_campaign_key(db):
     with alpaca, market:
         b = compose_morning_brief(db, alpaca, market)
     assert "research_campaign" in b  # None here (no attempts in fixture DB)
+
+
+# ---- T150: the week's risk events, surfaced in the weekly review ------------
+
+def test_weekly_risk_events_quiet_week_is_a_stated_fact(db):
+    _seed_day(db)
+    alpaca, market = clients(route())
+    with alpaca, market:
+        out = compose_weekly_review(db, alpaca, market)
+    rw = out["risk_events_week"]
+    assert rw["tier_changes"] == 0 and rw["breaker_trips"] == 0
+    assert rw["last_event"] is None
+    assert any("no risk events recorded this week" in f
+               for f in out["facts_for_lessons"])
+
+
+def test_weekly_risk_events_counts_and_quotes_the_last(db):
+    from datetime import datetime, timezone
+
+    from data.models import RiskEvent
+    _seed_day(db)
+    db.add(RiskEvent(ts=datetime.now(timezone.utc), kind="tier_change",
+                     detail="level=1 cautious (budget 27% consumed)"))
+    db.add(RiskEvent(ts=datetime.now(timezone.utc), kind="breaker_trip",
+                     detail="daily loss limit hit"))
+    db.commit()
+    alpaca, market = clients(route())
+    with alpaca, market:
+        out = compose_weekly_review(db, alpaca, market)
+    rw = out["risk_events_week"]
+    assert rw["tier_changes"] == 1 and rw["breaker_trips"] == 1
+    assert "daily loss limit hit" in rw["last_event"]
+    assert any("1 tier change(s), 1 breaker trip(s)" in f
+               for f in out["facts_for_lessons"])

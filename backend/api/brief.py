@@ -601,6 +601,30 @@ def compose_weekly_review(db: Session, alpaca: AlpacaClient,
         journal_calibration = {"available": False,
                                "why": f"{type(e).__name__}: {e}"}
 
+    # T150: the week's risk-event history (T135 recording), surfaced where the
+    # owner actually reads — the same trail the Sept-12 D021 revisit will cite.
+    # Counts + the last event verbatim; quiet week = a stated fact, not silence.
+    from data.risk_events import events_between
+    week_start = datetime.now(timezone.utc) - timedelta(days=7)
+    revents = events_between(db, week_start, datetime.now(timezone.utc))
+    tier_changes = [e for e in revents if e.kind == "tier_change"]
+    trips = [e for e in revents if e.kind == "breaker_trip"]
+    risk_events_week: dict = {
+        "tier_changes": len(tier_changes),
+        "breaker_trips": len(trips),
+        "last_event": (f"{revents[-1].ts:%Y-%m-%d} [{revents[-1].kind}] "
+                       f"{revents[-1].detail}") if revents else None,
+        "note": "recorded at observation time since 2026-08-20 (T135) — the "
+                "same history scripts/d021_evidence.py assembles",
+    }
+    if revents:
+        facts.append(f"risk events this week: {len(tier_changes)} tier "
+                     f"change(s), {len(trips)} breaker trip(s) — last: "
+                     f"{risk_events_week['last_event']}")
+    else:
+        facts.append("no risk events recorded this week — tiers and breaker "
+                     "stayed quiet (recording began 2026-08-20)")
+
     # T142: governance countdown — facts the narrator reads top-down, so the
     # reminder rides facts_for_lessons AND its own key (schedulers can key on it).
     governance_d021 = d021_countdown(market_today())
@@ -611,6 +635,7 @@ def compose_weekly_review(db: Session, alpaca: AlpacaClient,
         "type": "weekly",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "governance_d021": governance_d021,
+        "risk_events_week": risk_events_week,
         "performance": performance,
         "attribution": attribution,
         "journal_calibration": journal_calibration,
