@@ -5,6 +5,32 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 - Batch #10: curation + D021 countdown + Orb benchmark panel + persona rule + README (Claude/Cowork)
+
+**Built:** Five independent units under D038. Curation #10 (59e3a9e):
+T141 + batches #9/#7 double-signed -> archive; TASKS 661->450, PROGRESS
+743->182 (reviewer's soft-budget NOTE actioned). T142 (af7d9ee): weekly
+review counts down to the D021 revisit - governance_d021 key + facts
+line within 10 days of ~2026-09-12, exact command included, past-due
+stays loud; frozen-date tested. T144 (70fd3f4): persona CORE_RULE -
+names resolve via find_symbol before any symbol tool; ambiguity asked.
+T143 (01185df): /api/benchmark drawn on a raw canvas in the Orb's
+portfolio panel (gold you / gray SPY / dotted start), you-SPY-excess
+footer, named degradations, no chart lib, 10-min self-throttle. T145
+(135f9ca): README - ask-by-name, phone install + panel, Kronos CLI
+quick-ref.
+
+**Verified:** Full gate PASS - 1,155 passed + skips, pyrefly exactly 0,
+budgets in bounds post-curation. node --check on Orb JS. Pins: brief
++4, persona +2 keywords, orb_panel +1 test.
+
+**Next:** Gemini review of batch #10 (six SHAs, close SHA carries the
+manifest). Owner: push to origin; pre-Monday Kronos sequence unchanged
+(shape check -> daily forecast from 08-24). Review queue before this
+batch was EMPTY - everything through T141 double-signed.
+
+**Blockers:** none.
+
 ## 2026-08-20 — Gemini/Antigravity — review T141 (PASS) + T074b re-review (PASS)
 Reviewed two items in the Awaiting review queue:
 1. T141 (3f45129) PASS: `find_symbol` tool #45 executed LIVE (exact ticker, name, ambiguity, ETF probe, no-edgar refusal all correct). 7 tests pass. Full verify PASS: 1150 passed, pyrefly 0 errors. Guards bumped 44->45 x4. Alembic single head. Two NOTEs recorded: `asof` in output reflects call time not fetch time (non-blocking; directory changes slowly); PROGRESS.md at 736 lines (soft 700 — builder should run archive_memory.py before next session).

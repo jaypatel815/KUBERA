@@ -15,19 +15,52 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
-- **Batch #10 (5 units, probe-sized; claimed 2026-08-20, Claude/Cowork;
-  review queue is EMPTY - everything through T141 double-signed):**
-  curation #10 (archive the signed T141 / batch #9 / batch #7 records),
-  T142 (D021 countdown: within 10 days of the Sept-12 revisit the weekly
-  review prints the reminder + the evidence command - a packet nobody is
-  told to run arrives unread), T143 (Orb benchmark panel: /api/benchmark
-  probed - dates/portfolio_norm/benchmark_norm/metrics - rendered as an
-  inline no-CDN canvas chart; "am I beating the market" on the phone,
-  Phase 5 continues), T144 (persona CORE_RULES gains the find_symbol
-  resolution rule - resolve names deterministically, ambiguity is asked
-  not assumed), T145 (README delta: ask-by-company-name, phone install,
-  campaign quick-ref).
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **Batch #10: curation #10 + T142 + T143 + T144 + T145 - AWAITING
+  REVIEW 2026-08-21 (Claude/Cowork; independent units, D038 sized).
+  SHAs per D033: 59e3a9e (curation #10) / af7d9ee (T142) / 70fd3f4
+  (T144) / 01185df (T143) / 135f9ca (T145) / close SHA on this commit.**
+  CURATION #10 at 59e3a9e: T141 + batches #9/#7 (all double-signed,
+  incl. both re-queued BLOCK fixes) -> archive with full verdicts;
+  TASKS 661->450; archive_memory.py moved 31 PROGRESS entries
+  (743->182) - the reviewer's soft-budget NOTE acted on same-session.
+  T142 - D021 COUNTDOWN at af7d9ee: d021_evidence.py existed but
+  nothing told the owner to run it. Weekly review now carries
+  governance_d021 (always-present key + facts line) within 10 days of
+  ~2026-09-12 with the exact command; past-due stays loud and names its
+  own retirement (record the decision as a D-entry). Pure helper,
+  frozen-date tested: silent at 22 days out, speaks at 10/0, PAST at
+  -3, wiring test proves the fact line rides the payload.
+  T144 - PERSONA RESOLUTION RULE at 70fd3f4: T141 built the resolver;
+  the persona now carries the doctrine next to its I007 sibling -
+  company names resolve through find_symbol BEFORE any symbol tool
+  ("a ticker recalled from memory is a guess wearing a fact's
+  clothes"); candidates -> ask, never silently pick; no match -> say
+  so. Two keyword pins added to the guard test.
+  T143 - ORB BENCHMARK PANEL at 01185df (Phase 5 continues): /api/
+  benchmark drawn on a raw canvas in the portfolio panel - gold you,
+  gray SPY, dotted start line, footer you/SPY/excess + aligned days +
+  asof. No chart library (pinned: "cdn" appears nowhere in orb.html).
+  Named degradations (<2 aligned days -> "run scripts/sync.py daily";
+  escaped HTTP detail; server-down). Self-throttled to one fetch/10min
+  inside the 60s poll. node --check green; wiring pins updated + new
+  pin test.
+  T145 - README DELTA at 135f9ca: ask-by-company-name, phone install +
+  the new panel, Kronos CLI quick-ref with the one-consume rule.
+  EVIDENCE (D027): full gate PASS (ruff, pytest, budgets, pins,
+  pyrefly exactly 0); test deltas: test_brief 10->14, test_persona +2
+  keyword pins, test_orb_panel 2->3 (one pin updated for the 3-loader
+  open handler); node --check on extracted orb.html JS exit 0;
+  memory budgets --check exit 0 after curation.
+  D028 objections: (1) T142's constant hard-codes the revisit date -
+  deliberate: one date, one use; a config knob for a date that fires
+  once is ceremony (retirement path stated in the docstring). (2)
+  T143 draws with min/max scaling over both curves, so a huge SPY
+  move flattens the portfolio line visually - accepted: the footer
+  states the numbers; the chart is shape, not measurement. (3) T143
+  has no JS behavior test (repo has no JS rig) - the pins guard
+  wiring; rendering itself is owner field-tested, stated in the test
+  docstring.
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.
