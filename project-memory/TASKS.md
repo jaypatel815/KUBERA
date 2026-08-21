@@ -15,6 +15,15 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
+- In progress — Batch #16: T154 (budget/utilization engine) + T155 (household
+  chat tools + persona) + T156 (CSV spending import) + T158 (briefs household
+  sections) — Claude/Cowork 2026-08-21. PROBED before claim (D038): T157b's
+  endpoint computes utilization_frac inline (T154 centralizes + adds the 30%
+  line); registry at 45 tools, guard pins at test_tools:63/133, test_chat:69,
+  test_claude_sdk:143 (T155 bumps to 49); import_key idempotency ready in
+  log_spending (T156 builds on it); brief.py compose_* take db (T158 adds
+  sections). Also probed: the 7 vendored woff2 are 2 unique VARIABLE fonts
+  (fvar wght 100-700 / 300-900) — true bolds render; duplication harmless.
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T157j: TradingView chart (D041) + VIX + Buying Power - AWAITING
   REVIEW 2026-08-21 (Claude/Cowork; SHA e9f0960).** Owner's formal
