@@ -4,6 +4,7 @@ Run locally:  uvicorn --app-dir backend api.main:app --reload
 """
 
 import logging
+import re
 from contextlib import asynccontextmanager
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -118,6 +119,28 @@ def pwa_service_worker():
 @app.get("/icon.svg", include_in_schema=False)
 def pwa_icon():
     return _web_asset("icon.svg", "image/svg+xml")
+
+
+_FONT_NAME = re.compile(r"^[a-z0-9-]+\.woff2$")
+
+
+@app.get("/fonts/{name}", include_in_schema=False)
+def vendored_font(name: str):
+    """T157g — locally vendored reference typography (IBM Plex Sans + Rubik,
+    SIL OFL). Strict allowlist shape — no traversal, woff2 only. Absent files
+    404 with the one-time command; the UI falls back to the system stack."""
+    from pathlib import Path
+
+    from fastapi.responses import FileResponse, PlainTextResponse
+    if not _FONT_NAME.match(name):
+        return PlainTextResponse("not a font", status_code=404)
+    f = Path(__file__).resolve().parents[2] / "apps" / "web" / "fonts" / name
+    if not f.exists():
+        return PlainTextResponse(
+            "font not vendored yet — run once: python scripts/fetch_fonts.py "
+            "(SIL OFL licensed; ~300KB total)", status_code=404)
+    return FileResponse(f, media_type="font/woff2",
+                        headers={"Cache-Control": "public, max-age=604800"})
 
 
 class TTSRequest(BaseModel):

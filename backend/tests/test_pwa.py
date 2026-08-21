@@ -49,3 +49,21 @@ def test_service_worker_never_caches_money():
     # and the shell list contains only shell — no api, no portfolio
     shell_line = next(ln for ln in sw.splitlines() if ln.startswith("const SHELL ="))
     assert "/api" not in shell_line and "portfolio" not in shell_line
+
+
+# ---- T157g: vendored fonts route ---------------------------------------------
+
+def test_font_route_rejects_bad_names_and_hints_when_absent():
+    from fastapi.testclient import TestClient
+
+    from api.main import app
+    c = TestClient(app)
+    # traversal / wrong-shape names never touch the filesystem
+    assert c.get("/fonts/..%2Forb.html").status_code == 404
+    assert c.get("/fonts/evil.js").status_code == 404
+    # a valid-shaped name that is not vendored yet -> the one-time command
+    r = c.get("/fonts/rubik-700.woff2")
+    if r.status_code == 404:                      # not yet fetched (CI, sandbox)
+        assert "fetch_fonts" in r.text
+    else:                                          # owner machine, post-fetch
+        assert r.headers["content-type"].startswith("font/woff2")
