@@ -15,16 +15,43 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
-- **Batch #15 (coupled UI batch, D038; claimed 2026-08-21, Claude/Cowork):
-  T157a design language (owner sent six dribbble references; pages are
-  client-rendered so text-fetch is empty and his Chrome extension is not
-  connected - language derived from the genre + titles, provenance
-  STATED, owner's visual review is the acceptance gate) + T157b
-  /api/household + T157c dashboard v1 ("neat, not just an Orb" - the
-  page becomes the trading desk, conversation docks right, voice loop
-  untouched).**
-
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **Batch #15: T157a + T157b + T157c (dashboard v1) - AWAITING REVIEW
+  2026-08-21 (Claude/Cowork; coupled UI batch, D038). SHAs per D033:
+  df9c279 (T157a design language + T157b /api/household) / b9a3d56
+  (T157c dashboard). ALSO in queue: batch #14 at a608682 and I039 at
+  3ba7642 if not yet signed.**
+  T157a at df9c279: docs/design/dashboard-language.md - tokens, card
+  anatomy (label -> value -> chip -> ASOF, no exceptions), layout,
+  doctrine rules. PROVENANCE STATED PLAINLY: the owner's six dribbble
+  references are client-rendered (empty text-fetch) and his Chrome
+  extension was not connected - nobody pixel-inspected them; the
+  language is genre-derived and THE OWNER'S VISUAL REVIEW IS THE
+  ACCEPTANCE GATE, recorded in the doc itself.
+  T157b at df9c279: GET /api/household - debts + per-card utilization +
+  D039 staleness flags + payoff compare from the tested T153 engine;
+  impossible plans served as their named refusal; missing tables ->
+  named 503. 6 tests incl. money-never-cached for the new route.
+  T157c at b9a3d56: orb.html becomes the trading desk (owner's words:
+  "neat, and not just an Orb"; his one-surface call): topbar, 6-KPI row
+  (equity / day P&L / vs-SPY excess / risk tier + budget bar / DQS /
+  total debt), card grid (performance canvas, monitor + bell, household
+  payoff with "as you told me on DATE" stale rendering, positions),
+  conversation docked right with the orb CSS-scaled - the voice loop is
+  byte-identical and its pins stayed green untouched.
+  EVIDENCE (D027): full gate PASS - 1,196 passed (+7: household_api 6,
+  orb shell 1), pyrefly exactly 0, node --check exit 0 on the extracted
+  JS, no-CDN pin green, leftover-element scan clean (portPanel/btn-port
+  gone).
+  D028 objections: (1) NOBODY has SEEN this layout render - CSS is
+  structurally sound but untested visually; the acceptance gate is the
+  owner opening it (stated in T157a; v1 -> his corrections is the
+  designed loop, not a failure of it). (2) The dock is fixed 340px -
+  no responsive collapse for phone-width yet; the PWA still works but
+  the dashboard will crowd small screens; a media-query ticket earns
+  its place from his phone report. (3) KPI risk fetch adds an
+  /api/risk call per minute (alpaca account hit) - same cadence class
+  as the existing portfolio poll; acceptable, named.
 - **Batch #14: D039 + T152 + T153 - AWAITING REVIEW 2026-08-21
   (Claude/Cowork; Phase 9's coupled foundation, D038 4-6 rule). SHAs per
   D033: 534da08 (D039 + seeds) / 5a477fe (T152) / 1ac50b5 (T153) /

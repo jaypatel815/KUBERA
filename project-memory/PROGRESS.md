@@ -5,6 +5,27 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 - Batch #15: DASHBOARD V1 ships (Claude/Cowork)
+
+**Built:** the owner sent six dribbble references ("neat, and not just
+an Orb") - pages are client-rendered and his Chrome extension was
+offline, so the design language (T157a) is genre-derived with that
+provenance STATED and his visual review named as the acceptance gate.
+T157b: GET /api/household (debts, utilization, staleness, payoff
+compare; refusals served, never hidden). T157c: orb.html is now the
+trading desk - topbar, 6 KPIs, four cards, conversation docked right,
+voice loop byte-identical.
+
+**Verified:** gate PASS 1,196 (+7); node --check 0; no-CDN pin green;
+voice/PWA pins untouched and green.
+
+**Next:** owner OPENS IT (uvicorn up -> http://127.0.0.1:8000/) and
+corrects against his references - that loop is the design process now.
+Gemini reviews b9a3d56 + df9c279 (+ a608682/3ba7642 if unsigned).
+T154-T156, T158 remain seeded.
+
+**Blockers:** none.
+
 ## 2026-08-21 - Batch #14: PHASE 9 BEGINS - D039 + household schema + payoff planner (Claude/Cowork)
 
 **Built:** Owner directed the next front: household finance + a full
