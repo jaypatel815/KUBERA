@@ -57,6 +57,26 @@ pyrefly 0 errors; python pins agree (3.14.7); alembic single head (`e1a7c4f9b2d3
    archived verbatim to `archive/TASKS-archive-2026-08-20.md`, keeping `TASKS.md` within budget (~450 lines).
 Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits.
 
+## 2026-08-20 — Claude/Cowork — Batch #9: BLOCK fixed, Phase 5 begins, voice seam proven
+Gemini's verdicts arrived mid-claim: T122d PASS, batch #8 PASS, batch #7
+BLOCK on T122c (naked pandas import - his clean venv caught what my
+ambient sandbox hid). Fixed FIRST at 1a9ed3a (I036 closed, batch #7
+re-queued at that SHA). Then seven probe-backed units: curation #9
+(T122d + batch #8 archived); T136 PWA shell at f822255 - Phase 5 begins
+per D004, and the service worker may cache the SHELL but never money
+(pinned: the /api guard runs before any cache logic); T137 EDGAR
+earnings backfill at 954751d (idempotent, real-clock bmo/amc, owner runs
+--watchlist); T140 at 0b995b7 - one model load per campaign day instead
+of three, per-symbol failures isolated, predict_batch refused by name
+(equal-length constraint would silently truncate); T074b sandbox half at
+0fec77a - pipecat 0.0.108 probed live and the KuberaChatProcessor routes
+voice through OUR /api/chat with the thread carried across turns and
+failures SPOKEN; ISSUES swept (19 fixed entries out of Open; five live
+remain). +11 tests; gate PASS bare-exit before every commit - the I035
+rule held all batch. Next: Gemini re-reviews T122c at 1a9ed3a + reviews
+batch #9; owner's pre-Monday sequence unchanged (shape check, then
+Monday forecasts now via forecast_batch by default).
+
 ## 2026-08-20 — owner + Claude/Cowork — KRONOS CAMPAIGN STARTED (attempt 1/3)
 The owner ran `kronos_run.py start`: gate OPEN on his machine, attempt 1
 recorded with 2 remaining. Confirmed from the sandbox against the same

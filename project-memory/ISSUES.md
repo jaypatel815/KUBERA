@@ -4,13 +4,6 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
-- I036 [FIXED 2026-08-20 by 1a9ed3a — narrow ignore + incident comment] [was: FOUND 2026-08-20 — while reviewing Batch #7 / T122c] pyrefly reports
-  missing-import error on `scripts/kronos_adapter.py:50` (`import pandas as pd`)
-  because pandas is installed only in the owner's model venv, not KUBERA's root
-  venv. Unlike line 55 (`from model import ... # pyrefly: ignore`), line 50 lacks
-  the narrow ignore comment. REPRO: `python -m pyrefly check` from `backend/`
-  reports 1 error, failing the verify gate (`types (pyrefly = exactly 0)`).
-  FIX: add `# pyrefly: ignore` to line 50 with explanatory comment.
 - I035 [BEHAVIORAL, 2026-08-20 — three occurrences in ONE day, so it gets
   an entry, not another note] THE PIPE EATS THE EXIT CODE. Shell chains
   of the shape `checker | grep/tail/head ...; or && next-step` take the
@@ -24,6 +17,84 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   its own line, or `set -o pipefail` first; commit messages via -F file,
   never -m with backticks; the close commit runs ONLY after a bare-exit
   gate PASS. REPRO: `false | grep -c '' ; echo $?` prints 1 then 0.
+- I021 [BLOCKING T045 — the MCP server bypasses the confirmation gate] (2026-08-16)
+  DEMONSTRATED, not inferred: through the MCP server, with no confirmation step,
+  `update_ips` set max_drawdown_frac=0.99 and objectives="YOLO everything" on a
+  live row. Cause: `make_default_tool_context()` hardcodes `confirmed=True`, the
+  flag that tools.py:110 explicitly says must never be set from model output.
+  Four mutating tools are exposed (update_ips, record_decision, mark_decision,
+  update_watchlist) behind a docstring claiming read-only.
+  FIX: confirmed=False by default; read-only allowlist as the default
+  tool_filter; gated tools only via an explicit opt-in argument.
+- I022 [BLOCKING T045 — undeclared AND version-wrong dependency; CI is red]
+  `mcp` is in no requirements file and test_mcp_server.py imports it at module
+  scope, so a fresh checkout aborts collection — I016/I018 a third time.
+  ALSO: `pip install mcp` now resolves to 2.0.0, which has no
+  `mcp.server.fastmcp` module; that path only exists on 1.x (verified against
+  1.29.0). A fresh machine following the README cannot import the server at all.
+  FIX: pin `mcp>=1.29,<2` in a requirements file and guard the test with
+  `pytest.importorskip("mcp.server.fastmcp")`.
+- I015 [DIAGNOSTIC SHIPPED — needs owner's machine] — CORRECTION to the I014/D022
+  narrative: the owner's .env says LLM_PROVIDER=claude-sdk (verified 2026-08-14),
+  yet the timeout error was produced by the OpenAI-compat provider pointed at
+  local Ollama (OPENAI_BASE_URL=localhost:11434, nemotron). Claude wrongly
+  asserted "you were on openai" from the error string — the .env said otherwise.
+  Both facts are true simultaneously via one of two mechanisms: (a) a real OS
+  environment variable LLM_PROVIDER=openai overriding .env (pydantic-settings
+  precedence: env vars WIN — now pinned by test_brain_check.py), or (b) a stale
+  server process still running with the provider it started with. Shipped:
+  scripts/brain_check.py (intent vs resolution vs live server, secrets never
+  printed) + startup lifespan log announcing the brain + a loud PROVIDER
+  MISMATCH warning when .env intent differs from resolution. Owner: run
+  `python scripts/brain_check.py`, then restart the server from a clean shell
+  and confirm the startup line says llm_provider=claude-sdk. Logged 2026-08-14.
+- I005 [NEARLY CLOSED] — venv observed rebuilt on CPython 3.14.7 (python.org install
+  manager, `AppData\Local\Python\pythoncore-3.14-64`) on 2026-08-11. 3.14 is supported
+  (project floor is 3.10). Close this issue on the next local `python scripts\verify.py`
+  PASS. Original details below.
+- (was) I005 — Owner's machine: Python 3.11 was uninstalled/moved but the `py` launcher registry
+  and user PATH still point at `C:\Users\jaybe\AppData\Local\Programs\Python\Python311\`
+  ("Unable to create process… system cannot find the file"). The repo `.venv` is built on
+  that base and is therefore broken; this also caused the IDE interpreter-binding failures
+  (I004's config is correct but needs a healthy venv underneath).
+  Fix (owner or an Antigravity agent with terminal access):
+  1. `py -0p` — list actually-registered Pythons.
+  2. If a working 3.11+ exists: `py -3.X -m venv .venv --clear`. If not: install 3.11/3.12
+     from python.org ("Add python.exe to PATH" + py launcher checked) — overwrites the
+     orphaned registry entry.
+  3. `.venv\Scripts\activate` → `pip install -r backend\requirements.txt` →
+     `python scripts\verify.py` must PASS.
+  4. Remove dead `…\Python311\` entries from the user PATH; reload Antigravity and select
+     `.venv\Scripts\python.exe`.
+  Status: open — close when verify.py passes on a rebuilt venv. Logged 2026-08-11.
+  UPDATE (owner's `py -0p`, 2026-08-11): healthy installs exist — **3.10 at
+  `C:\Program Files\Python310\`** (use this: `py -3.10 -m venv .venv --clear`, activate,
+  reinstall requirements, verify), plus uv-managed 3.14.7 (legit, from prior project) and
+  Anaconda 3.9 (below our 3.10 floor — do not use). Only `3.11 *` is orphaned.
+  Cleanup for the orphan: delete stale `…\Python311\` user-PATH entries and the registry
+  key `HKCU\Software\Python\PythonCore\3.11`. Owner separately wants a fresh 3.12/3.13
+  **all-users** install (→ C:\Program Files) as their general Python — needs their UAC
+  click; after installing, rebuild the venv on it. This whole item is executable by an
+  Antigravity agent with terminal access except the UAC approval.
+  ONE-COMMAND FIX (2026-08-11): `scripts/repair_python.ps1` automates all of the above at
+  user level (no admin): picks newest healthy C:\Program Files\Python3xx, rebuilds .venv,
+  reinstalls deps, runs verify (must PASS), removes dead user-PATH entries, deletes the
+  orphaned HKCU 3.11 launcher key only after confirming its target is gone. Run:
+  `powershell -ExecutionPolicy Bypass -File scripts\repair_python.ps1` — safe to re-run
+  (auto-adopts newer Pythons installed later). Close this issue when it reports DONE.
+
+
+## Resolved
+
+### Swept from Open 2026-08-20 (batch #9 tidy - every entry below was already marked fixed in place; moved verbatim per the file's own convention)
+
+- I036 [FIXED 2026-08-20 by 1a9ed3a — narrow ignore + incident comment] [was: FOUND 2026-08-20 — while reviewing Batch #7 / T122c] pyrefly reports
+  missing-import error on `scripts/kronos_adapter.py:50` (`import pandas as pd`)
+  because pandas is installed only in the owner's model venv, not KUBERA's root
+  venv. Unlike line 55 (`from model import ... # pyrefly: ignore`), line 50 lacks
+  the narrow ignore comment. REPRO: `python -m pyrefly check` from `backend/`
+  reports 1 error, failing the verify gate (`types (pyrefly = exactly 0)`).
+  FIX: add `# pyrefly: ignore` to line 50 with explanatory comment.
 - I034 [FOUND AND FIXED same commit, 2026-08-20 — while wiring T121]
   The CHAT endpoint built per-turn optional clients (fred/fmp/edgar since
   T083b) and NEVER closed them — one leaked httpx socket per configured
@@ -249,23 +320,6 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   and would have silently broken tool execution. pyrefly: 0 errors, 13 MCP
   tests green, pyrefly.toml block records the history instead of
   overwriting it. The canary convention is now EXACTLY ZERO.
-- I021 [BLOCKING T045 — the MCP server bypasses the confirmation gate] (2026-08-16)
-  DEMONSTRATED, not inferred: through the MCP server, with no confirmation step,
-  `update_ips` set max_drawdown_frac=0.99 and objectives="YOLO everything" on a
-  live row. Cause: `make_default_tool_context()` hardcodes `confirmed=True`, the
-  flag that tools.py:110 explicitly says must never be set from model output.
-  Four mutating tools are exposed (update_ips, record_decision, mark_decision,
-  update_watchlist) behind a docstring claiming read-only.
-  FIX: confirmed=False by default; read-only allowlist as the default
-  tool_filter; gated tools only via an explicit opt-in argument.
-- I022 [BLOCKING T045 — undeclared AND version-wrong dependency; CI is red]
-  `mcp` is in no requirements file and test_mcp_server.py imports it at module
-  scope, so a fresh checkout aborts collection — I016/I018 a third time.
-  ALSO: `pip install mcp` now resolves to 2.0.0, which has no
-  `mcp.server.fastmcp` module; that path only exists on 1.x (verified against
-  1.29.0). A fresh machine following the README cannot import the server at all.
-  FIX: pin `mcp>=1.29,<2` in a requirements file and guard the test with
-  `pytest.importorskip("mcp.server.fastmcp")`.
 - I020 [FIXED 2026-08-16 in T105] the Schwab API import would have DROPPED most of the owner's trading
   FOUND by parsing his real confirmations (T102). His book is not what T016a
   assumed. Measured over 86 confirmations, Jan-Jun 2026:
@@ -405,20 +459,6 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   in chat.py — 3+ distinct underscore-bearing schema property names in a reply
   (when the user neither asked for fields nor used the jargon) → "⚠ Pacing check"
   footer + WARNING log. Owner transcript is a named test. Logged 2026-08-14.
-- I015 [DIAGNOSTIC SHIPPED — needs owner's machine] — CORRECTION to the I014/D022
-  narrative: the owner's .env says LLM_PROVIDER=claude-sdk (verified 2026-08-14),
-  yet the timeout error was produced by the OpenAI-compat provider pointed at
-  local Ollama (OPENAI_BASE_URL=localhost:11434, nemotron). Claude wrongly
-  asserted "you were on openai" from the error string — the .env said otherwise.
-  Both facts are true simultaneously via one of two mechanisms: (a) a real OS
-  environment variable LLM_PROVIDER=openai overriding .env (pydantic-settings
-  precedence: env vars WIN — now pinned by test_brain_check.py), or (b) a stale
-  server process still running with the provider it started with. Shipped:
-  scripts/brain_check.py (intent vs resolution vs live server, secrets never
-  printed) + startup lifespan log announcing the brain + a loud PROVIDER
-  MISMATCH warning when .env intent differs from resolution. Owner: run
-  `python scripts/brain_check.py`, then restart the server from a clean shell
-  and confirm the startup line says llm_provider=claude-sdk. Logged 2026-08-14.
 - I014 [FIXED — verify on owner machine] — the 19k-char IPS brief (I012 resend)
   died with raw "Network error calling openai: ReadTimeout('timed out')" shown to
   the owner (note: provider was openai/local at the time, not claude-sdk). Fixes:
@@ -440,42 +480,6 @@ Close entries by moving them to the bottom under "Resolved" with the fix commit.
   registry tool #25 + `GET /api/goal-math` (analysis/goal_math.py, hand-tested:
   10y needs 99.5%/yr; 1.02^252 ≈ 147x; $500/mo @10% reaches $1M in 29.6y).
   Owner: restart backend, resend the IPS message as-is. Logged 2026-08-14.
-- I005 [NEARLY CLOSED] — venv observed rebuilt on CPython 3.14.7 (python.org install
-  manager, `AppData\Local\Python\pythoncore-3.14-64`) on 2026-08-11. 3.14 is supported
-  (project floor is 3.10). Close this issue on the next local `python scripts\verify.py`
-  PASS. Original details below.
-- (was) I005 — Owner's machine: Python 3.11 was uninstalled/moved but the `py` launcher registry
-  and user PATH still point at `C:\Users\jaybe\AppData\Local\Programs\Python\Python311\`
-  ("Unable to create process… system cannot find the file"). The repo `.venv` is built on
-  that base and is therefore broken; this also caused the IDE interpreter-binding failures
-  (I004's config is correct but needs a healthy venv underneath).
-  Fix (owner or an Antigravity agent with terminal access):
-  1. `py -0p` — list actually-registered Pythons.
-  2. If a working 3.11+ exists: `py -3.X -m venv .venv --clear`. If not: install 3.11/3.12
-     from python.org ("Add python.exe to PATH" + py launcher checked) — overwrites the
-     orphaned registry entry.
-  3. `.venv\Scripts\activate` → `pip install -r backend\requirements.txt` →
-     `python scripts\verify.py` must PASS.
-  4. Remove dead `…\Python311\` entries from the user PATH; reload Antigravity and select
-     `.venv\Scripts\python.exe`.
-  Status: open — close when verify.py passes on a rebuilt venv. Logged 2026-08-11.
-  UPDATE (owner's `py -0p`, 2026-08-11): healthy installs exist — **3.10 at
-  `C:\Program Files\Python310\`** (use this: `py -3.10 -m venv .venv --clear`, activate,
-  reinstall requirements, verify), plus uv-managed 3.14.7 (legit, from prior project) and
-  Anaconda 3.9 (below our 3.10 floor — do not use). Only `3.11 *` is orphaned.
-  Cleanup for the orphan: delete stale `…\Python311\` user-PATH entries and the registry
-  key `HKCU\Software\Python\PythonCore\3.11`. Owner separately wants a fresh 3.12/3.13
-  **all-users** install (→ C:\Program Files) as their general Python — needs their UAC
-  click; after installing, rebuild the venv on it. This whole item is executable by an
-  Antigravity agent with terminal access except the UAC approval.
-  ONE-COMMAND FIX (2026-08-11): `scripts/repair_python.ps1` automates all of the above at
-  user level (no admin): picks newest healthy C:\Program Files\Python3xx, rebuilds .venv,
-  reinstalls deps, runs verify (must PASS), removes dead user-PATH entries, deletes the
-  orphaned HKCU 3.11 launcher key only after confirming its target is gone. Run:
-  `powershell -ExecutionPolicy Bypass -File scripts\repair_python.ps1` — safe to re-run
-  (auto-adopts newer Pythons installed later). Close this issue when it reports DONE.
-
-## Resolved
 - I006 — Voice loop spoke only the FIRST reply, then printed silently (owner report,
   2026-08-12). Root cause: pyttsx3's well-known Windows bug — `runAndWait()` works once
   per engine instance; subsequent calls are silently ignored. Fix: fresh engine per

@@ -15,24 +15,77 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
-- **Batch #9 (claimed 2026-08-20, Claude/Cowork; BLOCK-fix done first,
-  6 probe-backed tickets follow - owner asked for 8-10, probes yield
-  7 real units, D038 says never pad):** T122c-fix (DONE at 1a9ed3a),
-  curation #9 (batch #8 + T122d now double-signed - archive), T136
-  (PWA shell: manifest + service worker + registration - Phase 5
-  begins per D004's PWA decision, NOT the spec's Flutter line; probe:
-  orb.html has zero PWA plumbing today), T137 (earnings backfill:
-  EDGAR earnings_history is fetched per-call and persisted NOWHERE -
-  probe confirmed; script writes it into earnings_observed idempotent,
-  source-labeled, strengthening base rates + T116b caveats), T140
-  (kronos batch-forecast via the documented predict_batch: ONE model
-  load per day instead of three + fail-fast before any bars are
-  fetched), T074b-headless (probe: pip pipecat-ai; if it imports,
-  the /api/chat processor + fake-frame test; if it fights, a written
-  finding - either outcome closes the spike's sandbox half), ISSUES
-  tidy (I034 -> Resolved, I036 close).
-
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **Batch #9: T122c-fix + curation#9 + T136 + T137 + T140 +
+  T074b-headless + ISSUES-sweep - AWAITING REVIEW 2026-08-20
+  (Claude/Cowork; owner asked 8-10, probes yielded 7 real units + the
+  BLOCK-fix, D038 never pads). SHAs per D033: 1a9ed3a (T122c fix -
+  ALSO re-queues batch #7's blocked ticket at this SHA) / 8b3bb2f
+  (curation #9) / f822255 (T136) / 954751d (T137) / 0b995b7 (T140) /
+  0fec77a (T074b) / close SHA on this commit (ISSUES sweep + memory).**
+  T122c-FIX at 1a9ed3a: Gemini's clean venv caught the naked pandas
+  import my sandbox's ambient pandas hid - narrow ignore + incident
+  comment added (I036 closed); the environment-dependence lesson is in
+  the commit: a clean-checkout gate run (D027 #2) would have caught it
+  before review.
+  T136 - PWA SHELL at f822255 (Phase 5 BEGINS, per D004's PWA decision
+  not the spec's Flutter line - tension named): manifest + original SVG
+  icon + service worker + registration + routes. THE doctrine call: the
+  shell is cache-first, but /api/*, /portfolio and /health are
+  network-ONLY - a cached price is stale data presented as current.
+  Pinned by test: the money guard runs BEFORE any cache logic and the
+  shell list may never contain an API path. Owner field test: open the
+  Orb on the phone, the browser offers Install.
+  T137 - EARNINGS BACKFILL at 954751d: EDGAR history (years, real
+  acceptance clocks) was fetched per-call and persisted nowhere;
+  scripts/earnings_backfill.py derives bmo/amc/during from the REAL
+  clock (hand-checked incl. the 09:30 boundary; None when EDGAR omits),
+  upserts idempotently through the store's own semantics (second run
+  changes zero rows; FMP-enriched rows keep eps + provenance), names
+  failures per symbol. Owner: py scripts\earnings_backfill.py --watchlist.
+  Verification caught a wrong model-name guess (WatchlistEntry) before
+  ship.
+  T140 - ONE MODEL LOAD at 0b995b7: adapter splits _predictor (once) +
+  _one_symbol; forecast_batch runs all holdout symbols on one load
+  (three ~102M loads/day -> one) and a venv/config mistake surfaces on
+  the single call BEFORE any row logs. predict_batch deliberately NOT
+  used - its equal-length constraint would silently truncate; refusal
+  named in source and pinned by test. call_model_batch returns
+  (dists, named_errors) - a failed symbol never poisons neighbors,
+  proven via a BAD-symbol child through the real boundary. --func
+  defaults forecast_batch; shape check keeps the single path; adapter
+  121 lines, under the reviewability pin.
+  T074b (SANDBOX HALF) at 0fec77a: the probe held - pipecat 0.0.108
+  imports headless, API introspected LIVE (TranscriptionFrame fields,
+  process_frame/push_frame signatures). KuberaChatProcessor routes
+  utterances through OUR /api/chat (the hard part T074a named):
+  voice=True every turn, conversation id carried across turns, dead
+  server becomes a SPOKEN degradation ending "Nothing was decided or
+  placed." pipecat pinned in requirements-voice.txt ONLY; per-test
+  importorskip (I016); pipecat imports carry I036-class ignores
+  PROACTIVELY. Remaining owner-machine: audio transport, STT, kokoro,
+  latency + barge-in measurement.
+  ISSUES SWEEP (close commit): 19 already-fixed entries moved verbatim
+  from Open to Resolved; Open now holds exactly the five live ones
+  (I035 pipe rule, I021/I022 blocking caveats, I015 diagnostic, I005).
+  EVIDENCE (D027): +11 tests this batch (4 PWA incl. the
+  guard-before-cache order pin; 3 backfill incl. idempotency +
+  enrichment-survives; 4 batch-call incl. per-symbol isolation through
+  the real boundary; 3 voice seam) - all green; RAN LIVE: pipecat
+  install + introspection, node --check on sw.js, backfill no-args
+  refusal, full gate PASS bare-exit before every commit (I035 rule
+  held all batch).
+  D028 objections: (1) T136's PWA is installable but push delivery
+  remains the named gap (needs a push service; T062b's remainder
+  stands). (2) T140 changes forecast mechanics pre-window - legitimate
+  (no forecast exists; the frozen hash covers symbols/dates, not
+  plumbing) but a reviewer should confirm they agree. (3) The voice
+  seam tests call _chat_turn directly rather than through a full
+  pipecat pipeline - the pipeline harness needs a running loop and
+  audio frames; the seam contract is what the sandbox can honestly
+  pin. BATCH COUPLING NOTE (D038): T122c-fix + T140 both touch the
+  kronos files (sequential, one builder); everything else disjoint.
+
 - **Batch #7: T122c + T133 + curation #8 - AWAITING REVIEW 2026-08-20
   (Claude/Cowork; honestly sized at 3 - the backlog held no more
   unblocked work, and D038 says size is a target never a quota).
