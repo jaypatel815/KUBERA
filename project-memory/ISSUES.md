@@ -4,7 +4,7 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
-- I036 [FOUND 2026-08-20 — while reviewing Batch #7 / T122c] pyrefly reports
+- I036 [FIXED 2026-08-20 by 1a9ed3a — narrow ignore + incident comment] [was: FOUND 2026-08-20 — while reviewing Batch #7 / T122c] pyrefly reports
   missing-import error on `scripts/kronos_adapter.py:50` (`import pandas as pd`)
   because pandas is installed only in the owner's model venv, not KUBERA's root
   venv. Unlike line 55 (`from model import ... # pyrefly: ignore`), line 50 lacks

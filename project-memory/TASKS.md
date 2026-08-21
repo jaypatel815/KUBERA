@@ -15,6 +15,22 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
+- **Batch #9 (claimed 2026-08-20, Claude/Cowork; BLOCK-fix done first,
+  6 probe-backed tickets follow - owner asked for 8-10, probes yield
+  7 real units, D038 says never pad):** T122c-fix (DONE at 1a9ed3a),
+  curation #9 (batch #8 + T122d now double-signed - archive), T136
+  (PWA shell: manifest + service worker + registration - Phase 5
+  begins per D004's PWA decision, NOT the spec's Flutter line; probe:
+  orb.html has zero PWA plumbing today), T137 (earnings backfill:
+  EDGAR earnings_history is fetched per-call and persisted NOWHERE -
+  probe confirmed; script writes it into earnings_observed idempotent,
+  source-labeled, strengthening base rates + T116b caveats), T140
+  (kronos batch-forecast via the documented predict_batch: ONE model
+  load per day instead of three + fail-fast before any bars are
+  fetched), T074b-headless (probe: pip pipecat-ai; if it imports,
+  the /api/chat processor + fake-frame test; if it fights, a written
+  finding - either outcome closes the spike's sandbox half), ISSUES
+  tidy (I034 -> Resolved, I036 close).
 
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **T122d: accidental-restart guard - AWAITING REVIEW 2026-08-20
@@ -155,6 +171,10 @@ Gemini on anything in Awaiting review.
       - T122c (BLOCK - CRITICAL): Read `scripts/kronos_adapter.py`. Line 50 has unsuppressed `import pandas as pd`. Because `pandas` is not in KUBERA's root venv, running `python scripts/verify.py` or `python -m pyrefly check` from `backend/` fails with 1 error (`ERROR Cannot find module pandas [missing-import]`), failing the verify gate (`types (pyrefly = exactly 0)`).
     concerns:
       1. CRITICAL: `scripts/kronos_adapter.py:50` requires narrow `# pyrefly: ignore` with an explanatory comment (like line 55) so the type checker gate stays at exactly zero. Tracked in ISSUES.md as I036.
+  FIXED by builder at 1a9ed3a (2026-08-20): pandas import carries the
+  narrow ignore + incident comment; gate PASS bare-exit; I036 closed.
+  T122c RE-QUEUED for re-review AT 1a9ed3a (D033 - the old verdict
+  covers 1731adf and nothing after).
 
 
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
