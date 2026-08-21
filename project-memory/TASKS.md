@@ -15,6 +15,17 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
+- **T141 (symbol universe + find_symbol) - Claude/Cowork** - claimed
+  2026-08-20 on the owner's direction: "KUBERA shouldn't only focus on
+  specific symbols - it should have knowledge of every symbol in the
+  market." Probe findings: the data tools are ALREADY universal (any
+  symbol on demand), but ticker RESOLUTION relies on LLM memory - the
+  I007 wrong-symbol class. Fix: EdgarClient's already-fetched SEC
+  company_tickers.json (every US registrant: ticker/name/CIK, keyless)
+  becomes a directory; new deterministic find_symbol tool (#45) resolves
+  names -> tickers with scored candidates, a labeled live-quote probe
+  for ticker-shaped misses (ETFs/trusts absent from the SEC map), and
+  named refusals - never a guessed ticker. Guards 44->45; MCP +1.
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **Batch #9: T122c-fix + curation#9 + T136 + T137 + T140 +
   T074b-headless + ISSUES-sweep - AWAITING REVIEW 2026-08-20
@@ -85,6 +96,16 @@ Gemini on anything in Awaiting review.
   audio frames; the seam contract is what the sandbox can honestly
   pin. BATCH COUPLING NOTE (D038): T122c-fix + T140 both touch the
   kronos files (sequential, one builder); everything else disjoint.
+  REVIEWED 2026-08-20 by Gemini/Antigravity AT 752318c (SHAs: 1a9ed3a, 8b3bb2f, f822255, 954751d, 0b995b7, 0fec77a, 752318c) — BLOCK (CRITICAL on T074b, PASS on T136 / T137 / T140 / Curation #9 / ISSUES sweep)
+    aligned: Batch #9 — T122c-fix, PWA shell (T136), EDGAR earnings backfill (T137), one model load batching (T140), Pipecat voice chat seam (T074b), ISSUES sweep & curation #9.
+    checked:
+      - T136 (PASS): Read `apps/web/sw.js`, `manifest.json`, `orb.html`, `backend/tests/test_pwa.py`: verified cache-first shell with network-only money guard for `/api/*`, `/portfolio`, `/health`. 4 unit tests pass.
+      - T137 (PASS): Read `scripts/earnings_backfill.py`, `backend/tests/test_earnings_backfill.py`: verified EDGAR clock parsing (bmo/amc/during), idempotent store upsert, per-symbol error reporting. 3 unit tests pass.
+      - T140 (PASS): Read `scripts/kronos_adapter.py`, `backend/research/kronos_runner.py`, `backend/tests/test_kronos_runner.py`: verified `_predictor` singleton, `forecast_batch` execution, per-symbol failure isolation. 4 unit tests pass.
+      - Curation #9 & ISSUES sweep (PASS): Verified archive and issues cleanup.
+      - T074b (BLOCK - CRITICAL): Read `backend/tests/test_voice_pipeline.py`. Lines 63, 64, 92, 105 have unsuppressed `from pipecat...` imports without `# pyrefly: ignore`. Because `pipecat` is in `requirements-voice.txt` (optional, not installed in the standard environment where `scripts/verify.py` and `scripts/check_pyrefly.py` run), running `verify.py` fails with 4 errors (`ERROR Cannot find module pipecat... [missing-import]`), failing the verify gate (`types (pyrefly = exactly 0)`).
+    concerns:
+      1. CRITICAL: Add `# pyrefly: ignore` to `from pipecat...` import lines in `backend/tests/test_voice_pipeline.py` (lines 63, 64, 92, 105) so the type gate stays at exactly zero errors. Tracked as I037 in ISSUES.md.
 
 - **Batch #7: T122c + T133 + curation #8 - AWAITING REVIEW 2026-08-20
   (Claude/Cowork; honestly sized at 3 - the backlog held no more
@@ -150,6 +171,13 @@ Gemini on anything in Awaiting review.
   narrow ignore + incident comment; gate PASS bare-exit; I036 closed.
   T122c RE-QUEUED for re-review AT 1a9ed3a (D033 - the old verdict
   covers 1731adf and nothing after).
+  REVIEWED (re-review) 2026-08-20 by Gemini/Antigravity AT 1a9ed3a — PASS
+    aligned: T122c BLOCK resolution — narrow `# pyrefly: ignore` added to `scripts/kronos_adapter.py:50`.
+    checked:
+      - Read `scripts/kronos_adapter.py:50`: verified ignore comment and explanation; pandas error in pyrefly resolved.
+      - Shape check verified on owner's machine (`SHAPE CHECK: PASS`).
+    concerns: none.
+
 
 
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
