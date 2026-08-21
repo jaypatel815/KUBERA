@@ -25,7 +25,22 @@ talking; big-number KPIs with small delta chips; charts as thin-line areas
 with gradient fills; navigation quiet and monochrome; the AI presence is a
 **docked companion**, not the centerpiece.
 
-## Tokens (v2, T157d — EXTRACTED from the owner's references)
+## Tokens (v3, T157e — crypto-admin's skin_color.css owns the final word)
+The owner said "more like the crypto-admin page" — and this time its CSS was
+fetchable: `bs5/main/css/skin_color.css` gave the dark-skin palette verbatim.
+Field `#0c1a32`, surfaces `#112547`/`#162f5b`/`#1b3a70`/`#254f99`/`#2a5aad`,
+hairlines `rgba(255,255,255,0.12)`, text `#b5b5c3`/headings `#bdd1f8`/icons
+`#8cade4`/muted `#566f9e` — and THE accent is amber `#ffa800` (their skin even
+forces chart series to it: `.chart g [fill] {fill:#ffa800!important}`).
+Applied: blue-navy glass field with amber/blue glows; ramp mapped to
+`#E9EEF9`/`#BDD1F8`/`#8CADE4`/`#566F9E`/`#4C6390`; amber `#FFA800` = brand,
+watch, days lens, the "you" chart line, budget bar (`→#FFD166`); their link
+blue `#4F80D5` = interaction (focus, utilization, speaking state); orb states
+amber/light-blue/deep-blue/bright-blue. buck-net's greens/reds stay for
+gain/loss (`#02C751`/`#F52C38` — crypto-admin leaves semantics to Bootstrap).
+Their IBM Plex/Rubik webfonts are NOT adopted (no CDN, D039) — system stack.
+
+## Tokens (v2, T157d — superseded by v3 above, kept for the record)
 Round two of references was minable: **buck-net's tailwind.config.js**
 (github.com/jbrz0/buck-net — the shot the owner called "what I was looking
 for") gave its literal palette; ha-component-kit supplied the glass-card
