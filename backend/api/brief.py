@@ -18,6 +18,7 @@ Voice-ready: ask the Orb "give me my morning brief" — the chat layer calls the
 get_brief tool and narrates this structure per VOICE_STYLE.
 """
 
+from datetime import date as _date
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
@@ -44,6 +45,33 @@ from risk.tiers import current_tier
 from settings import get_settings
 
 PENDING_NOTES: list[str] = []  # T076b delivered the last standing note
+
+# T142: the D021 revisit (~2026-09-12) decides shorts/pairs/HRP on the
+# evidence scripts/d021_evidence.py assembles. The packet existed but
+# nothing TOLD the owner to run it — a reminder that lives inside the
+# weekly review he already reads. When the decision is recorded (a new
+# D-entry), the ticket that records it retires this constant.
+D021_REVISIT = _date(2026, 9, 12)
+D021_WINDOW_DAYS = 10
+
+
+def d021_countdown(today: _date) -> dict | None:
+    """None outside the window; inside it, a dated reminder + the command."""
+    days = (D021_REVISIT - today).days
+    if days > D021_WINDOW_DAYS:
+        return None
+    cmd = "python scripts/d021_evidence.py"
+    if days >= 0:
+        line = (f"governance: D021 revisit in {days} day(s) "
+                f"(~{D021_REVISIT.isoformat()}) — shorts/pairs/HRP get decided "
+                f"on evidence, not memory; run: {cmd}")
+    else:
+        line = (f"governance: D021 revisit is {-days} day(s) PAST "
+                f"(~{D021_REVISIT.isoformat()}) — run {cmd} and record the "
+                "decision as a new DECISIONS.md entry (which retires this "
+                "reminder)")
+    return {"revisit_date": D021_REVISIT.isoformat(),
+            "days_until": days, "line": line}
 
 
 def _risk_section(db: Session, equity: float) -> dict:
@@ -514,9 +542,16 @@ def compose_weekly_review(db: Session, alpaca: AlpacaClient,
         journal_calibration = {"available": False,
                                "why": f"{type(e).__name__}: {e}"}
 
+    # T142: governance countdown — facts the narrator reads top-down, so the
+    # reminder rides facts_for_lessons AND its own key (schedulers can key on it).
+    governance_d021 = d021_countdown(market_today())
+    if governance_d021 is not None:
+        facts.append(governance_d021["line"])
+
     return {
         "type": "weekly",
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "governance_d021": governance_d021,
         "performance": performance,
         "attribution": attribution,
         "journal_calibration": journal_calibration,

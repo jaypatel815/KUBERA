@@ -275,3 +275,48 @@ def test_weekly_attribution_degrades_without_fills(db):
         out = compose_weekly_review(db, alpaca, market)
     assert out["attribution"]["available"] is False
     assert "sync.py" in out["attribution"]["why"]
+
+
+# ---- T142: D021 governance countdown ---------------------------------------
+# Pure and frozen-date tested: the packet (d021_evidence.py) existed but the
+# weekly review never TOLD the owner to run it. Window = 10 days before the
+# ~2026-09-12 revisit; past-due stays visible until the decision is recorded.
+
+def test_d021_countdown_silent_outside_window():
+    from datetime import date
+
+    from api.brief import d021_countdown
+    assert d021_countdown(date(2026, 8, 21)) is None  # 22 days out
+
+
+def test_d021_countdown_speaks_inside_window():
+    from datetime import date
+
+    from api.brief import d021_countdown
+    out = d021_countdown(date(2026, 9, 2))  # exactly 10 days out
+    assert out is not None and out["days_until"] == 10
+    assert "scripts/d021_evidence.py" in out["line"]
+    on_day = d021_countdown(date(2026, 9, 12))
+    assert on_day is not None and on_day["days_until"] == 0
+
+
+def test_d021_countdown_past_due_stays_loud():
+    from datetime import date
+
+    from api.brief import d021_countdown
+    out = d021_countdown(date(2026, 9, 15))
+    assert out is not None and out["days_until"] == -3
+    assert "PAST" in out["line"] and "DECISIONS.md" in out["line"]
+
+
+def test_weekly_carries_governance_key(db):
+    # the key is always present (None outside the window) so schedulers can
+    # key on it without probing for existence
+    _seed_day(db)
+    alpaca, market = clients(route())
+    with alpaca, market:
+        out = compose_weekly_review(db, alpaca, market)
+    assert "governance_d021" in out
+    g = out["governance_d021"]
+    if g is not None:
+        assert any(g["line"] in f for f in out["facts_for_lessons"])
