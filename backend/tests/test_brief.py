@@ -320,3 +320,68 @@ def test_weekly_carries_governance_key(db):
     g = out["governance_d021"]
     if g is not None:
         assert any(g["line"] in f for f in out["facts_for_lessons"])
+
+
+# ---- T149: campaign section — counts and dates ONLY (T133 anti-peek) --------
+
+def _seed_campaign(db, attempts=1, forecast_dates=(), window=("2026-08-24", "2026-10-02")):
+    import json
+
+    from data.models import ExperimentBudget, HoldoutWindow, ResearchForecast
+    db.add(ExperimentBudget(revision="kronos-v1", max_attempts=3,
+                            attempts_json=json.dumps(
+                                [{"n": i + 1} for i in range(attempts)])))
+    db.add(HoldoutWindow(name="kronos-v1-fwd", symbols_json='["SPY"]',
+                         start=window[0], end=window[1],
+                         params_hash="abcd1234abcd1234", state="frozen"))
+    for d in forecast_dates:
+        db.add(ResearchForecast(revision="kronos-v1", symbol="SPY",
+                                forecast_date=d, basis_close=100.0,
+                                p05_frac=-0.01, p50_frac=0.0, p95_frac=0.01,
+                                up_odds=0.5, source_note="test fixture"))
+    db.commit()
+
+
+def test_campaign_section_silent_before_any_attempt(db):
+    from datetime import date
+
+    from api.brief import campaign_section
+    _seed_campaign(db, attempts=0)
+    assert campaign_section(db, date(2026, 8, 25)) is None
+
+
+def test_campaign_section_in_window_counts_and_nudges(db):
+    from datetime import date
+
+    from api.brief import campaign_section
+    _seed_campaign(db, attempts=1,
+                   forecast_dates=("2026-08-24", "2026-08-25"))
+    out = campaign_section(db, date(2026, 8, 25))
+    c = out["campaigns"][0]
+    assert c["attempts"] == "1/3" and c["forecast_days_logged"] == 2
+    assert c["days_remaining"] == (date(2026, 10, 2) - date(2026, 8, 25)).days
+    assert "nudge" not in c  # today's forecast IS logged
+    # anti-peek: no outcome-shaped fields ride the payload
+    assert not any(k for k in c if "return" in k or "coverage" in k or "pnl" in k)
+    # next morning with no new forecast: the nudge fires
+    c2 = campaign_section(db, date(2026, 8, 26))["campaigns"][0]
+    assert "coverage lost forever" in c2["nudge"]
+
+
+def test_campaign_section_pre_and_post_window_lines(db):
+    from datetime import date
+
+    from api.brief import campaign_section
+    _seed_campaign(db, attempts=1)
+    pre = campaign_section(db, date(2026, 8, 21))["campaigns"][0]
+    assert pre["status_line"] == "window opens 2026-08-24"
+    post = campaign_section(db, date(2026, 10, 5))["campaigns"][0]
+    assert "score --consume" in post["status_line"]
+
+
+def test_morning_brief_carries_campaign_key(db):
+    _seed_day(db)
+    alpaca, market = clients(route())
+    with alpaca, market:
+        b = compose_morning_brief(db, alpaca, market)
+    assert "research_campaign" in b  # None here (no attempts in fixture DB)

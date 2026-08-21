@@ -306,6 +306,65 @@ def _base_rates_summary(db: Session | None, market: MarketDataClient,
                 "why": f"base rates unavailable ({type(e).__name__})"}
 
 
+def campaign_section(db: Session, today: _date) -> dict | None:
+    """T149 — the research-campaign line for the morning brief: COUNTS AND
+    DATES ONLY (T133's anti-peek doctrine — outcomes stay sealed until
+    `score --consume`). Only campaigns whose budget has spent an attempt
+    appear; an unconfigured DB (tables not migrated) stays silent, because
+    a brief never dies for a research problem. The nudge exists because a
+    paper-forward day with no forecast logged is coverage lost FOREVER —
+    weekends stay quiet since `today` comes from market_today() (T111).
+    Window lookup joins budget revision -> holdout by name prefix
+    (kronos-v1 -> kronos-v1-fwd), stated here because it is a convention,
+    not a foreign key."""
+    import json as _json
+
+    from sqlalchemy.exc import OperationalError as _OpErr
+
+    from data.models import ExperimentBudget, HoldoutWindow, ResearchForecast
+    try:
+        budgets = db.execute(select(ExperimentBudget)).scalars().all()
+        holds = db.execute(select(HoldoutWindow)).scalars().all()
+        campaigns = []
+        for b in budgets:
+            used = len(_json.loads(b.attempts_json or "[]"))
+            if used == 0:
+                continue  # pre-registered but never started: nothing to report
+            rows = db.execute(select(ResearchForecast).where(
+                ResearchForecast.revision == b.revision)).scalars().all()
+            dates = sorted({r.forecast_date for r in rows})
+            entry: dict = {
+                "revision": b.revision,
+                "attempts": f"{used}/{b.max_attempts}",
+                "forecast_days_logged": len(dates),
+                "latest_forecast_date": dates[-1] if dates else None,
+                "anti_peek": "counts and dates only — outcomes stay sealed "
+                             "until score --consume (T133)",
+            }
+            hold = next((h for h in holds if h.name.startswith(b.revision)), None)
+            if hold is not None:
+                entry["window"] = {"start": hold.start, "end": hold.end,
+                                   "state": hold.state}
+                start = _date.fromisoformat(hold.start)
+                end = _date.fromisoformat(hold.end)
+                if today < start:
+                    entry["status_line"] = f"window opens {hold.start}"
+                elif today > end:
+                    entry["status_line"] = (f"window closed {hold.end} — one "
+                                            "evaluation remains: score --consume")
+                else:
+                    entry["days_remaining"] = (end - today).days
+                    if not dates or _date.fromisoformat(dates[-1]) < today:
+                        entry["nudge"] = (
+                            "no forecast logged for today's session — a missed "
+                            "paper-forward day is coverage lost forever "
+                            "(kronos_run.py forecast ...)")
+            campaigns.append(entry)
+        return {"campaigns": campaigns} if campaigns else None
+    except _OpErr:
+        return None  # research tables absent — silence, not a crash
+
+
 def compose_morning_brief(db: Session, alpaca: AlpacaClient,
                           market: MarketDataClient, fred=None, fmp=None) -> dict:
     acct = alpaca.get_account()
@@ -340,6 +399,8 @@ def compose_morning_brief(db: Session, alpaca: AlpacaClient,
         "watchlist": _watchlist_section(db, market),
         "event_risk": _events_section(fred),
         "earnings_risk": earnings,
+        # T149: None when no campaign has spent an attempt — key always present
+        "research_campaign": campaign_section(db, market_today()),
         "notes": PENDING_NOTES,
         "source": acct.source,
     }
