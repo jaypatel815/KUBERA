@@ -174,17 +174,12 @@ Gemini on anything in Awaiting review.
   owner's fills: REFUSED (D037).
 - [x] T122b - BUILT 2026-08-20, see Awaiting review at top (runner +
   migration + JSON seam + gated CLI; 14 tests; live DB migrated).
-- [ ] T122c - the Kronos ADAPTER (last piece before attempt one): a
-  self-contained kronos_adapter.py defining forecast(payload)->dict
-  {p05_frac,p50_frac,p95_frac,up_odds} that loads NeoQuasar/Kronos-base
-  and maps its output distribution to next-day return percentiles.
-  Runs ONLY on the owner's machine (model venv with torch; ~400MB
-  weights) through kronos_run.py's --model-file/--python seam. Agent
-  half: write the adapter + a shape-check script the owner runs before
-  `start`; owner half: create the model venv, download weights, run the
-  shape check. NOTE the D028 objection recorded on T122b: the adapter
-  executes with the model venv's full site-packages - keep it small
-  enough to READ before running it.
+- [x] T122c - BUILT 2026-08-20 (scripts/kronos_adapter.py, 121 lines,
+  30-path distribution with sample_count=1 per draw - the model's own
+  averaging parameter REFUSED; + kronos_shape_check.py; one-load
+  forecast_batch via T140), REVIEWED PASS by Gemini after the I036 fix
+  at 1a9ed3a (archive/TASKS-archive-2026-08-20.md, curations #9/#10).
+  Stale seed closed hygiene #8.
 - [x] T119 - BUILT 2026-08-20 (tool #44 get_thesis_view), REVIEWED PASS by
   Gemini (batch #4; archive/TASKS-archive-2026-08-20.md). Stale seed closed.
 - [x] T120 - BUILT 2026-08-20 (.claude-plugin + commands/, owner installed
@@ -209,7 +204,12 @@ Gemini on anything in Awaiting review.
   Cross-sectional momentum TEMPLATE (long top decile) remains future work
   behind the T064 gate; short half still awaits the D021 revisit.
 - [ ] T074 — Realtime conversation pipeline (the Zoey-latency upgrade): streaming STT + start-TTS-before-reply-completes + barge-in. FRAMEWORK DECIDED by T074a research (2026-08-19, docs/research/realtime-voice-2026-08-19.md): **Pipecat** — LocalAudioTransport/SmallWebRTC need NO media server (LiveKit's room/media-server design is wrong-shaped for one user on one desktop), KokoroTTSService is a documented service so D024's voice drops in, fully-local stacks hit sub-second in the wild, $0/min. OpenAI Realtime REJECTED on architecture (a speech-to-speech model replaces the brain — persona/rails/tool gates bypassed), not just cost ($0.05–0.46/min measured). No Anthropic speech-to-speech API exists (re-check at build). Build via T074b→T074c below.
-- [ ] T074b — Pipecat spike (probe-first, D030): LocalAudioTransport + faster-whisper (or whisper.cpp) STT + CUSTOM processor that calls OUR /api/chat (the hard part — voice-KUBERA must be the same KUBERA: context assembly, tool loop, rails) + existing kokoro TTS. Measure round-trip latency + interruption. Exit: a working persona conversation, or a written finding that the chat-endpoint processor fights the framework (then audio-half-only fallback gets its own ticket).
+- [~] T074b — SANDBOX HALF DONE 2026-08-20 (api/voice_pipeline.py:
+  KuberaChatProcessor routes TranscriptionFrame -> OUR /api/chat -> spoken
+  TextFrame, conversation_id carried, failures spoken not swallowed;
+  REVIEWED PASS after the I037 test-imports fix at e56c88b). REMAINING =
+  owner-machine half: LocalAudioTransport + STT + kokoro wiring, latency
+  + barge-in measurement (audio hardware cannot exist in the sandbox).
 - [ ] T074c — (after T074b) VAD/interruption tuning, latency vs push-to-talk, Orb mode switch (SmallWebRTCTransport if browser audio beats PyAudio). Push-to-talk stays as a permanent fallback mode.
 - [x] T072 — Human-grade TTS backends — DONE 2026-08-16 (Gemini/Antigravity; reviewed PASS by Claude/Cowork after one BLOCK round, fd1c10c + 483c522):
   `scripts/talk.py` `make_speaker()` now supports `KUBERA_TTS=openai` (OpenAI TTS API

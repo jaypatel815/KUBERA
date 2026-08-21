@@ -303,6 +303,19 @@ tool, smaller step) or park it in ISSUES.md with the evidence. Every silent
 half-applied edit this repo has suffered came from an agent retrying a failing
 replace instead of noticing it was failing.
 
+**THE ENVIRONMENT-PREMISE CLASS (I036 / I037 / I038 — three strikes, one
+lesson).** Three incidents in two days shared one root: a premise about the
+ENVIRONMENT that was assumed instead of enforced. I036: my sandbox had pandas
+ambiently, so a naked import passed here and BLOCKed in the reviewer's clean
+venv. I037: same class one file deeper (the tests were forgotten). I038: the
+owner's shell exported settings vars, so "empty settings" tests silently found
+config on his machine only. The rule: when a check passes HERE and fails
+THERE, suspect the environment before the code — and the fix is never a
+per-site patch, it is a MECHANISM that enforces the premise everywhere
+(narrow `# pyrefly: ignore` with the reason; the conftest env-strip fixture;
+version pins with reason comments). A truth that depends on which machine is
+asking is not yet a truth.
+
 ## Before you hand a ticket off: the self-check (D027)
 
 You are the last person who will look at this closely. Run these BEFORE marking
