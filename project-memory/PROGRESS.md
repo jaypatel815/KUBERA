@@ -5,6 +5,22 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 - T157i: real index levels + ticking candles (Claude/Cowork)
+
+**Built:** owner round two: /api/indices (Finnhub-live -> FRED-close ->
+named unavailable; ETF dollars banned as index levels, %% line labeled)
++ FinnhubClient.quote(); candle panel live-ticks the forming bar every
+5s while open, LIVE/CLOSED badge explains after-hours stillness. SHA
+ee6f011.
+
+**Verified:** gate PASS 1,206; node 0.
+
+**Next:** owner refreshes DURING MARKET HOURS to see the tick; first
+load shows which index rung his keys serve. Gemini queue: ee6f011 +
+T157h/g SHAs.
+
+**Blockers:** none.
+
 ## 2026-08-21 - T157h: owner feedback round + index37 additions (Claude/Cowork)
 
 **Built:** all 8 owner findings addressed with an approved plan first:

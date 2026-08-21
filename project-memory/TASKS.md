@@ -16,6 +16,22 @@ Gemini on anything in Awaiting review.
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T157i: real index levels + live-ticking candles - AWAITING REVIEW
+  2026-08-21 (Claude/Cowork; SHA ee6f011).** Owner's two findings:
+  index cards showed ETF dollars; candles read as static. Fixes:
+  /api/indices with a PER-INDEX named chain (Finnhub live ^DJI/^GSPC/
+  ^IXIC via new FinnhubClient.quote(), c=0 raised as refusal -> FRED
+  official close, dated -> named unavailable; ETF may supply the %%
+  line only, labeled; implied points derive from the LEVEL); candle
+  panel ticks the forming bar every 5s while the market is open +
+  LIVE/CLOSED badge that explains after-hours stillness (the owner
+  tested Friday night - stillness was TRUTH, now stated on-card).
+  EVIDENCE (D027): gate PASS 1,206 (+4 indices tests incl. the
+  never-ETF-dollars pin); node 0; visibility-gated 12 req/min.
+  D028 objections: (1) whether Finnhub free serves index quotes is
+  key-dependent - unverifiable from the sandbox; the chain degrades
+  named either way, owner's first load reveals the rung; (2) 5s tick
+  updates the FORMING bar only - completed bars never mutate.
 - **T157h: owner-feedback round (repairs + D040 + index37 row) -
   AWAITING REVIEW 2026-08-21 (Claude/Cowork; SHAs per D033: 77e15e3
   repairs+D040 / c7d74cb index37 row / 361b094 calendar+matrix+positions).**
