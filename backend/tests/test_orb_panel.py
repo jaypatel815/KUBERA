@@ -66,10 +66,25 @@ def test_dashboard_shell_and_household_card_are_wired():
     assert 'id="orb"' in text and 'id="typed"' in text
 
 
+def test_index36_views_and_behaviors_are_wired():
+    """T157f — the owner's screenshot, functional: three views on the pill
+    nav, status pills fed by real payloads, corner-arrows that ask KUBERA."""
+    text = ORB.read_text(encoding="utf-8")
+    for el in ('id="view-overview"', 'id="view-performance"', 'id="view-history"',
+               'id="risk-pill"', 'id="mon-pill"', 'id="conv-table"',
+               'id="debt-table"', 'id="bench-tip"', 'class="kpi hero"'):
+        assert el in text, f"missing {el}"
+    assert "showView(" in text
+    assert 'data-ask="explain my risk status"' in text  # arrows are REAL asks
+    assert "send(b.dataset.ask)" in text
+
+
 def test_benchmark_panel_is_wired():
     """T143 — performance vs SPY: /api/benchmark drawn inline, no chart lib."""
     text = ORB.read_text(encoding="utf-8")
-    assert 'fetch("/api/benchmark?days=90")' in text
+    # T157f: the range pills made days dynamic — the fetch is a template
+    assert "fetch(`/api/benchmark?days=${benchDays}`)" in text
+    assert 'data-days="30"' in text and 'data-days="180"' in text  # real ranges
     assert 'id="bench-chart"' in text and 'id="bench-foot"' in text
     assert "portfolio_norm" in text and "benchmark_norm" in text
     assert "excess" in text  # the honest number is displayed, not just curves

@@ -3,198 +3,274 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0c1a32">
+<meta name="theme-color" content="#050507">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <title>KUBERA</title>
 <style>
+  /* ══ T157f — the index36 look, built FROM THE OWNER'S SCREENSHOT ══
+     (his image is the first pixel ground truth: matte near-black cards,
+     radius 20, on pure black; VIOLET is the accent — gradients on the
+     hero card, active chart bar, buttons; green/red delta badges; inset
+     sub-boxes with corner arrows; pill nav in the top bar. Functionality
+     mapped to REAL KUBERA data; asof lines stay — doctrine.) */
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { height: 100%; color: #E9EEF9; overflow: hidden;
-    background: #0c1a32; }
+  html, body { height: 100%; color: #FFFFFF; overflow: hidden;
+    background: #050507;
+    font-family: "Segoe UI", Inter, -apple-system, system-ui, sans-serif; }
   body { background:
-      radial-gradient(900px 500px at 12% -8%, rgba(42,90,173,0.30), transparent 60%),
-      radial-gradient(1000px 600px at 105% 30%, rgba(37,79,153,0.22), transparent 60%),
-      radial-gradient(700px 500px at 55% 115%, rgba(255,168,0,0.06), transparent 60%),
-      #0c1a32;
-    font-family: "Segoe UI", -apple-system, system-ui, sans-serif; }
+      radial-gradient(700px 380px at 20% -10%, rgba(140,124,248,0.10), transparent 60%),
+      radial-gradient(900px 500px at 105% 15%, rgba(109,92,224,0.08), transparent 60%),
+      #050507; }
 
-  /* ══ T157c/T157d/T157e dashboard shell (docs/design/dashboard-language.md)
-     glass cards on crypto-admin's blue-navy — BOTH palettes extracted from
-     the owner's references (buck-net tailwind.config, then crypto-admin
-     skin_color.css which owns the final word): field #0c1a32, surfaces
-     #112547/#1b3a70, white-alpha hairlines, THE accent = their #ffa800
-     amber (they force it onto their charts too); asof on every card */
-  #topbar { position: fixed; top: 0; left: 0; right: 0; height: 46px; z-index: 300;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 14px; background: rgba(12,26,50,0.72); border-bottom: 1px solid rgba(255,255,255,0.10);
+  /* ── top bar: logo chip + pill nav + bell + user chip ── */
+  #topbar { position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 300;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 0 14px; background: rgba(8,8,11,0.85); border-bottom: 1px solid rgba(255,255,255,0.06);
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-  #wordmark { color: #FFA800; font-size: 15px; letter-spacing: 4px; font-weight: 600; }
-  #brand-sub { color: #566F9E; font-size: 10.5px; letter-spacing: 1px; margin-left: 10px;
-    text-transform: uppercase; }
-  #top-right { display: flex; align-items: center; gap: 10px; }
-  #top-date { color: #8CADE4; font-size: 11px; letter-spacing: 1px; }
-  #shell { position: fixed; inset: 46px 0 0 0; display: flex; flex-direction: row; }
+  #brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  #logo { width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+    background: linear-gradient(135deg, #A08BFC, #6D5BE2);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 15px; }
+  #wordmark { color: #FFFFFF; font-size: 14px; letter-spacing: 3px; font-weight: 600; }
+  #brand-sub { color: #5E5E6A; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+  #nav { display: flex; align-items: center; gap: 4px; background: #0D0D13;
+    border: 1px solid rgba(255,255,255,0.06); border-radius: 999px; padding: 4px; }
+  .navp { border: none; background: none; color: #8E8E9A; font-size: 12px;
+    padding: 7px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s, color 0.15s; }
+  .navp:hover { color: #E4E4EC; }
+  .navp.active { background: #1A1A22; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.07); }
+  #top-right { display: flex; align-items: center; gap: 8px; }
+  .iconbtn { width: 34px; height: 34px; border-radius: 999px; background: #0D0D13;
+    border: 1px solid rgba(255,255,255,0.07); color: #8E8E9A; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .iconbtn:hover { color: #FFFFFF; border-color: rgba(160,139,252,0.5); }
+  #btn-notify.on { color: #A99BFB; border-color: rgba(160,139,252,0.6); }
+  #userchip { display: flex; align-items: center; gap: 8px; background: #0D0D13;
+    border: 1px solid rgba(255,255,255,0.07); border-radius: 999px; padding: 4px 12px 4px 4px; }
+  #avatar { width: 26px; height: 26px; border-radius: 999px;
+    background: linear-gradient(135deg, #A08BFC, #6D5BE2); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  #uname { font-size: 11.5px; color: #E4E4EC; line-height: 1.1; }
+  #uname small { display: block; color: #5E5E6A; font-size: 9px; }
+  #top-date { color: #5E5E6A; font-size: 10.5px; letter-spacing: 0.5px; }
 
+  #shell { position: fixed; inset: 56px 0 0 0; display: flex; flex-direction: row; }
   #main { flex: 1; min-width: 0; overflow-y: auto; padding: 14px; }
   #main::-webkit-scrollbar { width: 4px; }
-  #main::-webkit-scrollbar-thumb { background: #254F99; border-radius: 3px; }
+  #main::-webkit-scrollbar-thumb { background: #26262E; border-radius: 3px; }
+  .view[hidden] { display: none; }
 
-  /* KPI row */
-  #kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px; margin-bottom: 12px; }
-  .kpi { background: rgba(17,37,71,0.55); border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 14px; padding: 12px 14px; min-height: 86px;
-    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    box-shadow: 0 8px 24px rgba(6,15,32,0.5), inset 0 1px 0 rgba(255,255,255,0.05); }
-  .kl { color: #8CADE4; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
-  .kv { color: #E9EEF9; font-size: 23px; font-weight: 600; margin-top: 4px;
+  /* ── stat cards (their Balance/Profit/Loss/Trade row) ── */
+  #kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px; margin-bottom: 12px; }
+  .kpi { background: #0D0D13; border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px; padding: 14px 16px; min-height: 108px; position: relative; }
+  .kpi.hero { background: linear-gradient(135deg, #8C7CF8 0%, #5B49C9 100%);
+    border-color: rgba(255,255,255,0.14); }
+  .kpi.hero .kl, .kpi.hero .kfoot { color: rgba(255,255,255,0.75); }
+  .kpi.hero .kv { color: #FFFFFF; }
+  .krow { display: flex; align-items: center; gap: 8px; }
+  .kic { width: 26px; height: 26px; border-radius: 8px; background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center;
+    justify-content: center; font-size: 12px; color: #C9BFFF; flex-shrink: 0; }
+  .kpi.hero .kic { background: rgba(255,255,255,0.18); color: #fff; }
+  .kl { color: #8E8E9A; font-size: 11px; letter-spacing: 0.4px; }
+  .kv { color: #FFFFFF; font-size: 24px; font-weight: 700; margin-top: 8px;
     font-variant-numeric: tabular-nums; }
-  .kv.pos { color: #02C751; } .kv.neg { color: #F52C38; }
-  .kfoot { color: #4C6390; font-size: 9.5px; margin-top: 5px; line-height: 1.4; }
-  .kbar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 999px; margin-top: 7px;
-    overflow: hidden; }
+  .kv.pos { color: #34C77B; } .kv.neg { color: #FF5063; }
+  .kpi.hero .kv.pos, .kpi.hero .kv.neg { color: #FFFFFF; }
+  .kb { display: inline-flex; align-items: center; gap: 4px; margin-top: 7px;
+    font-size: 10.5px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+  .kb.pos { color: #34C77B; background: rgba(52,199,123,0.12); }
+  .kb.neg { color: #FF5063; background: rgba(255,80,99,0.12); }
+  .kb.na  { color: #8E8E9A; background: rgba(255,255,255,0.06); }
+  .kpi.hero .kb { background: rgba(255,255,255,0.18); color: #fff; }
+  .kfoot { color: #5E5E6A; font-size: 9.5px; margin-top: 6px; line-height: 1.4; }
+  .kbar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 999px;
+    margin-top: 8px; overflow: hidden; }
   #kpi-budget-fill { height: 100%; width: 0%;
-    background: linear-gradient(90deg, #FFA800, #FFD166);
+    background: linear-gradient(90deg, #A08BFC, #6D5BE2);
     border-radius: 999px; transition: width 0.4s ease; }
 
-  /* cards grid */
-  #cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 10px; }
-  .card { background: rgba(17,37,71,0.55); border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 14px; padding: 12px 14px; min-width: 0;
-    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    box-shadow: 0 8px 24px rgba(6,15,32,0.5), inset 0 1px 0 rgba(255,255,255,0.05); }
-  .ch { display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 8px; }
-  .ct { color: #8CADE4; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+  /* ── cards + their inset sub-boxes + status pills ── */
+  #cards, .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px; }
+  .grid2 { margin-top: 12px; }
+  .card { background: #0D0D13; border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px; padding: 14px 16px; min-width: 0; }
+  .ch { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    margin-bottom: 10px; }
+  .ct { color: #E4E4EC; font-size: 12.5px; font-weight: 600; display: flex;
+    align-items: center; gap: 8px; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 10px;
+    padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.08);
+    color: #8E8E9A; background: rgba(255,255,255,0.04); white-space: nowrap; }
+  .pill::before { content: ""; width: 5px; height: 5px; border-radius: 999px;
+    background: #8E8E9A; }
+  .pill.ok  { color: #34C77B; } .pill.ok::before  { background: #34C77B; }
+  .pill.bad { color: #FF5063; } .pill.bad::before { background: #FF5063; }
+  .pill.vio { color: #A99BFB; } .pill.vio::before { background: #A99BFB; }
+  .inset { background: #15151C; border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px; padding: 9px 11px; margin-top: 8px; position: relative; }
+  .inset .il { color: #8E8E9A; font-size: 9.5px; letter-spacing: 0.3px; }
+  .inset .iv { color: #FFFFFF; font-size: 13.5px; font-weight: 600; margin-top: 2px;
+    font-variant-numeric: tabular-nums; }
+  .go { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px;
+    border-radius: 7px; border: 1px solid rgba(255,255,255,0.08); background: #0D0D13;
+    color: #8E8E9A; cursor: pointer; font-size: 11px; line-height: 1; }
+  .go:hover { color: #A99BFB; border-color: rgba(160,139,252,0.5); }
 
-  /* conversation dock (right) — the orb as companion, voice loop untouched */
+  /* monitor + household lines inside cards */
+  .mon-row  { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .mon-sym  { color: #FFFFFF; font-size: 12px; font-weight: 600; }
+  .mon-days { color: #A99BFB; font-size: 10.5px; line-height: 1.45; margin: 2px 0; }
+  .mon-line { color: #8E8E9A; font-size: 10px; line-height: 1.45; }
+  .mon-alert { color: #FF5063; font-size: 10.5px; }
+  .mon-watch { color: #FFB524; font-size: 10.5px; }
+  .mon-quiet { color: #34C77B; font-size: 10px; }
+  #mon-foot { font-size: 9.5px; color: #5E5E6A; margin-top: 8px; line-height: 1.5; }
+  .house-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .house-name { color: #FFFFFF; font-size: 12px; font-weight: 600; }
+  .house-num  { font-size: 10.5px; color: #8E8E9A; font-variant-numeric: tabular-nums; }
+  .house-stale { color: #FF7A45; }
+  .util-bar { height: 3px; background: rgba(255,255,255,0.07); border-radius: 999px;
+    overflow: hidden; margin-top: 6px; }
+  .util-fill { height: 100%; background: #8C7CF8; border-radius: 999px; }
+  .util-hot  { background: #FF5063; }
+
+  /* chart card */
+  #range { display: flex; gap: 4px; }
+  .rp { border: 1px solid rgba(255,255,255,0.07); background: #15151C; color: #8E8E9A;
+    font-size: 10.5px; border-radius: 999px; padding: 4px 11px; cursor: pointer; }
+  .rp.active { background: linear-gradient(135deg, #A08BFC, #6D5BE2); color: #fff;
+    border-color: transparent; }
+  #chartwrap { position: relative; }
+  #bench-chart { display: block; width: 100%; }
+  #bench-tip { position: absolute; display: none; pointer-events: none;
+    background: #1A1A22; border: 1px solid rgba(160,139,252,0.5); color: #E4E4EC;
+    font-size: 10.5px; padding: 4px 9px; border-radius: 8px; white-space: nowrap;
+    transform: translate(-50%, -130%); }
+  .bench-you { color: #A99BFB; }
+  .bench-spy { color: #8E8E9A; }
+  #bench-foot { font-size: 10px; line-height: 1.5; margin-top: 4px; }
+
+  /* purple gradient panel (their Trading Overview) */
+  .vpanel { background: linear-gradient(160deg, rgba(140,124,248,0.35), rgba(91,73,201,0.18));
+    border: 1px solid rgba(160,139,252,0.35); border-radius: 20px; padding: 14px 16px; }
+  .vrow { display: flex; align-items: center; justify-content: space-between;
+    background: rgba(13,13,19,0.5); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px; padding: 9px 12px; margin-top: 8px; }
+  .vrow .vl { color: #E4E4EC; font-size: 11.5px; display: flex; align-items: center; gap: 8px; }
+  .vrow .vv { color: #FFFFFF; font-size: 13px; font-weight: 700;
+    font-variant-numeric: tabular-nums; }
+
+  /* history tables (their Trading History / Billing) */
+  table.t { width: 100%; border-collapse: collapse; }
+  table.t th { color: #8E8E9A; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.5px; text-align: left; padding: 8px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.07); }
+  table.t td { color: #E4E4EC; font-size: 11.5px; padding: 9px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.05); font-variant-numeric: tabular-nums; }
+  td.pos { color: #34C77B; } td.neg { color: #FF5063; }
+
+  /* ── conversation dock ── */
   #dock { width: 340px; flex-shrink: 0; display: flex; flex-direction: column;
-    background: rgba(12,26,50,0.60); border-left: 1px solid rgba(255,255,255,0.10);
+    background: rgba(8,8,11,0.8); border-left: 1px solid rgba(255,255,255,0.06);
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); padding: 10px 12px; }
-  #hint { text-align: center; font-size: 10.5px; color: #566F9E; letter-spacing: 0.6px;
+  #hint { text-align: center; font-size: 10.5px; color: #5E5E6A; letter-spacing: 0.6px;
     padding: 2px 0 6px; transition: color 0.3s; }
   #stage { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
-  #orb { cursor: pointer; width: 170px; height: 170px; } /* canvas draws 520², CSS scales */
+  #orb { cursor: pointer; width: 170px; height: 170px; }
   #status { margin-top: 2px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
-    color: #8CADE4; user-select: none; text-align: center; }
+    color: #8E8E9A; user-select: none; text-align: center; }
   #log { flex: 1; overflow-y: auto; font-size: 13px; line-height: 1.5; margin: 8px 0;
     -webkit-mask-image: linear-gradient(transparent, black 12%);
     mask-image: linear-gradient(transparent, black 12%); }
   #log::-webkit-scrollbar { width: 3px; }
-  #log::-webkit-scrollbar-thumb { background: #254F99; border-radius: 3px; }
-
-  /* ── sidebar (left, toggle) ── */
-  #sidebar { width: 0; overflow: hidden; transition: width 0.22s ease;
-    display: flex; flex-direction: column; background: #0c1a32;
-    border-right: 1px solid rgba(255,255,255,0.12); flex-shrink: 0; }
-  #sidebar.open { width: 240px; }
-  #sidebar-hdr { display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.12); flex-shrink: 0; }
-  #sidebar-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #8CADE4; }
-  #btn-new { font-size: 11px; color: #FFA800; cursor: pointer; letter-spacing: 1px;
-    background: none; border: none; padding: 2px 6px; border-radius: 4px; }
-  #btn-new:hover { background: rgba(255,168,0,0.10); }
-  #sidebar-list { flex: 1; overflow-y: auto; padding: 6px 0; }
-  #sidebar-list::-webkit-scrollbar { width: 3px; }
-  #sidebar-list::-webkit-scrollbar-thumb { background: #254F99; border-radius: 3px; }
-  .srow { padding: 9px 12px; cursor: pointer; border-left: 3px solid transparent;
-    transition: background 0.12s; }
-  .srow:hover { background: rgba(255,255,255,0.06); }
-  .srow.active { border-left-color: #FFA800; background: rgba(79,128,213,0.12); }
-  .srow-snip { font-size: 12px; color: #BDD1F8; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
-  .srow-meta { font-size: 10px; color: #566F9E; margin-top: 3px; letter-spacing: 0.4px; }
-
+  #log::-webkit-scrollbar-thumb { background: #26262E; border-radius: 3px; }
   .turn { margin: 10px 0; }
-  .you { color: #8CADE4; }
-  .kub { color: #FFC966; }
+  .you { color: #A99BFB; }
+  .kub { color: #E4E4EC; }
   .chips { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 5px; }
-  /* base chip */
-  .chip { display: inline-block; font-size: 10.5px; letter-spacing: 1px; color: #8CADE4;
-    border: 1px solid #2F4B7E; border-radius: 999px; padding: 1px 9px; }
-  /* freshness chip variants (T036b / T082) */
-  .chip-live  { border-color: #0E6B4A; color: #02C751; }
-  .chip-last  { border-color: rgba(79,128,213,0.55); color: #C9A96B; }
-  .chip-stale { border-color: #8A3A1E; color: #FF5924; }
-  .chip-old   { border-color: #7A2430; color: #E0616A; }
-
+  .chip { display: inline-block; font-size: 10.5px; letter-spacing: 1px; color: #8E8E9A;
+    border: 1px solid #2A2A34; border-radius: 999px; padding: 1px 9px; }
+  .chip-live  { border-color: #1C6B45; color: #34C77B; }
+  .chip-last  { border-color: rgba(160,139,252,0.5); color: #C9BFFF; }
+  .chip-stale { border-color: #8A3A1E; color: #FF7A45; }
+  .chip-old   { border-color: #7A2430; color: #FF5063; }
   #bar { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
-  #typed { flex: 1; background: rgba(27,58,112,0.45); border: 1px solid rgba(255,255,255,0.16); border-radius: 10px;
-    color: #E9EEF9; padding: 9px 12px; font-size: 13px; outline: none; min-width: 0; }
-  #typed:focus { border-color: #4F80D5; }
-  label.cf { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: #8CADE4;
+  #typed { flex: 1; background: #0D0D13; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px; color: #FFFFFF; padding: 9px 14px; font-size: 13px;
+    outline: none; min-width: 0; }
+  #typed:focus { border-color: #8C7CF8; }
+  label.cf { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: #8E8E9A;
     user-select: none; white-space: nowrap; }
-  input[type=checkbox] { accent-color: #FFA800; }
-  #err { text-align: center; font-size: 10.5px; color: #F52C38; min-height: 15px;
+  input[type=checkbox] { accent-color: #8C7CF8; }
+  #err { text-align: center; font-size: 10.5px; color: #FF5063; min-height: 15px;
     padding-top: 3px; flex-shrink: 0; }
 
-  /* shared value styles (KPIs + positions card) */
-  .pl  { color: #8CADE4; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  /* ── history sidebar (drawer) ── */
+  #sidebar { width: 0; overflow: hidden; transition: width 0.22s ease;
+    display: flex; flex-direction: column; background: #0A0A0E;
+    border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
+  #sidebar.open { width: 240px; }
+  #sidebar-hdr { display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
+  #sidebar-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #8E8E9A; }
+  #btn-new { font-size: 11px; color: #A99BFB; cursor: pointer; letter-spacing: 1px;
+    background: none; border: none; padding: 2px 6px; border-radius: 4px; }
+  #btn-new:hover { background: rgba(140,124,248,0.12); }
+  #sidebar-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+  #sidebar-list::-webkit-scrollbar { width: 3px; }
+  #sidebar-list::-webkit-scrollbar-thumb { background: #26262E; border-radius: 3px; }
+  .srow { padding: 9px 12px; cursor: pointer; border-left: 3px solid transparent;
+    transition: background 0.12s; }
+  .srow:hover { background: rgba(255,255,255,0.04); }
+  .srow.active { border-left-color: #8C7CF8; background: rgba(140,124,248,0.10); }
+  .srow-snip { font-size: 12px; color: #E4E4EC; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
+  .srow-meta { font-size: 10px; color: #5E5E6A; margin-top: 3px; letter-spacing: 0.4px; }
+
+  /* legacy shared styles still used by the positions list */
+  .pl  { color: #8E8E9A; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
     margin-top: 10px; margin-bottom: 2px; }
-  .pv  { color: #BDD1F8; }
-  .pv.pos { color: #02C751; }
-  .pv.neg { color: #F52C38; }
+  .pv  { color: #E4E4EC; } .pv.pos { color: #34C77B; } .pv.neg { color: #FF5063; }
   .ppr { display: flex; justify-content: space-between; align-items: baseline;
-    padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
-  .ppr-sym { color: #BDD1F8; font-size: 11px; font-weight: 600; }
+    padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .ppr-sym { color: #FFFFFF; font-size: 11.5px; font-weight: 600; }
   .ppr-pl { font-size: 10.5px; }
-  #port-asof { font-size: 10px; color: #4C6390; margin-top: 10px; }
-
-  /* ── open-trade monitor block (T087) — same judgment as scripts/monitor.py ── */
-  .mon-row  { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
-  .mon-sym  { color: #BDD1F8; font-size: 11px; font-weight: 600; }
-  .mon-days { color: #FFA800; font-size: 10.5px; line-height: 1.45; margin: 2px 0; }
-  .mon-line { color: #8CADE4; font-size: 10px; line-height: 1.45; }
-  .mon-alert { color: #F52C38; font-size: 10.5px; }
-  .mon-watch { color: #FFA800; font-size: 10.5px; }
-  .mon-quiet { color: #02C751; font-size: 10px; }
-  #mon-foot { font-size: 9.5px; color: #4C6390; margin-top: 8px; line-height: 1.5; }
-
-  /* ── alert-notification bell (T147) ── */
-  #btn-notify { background: none; border: none; cursor: pointer; float: right;
-    font-size: 13px; opacity: 0.55; padding: 0 2px; }
-  #btn-notify.on { opacity: 1; }
-
-  /* ── performance vs SPY block (T143) — /api/benchmark drawn inline ── */
-  #bench-chart { display: block; width: 100%; margin: 4px 0 2px; }
-  .bench-you { color: #FFA800; }
-  .bench-spy { color: #8CADE4; }
-  #bench-foot { font-size: 10px; line-height: 1.5; }
-
-  /* ── household card (T157) ── */
-  .house-row { display: flex; justify-content: space-between; align-items: baseline;
-    padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
-  .house-name { color: #BDD1F8; font-size: 11px; font-weight: 600; }
-  .house-num  { font-size: 10.5px; color: #8CADE4; font-variant-numeric: tabular-nums; }
-  .house-stale { color: #FF5924; }
-  .util-bar { height: 3px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden;
-    margin: 2px 0 4px; }
-  .util-fill { height: 100%; background: #4F80D5; border-radius: 999px; }
-  .util-hot  { background: #F52C38; }
-
-  /* ── sidebar toggle (topbar) ── */
-  #btn-sidebar { background: #0c1a32; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px;
-    color: #8CADE4; font-size: 13px; width: 28px; height: 28px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; transition: color 0.15s, border-color 0.15s; }
-  #btn-sidebar:hover { color: #FFA800; border-color: rgba(79,128,213,0.55); }
+  .pos { color: #34C77B; } .neg { color: #FF5063; }
+  #port-asof { font-size: 9.5px; color: #5E5E6A; margin-top: 6px; }
 </style>
 </head>
 <body>
 
-<!-- ════ TOP BAR ════ -->
+<!-- ════ TOP BAR (their chrome: logo chip · pill nav · bell · user) ════ -->
 <div id="topbar">
-  <div><span id="wordmark">KUBERA</span><span id="brand-sub">personal financial advisor · paper account</span></div>
+  <div id="brand">
+    <div id="logo">K</div>
+    <div><span id="wordmark">KUBERA</span><br><span id="brand-sub">personal financial advisor</span></div>
+  </div>
+  <nav id="nav">
+    <button class="navp active" data-view="overview">Account Overview</button>
+    <button class="navp" data-view="performance">Trading Overview</button>
+    <button class="navp" data-view="history">Transactions</button>
+  </nav>
   <div id="top-right">
     <span id="top-date"></span>
-    <button id="btn-sidebar" title="Conversation history">☰</button>
+    <button id="btn-notify" class="iconbtn" title="alert notifications OFF">&#x1F515;</button>
+    <button id="btn-sidebar" class="iconbtn" title="Conversation history">&#9776;</button>
+    <div id="userchip"><div id="avatar">C</div>
+      <div id="uname">Chotu<small>paper account</small></div></div>
   </div>
 </div>
 
 <div id="shell">
 
-  <!-- ════ LEFT: conversation history sidebar (T082) ════ -->
+  <!-- ════ LEFT: conversation history drawer (T082) ════ -->
   <div id="sidebar">
     <div id="sidebar-hdr">
       <span id="sidebar-title">History</span>
@@ -203,63 +279,128 @@
     <div id="sidebar-list"></div>
   </div>
 
-  <!-- ════ CENTER: the dashboard (T157c) — every card carries its asof ════ -->
+  <!-- ════ CENTER: the views (index36 anatomy, KUBERA data) ════ -->
   <main id="main">
-    <div id="kpis">
-      <div class="kpi"><div class="kl">Equity</div>
-        <div class="kv" id="port-equity">&mdash;</div>
-        <div class="kfoot" id="port-asof"></div></div>
-      <div class="kpi"><div class="kl">Day P&amp;L</div>
-        <div class="kv" id="port-daypnl">&mdash;</div>
-        <div class="kfoot">vs day start &middot; paper</div></div>
-      <div class="kpi"><div class="kl">vs SPY &middot; 90d</div>
-        <div class="kv" id="kpi-excess">&mdash;</div>
-        <div class="kfoot" id="kpi-excess-note">excess cumulative return</div></div>
-      <div class="kpi"><div class="kl">Risk tier</div>
-        <div class="kv" id="kpi-tier">&mdash;</div>
-        <div class="kbar"><div id="kpi-budget-fill"></div></div>
-        <div class="kfoot" id="kpi-tier-note">daily loss budget</div></div>
-      <div class="kpi"><div class="kl">Decision quality</div>
-        <div class="kv" id="kpi-dqs">&mdash;</div>
-        <div class="kfoot" id="kpi-dqs-note">process, not outcome</div></div>
-      <div class="kpi"><div class="kl">Total debt</div>
-        <div class="kv" id="kpi-debt">&mdash;</div>
-        <div class="kfoot" id="kpi-debt-note">tell KUBERA your debts to track them</div></div>
+
+    <!-- ── VIEW 1: Account Overview ── -->
+    <div id="view-overview" class="view">
+      <div id="kpis">
+        <div class="kpi hero"><div class="krow"><span class="kic">$</span>
+            <span class="kl">Equity</span></div>
+          <div class="kv" id="port-equity">&mdash;</div>
+          <span class="kb na" id="kpi-equity-badge">&mdash;</span>
+          <div class="kfoot" id="port-asof"></div></div>
+        <div class="kpi"><div class="krow"><span class="kic">&#8645;</span>
+            <span class="kl">Day P&amp;L</span></div>
+          <div class="kv" id="port-daypnl">&mdash;</div>
+          <div class="kfoot">vs day start &middot; paper</div></div>
+        <div class="kpi"><div class="krow"><span class="kic">&#9650;</span>
+            <span class="kl">vs SPY &middot; 90d</span></div>
+          <div class="kv" id="kpi-excess">&mdash;</div>
+          <div class="kfoot" id="kpi-excess-note">excess cumulative return</div></div>
+        <div class="kpi"><div class="krow"><span class="kic">&#9878;</span>
+            <span class="kl">Total Debt</span></div>
+          <div class="kv" id="kpi-debt">&mdash;</div>
+          <span class="kb na" id="kpi-debt-badge">&mdash;</span>
+          <div class="kfoot" id="kpi-debt-note">tell KUBERA your debts to track them</div></div>
+      </div>
+
+      <div id="cards">
+        <section class="card">
+          <div class="ch"><span class="ct">Risk Limits</span>
+            <span class="pill" id="risk-pill">loading</span></div>
+          <div class="inset"><div class="il">Risk Tier</div>
+            <div class="iv" id="kpi-tier">&mdash;</div>
+            <div class="kbar"><div id="kpi-budget-fill"></div></div>
+            <div class="kfoot" id="kpi-tier-note">daily loss budget</div>
+            <button class="go" data-ask="explain my risk status">&#8599;</button></div>
+          <div class="inset"><div class="il">Decision Quality</div>
+            <div class="iv" id="kpi-dqs">&mdash;</div>
+            <div class="kfoot" id="kpi-dqs-note">process, not outcome</div>
+            <button class="go" data-ask="how is my decision quality trending?">&#8599;</button></div>
+          <div class="inset"><div class="il">New Buys Today</div>
+            <div class="iv" id="risk-buys">&mdash;</div>
+            <div class="kfoot">order-frequency rail &middot; sells always allowed</div></div>
+        </section>
+
+        <section class="card">
+          <div class="ch"><span class="ct">Open-Trade Monitor</span>
+            <span class="pill" id="mon-pill">loading</span></div>
+          <div id="mon-body"><div class="mon-line">loading&hellip;</div></div>
+          <div id="mon-foot"></div>
+        </section>
+
+        <section class="card">
+          <div class="ch"><span class="ct">Household &middot; Debt Payoff</span>
+            <span class="pill vio">advisory</span></div>
+          <div id="house-body"><div class="mon-line">loading&hellip;</div></div>
+        </section>
+
+        <section class="card">
+          <div class="ch"><span class="ct">Positions</span></div>
+          <div id="port-positions"></div>
+        </section>
+      </div>
     </div>
 
-    <div id="cards">
-      <section class="card">
-        <div class="ch"><span class="ct">Performance vs SPY &middot; 90d</span></div>
-        <canvas id="bench-chart" width="520" height="150"></canvas>
-        <div id="bench-foot"><div class="mon-line">loading&hellip;</div></div>
-      </section>
-      <section class="card">
-        <div class="ch"><span class="ct">Open-trade monitor</span>
-          <button id="btn-notify" title="alert notifications OFF">&#x1F515;</button></div>
-        <div id="mon-body"><div class="mon-line">loading&hellip;</div></div>
-        <div id="mon-foot"></div>
-      </section>
-      <section class="card">
-        <div class="ch"><span class="ct">Household &middot; debt payoff</span></div>
-        <div id="house-body"><div class="mon-line">loading&hellip;</div></div>
-      </section>
-      <section class="card">
-        <div class="ch"><span class="ct">Positions</span></div>
-        <div id="port-positions"></div>
-      </section>
+    <!-- ── VIEW 2: Trading Overview ── -->
+    <div id="view-performance" class="view" hidden>
+      <div class="grid2" style="margin-top:0;">
+        <section class="card" style="grid-column: 1 / -1;">
+          <div class="ch"><span class="ct">Total Equity vs SPY</span>
+            <div id="range">
+              <button class="rp" data-days="30">1M</button>
+              <button class="rp active" data-days="90">3M</button>
+              <button class="rp" data-days="180">6M</button>
+            </div></div>
+          <div id="chartwrap">
+            <canvas id="bench-chart" width="860" height="220"></canvas>
+            <div id="bench-tip"></div>
+          </div>
+          <div id="bench-foot"><div class="mon-line">loading&hellip;</div></div>
+        </section>
+        <section class="vpanel">
+          <div class="ch"><span class="ct" style="color:#fff;">Decision Quality</span>
+            <span class="pill vio" id="dqs-window">window</span></div>
+          <div id="dqs-rows"></div>
+        </section>
+        <section class="card">
+          <div class="ch"><span class="ct">Performance Metrics</span></div>
+          <div id="perf-rows"></div>
+        </section>
+      </div>
     </div>
+
+    <!-- ── VIEW 3: Transactions / records ── -->
+    <div id="view-history" class="view" hidden>
+      <div class="grid2" style="margin-top:0;">
+        <section class="card" style="grid-column: 1 / -1;">
+          <div class="ch"><span class="ct">Conversations</span></div>
+          <table class="t"><thead><tr><th>SN</th><th>Last message</th>
+            <th>Turns</th><th>Tool calls</th><th>When</th></tr></thead>
+            <tbody id="conv-table"></tbody></table>
+        </section>
+        <section class="card" style="grid-column: 1 / -1;">
+          <div class="ch"><span class="ct">Debts on Record</span></div>
+          <table class="t"><thead><tr><th>Name</th><th>Kind</th><th>Balance</th>
+            <th>APR</th><th>Min/mo</th><th>Stated</th></tr></thead>
+            <tbody id="debt-table"></tbody></table>
+        </section>
+      </div>
+    </div>
+
   </main>
 
-  <!-- ════ RIGHT: conversation dock — the orb as companion, voice untouched ════ -->
+  <!-- ════ RIGHT: conversation dock — the orb as companion ════ -->
   <aside id="dock">
-    <div id="hint">click the orb or hold SPACE to talk &nbsp;·&nbsp; type below if you must</div>
+    <div id="hint">click the orb or hold SPACE to talk &nbsp;&middot;&nbsp; type below if you must</div>
     <div id="stage">
       <canvas id="orb" width="520" height="520"></canvas>
       <div id="status">idle</div>
     </div>
     <div id="log"></div>
     <div id="bar">
-      <input id="typed" placeholder="…or type to KUBERA" autocomplete="off">
+      <input id="typed" placeholder="&hellip;or type to KUBERA" autocomplete="off">
       <label class="cf"><input type="checkbox" id="confirm"> confirm this turn</label>
     </div>
     <div id="err"></div>
@@ -270,8 +411,8 @@
 <script>
 // ------------------------------------------------------------------ state
 const S = { mode: "idle", conversationId: null, amp: 0, t: 0 };
-const COLORS = { idle: [255,168,0], listening: [140,173,228], thinking: [42,90,173],
-                 speaking: [79,128,213] };  // crypto-admin amber-on-blue (T157e)
+const COLORS = { idle: [140,124,248], listening: [52,199,123], thinking: [109,92,224],
+                 speaking: [169,155,251] };  // index36 violet family (T157f)
 const statusEl = document.getElementById("status");
 const errEl    = document.getElementById("err");
 const hintEl   = document.getElementById("hint");
@@ -527,6 +668,15 @@ async function loadConversations() {
         'No conversations yet.<br>Start talking to KUBERA.</div>';
       return;
     }
+    const ct = document.getElementById("conv-table");
+    if (ct) {
+      ct.innerHTML = rows.slice(0, 25).map((c, i) =>
+        `<tr><td>${String(i + 1).padStart(2, "0")}</td>` +
+        `<td>${(c.snippet || "(empty)").replace(/</g, "&lt;").slice(0, 80)}</td>` +
+        `<td>${c.message_count}</td><td>${c.tool_calls}</td>` +
+        `<td>${fmtAgo(c.last_activity_at)}</td></tr>`).join("") ||
+        '<tr><td colspan="5" class="mon-line">no conversations yet</td></tr>';
+    }
     rows.forEach(conv => {
       const div = document.createElement("div");
       div.className = "srow" + (conv.id === S.conversationId ? " active" : "");
@@ -594,6 +744,12 @@ async function loadPortfolio() {
 
     portDayEl.textContent = (dayPnl >= 0 ? "+" : "") + fmtUSD(dayPnl);
     portDayEl.className = "kv " + (dayPnl >= 0 ? "pos" : "neg");
+    const eqBadge = document.getElementById("kpi-equity-badge");
+    if (lastEquity > 0) {
+      const dp = dayPnl / lastEquity * 100;
+      eqBadge.textContent = (dp >= 0 ? "\u2191 " : "\u2193 ") + Math.abs(dp).toFixed(2) + "%";
+      eqBadge.className = "kb " + (dp >= 0 ? "pos" : "neg");
+    }
 
     const positions = (d.positions || [])
       .slice()
@@ -672,6 +828,10 @@ async function loadMonitor() {
       `${s.positions} position(s): ${s.alerts} alert(s), ${s.watches} watch(es), ` +
       `${s.blind_spots} blind spot(s) · ${d.advisory || ""}` +
       (d.calendar_note ? ` · calendar degraded: ${d.calendar_note}` : "");
+    const mp = document.getElementById("mon-pill");
+    if ((s.alerts || 0) > 0) { mp.textContent = s.alerts + " alert(s)"; mp.className = "pill bad"; }
+    else if ((s.watches || 0) > 0) { mp.textContent = s.watches + " watch(es)"; mp.className = "pill vio"; }
+    else { mp.textContent = "quiet"; mp.className = "pill ok"; }
     // T147: only severity "alert" reaches the OS — watches stay in-panel
     const currentAlerts = [];
     d.positions.forEach(p => (p.alerts || []).forEach(a => {
@@ -745,13 +905,15 @@ btnNotify.addEventListener("click", async () => {
 const benchCvs = document.getElementById("bench-chart");
 const benchFootEl = document.getElementById("bench-foot");
 let benchLastMs = 0;
+let benchDays = 90;                 // their Weekly dropdown -> real range pills
+let benchLast = null;               // {dates, port, spy} for the hover tooltip
 const BENCH_REFRESH_MS = 600_000; // daily-bar data — 10 min is generous
 
 async function loadBench(force) {
   if (!force && Date.now() - benchLastMs < BENCH_REFRESH_MS) return;
   benchLastMs = Date.now();
   try {
-    const r = await fetch("/api/benchmark?days=90");
+    const r = await fetch(`/api/benchmark?days=${benchDays}`);
     if (!r.ok) {
       let detail = "unavailable";
       try { detail = (await r.json()).detail || detail; } catch (_) {}
@@ -768,6 +930,7 @@ async function loadBench(force) {
       return;
     }
     benchCvs.style.display = "block";
+    benchLast = { dates: d.dates || [], port, spy };
     drawBench(port, spy);
     const m = d.metrics || {}, pm = m.portfolio || {}, bm = m.benchmark || {};
     const pct = v => (v == null ? "?"
@@ -776,7 +939,20 @@ async function loadBench(force) {
     kEx.textContent = pct(m.excess_return);
     kEx.className = "kv " + ((m.excess_return || 0) >= 0 ? "pos" : "neg");
     document.getElementById("kpi-excess-note").textContent =
-      `excess cumulative · asof ${(d.asof || "").slice(0, 10)}`;
+      `excess cumulative · ${benchDays}d · asof ${(d.asof || "").slice(0, 10)}`;
+    // performance metrics rows (their Trading Overview right column)
+    const pr = document.getElementById("perf-rows");
+    const f2 = v => v == null ? "—" : Number(v).toFixed(2);
+    pr.innerHTML = [
+      ["Your return", pct(pm.cumulative_return)], ["SPY return", pct(bm.cumulative_return)],
+      ["Excess", pct(m.excess_return)],
+      ["Your volatility (ann.)", pct(pm.volatility_ann)],
+      ["Sharpe (ann.)", f2(pm.sharpe_ann)],
+      ["Max drawdown", pct(pm.max_drawdown_frac == null ? null : -Math.abs(pm.max_drawdown_frac))],
+    ].map(([l, v]) => `<div class="vrow"><span class="vl">${l}</span>` +
+      `<span class="vv">${esc(v)}</span></div>`).join("") +
+      `<div class="mon-line" style="margin-top:6px;">asof ${esc((d.asof || "").slice(0, 10))}` +
+      ` · ${esc(d.source || "")}</div>`;
     benchFootEl.innerHTML =
       `<div class="mon-line"><span class="bench-you">you ${pct(pm.cumulative_return)}</span>` +
       ` &middot; <span class="bench-spy">SPY ${pct(bm.cumulative_return)}</span>` +
@@ -808,8 +984,16 @@ function drawBench(port, spy) {
     arr.forEach((v, i) => i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)));
     ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
   };
-  line(spy, "#566F9E", 1);    // the benchmark: their muted blue
-  line(port, "#FFA800", 1.6); // you: crypto-admin amber (their .chart rule)
+  // violet gradient area under YOUR curve (their chart treatment)
+  const fill = ctx.createLinearGradient(0, 0, 0, H);
+  fill.addColorStop(0, "rgba(140,124,248,0.35)");
+  fill.addColorStop(1, "rgba(140,124,248,0.0)");
+  ctx.beginPath();
+  port.forEach((v, i) => i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)));
+  ctx.lineTo(x(port.length - 1), H); ctx.lineTo(x(0), H); ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+  line(spy, "#5E5E6A", 1);     // benchmark: quiet gray
+  line(port, "#A99BFB", 1.8);  // you: index36 violet
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -845,8 +1029,40 @@ async function loadRisk() {
         (d.dqs.orders ?? 0) + " orders · " + (d.dqs.no_trades ?? 0) +
         " deliberate no-trades";
     }
+    // status pill (their "Ongoing" dot) + buy-frequency inset
+    const pill = document.getElementById("risk-pill");
+    if (d.breaker && d.breaker.tripped) {
+      pill.textContent = "breaker tripped"; pill.className = "pill bad";
+    } else if (d.tier && d.tier.level >= 2) {
+      pill.textContent = d.tier.name; pill.className = "pill bad";
+    } else {
+      pill.textContent = "ongoing"; pill.className = "pill ok";
+    }
+    if (d.buy_frequency) {
+      document.getElementById("risk-buys").textContent =
+        `${d.buy_frequency.buys_today} / ${d.buy_frequency.max_buys_per_day}`;
+    }
+    // the violet panel rows (their Trading Overview list), same payload
+    const rows = [];
+    if (d.dqs) {
+      rows.push(["DQS score", d.dqs.score],
+                ["Orders", d.dqs.orders], ["Deliberate no-trades", d.dqs.no_trades]);
+      document.getElementById("dqs-window").textContent =
+        (d.dqs.window_days ? d.dqs.window_days + "d window" : "window");
+    }
+    if (d.tier) rows.push(["Loss budget used",
+      Math.round((d.tier.budget_consumed_frac || 0) * 100) + "%"]);
+    if (d.buy_frequency) rows.push(["New buys today",
+      `${d.buy_frequency.buys_today} / ${d.buy_frequency.max_buys_per_day}`]);
+    document.getElementById("dqs-rows").innerHTML = rows.map(([l, v]) =>
+      `<div class="vrow"><span class="vl">${esc(l)}</span>` +
+      `<span class="vv">${esc(v ?? "—")}</span></div>`).join("") +
+      `<div class="mon-line" style="margin-top:6px;">asof ${esc((d.asof || "").slice(0, 16))}Z` +
+      " · process, not outcome</div>";
   } catch (_) {
     kNote.textContent = "risk status unavailable (server starting?)";
+    const pill = document.getElementById("risk-pill");
+    pill.textContent = "unreachable"; pill.className = "pill";
   }
 }
 
@@ -878,6 +1094,11 @@ async function loadHousehold() {
     kNote.textContent = d.any_stale
       ? "includes stale balances — restate them to KUBERA"
       : "owner-stated · asof " + (d.asof || "").slice(0, 10);
+    const dBadge = document.getElementById("kpi-debt-badge");
+    if (d.payoff && d.payoff.available) {
+      dBadge.textContent = "debt-free in " + d.payoff.avalanche.months + " mo";
+      dBadge.className = "kb pos";
+    } else { dBadge.textContent = "no plan yet"; dBadge.className = "kb na"; }
     const rows = d.debts.map(x => {
       const util = x.utilization_frac;
       const utilBar = util == null ? "" :
@@ -886,10 +1107,20 @@ async function loadHousehold() {
       const staleTag = x.stale
         ? ` <span class="house-stale">as you told me on ${esc(x.balance_asof)}</span>`
         : "";
-      return `<div class="house-row"><span class="house-name">${esc(x.name)}</span>` +
+      return `<div class="inset"><div class="house-row">` +
+        `<span class="house-name">${esc(x.name)}</span>` +
         `<span class="house-num">${fmtUSD(x.balance)} · ${(x.apr_frac * 100).toFixed(1)}%` +
-        `${staleTag}</span></div>${utilBar}`;
+        `${staleTag}</span></div>${utilBar}` +
+        `<button class="go" data-ask="how should I pay off ${esc(x.name)}?">\u2197</button>` +
+        `</div>`;
     }).join("");
+    const dt = document.getElementById("debt-table");
+    dt.innerHTML = d.debts.map(x =>
+      `<tr><td>${esc(x.name)}</td><td>${esc(x.kind)}</td>` +
+      `<td>${fmtUSD(x.balance)}</td><td>${(x.apr_frac * 100).toFixed(1)}%</td>` +
+      `<td>${fmtUSD(x.min_payment)}</td>` +
+      `<td${x.stale ? ' class="neg"' : ""}>${esc(x.balance_asof)}${x.stale ? " (stale)" : ""}</td></tr>`
+    ).join("") || '<tr><td colspan="6" class="mon-line">no debts recorded</td></tr>';
     let plan = "";
     if (d.payoff && d.payoff.available) {
       const av = d.payoff.avalanche;
@@ -905,6 +1136,56 @@ async function loadHousehold() {
     body.innerHTML = '<div class="mon-line">household unavailable (server starting?)</div>';
   }
 }
+
+// ════════════════════════════════════════════════════════════════════
+// T157f — index36 BEHAVIORS on real data: hover tooltip, range pills,
+// view switching, and corner-arrows that ASK KUBERA in the dock.
+// ════════════════════════════════════════════════════════════════════
+const benchTip = document.getElementById("bench-tip");
+benchCvs.addEventListener("mousemove", (ev) => {
+  if (!benchLast || benchLast.port.length < 2) return;
+  const rect = benchCvs.getBoundingClientRect();
+  const frac = (ev.clientX - rect.left) / rect.width;
+  const i = Math.max(0, Math.min(benchLast.port.length - 1,
+    Math.round(frac * (benchLast.port.length - 1))));
+  const v = benchLast.port[i], b = benchLast.spy[i];
+  benchTip.textContent = `${benchLast.dates[i] || ""} · you ${((v - 1) * 100).toFixed(2)}%` +
+    ` · SPY ${((b - 1) * 100).toFixed(2)}%`;
+  benchTip.style.left = (frac * rect.width) + "px";
+  benchTip.style.top = "18px";
+  benchTip.style.display = "block";
+});
+benchCvs.addEventListener("mouseleave", () => { benchTip.style.display = "none"; });
+
+document.getElementById("range").addEventListener("click", (ev) => {
+  const b = ev.target.closest(".rp");
+  if (!b) return;
+  document.querySelectorAll(".rp").forEach(x => x.classList.toggle("active", x === b));
+  benchDays = parseInt(b.dataset.days, 10) || 90;
+  loadBench(true);
+});
+
+function showView(name) {
+  ["overview", "performance", "history"].forEach(v => {
+    document.getElementById("view-" + v).hidden = (v !== name);
+  });
+  document.querySelectorAll(".navp").forEach(x =>
+    x.classList.toggle("active", x.dataset.view === name));
+  if (name === "performance") loadBench(true);
+  if (name === "history") loadConversations();
+}
+document.getElementById("nav").addEventListener("click", (ev) => {
+  const b = ev.target.closest(".navp");
+  if (b) showView(b.dataset.view);
+});
+
+// their corner ↗ arrows, made REAL: the question goes to KUBERA
+document.getElementById("main").addEventListener("click", (ev) => {
+  const b = ev.target.closest(".go");
+  if (!b || !b.dataset.ask) return;
+  showView("overview");
+  send(b.dataset.ask);
+});
 
 // ── T136: PWA registration (feature-detected; failure is silent because
 // the app works identically unregistered — the SW only caches the shell,

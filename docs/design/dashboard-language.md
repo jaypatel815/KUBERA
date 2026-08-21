@@ -25,6 +25,35 @@ talking; big-number KPIs with small delta chips; charts as thin-line areas
 with gradient fills; navigation quiet and monochrome; the AI presence is a
 **docked companion**, not the centerpiece.
 
+## Tokens (v4, T157f — THE OWNER'S SCREENSHOT is the source of truth)
+The owner posted a screenshot of the exact index36 look he wants — the first
+pixel ground truth of this phase — and corrected the record: index36 is the
+BLACK + VIOLET variant of the template family, not the blue dark-skin its
+generic skin_color.css describes (v3 below was that wrong variant, kept for
+the record). From the image:
+
+- Field: `#050507` near-black with faint violet radial glows
+- Cards: matte `#0D0D13`, border `rgba(255,255,255,0.07)`, **radius 20**;
+  inset sub-boxes `#15151C` radius 12 with corner ↗ buttons
+- HERO card: violet gradient `linear-gradient(135deg,#8C7CF8,#5B49C9)` —
+  one highlighted stat card per row (Equity)
+- Accent: violet `#8C7CF8` / light `#A99BFB` / deep `#6D5BE2`; gradient
+  `#A08BFC→#6D5BE2` on logo, avatar, budget bar, active range pill
+- Text: `#FFFFFF` values / `#E4E4EC` body / `#8E8E9A` labels / `#5E5E6A` fine
+- Semantics: gain `#34C77B` (badge bg 12% alpha) · loss `#FF5063` ·
+  stale `#FF7A45`
+- Chrome: pill nav in the top bar (rounded container, active pill filled),
+  round icon buttons (bell = the T147 notification toggle, relocated),
+  user chip with gradient avatar
+- Chart: violet line with gradient area fill, gray benchmark, floating
+  tooltip; range pills 1M/3M/6M drive the real /api/benchmark days param
+- Behaviors mapped to REAL data: three views (Account Overview / Trading
+  Overview / Transactions) on the pill nav; status pills from /api/risk and
+  /api/monitor; corner ↗ arrows SEND a question to KUBERA in the dock;
+  history tables from /api/conversations and /api/household
+- Their 3D illustrations: not reproduced (no assets, no CDN) — icon chips
+  stand in. Webfonts still not adopted (system stack).
+
 ## Tokens (v3, T157e — crypto-admin's skin_color.css owns the final word)
 The owner said "more like the crypto-admin page" — and this time its CSS was
 fetchable: `bs5/main/css/skin_color.css` gave the dark-skin palette verbatim.
