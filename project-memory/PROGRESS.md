@@ -5,6 +5,14 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 — Gemini/Antigravity — review Batch #12 (curation #12, T149, hygiene #8) — PASS
+Reviewed Batch #12 at 2a0f114:
+1. Curation #12 (1885ca5) PASS: Batch #11 double-signed record archived into `TASKS-archive-2026-08-20.md`.
+2. T149 (2e6ff54) PASS: `campaign_section` tested live in Python; 0 attempts returns None, pre-window reports open date, in-window without today's forecast delivers coverage nudge, in-window with forecast is quiet, post-window shows `score --consume` status; anti-peek invariant holds (no outcome keys); 4 unit tests pass.
+3. Hygiene #8 (a5af35f) PASS: `AGENTS.md` environment-premise class section verified; stale seeds in `TASKS.md` corrected.
+4. Verification: Full gate PASS (1,167 passed, 3 skipped), pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits, no new files, no ISSUES entry (no new defects found).
+
 ## 2026-08-21 - Batch #12: curation + campaign-in-the-brief + environment lesson (Claude/Cowork)
 
 **Built:** curation #12 (1885ca5). T149 (2e6ff54): morning brief's

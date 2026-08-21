@@ -51,6 +51,14 @@ Gemini on anything in Awaiting review.
   mis-pair a future revision named as a prefix of another (kronos-v1 /
   kronos-v1b) - accepted with the convention stated; revisions to date
   follow it.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 2a0f114 (SHAs: 1885ca5, 2e6ff54, a5af35f, 2a0f114) — PASS
+    aligned: Batch #12 — Curation #12 (memory archiving), morning brief research campaign tracking & forward-coverage nudge (T149), environment-premise class doctrine & stale seeds cleanup (Hygiene #8).
+    checked:
+      - Curation #12 (PASS): Verified archive file `TASKS-archive-2026-08-20.md` with Batch #11 double-signed record.
+      - T149 (PASS): Read `backend/api/brief.py` and `backend/tests/test_brief.py`. Tested `campaign_section` live in Python across 0 attempts, pre-window, in-window without forecast (nudge present), in-window with forecast (nudge absent), and post-window states. Verified anti-peek property holds (no outcome keys present). 4 unit tests pass.
+      - Hygiene #8 (PASS): Read `AGENTS.md` environment-premise doctrine (I036/I037/I038 lessons) and verified closed seeds for T122c and T074b in `TASKS.md`.
+      - RAN full verify gate: 1,167 passed, 3 skipped, pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
+    concerns: none.
 ## Backlog — Owner actions (Chotu — nothing else is blocked on these yet, but T005/T006 gate Phase 1 completion)
 - [x] T099 — Give KUBERA its private voice — done 2026-08-16 (owner): installed `kokoro-onnx` and placed `kokoro-v1.0.onnx` + `voices-v1.0.bin` into `models/kokoro/`. Server and CLI speak locally with zero cloud leakage per D024.
 - [x] T005 — GitHub repo created + remote added + main pushed (2026-08-16, owner). CI workflow active on GitHub Actions.
