@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- T136: the Orb as an app icon - original artwork, gold on the app's own dark -->
+  <rect width="512" height="512" rx="96" fill="#0d0d14"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#c9a227" stroke-width="14" opacity="0.9"/>
+  <circle cx="256" cy="256" r="96" fill="#c9a227" opacity="0.18"/>
+  <circle cx="256" cy="256" r="52" fill="#c9a227" opacity="0.55"/>
+  <circle cx="256" cy="256" r="20" fill="#e8d48a"/>
+</svg>

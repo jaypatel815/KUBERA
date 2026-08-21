@@ -93,6 +93,33 @@ def orb():
     return FileResponse(page, media_type="text/html")
 
 
+def _web_asset(name: str, media_type: str):
+    """T136 — PWA shell assets, served from apps/web with explicit types.
+    sw.js must be served from the ROOT path so its scope can cover '/'."""
+    from pathlib import Path
+
+    from fastapi.responses import FileResponse, PlainTextResponse
+    f = Path(__file__).resolve().parents[2] / "apps" / "web" / name
+    if not f.exists():
+        return PlainTextResponse(f"missing: apps/web/{name}", status_code=404)
+    return FileResponse(f, media_type=media_type)
+
+
+@app.get("/manifest.webmanifest", include_in_schema=False)
+def pwa_manifest():
+    return _web_asset("manifest.webmanifest", "application/manifest+json")
+
+
+@app.get("/sw.js", include_in_schema=False)
+def pwa_service_worker():
+    return _web_asset("sw.js", "text/javascript")
+
+
+@app.get("/icon.svg", include_in_schema=False)
+def pwa_icon():
+    return _web_asset("icon.svg", "image/svg+xml")
+
+
 class TTSRequest(BaseModel):
     """POST body for speech (T098).
 
