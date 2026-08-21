@@ -1542,3 +1542,91 @@ Shared-file hazards: the three tool-count guard tests, PROGRESS/TASKS/DECISIONS
 
 
 
+
+## Curation #11 (2026-08-21) — batch #10 (PASS at 43bb0e7) + I038 fix (PASS at d727e80, superseded Gemini's 327cc4d; D032 breach on record in REVIEW.md)
+
+- **I038 fix: ambient-env test isolation - AWAITING REVIEW 2026-08-21
+  (Claude/Cowork; SHA 89a016c - SUPERSEDES Gemini's 327cc4d).**
+  Owner's machine: 4 missing-config tests DID NOT RAISE because his shell
+  exported EDGAR_CONTACT/FINNHUB_API_KEY/FMP_API_KEY/SCHWAB_* and OS env
+  outranks a disabled dotenv at ~29 `KuberaSettings(_env_file=None)` call
+  sites. Gemini's review session diagnosed it correctly but patched only
+  the 4 red sites AND did so by editing test files in a review session
+  (D032 violation - on record in REVIEW.md under the scope rule).
+  Fix: conftest autouse fixture strips every settings-mapped env var
+  (derived from the model, aliases included); the 4 tests restored to
+  original absent-config form; test_env_isolation.py (3 tests) pins the
+  invariant with one named production allowlist (llm_claude_sdk token
+  setdefault). EVIDENCE (D027): owner's failure REPRODUCED in sandbox
+  (planted vars + original tests = same 4 reds), then hostile-env gate
+  PASS at 1,158 incl. test_pacing_timeout (which 327cc4d left exposed
+  to an ambient LLM_TIMEOUT_SECONDS), then clean-env gate PASS.
+  D028 objections: (1) session-scoped delete means a test that WANTS an
+  ambient settings var can't have one - correct by policy: such a test
+  should construct settings explicitly; (2) the allowlist could hide a
+  future genuine leak of CLAUDE_CODE_OAUTH_TOKEN specifically - accepted,
+  it is one var, documented, and empty-settings assertions still cover it.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 89a016c — PASS
+    aligned: I038 resolution — strip ambient OS environment variables in `conftest.py` autouse session fixture so test premises (`KuberaSettings(_env_file=None)`) remain unpolluted regardless of caller's shell environment.
+    checked:
+      - Read `backend/tests/conftest.py`: verified `_ambient_settings_env_stripped` fixture dynamically derives all field and alias names from `KuberaSettings.model_fields`.
+      - Read `backend/tests/test_env_isolation.py`: verified 3 isolation tests (`test_empty_settings_are_actually_empty`, `test_no_settings_env_var_survives_in_the_process`, `test_derivation_knows_both_alpaca_spellings`) with explicit `_REEXPORTED_BY_PRODUCTION_CODE` allowlist.
+      - Tested with simulated ambient environment variables planted (`EDGAR_CONTACT`, `FINNHUB_API_KEY`, `FMP_API_KEY`, `SCHWAB_*`, `ALPACA_*`, `LLM_TIMEOUT_SECONDS`): 62/62 unit tests passed.
+      - Restored original `KuberaSettings(_env_file=None)` in `test_edgar.py`, `test_finnhub.py`, `test_fmp.py`, `test_schwab.py`.
+      - RAN full verify gate: 1,158 passed, 3 skipped, pyrefly 0 errors, python pins agree: 3.14.7.
+    concerns: none. Supersedes 327cc4d cleanly at the fixture level.
+- **Batch #10: curation #10 + T142 + T143 + T144 + T145 - AWAITING
+  REVIEW 2026-08-21 (Claude/Cowork; independent units, D038 sized).
+  SHAs per D033: 59e3a9e (curation #10) / af7d9ee (T142) / 70fd3f4
+  (T144) / 01185df (T143) / 135f9ca (T145) / close SHA on this commit.**
+  CURATION #10 at 59e3a9e: T141 + batches #9/#7 (all double-signed,
+  incl. both re-queued BLOCK fixes) -> archive with full verdicts;
+  TASKS 661->450; archive_memory.py moved 31 PROGRESS entries
+  (743->182) - the reviewer's soft-budget NOTE acted on same-session.
+  T142 - D021 COUNTDOWN at af7d9ee: d021_evidence.py existed but
+  nothing told the owner to run it. Weekly review now carries
+  governance_d021 (always-present key + facts line) within 10 days of
+  ~2026-09-12 with the exact command; past-due stays loud and names its
+  own retirement (record the decision as a D-entry). Pure helper,
+  frozen-date tested: silent at 22 days out, speaks at 10/0, PAST at
+  -3, wiring test proves the fact line rides the payload.
+  T144 - PERSONA RESOLUTION RULE at 70fd3f4: T141 built the resolver;
+  the persona now carries the doctrine next to its I007 sibling -
+  company names resolve through find_symbol BEFORE any symbol tool
+  ("a ticker recalled from memory is a guess wearing a fact's
+  clothes"); candidates -> ask, never silently pick; no match -> say
+  so. Two keyword pins added to the guard test.
+  T143 - ORB BENCHMARK PANEL at 01185df (Phase 5 continues): /api/
+  benchmark drawn on a raw canvas in the portfolio panel - gold you,
+  gray SPY, dotted start line, footer you/SPY/excess + aligned days +
+  asof. No chart library (pinned: "cdn" appears nowhere in orb.html).
+  Named degradations (<2 aligned days -> "run scripts/sync.py daily";
+  escaped HTTP detail; server-down). Self-throttled to one fetch/10min
+  inside the 60s poll. node --check green; wiring pins updated + new
+  pin test.
+  T145 - README DELTA at 135f9ca: ask-by-company-name, phone install +
+  the new panel, Kronos CLI quick-ref with the one-consume rule.
+  EVIDENCE (D027): full gate PASS (ruff, pytest, budgets, pins,
+  pyrefly exactly 0); test deltas: test_brief 10->14, test_persona +2
+  keyword pins, test_orb_panel 2->3 (one pin updated for the 3-loader
+  open handler); node --check on extracted orb.html JS exit 0;
+  memory budgets --check exit 0 after curation.
+  D028 objections: (1) T142's constant hard-codes the revisit date -
+  deliberate: one date, one use; a config knob for a date that fires
+  once is ceremony (retirement path stated in the docstring). (2)
+  T143 draws with min/max scaling over both curves, so a huge SPY
+  move flattens the portfolio line visually - accepted: the footer
+  states the numbers; the chart is shape, not measurement. (3) T143
+  has no JS behavior test (repo has no JS rig) - the pins guard
+  wiring; rendering itself is owner field-tested, stated in the test
+  docstring.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 3fd70eb (SHAs: 59e3a9e, af7d9ee, 70fd3f4, 01185df, 135f9ca, 3fd70eb) — PASS
+    aligned: Batch #10 — Curation #10 (memory archiving), D021 governance countdown (T142), persona resolution rule (T144), Orb benchmark panel (T143), README update (T145).
+    checked:
+      - Curation #10 (PASS): Verified archive files `PROGRESS-archive-2026-08-21.md` and `TASKS-archive-2026-08-20.md`. Memory line budgets cleanly within limits (`archive_memory.py --check` exit 0).
+      - T142 (PASS): Read `backend/api/brief.py` and `backend/tests/test_brief.py`. Ran live Python execution of `d021_countdown` across outside window (22d), inside window (10d, 0d), and past due (-3d) states. Verified `governance_d021` payload wiring. 4 unit tests pass.
+      - T144 (PASS): Read `backend/api/persona.py` and `backend/tests/test_persona.py`. Verified RESOLUTION rule in CORE_RULES requiring `find_symbol` first and asking on ambiguity. Keyword pins pass.
+      - T143 (PASS): Read `apps/web/orb.html` and `backend/tests/test_orb_panel.py`. Ran `node --check` on extracted JS (exit 0). Verified raw HTML5 canvas rendering, no external CDN / chart library, 10-minute throttling, error escaping, and degradation messages when <2 aligned days.
+      - T145 (PASS): Read `README.md` updates regarding company name lookups, phone installation, and Kronos runbook CLI quick-reference.
+      - RAN full verify gate: 1,155 passed, 3 skipped, pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
+    concerns: none.
