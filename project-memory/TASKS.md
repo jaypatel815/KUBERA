@@ -37,6 +37,15 @@ Gemini on anything in Awaiting review.
   should construct settings explicitly; (2) the allowlist could hide a
   future genuine leak of CLAUDE_CODE_OAUTH_TOKEN specifically - accepted,
   it is one var, documented, and empty-settings assertions still cover it.
+  REVIEWED 2026-08-21 by Gemini/Antigravity AT 89a016c — PASS
+    aligned: I038 resolution — strip ambient OS environment variables in `conftest.py` autouse session fixture so test premises (`KuberaSettings(_env_file=None)`) remain unpolluted regardless of caller's shell environment.
+    checked:
+      - Read `backend/tests/conftest.py`: verified `_ambient_settings_env_stripped` fixture dynamically derives all field and alias names from `KuberaSettings.model_fields`.
+      - Read `backend/tests/test_env_isolation.py`: verified 3 isolation tests (`test_empty_settings_are_actually_empty`, `test_no_settings_env_var_survives_in_the_process`, `test_derivation_knows_both_alpaca_spellings`) with explicit `_REEXPORTED_BY_PRODUCTION_CODE` allowlist.
+      - Tested with simulated ambient environment variables planted (`EDGAR_CONTACT`, `FINNHUB_API_KEY`, `FMP_API_KEY`, `SCHWAB_*`, `ALPACA_*`, `LLM_TIMEOUT_SECONDS`): 62/62 unit tests passed.
+      - Restored original `KuberaSettings(_env_file=None)` in `test_edgar.py`, `test_finnhub.py`, `test_fmp.py`, `test_schwab.py`.
+      - RAN full verify gate: 1,158 passed, 3 skipped, pyrefly 0 errors, python pins agree: 3.14.7.
+    concerns: none. Supersedes 327cc4d cleanly at the fixture level.
 - **Batch #10: curation #10 + T142 + T143 + T144 + T145 - AWAITING
   REVIEW 2026-08-21 (Claude/Cowork; independent units, D038 sized).
   SHAs per D033: 59e3a9e (curation #10) / af7d9ee (T142) / 70fd3f4

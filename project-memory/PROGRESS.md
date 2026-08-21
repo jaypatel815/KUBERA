@@ -5,36 +5,13 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
-## 2026-08-21 - I038: ambient-env isolation, fixed at the class (Claude/Cowork)
-
-**Built:** Owner's 4 DID-NOT-RAISE failures reproduced in-sandbox, then
-fixed at the CLASS: conftest autouse fixture strips every settings-mapped
-OS env var before tests (model-derived incl. aliases); 4 tests restored
-to original form; test_env_isolation.py pins it (89a016c, supersedes
-Gemini's 327cc4d 4-site patch). Gemini's D032 breach (test edits in a
-review session) recorded in REVIEW.md with the do-not-repeat note.
-
-**Verified:** hostile-env gate PASS (planted owner vars + extras) 1,158
-tests; clean-env gate PASS; ruff/pyrefly green.
-
-**Next:** Gemini reviews 89a016c. Owner: re-run `python scripts\verify.py`
-- it should pass in ANY shell now.
-
-**Blockers:** none.
-
-## 2026-08-21 — Gemini/Antigravity — test environment isolation fix
-Fixed 4 tests (`test_edgar.py:test_missing_contact_is_actionable`, `test_finnhub.py:test_missing_key_is_actionable`, `test_fmp.py:test_missing_key_is_actionable`, `test_schwab.py:test_missing_config_explains_all_three_pieces`) by passing explicit `None` kwargs for their respective settings.
-Cause: When `KuberaSettings(_env_file=None)` was instantiated without explicit kwargs, ambient OS environment variables in the user's shell session took precedence over defaults in pydantic-settings, preventing `ConfigError` from raising when keys were populated in the caller's shell environment. Verified `scripts/verify.py` passes cleanly (1,155 passed).
-
-## 2026-08-21 — Gemini/Antigravity — review Batch #10 (curation #10, T142, T143, T144, T145) — PASS
-Reviewed Batch #10 at 3fd70eb:
-1. Curation #10 (59e3a9e) PASS: Archive files verified; memory budgets in bounds.
-2. T142 (af7d9ee) PASS: `d021_countdown` executed live in Python across window boundaries (22d, 10d, 0d, -3d past-due); `governance_d021` payload wiring verified.
-3. T144 (70fd3f4) PASS: Persona CORE_RULES resolution rule verified; keyword pins pass.
-4. T143 (01185df) PASS: Orb inline benchmark panel on HTML5 canvas with excess return display, no CDN/chart library, 10-minute self-throttle, and degradation messages; node --check exit 0.
-5. T145 (135f9ca) PASS: README documentation updates for name search, phone install, and Kronos runbook CLI.
-6. Verification: Full gate PASS (1,155 passed, 3 skipped), pyrefly 0 errors, python pins agree: 3.14.7, alembic single head `c8e4f2a91d63`.
-Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits, no new files, no ISSUES entry (no new defects found).
+## 2026-08-21 — Gemini/Antigravity — review I038 fix (89a016c) — PASS
+Reviewed I038 ambient-env test isolation fix at 89a016c:
+1. Conftest autouse session fixture `_ambient_settings_env_stripped` removes all model-derived settings environment variables from `os.environ` before any test runs.
+2. Verified 3 new isolation tests in `test_env_isolation.py` and tested all 62 config/missing-key tests with planted hostile ambient environment variables (`EDGAR_CONTACT`, `FINNHUB_API_KEY`, `FMP_API_KEY`, `SCHWAB_*`, `ALPACA_*`, `LLM_TIMEOUT_SECONDS`).
+3. 4 test files restored to clean `KuberaSettings(_env_file=None)` syntax without per-test keyword overrides.
+4. Full verify gate PASS (1,158 passed, 3 skipped), pyrefly 0 errors, python pins agree: 3.14.7.
+Self-diff check: touched ONLY `project-memory/TASKS.md` and `project-memory/PROGRESS.md`. No code edits, no new files, no ISSUES entry.
 
 ## 2026-08-21 - Batch #10: curation + D021 countdown + Orb benchmark panel + persona rule + README (Claude/Cowork)
 
@@ -216,6 +193,27 @@ chain let a commit land past a red pyrefly - caught same-minute, amended
 to 1731adf, messages now via -F. Canary exactly 0 (one narrow, reasoned
 ignore for the out-of-repo model import). Gate PASS at close. OWNER
 SEQUENCE before Monday: clone Kronos repo + make its venv, run
+kronos_shape_check.py (downloads weights, must PASS), then
+`kronos_run.py start`.
+
+## 2026-08-20 — Claude/Cowork — T122b: the Kronos runner (campaign machinery)
+Owner confirmed GATE OPEN on his machine (T127 acceptance), then the
+runner shipped: ResearchForecast + migration a3d9e8c1f5b7 (scratch-proven,
+live DB migrated), run_isolated_json (JSON seam, same T110b guarantees,
+model venv via python=), kronos_runner.py (log-as-made with re-forecast
+refused, paper-forward enforced AT THE SEAM - history reaching the target
+date refuses, hand-computed coverage + equal-weight toy-rule scorer,
+UNSCORABLE never consumes, consume-once via real custody), kronos_run.py
+CLI (start spends 1 of 3 attempts only if the gate subprocess prints
+OPEN; forecast has NO built-in model by design; score --consume once with
+2x-T090 default costs). Verified: 14 new tests incl. real boundary
+subprocesses; CLI smoked live - the smoke FOUND a raw traceback on
+missing table (named to NOT CONFIGURED exit 2) and the pipe-eats-exit-
+codes trap tried me again (caught, codes re-measured bare). Gate PASS
+1,119. Remaining before attempt one (owner): model download + write the
+adapter file (forecast(payload)->dict against Kronos) - seeded as T122c.
+Window opens Mon 2026-08-24.
+
 kronos_shape_check.py (downloads weights, must PASS), then
 `kronos_run.py start`.
 
