@@ -16,6 +16,22 @@ Gemini on anything in Awaiting review.
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T157e: crypto-admin skin - AWAITING REVIEW 2026-08-21 (Claude/
+  Cowork; SHA b76f444; owner: "more like the crypto-admin page").**
+  THEIR STYLESHEET WAS FETCHABLE: bs5/main/css/skin_color.css adopted
+  verbatim - field #0c1a32, glass tinted #112547, white-alpha
+  hairlines, ramp #E9EEF9/#BDD1F8/#8CADE4/#566F9E, THE accent =
+  their #ffa800 amber (their skin forces chart series to it; ours
+  follows: "you" line, days lens, budget bar, wordmark). Link blue
+  #4F80D5 = interaction; orb states amber/blues; gain/loss keep
+  green/red (their skin defers semantics to Bootstrap); IBM Plex
+  webfont NOT adopted (no CDN, D039). Doc tokens v3, v2 kept beneath.
+  EVIDENCE (D027): stylesheet quoted in the doc; gate PASS 1,196;
+  node --check 0; zero old-hex leftovers by automated scan; pins green.
+  D028 objections: (1) still unseen in a browser - owner's eyes are
+  the gate, third iteration of the designed loop; (2) two palettes
+  now blended (crypto-admin base + buck-net semantics) - the doc says
+  which owns what so a future pass doesn't muddle them.
 - **T157d: the glass pass - AWAITING REVIEW 2026-08-21 (Claude/Cowork;
   SHA 2124b40; single-unit responsive batch #16 - owner sent round-two
   references and said "the glassy look" + confirmed the side-panel

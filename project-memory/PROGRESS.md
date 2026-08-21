@@ -5,6 +5,23 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 - T157e: crypto-admin skin, from source (Claude/Cowork)
+
+**Built:** owner wanted the crypto-admin look; its skin_color.css WAS
+fetchable - dark skin adopted verbatim (blue-navy #0c1a32 field, glass
+#112547, white-alpha hairlines, amber #ffa800 as THE accent incl. the
+chart series, link-blue #4F80D5 interaction, orb states recolored).
+Webfonts not adopted (no CDN). Doc tokens v3 with provenance; manifest
+colors follow.
+
+**Verified:** gate PASS 1,196; node --check 0; zero-leftover hex scan;
+pins green.
+
+**Next:** owner refreshes and judges (third loop). Gemini queue:
+b76f444 + 2124b40 + 89e4494 as unsigned.
+
+**Blockers:** none.
+
 ## 2026-08-21 - T157d: the glass pass (Claude/Cowork)
 
 **Built:** owner's round-two references were MINABLE - buck-net's
