@@ -5,6 +5,27 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 - Batch #14: PHASE 9 BEGINS - D039 + household schema + payoff planner (Claude/Cowork)
+
+**Built:** Owner directed the next front: household finance + a full
+dashboard ("futuristic... like finrobot") with debt payoff, credit
+cards, spending, budget. D039 records his three picks (one phase,
+chat+CSV, ONE surface). T152: debts/flows/spending schema + strict
+store (units refused not guessed; manual-data recency in the schema).
+T153: avalanche-vs-snowball payoff engine, hand-computed, impossible
+plans refused by name. Seeds T154-T158 queued (budget engine, chat
+tools, CSV import, dashboard v1, briefs).
+
+**Verified:** gate PASS 1,189 (+16); alembic single head d4b8f1a6c2e5;
+pyrefly 0 (it refused T153's first commit - second live save).
+
+**Next:** Gemini reviews batch #14 + I039 (3ba7642). Then T154+T155
+(budget engine + chat tools) next batch; dashboard v1 (T157) after the
+math is signed. Owner: alembic upgrade head on his machine when he
+pulls; Monday Kronos sequence unchanged.
+
+**Blockers:** none.
+
 ## 2026-08-21 - I039: /api/tts 500 fixed (voice-name validation) (Claude/Cowork)
 
 **Built:** owner's incident (edge-tts name in KUBERA_VOICE -> kokoro

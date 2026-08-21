@@ -15,11 +15,42 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
-- **Batch #14 (coupled foundation, D038 4-6 rule; claimed 2026-08-21,
-  Claude/Cowork): D039 record + Phase 9 seeds + T152 schema + T153
-  payoff engine.** UI batches follow once the math is signed.
-
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **Batch #14: D039 + T152 + T153 - AWAITING REVIEW 2026-08-21
+  (Claude/Cowork; Phase 9's coupled foundation, D038 4-6 rule). SHAs per
+  D033: 534da08 (D039 + seeds) / 5a477fe (T152) / 1ac50b5 (T153) /
+  close SHA on this commit. ALSO in queue: I039 voice fix at 3ba7642.**
+  D039 at 534da08: owner-directed Phase 9 (household finance +
+  dashboard; his picks recorded verbatim: one phase, chat+CSV entry,
+  ONE SURFACE - the Orb panel grows into the dashboard). Doctrine
+  carried in: manual-data recency ("as you told me on DATE", stale
+  after a statement cycle), asof on every card, no CDN, payoff math =
+  tested code, coach-not-scold. Seeds T152-T158.
+  T152 - SCHEMA at 5a477fe: debts / recurring_flows / spending_entries
+  + migration d4b8f1a6c2e5 (single head kept) + strict store: percent-
+  shaped apr REFUSED with the conversion spelled out; due_day 29+
+  refused naming February; every balance restatement restamps
+  balance_asof; import_key UNIQUE (NULL-exempt) ready for T156
+  idempotency. 9 tests.
+  T153 - PAYOFF PLANNER at 1ac50b5: avalanche vs snowball, APR/12
+  accrual, freed minimums roll (both strategies - fair comparison),
+  same-month cascade. REFUSES plans whose payments cannot outrun
+  interest, naming the debt and monthly shortfall; 100y horizon cap;
+  debt-free is an answer. compare() states the interest delta AND that
+  adherence is the owner's variable. 7 tests incl. an 11-month schedule
+  worked by hand and the avalanche<=snowball invariant.
+  EVIDENCE (D027): full gate PASS - 1,189 passed (+16: household 9,
+  payoff 7), pyrefly exactly 0, alembic single head d4b8f1a6c2e5,
+  budgets in bounds. The type gate REFUSED T153's first commit
+  (heterogeneous-list indexing) - rewritten on a proper dataclass; its
+  second live save.
+  D028 objections: (1) APR/12 monthly accrual is the standard consumer
+  approximation, not daily compounding - real card interest runs
+  slightly higher; stated here and in the module docstring. (2) The
+  payoff engine trusts owner-stated balances; balance_is_stale() is the
+  defense and T155 must surface it in every answer. (3) cadence is
+  monthly-only v1 - weekly paychecks need doubling by hand until a
+  cadence ticket earns its place.
 - **I039 fix: voice-name validation + secret_check runtime-env parity -
   AWAITING REVIEW 2026-08-21 (Claude/Cowork; SHA 3ba7642).** Owner's
   /api/tts 500 (edge name into kokoro's assert). Fix + follow-through
