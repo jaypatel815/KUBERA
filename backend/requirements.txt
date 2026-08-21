@@ -1,5 +1,8 @@
 fastapi>=0.111
-pydantic-settings>=2.2
+pydantic-settings>=2.2,<3  # T146: owner/sandbox version drift produced the first
+                           # cross-machine behavior gap (his newer build warns on
+                           # FastMCP's 'lifespan' forward ref; ours is silent) —
+                           # the warning is third-party+cosmetic, the DRIFT is ours
 sqlalchemy>=2.0
 alembic>=1.13
 uvicorn>=0.30

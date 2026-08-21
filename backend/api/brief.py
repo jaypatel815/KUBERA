@@ -427,15 +427,13 @@ def compose_weekly_review(db: Session, alpaca: AlpacaClient,
         performance = {"available": False,
                        "why": "fewer than 2 daily snapshots — run scripts/sync.py daily"}
 
-    week_ago = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0,
-                                                  microsecond=0)
+    # window handling lives in score_decisions; rows are shown in full
     rows = db.execute(select(SignalLog).order_by(SignalLog.ts)).scalars().all()
     dqs = score_decisions(rows)
     ordered = [r for r in rows if r.action == "ordered"]
     no_trades = [r for r in rows if r.action == "no_trade"]
     rejected = [r for r in rows if r.action == "rejected"]
     tier_notes = sum(1 for r in rows if r.reasons and "risk tier" in r.reasons)
-    _ = week_ago  # window handling lives in score_decisions; rows shown in full
 
     facts = [
         f"{len(ordered)} orders, {len(no_trades)} deliberate no-trade decisions, "
