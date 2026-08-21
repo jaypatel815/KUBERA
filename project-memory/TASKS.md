@@ -16,6 +16,32 @@ Gemini on anything in Awaiting review.
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T157g: the APPROVED index36 rebuild - AWAITING REVIEW 2026-08-21
+  (Claude/Cowork; SHAs per D033: 4100c6d fonts infra / 9f32007 rebuild /
+  close SHA on this commit).** Owner ran the full spec process himself
+  (analyze -> map -> approve): reference = crypto-admin index36, his
+  screenshot the pixel authority; his three calls locked (vendored OFL
+  fonts via owner-run fetch_fonts.py + /fonts allowlist route; chat as
+  hero mic-orb + amber FAB drawer, fixed dock retired; secondary views
+  behind header icon chips). Built: reference chrome/hero/rows with
+  KUBERA organs - equity in the VISA card anatomy, excess/day/debt as
+  income rows with a REAL range chip, breaker circle + loss-budget
+  donut, amber sparkline + DQS review card, monitor as Activity manager
+  (quick-ask input, count pills, filter, P&L bars, payoff plan in their
+  Upgrade shape), allocation as nested amber circles, session card on
+  the real ET clock, every ask auto-opens the drawer. Voice loop
+  byte-identical; asof survives on every card; no CDN (fonts local).
+  EVIDENCE (D027): gate PASS 1,198 (+1 fonts test); node --check 0;
+  dangling-id scan 0; pin suite extended (hero/micwrap/fab/cmd/donut/
+  alloc/plbars/sess/mon-search + greeting + morning-brief CTA +
+  openDock). docs/design/index36-qa.md carries the Phase-5 checklist
+  with the two owner-eye items and four NAMED deviations.
+  D028 objections: (1) fonts render as system stack until the owner
+  runs fetch_fonts.py once - stated everywhere; (2) drawer-closed
+  replies would be invisible, so EVERY send() opens it - a behavior
+  the reference cannot exhibit but honesty requires; (3) the hero
+  greeting hard-codes "Chotu" - it is his app, but a rename lives in
+  one string.
 - **T157f: the index36 experience - AWAITING REVIEW 2026-08-21
   (Claude/Cowork; SHA 74c85af; owner posted a SCREENSHOT of the exact
   target and said "follow it exactly... functionality, the look, how it

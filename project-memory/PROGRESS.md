@@ -5,6 +5,26 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 - T157g: the approved index36 rebuild ships (Claude/Cowork)
+
+**Built:** owner drove a formal spec process (analyze reference -> map ->
+approve) and the page is now index36 with KUBERA organs: header icon
+chips + command box, hero greeting with the orb inside the white mic
+circle, VISA-anatomy account card, income rows, breaker circle +
+budget donut, amber sparkline, monitor-as-activity-manager with P&L
+bars + payoff Upgrade card, allocation circles, ET session card, amber
+FAB chat drawer. Fonts vendored locally via owner-run fetch_fonts.py +
+/fonts route. QA checklist at docs/design/index36-qa.md.
+
+**Verified:** gate PASS 1,198; node --check 0; dangling-id scan clean;
+pins extended and green; voice loop untouched.
+
+**Next:** owner: (1) python scripts/fetch_fonts.py once, (2) restart +
+refresh, (3) judge against his screenshot - the two eye-items in the QA
+doc. Gemini queue: 4100c6d + 9f32007 + close SHA (+ prior UI SHAs).
+
+**Blockers:** none.
+
 ## 2026-08-21 - T157f: the index36 experience, from the owner's screenshot (Claude/Cowork)
 
 **Built:** owner posted the target's screenshot (first pixel ground
