@@ -846,7 +846,7 @@ presentation doctrine, not a data change. Longer-horizon memory beyond one
 thread's context window remains a NAMED gap for a future ticket
 (cross-thread recall), not papered over.
 
-## D041 — scoped third-party exception: TradingView chart iframe (2026-08-21)
+## D041 — scoped third-party exception: TradingView chart (2026-08-21; amended 2026-08-21)
 
 KUBERA has run with ZERO third-party runtime code (no CDN, single-file UI,
 pinned by test) — supply-chain caution on a public-repo money app. The owner,
@@ -862,3 +862,19 @@ is what his index37 reference embeds) with the tradeoffs stated and accepted:
   is RETAINED behind a one-click fallback for offline/embed failure.
 Scope: the chart slot only. Any further third-party embed needs its own
 decision entry. The no-CDN rule stands for everything else.
+
+AMENDED 2026-08-21 — owner pasted the exact index37.html widget code and
+confirmed the switch. New approach: `new TradingView.widget({...})` via
+`<script src="https://s3.tradingview.com/tv.js">` in the page head.
+Difference from original: tv.js now executes in KUBERA's page (not sandboxed
+to TV's origin). Tradeoffs re-stated and accepted:
+- tv.js is TradingView's own published library — same trust level as the
+  previous iframe embed, wider surface.
+- The widget is scoped to the `#tvchart` div container; it has no access to
+  KUBERA's account data, API keys, or voice loop (no shared globals, no
+  postMessage bridge from KUBERA to the widget).
+- tv.js is the ONE permitted `<script src=` in the page — pinned by test.
+  Any additional third-party script needs its own D0xx entry.
+- Data provenance label ("their feed, their timestamps") retained.
+- First-party canvas fallback retained.
+The no-CDN rule for everything else (chart.js, etc.) is unchanged.

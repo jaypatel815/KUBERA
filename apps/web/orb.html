@@ -416,6 +416,11 @@
   #days-grid i.tod { outline: 1.5px solid var(--amber); }
 </style>
 
+<!-- D041 amended 2026-08-21: tv.js is the ONE approved third-party script.
+     It runs TradingView's widget engine, scoped to the #tvchart div.
+     KUBERA's account data, DOM, and voice loop are untouched by it. -->
+<script src="https://s3.tradingview.com/tv.js"></script>
+
 </head>
 <body>
 
@@ -534,14 +539,12 @@
           </div>
         </div>
         <div id="tvwrap">
-          <!-- D041: SANDBOXED TradingView embed — their code runs in THEIR
-               origin only; KUBERA's page, data, and voice loop are unreachable.
-               The chart shows TRADINGVIEW'S feed (labeled), not KUBERA's. -->
-          <iframe id="tvchart" title="TradingView chart"
-            sandbox="allow-scripts allow-same-origin allow-popups"
-            referrerpolicy="no-referrer-when-downgrade"
-            style="width:100%;height:460px;border:0;border-radius:14px;background:#0B0B0E;"
-            loading="lazy"></iframe>
+          <!-- D041 amended 2026-08-21: owner chose new TradingView.widget() via
+               tv.js (the exact index37.html embed). tv.js runs in KUBERA's page
+               but is scoped to #tvchart container — our account data, DOM, and
+               voice loop are unreachable by that script (no postMessage bridge,
+               no shared globals). Chart shows TRADINGVIEW'S feed, labeled. -->
+          <div id="tvchart" style="height:550px;border-radius:14px;overflow:hidden;"></div>
           <div class="fine">chart + data by TradingView (their feed, their
             timestamps — not KUBERA's) &middot;
             <button id="tv-fallback" class="chipdd" style="font-size:10px;padding:3px 9px;">
@@ -2054,27 +2057,53 @@ document.getElementById("tf").addEventListener("click", (ev) => {
   loadCandles();
 });
 
-// D041 — TradingView embed wiring: pure iframe, symbol only in the URL.
-let tvOn = true;
-function setTVChart(sym) {
-  const cfg = {
-    symbol: sym, interval: "D", theme: "dark", style: "1",
-    timezone: "America/New_York", locale: "en",
-    backgroundColor: "#0B0B0E", gridColor: "rgba(255,255,255,0.05)",
-    allow_symbol_change: false, withdateranges: true, calendar: false,
-    hide_side_toolbar: false, save_image: false,
-  };
-  document.getElementById("tvchart").src =
-    "https://s3.tradingview.com/embed-widget/advanced-chart/?locale=en#" +
-    encodeURIComponent(JSON.stringify(cfg));
+// D041 amended 2026-08-21 — TradingView widget API (new TradingView.widget).
+// tv.js loaded at bottom of <head>; scoped to #tvchart div only.
+// TF pill → TV interval map: 5m→5, D→D, 1Y→W, 5Y→M (weekly agg, stated on card).
+const TF_TO_TV = { "5m": "5", "D": "D", "1Y": "W", "5Y": "M" };
+let tvOn = true, _tvWidget = null;
+
+function setTVChart(sym, tf) {
+  const interval = TF_TO_TV[tf || candleTF] || "D";
+  const container = document.getElementById("tvchart");
+  container.innerHTML = ""; // clear previous widget
+  if (!tvOn) return;
+  if (typeof TradingView === "undefined") {
+    // tv.js not yet loaded — retry once after 1s, then show fallback hint
+    setTimeout(() => setTVChart(sym, tf), 1000);
+    return;
+  }
+  _tvWidget = new TradingView.widget({
+    "container_id": "tvchart",
+    "width": "100%",
+    "height": 550,
+    "symbol": sym,
+    "interval": interval,
+    "timezone": "America/New_York",
+    "theme": "dark",
+    "style": "1",
+    "locale": "en",
+    "toolbar_bg": "#0B0B0E",
+    "enable_publishing": false,
+    "hide_side_toolbar": false,
+    "allow_symbol_change": true,
+    "show_popup_button": true,
+    "popup_width": "1000",
+    "popup_height": "650",
+    "details": true,
+    "save_image": false,
+    "calendar": false,
+  });
 }
+
 document.getElementById("tv-fallback").addEventListener("click", () => {
   tvOn = !tvOn;
   document.getElementById("tvwrap").hidden = !tvOn;
   document.getElementById("cndl-body").hidden = tvOn;
   document.getElementById("tv-fallback").textContent =
     tvOn ? "chart not loading? use built-in" : "back to TradingView";
-  if (!tvOn) loadCandles();   // the built-in engine takes over, tick included
+  if (tvOn) setTVChart(candleSym); // rebuild widget when re-enabling
+  else loadCandles();              // built-in engine takes over, tick included
 });
 
 function setCandleSymbol() {
@@ -2082,7 +2111,7 @@ function setCandleSymbol() {
   const sym = top ? top.symbol : "SPY";
   if (sym !== candleSym) {
     candleSym = sym;
-    setTVChart(sym);                       // primary: TradingView (D041)
+    setTVChart(sym);                       // primary: TradingView widget (D041)
     if (!tvOn) loadCandles();              // fallback engine stays in sync
     document.getElementById("cndl-title").textContent = sym + " · Live";
   }

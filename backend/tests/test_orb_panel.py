@@ -111,12 +111,13 @@ def test_index37_row_is_wired():
     # live tick: forming bar moves every 5s while open; stillness explained
     assert "liveTick" in text and "setInterval(liveTick, 5000)" in text
     assert "market closed — candles resume at the open" in text
-    # T157j/D041: TradingView primary (sandboxed iframe, labeled feed),
-    # built-in canvas retained as the named fallback; VIX is the 4th card
+    # T157j/D041 amended 2026-08-21: TradingView.widget() via tv.js (index37 style).
+    # Primary container is a div; the widget builds its own iframe internally.
+    # Fallback canvas + toggle button retained for offline/embed failure.
     assert 'id="tvchart"' in text
-    assert 'sandbox="allow-scripts allow-same-origin allow-popups"' in text
-    assert "embed-widget/advanced-chart" in text
-    assert "their feed, their" in text          # data provenance labeled
+    assert 'new TradingView.widget(' in text       # widget API, not raw iframe
+    assert 'container_id' in text                  # widget config field
+    assert "their feed, their" in text             # data provenance still labeled
     assert 'id="tv-fallback"' in text and "use built-in" in text
     assert 'data-idx="VIX"' in text
     assert 'id="port-bp"' in text               # Buying Power on the acct card
@@ -156,9 +157,13 @@ def test_benchmark_panel_is_wired():
     assert "benchmark unavailable" in text
     # API detail text is escaped before it touches innerHTML
     assert "esc(detail)" in text
-    # first-party rule with ONE recorded exception (D041): the TradingView
-    # chart iframe. No script CDNs, no inline third-party JS — the embed is
-    # a sandboxed iframe whose code runs in TradingView's origin only.
+    # D041 amended 2026-08-21: ONE approved third-party script tag — tv.js only.
+    # No other CDN scripts, no chart.js, no inline third-party JS.
     assert "cdn" not in text.lower()
     assert "chart.js" not in text.lower()
-    assert "<script src=" not in text.lower()  # zero third-party JS in OUR page
+    # tv.js is the ONE permitted <script src= — verify it's the only one
+    script_srcs = [ln for ln in text.splitlines() if "<script src=" in ln.lower()]
+    assert len(script_srcs) == 1, (
+        f"Expected exactly 1 <script src=, got {len(script_srcs)}: {script_srcs}"
+    )
+    assert "tradingview.com/tv.js" in script_srcs[0]  # must be TV's own script
