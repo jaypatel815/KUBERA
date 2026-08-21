@@ -845,3 +845,20 @@ record (threads, audit trail, /api/chat/{id}) untouched; this is a
 presentation doctrine, not a data change. Longer-horizon memory beyond one
 thread's context window remains a NAMED gap for a future ticket
 (cross-thread recall), not papered over.
+
+## D041 — scoped third-party exception: TradingView chart iframe (2026-08-21)
+
+KUBERA has run with ZERO third-party runtime code (no CDN, single-file UI,
+pinned by test) — supply-chain caution on a public-repo money app. The owner,
+after three rounds on the chart, chose TradingView's actual Chart Widget (it
+is what his index37 reference embeds) with the tradeoffs stated and accepted:
+- SANDBOXED IFRAME ONLY — TradingView's code executes in ITS origin, never
+  in KUBERA's page; our DOM, account data, and voice loop are unreachable.
+- TradingView receives the viewed symbol string + standard embed telemetry;
+  the chart area requires internet.
+- The chart shows TRADINGVIEW'S feed, labeled as such — KUBERA's asof/feed
+  rails apply everywhere else, not inside the iframe.
+- The built-in canvas chart (T157h/i: candles, volume, 5s tick, TF chips)
+  is RETAINED behind a one-click fallback for offline/embed failure.
+Scope: the chart slot only. Any further third-party embed needs its own
+decision entry. The no-CDN rule stands for everything else.

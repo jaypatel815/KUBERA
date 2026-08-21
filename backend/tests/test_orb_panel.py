@@ -107,6 +107,15 @@ def test_index37_row_is_wired():
     # live tick: forming bar moves every 5s while open; stillness explained
     assert "liveTick" in text and "setInterval(liveTick, 5000)" in text
     assert "market closed — candles resume at the open" in text
+    # T157j/D041: TradingView primary (sandboxed iframe, labeled feed),
+    # built-in canvas retained as the named fallback; VIX is the 4th card
+    assert 'id="tvchart"' in text
+    assert 'sandbox="allow-scripts allow-same-origin allow-popups"' in text
+    assert "embed-widget/advanced-chart" in text
+    assert "their feed, their" in text          # data provenance labeled
+    assert 'id="tv-fallback"' in text and "use built-in" in text
+    assert 'data-idx="VIX"' in text
+    assert 'id="port-bp"' in text               # Buying Power on the acct card
     assert "headlines are data, not advice" in text
     # real endpoints, incl. the new raw-bars route + deep history
     assert "intraday-bars?timeframe=5Min" in text
@@ -143,6 +152,9 @@ def test_benchmark_panel_is_wired():
     assert "benchmark unavailable" in text
     # API detail text is escaped before it touches innerHTML
     assert "esc(detail)" in text
-    # no chart library crept in — the Orb stays a single self-contained file
+    # first-party rule with ONE recorded exception (D041): the TradingView
+    # chart iframe. No script CDNs, no inline third-party JS — the embed is
+    # a sandboxed iframe whose code runs in TradingView's origin only.
     assert "cdn" not in text.lower()
     assert "chart.js" not in text.lower()
+    assert "<script src=" not in text.lower()  # zero third-party JS in OUR page

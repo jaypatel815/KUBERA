@@ -58,8 +58,9 @@ def test_no_provider_means_a_named_refusal_not_an_etf_price():
     for c in cards:
         assert c["level"] is None
         assert "NOT the index" in c["why"]
-        # the %% line may still ride the ETF, labeled
-        assert c["change_pct"] is not None
+    # equity indices may ride the ETF for %% (labeled); VIX has no honest
+    # proxy, so its change line stays empty rather than faked
+    assert [c["change_pct"] is not None for c in cards] == [True, True, True, False]
 
 
 def test_endpoint_answers_without_keys():
@@ -70,5 +71,5 @@ def test_endpoint_answers_without_keys():
     assert r.status_code == 200
     d = r.json()
     assert [c["name"] for c in d["indices"]] == [
-        "Dow Index", "S&P 500 Index", "NASDAQ Index"]
+        "Dow Index", "S&P 500 Index", "NASDAQ Index", "VIX"]
     assert "official FRED close" in d["note"]

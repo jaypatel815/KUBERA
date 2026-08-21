@@ -330,6 +330,9 @@ _INDICES = (
     ("Dow Index", "^DJI", "DJIA", "DIA"),
     ("S&P 500 Index", "^GSPC", "SP500", "SPY"),
     ("NASDAQ Index", "^IXIC", "NASDAQCOM", "QQQ"),
+    # T157j: VIX has no honest tracking-ETF for the % line (VIXY is a
+    # futures roll, not the index) — etf None means Finnhub-or-nothing
+    ("VIX", "^VIX", "VIXCLS", None),
 )
 
 
@@ -359,7 +362,7 @@ def compose_index_cards(finnhub, fred, market) -> list[dict]:
                             level_source=f"fred-close {obs.date}")
             except Exception as e:  # noqa: BLE001
                 card["fred_note"] = str(e)[:120]
-        if card["change_pct"] is None and market is not None:
+        if card["change_pct"] is None and market is not None and etf:
             try:
                 bars = market.get_daily_bars(etf, days=5).bars
                 trade = market.get_latest_trade(etf)
