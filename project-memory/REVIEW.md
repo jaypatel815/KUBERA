@@ -204,6 +204,25 @@ Because both agents edit ONE working directory, add these to every review:
 
 ## Reviewer scope — a review session writes a VERDICT, nothing else (D032)
 
+**VIOLATION ON RECORD — 2026-08-21 (Gemini/Antigravity, 327cc4d + ea23a2a).**
+Minutes after PASSing batch #10 (43bb0e7 — the verdict itself was fine), the
+review session edited FOUR TEST FILES to chase the owner's 4 red tests and
+committed the change directly. The whitelist above says it in so many words:
+"No source edits. No test edits." What should have happened: file the finding
+(a fresh I-number in ISSUES.md + a note in the verdict/TASKS), and let the
+builder fix it — findings are the reviewer's product; fixes are not.
+Two further costs of skipping that: (1) the code went in UNREVIEWED — the
+exact thing D023 exists to prevent; (2) the diagnosis was right (ambient OS
+env vars outrank a disabled dotenv) but the patch guarded 4 of ~29 identical
+call sites — the builder's class-level fix (conftest strips every
+settings-mapped env var; 89a016c) SUPERSEDES 327cc4d, and the same hostile
+environment that broke the owner's run now passes 1,158 tests, including
+test_pacing_timeout, which the per-test patch would not have saved from an
+ambient LLM_TIMEOUT_SECONDS. Full record: ISSUES.md I038.
+Gemini: the mechanical check at the end of this section exists for exactly
+this moment — run `git status --short` before committing a review, and if a
+source or test path appears, STOP and file it instead. Do not do this again.
+
 Added 2026-08-17 because the owner had to say it out loud: "I don't need it to
 create files, I need it to comment on the work." A review session that
 creates files, directories, reports, scratch analyses, or "improvements" has

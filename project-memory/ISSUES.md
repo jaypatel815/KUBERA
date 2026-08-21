@@ -659,3 +659,28 @@ it guarded the library named in the error and not the one imported above it. Whe
 error is fixed, re-run the failing condition rather than the working one; a green suite on a
 machine that has the dependency proves nothing about the machine that does not.
 
+
+## I038 — ambient OS env vars flipped test premises on the owner's machine (2026-08-21)
+**Symptom:** owner's `verify.py` failed 4 tests with DID NOT RAISE
+(test_edgar / test_finnhub / test_fmp / test_schwab missing-config tests)
+while CI and the Cowork sandbox stayed green.
+**Root cause:** pydantic-settings reads real OS environment variables at
+HIGHER priority than any dotenv file, so `KuberaSettings(_env_file=None)` —
+the "empty settings" premise used at ~29 test call sites — silently absorbed
+whatever the launching shell exported. The owner's shell had EDGAR_CONTACT,
+FINNHUB_API_KEY, FMP_API_KEY, and SCHWAB_* exported (vector unknown — VS Code
+auto-loading .env into terminals and `setx` from another tool's setup are the
+usual suspects; the fix does not depend on which). Same CLASS as I036/I037:
+truth that depends on which machine is asking.
+**Fix (89a016c):** conftest.py autouse session fixture deletes every
+settings-mapped env var before the first test (names DERIVED from
+KuberaSettings.model_fields + alias spellings, so future fields are covered
+automatically); the 4 tests restored to their original absent-config form;
+test_env_isolation.py pins the invariant with a named allowlist for the one
+legitimate re-export (llm_claude_sdk setdefaults the oauth token from
+settings). Safe for live-keyed tests: they read the .env FILE, which ignores
+the process environment. Reproduced-then-fixed in the sandbox by planting the
+owner's exact vars: 4 red before, 1,158 green after, clean-env gate also PASS.
+**Also on record:** Gemini's review session committed a 4-site bandage
+(327cc4d, superseded) — a D032 violation, noted in REVIEW.md under the scope
+rule.

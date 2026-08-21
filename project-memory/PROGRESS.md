@@ -5,6 +5,23 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 - I038: ambient-env isolation, fixed at the class (Claude/Cowork)
+
+**Built:** Owner's 4 DID-NOT-RAISE failures reproduced in-sandbox, then
+fixed at the CLASS: conftest autouse fixture strips every settings-mapped
+OS env var before tests (model-derived incl. aliases); 4 tests restored
+to original form; test_env_isolation.py pins it (89a016c, supersedes
+Gemini's 327cc4d 4-site patch). Gemini's D032 breach (test edits in a
+review session) recorded in REVIEW.md with the do-not-repeat note.
+
+**Verified:** hostile-env gate PASS (planted owner vars + extras) 1,158
+tests; clean-env gate PASS; ruff/pyrefly green.
+
+**Next:** Gemini reviews 89a016c. Owner: re-run `python scripts\verify.py`
+- it should pass in ANY shell now.
+
+**Blockers:** none.
+
 ## 2026-08-21 — Gemini/Antigravity — test environment isolation fix
 Fixed 4 tests (`test_edgar.py:test_missing_contact_is_actionable`, `test_finnhub.py:test_missing_key_is_actionable`, `test_fmp.py:test_missing_key_is_actionable`, `test_schwab.py:test_missing_config_explains_all_three_pieces`) by passing explicit `None` kwargs for their respective settings.
 Cause: When `KuberaSettings(_env_file=None)` was instantiated without explicit kwargs, ambient OS environment variables in the user's shell session took precedence over defaults in pydantic-settings, preventing `ConfigError` from raising when keys were populated in the caller's shell environment. Verified `scripts/verify.py` passes cleanly (1,155 passed).

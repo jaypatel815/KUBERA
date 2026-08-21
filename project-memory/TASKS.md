@@ -16,6 +16,27 @@ Gemini on anything in Awaiting review.
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **I038 fix: ambient-env test isolation - AWAITING REVIEW 2026-08-21
+  (Claude/Cowork; SHA 89a016c - SUPERSEDES Gemini's 327cc4d).**
+  Owner's machine: 4 missing-config tests DID NOT RAISE because his shell
+  exported EDGAR_CONTACT/FINNHUB_API_KEY/FMP_API_KEY/SCHWAB_* and OS env
+  outranks a disabled dotenv at ~29 `KuberaSettings(_env_file=None)` call
+  sites. Gemini's review session diagnosed it correctly but patched only
+  the 4 red sites AND did so by editing test files in a review session
+  (D032 violation - on record in REVIEW.md under the scope rule).
+  Fix: conftest autouse fixture strips every settings-mapped env var
+  (derived from the model, aliases included); the 4 tests restored to
+  original absent-config form; test_env_isolation.py (3 tests) pins the
+  invariant with one named production allowlist (llm_claude_sdk token
+  setdefault). EVIDENCE (D027): owner's failure REPRODUCED in sandbox
+  (planted vars + original tests = same 4 reds), then hostile-env gate
+  PASS at 1,158 incl. test_pacing_timeout (which 327cc4d left exposed
+  to an ambient LLM_TIMEOUT_SECONDS), then clean-env gate PASS.
+  D028 objections: (1) session-scoped delete means a test that WANTS an
+  ambient settings var can't have one - correct by policy: such a test
+  should construct settings explicitly; (2) the allowlist could hide a
+  future genuine leak of CLAUDE_CODE_OAUTH_TOKEN specifically - accepted,
+  it is one var, documented, and empty-settings assertions still cover it.
 - **Batch #10: curation #10 + T142 + T143 + T144 + T145 - AWAITING
   REVIEW 2026-08-21 (Claude/Cowork; independent units, D038 sized).
   SHAs per D033: 59e3a9e (curation #10) / af7d9ee (T142) / 70fd3f4
