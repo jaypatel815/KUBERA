@@ -15,6 +15,17 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
+- **Batch #11 (5 units, probe-sized; claimed 2026-08-21, Claude/Cowork;
+  queue empty - I038 fix PASSed at d727e80, batch #10 PASSed at 43bb0e7):**
+  curation #11 (archive both signed blocks), T146 (cap pydantic-settings
+  <3 - first observed cross-machine drift: owner's newer version emits a
+  FastMCP 'lifespan' forward-ref warning our sandbox never sees; the
+  warning itself is third-party and cosmetic, the DRIFT is ours to stop;
+  + dead week_ago sweep in brief.py), T147 (Orb local alert
+  notifications: NEW-transition-only, permission on gesture, honest
+  only-while-open scope - PWA push stays a named gap), T148
+  (health_check check_backup: the restore drill proves a backup
+  restores, nothing watches that backups keep HAPPENING), close.
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
 - **I038 fix: ambient-env test isolation - AWAITING REVIEW 2026-08-21
   (Claude/Cowork; SHA 89a016c - SUPERSEDES Gemini's 327cc4d).**
