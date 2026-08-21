@@ -91,6 +91,24 @@ def test_index36_views_and_behaviors_are_wired():
     assert "send(b.dataset.ask)" in text
 
 
+def test_index37_row_is_wired():
+    """T157h — the owner's index37 additions, on real endpoints."""
+    text = ORB.read_text(encoding="utf-8")
+    for el in ('id="tickers"', 'data-sym="DIA"', 'data-sym="SPY"',
+               'data-sym="QQQ"', 'id="news-card"', 'id="news-hed"',
+               'id="candle-card"', 'id="candles"', 'id="cndl-rail"',
+               'data-tf="5m"', 'data-tf="5Y"'):
+        assert el in text, f"missing {el}"
+    # honest labels: proxies named, headlines framed as data
+    assert "ETF proxy" in text
+    assert "headlines are data, not advice" in text
+    # real endpoints, incl. the new raw-bars route + deep history
+    assert "intraday-bars?timeframe=5Min" in text
+    assert "days=${def.days}" in text and '"5Y": { days: 1825' in text
+    # 5Y readability = weekly aggregation, stated on the card
+    assert "weekly candles (aggregated for readability)" in text
+
+
 def test_benchmark_panel_is_wired():
     """T143 — performance vs SPY: /api/benchmark drawn inline, no chart lib."""
     text = ORB.read_text(encoding="utf-8")

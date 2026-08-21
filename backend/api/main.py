@@ -326,6 +326,24 @@ def market_bars(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@app.get("/api/market/{symbol}/intraday-bars")
+def market_intraday_bars(
+    symbol: str,
+    timeframe: str = "5Min",
+    days: int = 1,
+    client: MarketDataClient = Depends(get_market_client),
+) -> dict:
+    """T157h — RAW intraday OHLCV for the candlestick panel (the /api/intraday
+    route serves the session READ, not bars). Thin passthrough, same feed."""
+    try:
+        return asdict(client.get_intraday_bars(symbol, timeframe=timeframe,
+                                               days=days))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except MarketDataError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @app.get("/api/briefing/{symbol}")
 def symbol_briefing(
     symbol: str,

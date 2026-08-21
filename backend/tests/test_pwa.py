@@ -67,3 +67,17 @@ def test_font_route_rejects_bad_names_and_hints_when_absent():
         assert "fetch_fonts" in r.text
     else:                                          # owner machine, post-fetch
         assert r.headers["content-type"].startswith("font/woff2")
+
+
+def test_intraday_bars_route_shape():
+    """T157h — the candle panel's raw-bars route exists and degrades named."""
+    from fastapi.testclient import TestClient
+
+    from api.main import app
+    r = TestClient(app).get("/api/market/SPY/intraday-bars?timeframe=5Min&days=1")
+    # sandbox/CI: feed unreachable -> 502 with the named network error;
+    # owner machine: 200 with {symbol, timeframe, bars, asof, source}
+    assert r.status_code in (200, 502)
+    if r.status_code == 200:
+        body = r.json()
+        assert body["symbol"] == "SPY" and "bars" in body
