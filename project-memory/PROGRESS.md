@@ -5,6 +5,25 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-21 - T157j: TradingView chart (D041) + VIX + Buying Power (Claude/Cowork)
+
+**Built:** owner's redesign brief reconciled (T157g-i already covered
+most; phantom svc-*/WebSocket architecture corrected on record). New:
+TradingView Advanced Chart as a sandboxed iframe (D041 - owner accepted
+the stated tradeoffs; built-in canvas kept as named fallback), VIX 4th
+ticker via FRED VIXCLS (no faked %% line), Buying Power on the account
+card. SHA e9f0960.
+
+**Verified:** gate PASS 1,206; node 0; zero third-party JS in our page
+pinned by test.
+
+**Next:** owner refreshes - TradingView chart should render with full
+crosshair/OHLCV/pan/zoom immediately (internet required); Monday
+session proves the tickers + Kronos day one. Gemini queue: e9f0960 +
+prior UI SHAs.
+
+**Blockers:** none.
+
 ## 2026-08-21 - T157i: real index levels + ticking candles (Claude/Cowork)
 
 **Built:** owner round two: /api/indices (Finnhub-live -> FRED-close ->

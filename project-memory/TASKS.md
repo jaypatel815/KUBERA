@@ -16,6 +16,27 @@ Gemini on anything in Awaiting review.
 
 ## In progress
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T157j: TradingView chart (D041) + VIX + Buying Power - AWAITING
+  REVIEW 2026-08-21 (Claude/Cowork; SHA e9f0960).** Owner's formal
+  redesign brief reconciled honestly (most mandates already shipped in
+  T157g-i; corrections on record: no svc-* microservices, no WebSocket
+  layer exist - REST polling is the truth). Genuinely new, all built:
+  (1) owner chose TradingView's ACTUAL widget over first-party
+  crosshair work - adopted per D041 with tradeoffs stated and accepted:
+  SANDBOXED IFRAME only (zero third-party JS in our page - pinned:
+  "<script src=" absent entirely), symbol-only URL, provenance labeled
+  ("their feed, their timestamps"), built-in canvas engine RETAINED
+  behind a named fallback toggle for offline/embed failure; (2) VIX as
+  the 4th ticker (FRED VIXCLS chain; NO %% line - VIXY is a futures
+  roll, an empty change beats a faked one); (3) Buying Power beside
+  Day P&L on the account card.
+  EVIDENCE (D027): gate PASS 1,206; node 0; pins extended (tvchart/
+  sandbox/provenance/fallback/VIX/port-bp + no-script-src). D028
+  objections: (1) TradingView embed is a live third-party dependency -
+  scoped to the chart slot by D041, everything else first-party; (2)
+  the widget's data may disagree with our feed by pennies/timing -
+  labeled, and KUBERA's own numbers never come from it; (3) VIX change
+  line empty without Finnhub index quotes - honest by design.
 - **T157i: real index levels + live-ticking candles - AWAITING REVIEW
   2026-08-21 (Claude/Cowork; SHA ee6f011).** Owner's two findings:
   index cards showed ETF dollars; candles read as static. Fixes:
