@@ -12,10 +12,63 @@
   html, body { height: 100%; background: #07070c; color: #e8e4d8; overflow: hidden;
     font-family: "Segoe UI", -apple-system, system-ui, sans-serif; }
 
-  /* ── layout shell ── */
-  #shell { position: fixed; inset: 0; display: flex; flex-direction: row; }
+  /* ══ T157c dashboard shell (docs/design/dashboard-language.md) ══
+     dark canvas, content on cards, ONE gold accent, asof on every card;
+     the conversation docks right — "neat, and not just an Orb" */
+  #topbar { position: fixed; top: 0; left: 0; right: 0; height: 46px; z-index: 300;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 14px; background: #0a0a10; border-bottom: 1px solid #1a1a24; }
+  #wordmark { color: #c9a227; font-size: 15px; letter-spacing: 4px; font-weight: 600; }
+  #brand-sub { color: #55503e; font-size: 10.5px; letter-spacing: 1px; margin-left: 10px;
+    text-transform: uppercase; }
+  #top-right { display: flex; align-items: center; gap: 10px; }
+  #top-date { color: #8a815f; font-size: 11px; letter-spacing: 1px; }
+  #shell { position: fixed; inset: 46px 0 0 0; display: flex; flex-direction: row; }
 
-  /* ── sidebar (left) ── */
+  #main { flex: 1; min-width: 0; overflow-y: auto; padding: 14px; }
+  #main::-webkit-scrollbar { width: 4px; }
+  #main::-webkit-scrollbar-thumb { background: #2a2520; border-radius: 3px; }
+
+  /* KPI row */
+  #kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px; margin-bottom: 12px; }
+  .kpi { background: #0d0d14; border: 1px solid #1a1a24; border-radius: 12px;
+    padding: 12px 14px; min-height: 86px; }
+  .kl { color: #8a815f; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+  .kv { color: #e8e4d8; font-size: 23px; font-weight: 600; margin-top: 4px;
+    font-variant-numeric: tabular-nums; }
+  .kv.pos { color: #5aaa88; } .kv.neg { color: #b07070; }
+  .kfoot { color: #3a3830; font-size: 9.5px; margin-top: 5px; line-height: 1.4; }
+  .kbar { height: 4px; background: #14141c; border-radius: 999px; margin-top: 7px;
+    overflow: hidden; }
+  #kpi-budget-fill { height: 100%; width: 0%; background: #c9a227;
+    border-radius: 999px; transition: width 0.4s ease; }
+
+  /* cards grid */
+  #cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 10px; }
+  .card { background: #0d0d14; border: 1px solid #1a1a24; border-radius: 12px;
+    padding: 12px 14px; min-width: 0; }
+  .ch { display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; }
+  .ct { color: #8a815f; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* conversation dock (right) — the orb as companion, voice loop untouched */
+  #dock { width: 340px; flex-shrink: 0; display: flex; flex-direction: column;
+    background: #0a0a10; border-left: 1px solid #1a1a24; padding: 10px 12px; }
+  #hint { text-align: center; font-size: 10.5px; color: #55503e; letter-spacing: 0.6px;
+    padding: 2px 0 6px; transition: color 0.3s; }
+  #stage { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+  #orb { cursor: pointer; width: 170px; height: 170px; } /* canvas draws 520², CSS scales */
+  #status { margin-top: 2px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: #8a815f; user-select: none; text-align: center; }
+  #log { flex: 1; overflow-y: auto; font-size: 13px; line-height: 1.5; margin: 8px 0;
+    -webkit-mask-image: linear-gradient(transparent, black 12%);
+    mask-image: linear-gradient(transparent, black 12%); }
+  #log::-webkit-scrollbar { width: 3px; }
+  #log::-webkit-scrollbar-thumb { background: #2a2520; border-radius: 3px; }
+
+  /* ── sidebar (left, toggle) ── */
   #sidebar { width: 0; overflow: hidden; transition: width 0.22s ease;
     display: flex; flex-direction: column; background: #0d0d14;
     border-right: 1px solid #1a1a24; flex-shrink: 0; }
@@ -37,19 +90,6 @@
     overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
   .srow-meta { font-size: 10px; color: #55503e; margin-top: 3px; letter-spacing: 0.4px; }
 
-  /* ── center stage ── */
-  #center { flex: 1; position: relative; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; min-width: 0; }
-  #stage { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  #orb { cursor: pointer; }
-  #status { margin-top: 6px; font-size: 13px; letter-spacing: 3px; text-transform: uppercase;
-    color: #8a815f; user-select: none; }
-  #hint { position: absolute; top: 18px; width: 100%; text-align: center; font-size: 12px;
-    color: #55503e; letter-spacing: 1px; pointer-events: none; transition: color 0.3s; }
-  #log { position: absolute; bottom: 92px; left: 50%; transform: translateX(-50%);
-    width: min(640px, 90%); max-height: 30vh; overflow-y: auto; font-size: 14px;
-    line-height: 1.55; -webkit-mask-image: linear-gradient(transparent, black 18%);
-    mask-image: linear-gradient(transparent, black 18%); }
   .turn { margin: 10px 0; }
   .you { color: #6f9f9b; }
   .kub { color: #d9c98a; }
@@ -63,28 +103,17 @@
   .chip-stale { border-color: #6a3820; color: #b07050; }
   .chip-old   { border-color: #5a2020; color: #9a5050; }
 
-  #bar { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
-    width: min(640px, 90%); display: flex; gap: 8px; align-items: center; }
+  #bar { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
   #typed { flex: 1; background: #101018; border: 1px solid #23232e; border-radius: 10px;
-    color: #e8e4d8; padding: 11px 14px; font-size: 14px; outline: none; }
+    color: #e8e4d8; padding: 9px 12px; font-size: 13px; outline: none; min-width: 0; }
   #typed:focus { border-color: #4a4433; }
-  label.cf { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #8a815f;
+  label.cf { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: #8a815f;
     user-select: none; white-space: nowrap; }
   input[type=checkbox] { accent-color: #c9a227; }
-  #err { position: absolute; bottom: 4px; width: 100%; text-align: center; font-size: 11px;
-    color: #a05c5c; }
+  #err { text-align: center; font-size: 10.5px; color: #a05c5c; min-height: 15px;
+    padding-top: 3px; flex-shrink: 0; }
 
-  /* ── portfolio panel (right) ── */
-  #port-panel { width: 0; overflow: hidden; transition: width 0.22s ease;
-    display: flex; flex-direction: column; background: #0d0d14;
-    border-left: 1px solid #1a1a24; flex-shrink: 0; }
-  #port-panel.open { width: 264px; } /* widened for the monitor's days lens (T087) */
-  #port-hdr { display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 12px 10px; border-bottom: 1px solid #1a1a24; flex-shrink: 0; }
-  #port-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #8a815f; }
-  #port-body { flex: 1; overflow-y: auto; padding: 10px 12px; font-size: 12px; line-height: 1.6; }
-  #port-body::-webkit-scrollbar { width: 3px; }
-  #port-body::-webkit-scrollbar-thumb { background: #2a2520; border-radius: 3px; }
+  /* shared value styles (KPIs + positions card) */
   .pl  { color: #8a815f; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
     margin-top: 10px; margin-bottom: 2px; }
   .pv  { color: #c8c4b4; }
@@ -117,23 +146,35 @@
   .bench-spy { color: #8b8fa3; }
   #bench-foot { font-size: 10px; line-height: 1.5; }
 
-  /* ── floating toggle buttons ── */
-  #btn-sidebar, #btn-port {
-    position: fixed; top: 18px; z-index: 200;
-    background: #0d0d14; border: 1px solid #1a1a24; border-radius: 6px;
-    color: #8a815f; font-size: 14px; width: 30px; height: 30px;
+  /* ── household card (T157) ── */
+  .house-row { display: flex; justify-content: space-between; align-items: baseline;
+    padding: 5px 0; border-bottom: 1px solid #14141c; }
+  .house-name { color: #c8c4b4; font-size: 11px; font-weight: 600; }
+  .house-num  { font-size: 10.5px; color: #8a815f; font-variant-numeric: tabular-nums; }
+  .house-stale { color: #b07050; }
+  .util-bar { height: 3px; background: #14141c; border-radius: 999px; overflow: hidden;
+    margin: 2px 0 4px; }
+  .util-fill { height: 100%; background: #8b8fa3; border-radius: 999px; }
+  .util-hot  { background: #b07070; }
+
+  /* ── sidebar toggle (topbar) ── */
+  #btn-sidebar { background: #0d0d14; border: 1px solid #1a1a24; border-radius: 6px;
+    color: #8a815f; font-size: 13px; width: 28px; height: 28px;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; transition: color 0.15s, border-color 0.15s; }
-  #btn-sidebar { left: 12px; }
-  #btn-port    { right: 12px; }
-  #btn-sidebar:hover, #btn-port:hover { color: #c9a227; border-color: #4a4030; }
+  #btn-sidebar:hover { color: #c9a227; border-color: #4a4030; }
 </style>
 </head>
 <body>
 
-<!-- floating toggles -->
-<button id="btn-sidebar" title="Conversation history">☰</button>
-<button id="btn-port"    title="Portfolio snapshot">▣</button>
+<!-- ════ TOP BAR ════ -->
+<div id="topbar">
+  <div><span id="wordmark">KUBERA</span><span id="brand-sub">personal financial advisor · paper account</span></div>
+  <div id="top-right">
+    <span id="top-date"></span>
+    <button id="btn-sidebar" title="Conversation history">☰</button>
+  </div>
+</div>
 
 <div id="shell">
 
@@ -146,8 +187,55 @@
     <div id="sidebar-list"></div>
   </div>
 
-  <!-- ════ CENTER: orb + chat ════ -->
-  <div id="center">
+  <!-- ════ CENTER: the dashboard (T157c) — every card carries its asof ════ -->
+  <main id="main">
+    <div id="kpis">
+      <div class="kpi"><div class="kl">Equity</div>
+        <div class="kv" id="port-equity">&mdash;</div>
+        <div class="kfoot" id="port-asof"></div></div>
+      <div class="kpi"><div class="kl">Day P&amp;L</div>
+        <div class="kv" id="port-daypnl">&mdash;</div>
+        <div class="kfoot">vs day start &middot; paper</div></div>
+      <div class="kpi"><div class="kl">vs SPY &middot; 90d</div>
+        <div class="kv" id="kpi-excess">&mdash;</div>
+        <div class="kfoot" id="kpi-excess-note">excess cumulative return</div></div>
+      <div class="kpi"><div class="kl">Risk tier</div>
+        <div class="kv" id="kpi-tier">&mdash;</div>
+        <div class="kbar"><div id="kpi-budget-fill"></div></div>
+        <div class="kfoot" id="kpi-tier-note">daily loss budget</div></div>
+      <div class="kpi"><div class="kl">Decision quality</div>
+        <div class="kv" id="kpi-dqs">&mdash;</div>
+        <div class="kfoot" id="kpi-dqs-note">process, not outcome</div></div>
+      <div class="kpi"><div class="kl">Total debt</div>
+        <div class="kv" id="kpi-debt">&mdash;</div>
+        <div class="kfoot" id="kpi-debt-note">tell KUBERA your debts to track them</div></div>
+    </div>
+
+    <div id="cards">
+      <section class="card">
+        <div class="ch"><span class="ct">Performance vs SPY &middot; 90d</span></div>
+        <canvas id="bench-chart" width="520" height="150"></canvas>
+        <div id="bench-foot"><div class="mon-line">loading&hellip;</div></div>
+      </section>
+      <section class="card">
+        <div class="ch"><span class="ct">Open-trade monitor</span>
+          <button id="btn-notify" title="alert notifications OFF">&#x1F515;</button></div>
+        <div id="mon-body"><div class="mon-line">loading&hellip;</div></div>
+        <div id="mon-foot"></div>
+      </section>
+      <section class="card">
+        <div class="ch"><span class="ct">Household &middot; debt payoff</span></div>
+        <div id="house-body"><div class="mon-line">loading&hellip;</div></div>
+      </section>
+      <section class="card">
+        <div class="ch"><span class="ct">Positions</span></div>
+        <div id="port-positions"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ════ RIGHT: conversation dock — the orb as companion, voice untouched ════ -->
+  <aside id="dock">
     <div id="hint">click the orb or hold SPACE to talk &nbsp;·&nbsp; type below if you must</div>
     <div id="stage">
       <canvas id="orb" width="520" height="520"></canvas>
@@ -159,30 +247,7 @@
       <label class="cf"><input type="checkbox" id="confirm"> confirm this turn</label>
     </div>
     <div id="err"></div>
-  </div>
-
-  <!-- ════ RIGHT: portfolio snapshot panel (T082) ════ -->
-  <div id="port-panel">
-    <div id="port-hdr">
-      <span id="port-title">Portfolio</span>
-      <button id="btn-notify" title="alert notifications OFF">&#x1F515;</button>
-    </div>
-    <div id="port-body">
-      <div class="pl">Equity</div>
-      <div class="pv" id="port-equity">—</div>
-      <div class="pl">Day P&amp;L</div>
-      <div class="pv" id="port-daypnl">—</div>
-      <div class="pl">Positions</div>
-      <div id="port-positions"></div>
-      <div id="port-asof"></div>
-      <div class="pl">Open-trade monitor</div>
-      <div id="mon-body"><div class="mon-line">loading&hellip;</div></div>
-      <div id="mon-foot"></div>
-      <div class="pl">Performance vs SPY (90d)</div>
-      <canvas id="bench-chart" width="240" height="96"></canvas>
-      <div id="bench-foot"><div class="mon-line">loading&hellip;</div></div>
-    </div>
-  </div>
+  </aside>
 
 </div><!-- #shell -->
 
@@ -470,21 +535,18 @@ function resumeConversation(id) {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// T082 (b) — PORTFOLIO SNAPSHOT PANEL
+// T082 (b) — PORTFOLIO DATA → the KPI row (T157c: always visible now)
 // ════════════════════════════════════════════════════════════════════
-const portPanel    = document.getElementById("port-panel");
-const btnPort      = document.getElementById("btn-port");
 const portEquityEl = document.getElementById("port-equity");
 const portDayEl    = document.getElementById("port-daypnl");
 const portPosEl    = document.getElementById("port-positions");
 const portAsofEl   = document.getElementById("port-asof");
 
-btnPort.addEventListener("click", () => {
-  const opening = !portPanel.classList.contains("open");
-  portPanel.classList.toggle("open");
-  btnPort.title = opening ? "Close portfolio" : "Portfolio snapshot";
-  if (opening) { loadPortfolio(); loadMonitor(); loadBench(true); }
-});
+// the dashboard has no open/close — everything loads at start
+// (pinned): loadPortfolio(); loadMonitor(); loadBench(true); loadRisk(); loadHousehold();
+document.getElementById("top-date").textContent =
+  new Date().toLocaleDateString("en-US",
+    { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 
 function fmtUSD(n) {
   if (n == null || isNaN(n)) return "—";
@@ -498,9 +560,9 @@ async function loadPortfolio() {
     const r = await fetch("/portfolio");
     if (!r.ok) {
       portEquityEl.textContent = "broker offline";
-      portEquityEl.className = "pv neg";
+      portEquityEl.className = "kv neg";
       portDayEl.textContent = "—";
-      portDayEl.className = "pv";
+      portDayEl.className = "kv";
       portPosEl.innerHTML = "";
       portAsofEl.textContent = "";
       return;
@@ -512,10 +574,10 @@ async function loadPortfolio() {
     const dayPnl    = equity - lastEquity;
 
     portEquityEl.textContent = fmtUSD(equity);
-    portEquityEl.className = "pv";
+    portEquityEl.className = "kv";
 
     portDayEl.textContent = (dayPnl >= 0 ? "+" : "") + fmtUSD(dayPnl);
-    portDayEl.className = "pv " + (dayPnl >= 0 ? "pos" : "neg");
+    portDayEl.className = "kv " + (dayPnl >= 0 ? "pos" : "neg");
 
     const positions = (d.positions || [])
       .slice()
@@ -539,7 +601,7 @@ async function loadPortfolio() {
       { hour: "2-digit", minute: "2-digit", timeZoneName: "short" });
   } catch (_) {
     portEquityEl.textContent = "unavailable";
-    portEquityEl.className = "pv neg";
+    portEquityEl.className = "kv neg";
   }
 }
 
@@ -694,6 +756,11 @@ async function loadBench(force) {
     const m = d.metrics || {}, pm = m.portfolio || {}, bm = m.benchmark || {};
     const pct = v => (v == null ? "?"
       : (v >= 0 ? "+" : "") + (v * 100).toFixed(2) + "%");
+    const kEx = document.getElementById("kpi-excess");
+    kEx.textContent = pct(m.excess_return);
+    kEx.className = "kv " + ((m.excess_return || 0) >= 0 ? "pos" : "neg");
+    document.getElementById("kpi-excess-note").textContent =
+      `excess cumulative · asof ${(d.asof || "").slice(0, 10)}`;
     benchFootEl.innerHTML =
       `<div class="mon-line"><span class="bench-you">you ${pct(pm.cumulative_return)}</span>` +
       ` &middot; <span class="bench-spy">SPY ${pct(bm.cumulative_return)}</span>` +
@@ -729,6 +796,100 @@ function drawBench(port, spy) {
   line(port, "#c9a227", 1.6); // you: the orb's gold, drawn on top
 }
 
+// ════════════════════════════════════════════════════════════════════
+// T157c — RISK + HOUSEHOLD KPIs and the household card. textContent for
+// KPI values (no HTML path); card lists go through esc() like everything.
+// ════════════════════════════════════════════════════════════════════
+async function loadRisk() {
+  const kTier = document.getElementById("kpi-tier");
+  const kNote = document.getElementById("kpi-tier-note");
+  const kDqs  = document.getElementById("kpi-dqs");
+  try {
+    const r = await fetch("/api/risk");
+    if (!r.ok) throw new Error("risk " + r.status);
+    const d = await r.json();
+    if (d.breaker && d.breaker.tripped) {
+      kTier.textContent = "BREAKER";
+      kTier.className = "kv neg";
+      kNote.textContent = "circuit breaker tripped — sells only";
+    } else if (d.tier) {
+      kTier.textContent = "L" + d.tier.level + " · " + d.tier.name;
+      kTier.className = "kv" + (d.tier.level >= 2 ? " neg" : "");
+      const usedPct = Math.min(100, Math.round((d.tier.budget_consumed_frac || 0) * 100));
+      document.getElementById("kpi-budget-fill").style.width = usedPct + "%";
+      kNote.textContent = usedPct + "% of daily loss budget · asof " +
+        (d.asof || "").slice(11, 16) + "Z";
+    } else {
+      kTier.textContent = "—";
+      kNote.textContent = "no day baseline yet — run scripts/sync.py";
+    }
+    if (d.dqs && d.dqs.score != null) {
+      kDqs.textContent = String(d.dqs.score);
+      document.getElementById("kpi-dqs-note").textContent =
+        (d.dqs.orders ?? 0) + " orders · " + (d.dqs.no_trades ?? 0) +
+        " deliberate no-trades";
+    }
+  } catch (_) {
+    kNote.textContent = "risk status unavailable (server starting?)";
+  }
+}
+
+const HOUSE_EMPTY =
+  '<div class="mon-line">no debts recorded — say "add my Visa: $3,200 ' +
+  'balance, 24.9% APR, $35 minimum" and KUBERA will keep the plan</div>';
+
+async function loadHousehold() {
+  const body  = document.getElementById("house-body");
+  const kDebt = document.getElementById("kpi-debt");
+  const kNote = document.getElementById("kpi-debt-note");
+  try {
+    const r = await fetch("/api/household");
+    if (!r.ok) {
+      let detail = "household unavailable";
+      try { detail = (await r.json()).detail || detail; } catch (_) {}
+      body.innerHTML = `<div class="mon-line">${esc(detail).slice(0, 160)}</div>`;
+      return;
+    }
+    const d = await r.json();
+    if (!d.debts.length) {
+      kDebt.textContent = "$0";
+      kNote.textContent = "tell KUBERA your debts to track them";
+      body.innerHTML = HOUSE_EMPTY;
+      return;
+    }
+    kDebt.textContent = fmtUSD(d.total_balance);
+    kDebt.className = "kv";
+    kNote.textContent = d.any_stale
+      ? "includes stale balances — restate them to KUBERA"
+      : "owner-stated · asof " + (d.asof || "").slice(0, 10);
+    const rows = d.debts.map(x => {
+      const util = x.utilization_frac;
+      const utilBar = util == null ? "" :
+        `<div class="util-bar"><div class="util-fill${util > 0.3 ? " util-hot" : ""}"` +
+        ` style="width:${Math.min(100, Math.round(util * 100))}%"></div></div>`;
+      const staleTag = x.stale
+        ? ` <span class="house-stale">as you told me on ${esc(x.balance_asof)}</span>`
+        : "";
+      return `<div class="house-row"><span class="house-name">${esc(x.name)}</span>` +
+        `<span class="house-num">${fmtUSD(x.balance)} · ${(x.apr_frac * 100).toFixed(1)}%` +
+        `${staleTag}</span></div>${utilBar}`;
+    }).join("");
+    let plan = "";
+    if (d.payoff && d.payoff.available) {
+      const av = d.payoff.avalanche;
+      plan = `<div class="mon-line" style="margin-top:6px;">avalanche: debt-free in ` +
+        `${av.months} mo · ${fmtUSD(av.total_interest)} interest` +
+        ` · saves ${fmtUSD(d.payoff.interest_saved_by_avalanche)} vs snowball</div>` +
+        `<div class="mon-line">${esc(d.payoff.note)}</div>`;
+    } else if (d.payoff) {
+      plan = `<div class="mon-line" style="margin-top:6px;">${esc(d.payoff.why || "")}</div>`;
+    }
+    body.innerHTML = rows + plan;
+  } catch (_) {
+    body.innerHTML = '<div class="mon-line">household unavailable (server starting?)</div>';
+  }
+}
+
 // ── T136: PWA registration (feature-detected; failure is silent because
 // the app works identically unregistered — the SW only caches the shell,
 // NEVER money: see sw.js) ──
@@ -736,13 +897,13 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js").catch(() => {});
 }
 
-// ── init ──
+// ── init ── (pinned: the dashboard loads everything at start)
 loadConversations();
+loadPortfolio(); loadMonitor(); loadBench(true); loadRisk(); loadHousehold();
 // Portfolio + monitor poll every 60 s while the panel is visible.
 setInterval(() => {
-  if (portPanel.classList.contains("open")) {
-    loadPortfolio(); loadMonitor(); loadBench(false); // bench self-throttles to 10 min
-  }
+  loadPortfolio(); loadMonitor(); loadBench(false); // bench self-throttles to 10 min
+  loadRisk(); loadHousehold();
 }, 60_000);
 </script>
 </body>
