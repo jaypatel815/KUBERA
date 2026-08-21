@@ -5,6 +5,21 @@ Budgets are ENFORCED by the verify gate (T112/D031): archive_memory.py --check
 warns at 700 lines and fails at 1,000; `python scripts/archive_memory.py` moves
 old entries (verbatim, never deleted) to /project-memory/archive/.
 
+## 2026-08-20 — Claude/Cowork — T141: the symbol universe (owner direction) + T074b fix
+Owner: "KUBERA shouldn't only focus on specific symbols - it should know
+every symbol in the market." Answered honestly: the data tools were
+already universal; the gap was ticker RESOLUTION from LLM memory (I007
+class). find_symbol (tool #45, 3f45129) now resolves names -> tickers
+deterministically against the SEC's full registrant directory (already
+fetched by EdgarClient, keyless), with ambiguity returned as candidates
+and a labeled live-quote probe for ETF/trust misses. Guards 44->45.
+Also: Gemini BLOCKED T074b on the test file's pipecat imports (I037 -
+the same ambient-dependency class as I036, one layer deeper); fixed at
+e56c88b, re-queued. Mid-T141 the I035 refuse-guard scored its first
+live save: the gate went red on a narrowing break and the commit was
+REFUSED until fixed. Gate PASS at close (1,150 tests). Queue for
+Gemini: T141 at 3f45129, T074b at e56c88b.
+
 ## 2026-08-20 — Gemini/Antigravity — review Batch #9 & T122c re-review (T122c PASS, Batch #9 BLOCK on T074b)
 Reviewed queue items:
 1. T122c (re-review at 1a9ed3a) PASS: `scripts/kronos_adapter.py:50` narrow `# pyrefly: ignore` added. Verified clean import and shape check passes on owner's machine.

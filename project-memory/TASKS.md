@@ -15,18 +15,37 @@ origin (local runs ahead — CI confirms green only on push), and triggering
 Gemini on anything in Awaiting review.
 
 ## In progress
-- **T141 (symbol universe + find_symbol) - Claude/Cowork** - claimed
-  2026-08-20 on the owner's direction: "KUBERA shouldn't only focus on
-  specific symbols - it should have knowledge of every symbol in the
-  market." Probe findings: the data tools are ALREADY universal (any
-  symbol on demand), but ticker RESOLUTION relies on LLM memory - the
-  I007 wrong-symbol class. Fix: EdgarClient's already-fetched SEC
-  company_tickers.json (every US registrant: ticker/name/CIK, keyless)
-  becomes a directory; new deterministic find_symbol tool (#45) resolves
-  names -> tickers with scored candidates, a labeled live-quote probe
-  for ticker-shaped misses (ETFs/trusts absent from the SEC map), and
-  named refusals - never a guessed ticker. Guards 44->45; MCP +1.
 ## Awaiting review (D023 — a DIFFERENT agent signs these off; see REVIEW.md)
+- **T141: symbol universe + find_symbol - AWAITING REVIEW 2026-08-20
+  (Claude/Cowork; SHA 3f45129). ALSO in queue: T074b re-review at
+  e56c88b (I037 fix - the test file's four pipecat imports).**
+  Owner's direction: "KUBERA shouldn't only focus on specific symbols."
+  Honest finding first: the data tools were ALREADY universal (any
+  symbol on demand); the real gap was RESOLUTION - tickers guessed from
+  LLM memory (the I007 class). Built: EdgarClient.ticker_directory()
+  exposes the already-fetched SEC company_tickers.json (every US
+  registrant, keyless, ~10k entries; one fetch per client lifetime - no
+  stale local cache, freshness doctrine intact); find_symbol tool #45
+  resolves deterministically - exact ticker first, scored name
+  candidates (prefix > word > substring), AMBIGUITY RETURNED for the
+  user to choose (never silently picked), ticker-shaped SEC-map misses
+  get a labeled live-quote probe (SPY resolves "trades, likely
+  ETF/trust" instead of vanishing; dead market -> "do not assume it
+  exists"). Tool description orders the model: resolve BEFORE symbol
+  tools, never guess. Guards 44->45 x4 + name set + MCP read-only.
+  EVIDENCE (D027): 7 tests (exact win, name resolution, ambiguity as
+  candidates, ETF probe both alive and dead, name-shaped miss NOT
+  probed, missing-EDGAR named refusal); full gate PASS - and the I035
+  refuse-guard fired mid-ticket: my refactor broke pyrefly's None-
+  narrowing in cik_for, the gate went red, the commit was REFUSED, the
+  assert fix landed, gate green, then committed. The guard's first
+  live save.
+  D028 objections: (1) name scoring is intentionally simple (no fuzzy/
+  edit-distance) - "Palanteer" misspelled won't match; the ambiguity-
+  as-candidates design means the user corrects, which beats a wrong
+  fuzzy pick. (2) The SEC map's ETF gap is handled by probe, but the
+  probe proves EXISTENCE only, not identity - the label says so.
+
 - **Batch #9: T122c-fix + curation#9 + T136 + T137 + T140 +
   T074b-headless + ISSUES-sweep - AWAITING REVIEW 2026-08-20
   (Claude/Cowork; owner asked 8-10, probes yielded 7 real units + the
