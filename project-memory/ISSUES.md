@@ -4,6 +4,15 @@ Known bugs and gotchas, so no agent re-diagnoses one from scratch. Format per PR
 Close entries by moving them to the bottom under "Resolved" with the fix commit.
 
 ## Open
+- I037 [FOUND 2026-08-20 — while reviewing Batch #9 / T074b] pyrefly reports
+  missing-import errors on `backend/tests/test_voice_pipeline.py` (lines 63, 64,
+  92, 105) for `from pipecat...` imports. `pipecat` is in `requirements-voice.txt`
+  (optional, not in base `requirements.txt` / standard venv). While
+  `backend/api/voice_pipeline.py` carries `# pyrefly: ignore`, the test file's
+  imports omitted it, producing 4 errors and failing verify gate
+  (`types (pyrefly = exactly 0)`). REPRO: `python scripts/check_pyrefly.py` fails
+  with 4 errors. FIX: add `# pyrefly: ignore` to the 4 import lines in
+  `backend/tests/test_voice_pipeline.py`.
 - I035 [BEHAVIORAL, 2026-08-20 — three occurrences in ONE day, so it gets
   an entry, not another note] THE PIPE EATS THE EXIT CODE. Shell chains
   of the shape `checker | grep/tail/head ...; or && next-step` take the
